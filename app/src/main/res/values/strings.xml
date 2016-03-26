@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">Hello World, DemoActivity!</string>
+    <string name="app_name">NightScout</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="sgv_id">sgv_id</string>
+    <string name="arrow_id">arrow_id</string>
+    <string name="arrow_none">---</string>
+    <string name="self_destruct">Close It</string>
+    <string name="but_contentDesc">Launch Nightscout</string>
+    <string name="eula_title">Disclaimer</string>
+    <string name="eula_accept">Accept</string>
+    <string name="eula_refuse">Refuse</string>
+    <string  name="version">Version: 03.07.15</string>
+    <style name="ButtonText">
+    <item name="android:layout_width">fill_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">#ffffff</item>
+    <item name="android:gravity">center</item>
+    <item name="android:layout_margin">3dp</item>
+    <item name="android:textSize">30dp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:shadowColor">#000000</item>
+    <item name="android:shadowDx">1</item>
+    <item name="android:shadowDy">1</item>
+    <item name="android:shadowRadius">2</item>
+	</style>
+	<string-array name="types">
+     <item>Dexcom G4</item>
+     <item>Medtronic CGM</item>
+        <item>Contour NextLink 2.4</item>
+    </string-array>
+    <string-array name="types_values">
+     <item>1</item>
+     <item>2</item>
+        <item>3</item>
+    </string-array>
+     <string-array name="calib_types_values">
+     <item>1</item>
+     <item>2</item>
+     <item>3</item>
+    </string-array>
+    <string-array name="calibrationTypes">
+     <item>Glucometer</item>
+     <item>Medtronic Pump</item>
+     <item>Manual</item>
+    </string-array>
+     <string-array name="sourceTypes">
+     <item>Medtronic Sensor</item>
+     <item>Medtronic Pump</item>
+     <item>Both (sensor + pump support)</item>
+    </string-array>
+    <string-array name="pumpPeriodList">
+     <item>30 min.</item>
+     <item>60 min.</item>
+     <item>90 min.</item>
+     <item>120 min.</item>
+    </string-array>
+    <string-array name="pumpperiod_values">
+     <item>1</item>
+     <item>2</item>
+     <item>3</item>
+     <item>4</item>
+    </string-array>
+     <string-array name="historicPeriodList">
+     <item>5 min.</item>
+     <item>10 min.</item>
+     <item>15 min.</item>
+     <item>20 min.</item>
+    </string-array>
+    <string-array name="levelList">
+     <item>Error</item>
+     <item>Info</item>
+     <item>Debug</item>
+    </string-array>
+     <string-array name="historicMixPeriodList">
+     <item>10 min.</item>
+     <item>15 min.</item>
+     <item>20 min.</item>
+     <item>25 min.</item>
+     <item>30 min.</item>
+     <item>35 min.</item>
+     <item>40 min.</item>
+     <item>45 min.</item>
+     <item>50 min.</item>
+     <item>55 min.</item>
+     <item>60 min.</item>
+    </string-array>
+     <string-array name="historicMixPeriodVal">
+     <item>1</item>
+     <item>2</item>
+     <item>3</item>
+     <item>4</item>
+     <item>5</item>
+     <item>6</item>
+     <item>7</item>
+     <item>8</item>
+     <item>9</item>
+     <item>10</item>
+     <item>11</item>
+    </string-array>
+</resources>

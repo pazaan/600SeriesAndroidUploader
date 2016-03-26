@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+            android:id="@+id/menu_settings"
+            android:orderInCategory="100"
+            android:title="Preferences">
+    </item>
+    <item
+            android:id="@+id/readPumpInfo"
+            android:orderInCategory="100"
+            android:title="Read Pump Info.">
+    </item>
+    <item
+            android:id="@+id/refreshCalFactor"
+            android:orderInCategory="100"
+            android:title="Get Cal Factor!">
+    </item>
+     <item
+            android:id="@+id/calibMan"
+            android:orderInCategory="100"
+            android:title="Manual Calibration.">
+    </item>
+    <item
+            android:id="@+id/instantCalib"
+            android:orderInCategory="100"
+            android:title="Instant Calibration.">
+    </item>
+</menu>

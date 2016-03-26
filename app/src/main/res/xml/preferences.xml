@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="Monitor">
+         <com.nightscout.android.utils.CustomSwitchPreference
+	            android:title="mmol/l"
+	            android:key="mmolxl"
+	            android:disableDependentsState="false"
+	            android:switchTextOn="mmol/l"
+	            android:switchTextOff="mg/dl"
+	            android:summaryOn="mmol/l. Values are shown and setted in mmol/l"
+	            android:summaryOff="mg/dl. Values are shown and setted in mg/dl">
+	    </com.nightscout.android.utils.CustomSwitchPreference>
+	    <com.nightscout.android.utils.CustomSwitchPreference
+	            android:title="mmol/l decimals"
+	            android:key="mmolDecimals"
+	            android:dependency = "mmolxl"
+	            android:defaultValue="false"
+	            android:switchTextOn="2"
+	            android:switchTextOff="1"
+	            android:summaryOn="Activated. 2 Decimal values will be shown ."
+	            android:summaryOff="Deactivated. 1 Decimal value will be shown .">
+	    </com.nightscout.android.utils.CustomSwitchPreference>
+        <ListPreference
+        android:key="monitor_type"
+        android:disableDependentsState="false"
+        android:title="Type"
+        android:summary="Select item from array"
+        android:entries="@array/types"
+        android:entryValues="@array/types_values"
+        android:defaultValue="1"
+        />
+        <EditTextPreference
+            android:title="Pump ID"
+            android:key="medtronic_cgm_id"
+            android:dialogTitle="Enter your Guardian/Pump ID"/>
+         <EditTextPreference
+            android:title="Glucometer ID"
+            android:key="glucometer_cgm_id"
+            android:dialogTitle="Enter your Glucometer ID"/>
+          <EditTextPreference
+            android:title="Sensor ID"
+            android:key="sensor_cgm_id"
+            android:dialogTitle="Enter your Sensor ID"/>
+        <ListPreference
+        android:key="calibrationType"
+        android:disableDependentsState="false"
+        android:title="Calibration Type"
+        android:summary="Select item from array"
+        android:entries="@array/calibrationTypes"
+        android:entryValues="@array/calib_types_values"
+        android:defaultValue="3"
+        />
+         <ListPreference
+        android:key="pumpPeriod"
+        android:disableDependentsState="false"
+        android:title="Pump Request Period"
+        android:summary="Select item from array"
+        android:entries="@array/pumpPeriodList"
+        android:entryValues="@array/pumpperiod_values"
+        android:defaultValue="1"
+        />
+          <ListPreference
+        android:key="glucSrcTypes"
+        android:disableDependentsState="false"
+        android:title="Glucose Value Source"
+        android:summary="Select item from array"
+        android:entries="@array/sourceTypes"
+        android:entryValues="@array/calib_types_values"
+        android:defaultValue="1"
+        />
+         <ListPreference
+        android:key="historicPeriod"
+        android:disableDependentsState="false"
+        android:title="Historic Log Request Period"
+        android:summary="Select item from array"
+        android:entries="@array/historicPeriodList"
+        android:entryValues="@array/pumpperiod_values"
+        android:defaultValue="1"
+        />
+        <ListPreference
+        android:key="historicMixPeriod"
+        android:disableDependentsState="false"
+        android:title="Period after failure"
+        android:summary="Select item from array"
+        android:entries="@array/historicMixPeriodList"
+        android:entryValues="@array/historicMixPeriodVal"
+        android:defaultValue="3"
+        />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Sharing">    
+    <com.nightscout.android.utils.CustomSwitchPreference
+            android:title="API Upload (REST)"
+            android:key="EnableRESTUpload"
+            android:disableDependentsState="false"
+            android:summary="The REST API is an alternative to direct mongodb upload">
+    </com.nightscout.android.utils.CustomSwitchPreference>
+    <EditTextPreference
+            android:dependency="EnableRESTUpload"
+            android:title="API Base URL"
+            android:key="API Base URL"
+            android:dialogTitle="Enter Base API URL"
+            android:defaultValue="http://{YOUR-API-SERVER}/api"
+            android:dialogMessage="This only the base URL, the uploader will automatically append /entries for the POST of CGM data and /gdentries for the POST of glucometer data values">
+    </EditTextPreference>
+    <com.nightscout.android.utils.CustomSwitchPreference
+            android:title="MongoDB Upload"
+            android:key="EnableMongoUpload"
+            android:disableDependentsState="false"
+            android:summary="If you're using MongoLab and Azure this should be enabled">
+    </com.nightscout.android.utils.CustomSwitchPreference>
+    <com.nightscout.android.utils.CustomSwitchPreference
+            android:title="MongoDB REST Upload"
+            android:key="isMongoRest"
+            android:disableDependentsState="false"
+            android:switchTextOn="YES"
+            android:switchTextOff="NO"
+            android:summaryOn="Activated. USING MONGO REST API.Mogo Driver is disabled. Mongodb 3.0"
+            android:summaryOff="Deactivated. USING MONGO DRIVER.Mogo Rest is disabled. Mongodb 2.6 and older">
+    </com.nightscout.android.utils.CustomSwitchPreference>
+    <EditTextPreference
+            android:dependency="EnableMongoUpload"
+            android:title="MongoDB URI"
+            android:key="MongoDB URI"
+            android:dialogTitle="Enter MongoDB URI"
+            android:dialogMessage="Replace example values in {}'s with your correct values"
+            android:defaultValue="mongodb://{user}:{password}@{host}.mongolab.com:{11111}/{database}">
+    </EditTextPreference>
+    <EditTextPreference
+            android:dependency="EnableMongoUpload"
+            android:title="APIKEY"
+            android:key="apiKey"
+            android:dialogTitle="Enter API Key"
+            android:dialogMessage="get your API KEY from mongolabs"
+            android:defaultValue="">
+    </EditTextPreference>
+     <EditTextPreference
+            android:title="Database Name"
+            android:key="dbName"
+            android:dialogTitle="Enter Database Name"
+            android:dialogMessage="set your Database Name"
+            android:defaultValue="">
+    </EditTextPreference>
+    <EditTextPreference
+            android:dependency="EnableMongoUpload"
+            android:title="Collection Name"
+            android:key="Collection Name"
+            android:dialogTitle="Enter Collection Name"
+            android:dialogMessage="This is the name of the collection where the CGM data will be stored">
+    </EditTextPreference>
+    <EditTextPreference
+            android:dependency="EnableMongoUpload"
+            android:title="Glucometer Data Collection Name"
+            android:key="gcdCollectionName"
+            android:dialogTitle="Enter Collection Name"
+            android:dialogMessage="This is the name of the collection where the glucometer data will be stored">
+    </EditTextPreference>
+    <com.nightscout.android.utils.CustomSwitchPreference
+            android:title="Wifi Hack"
+            android:key="EnableWifiHack"
+            android:disableDependentsState="false"
+            android:defaultValue="false"
+            android:summaryOn="Wifi will be disabled if there is a timeout (poor wifi signal/access point), this will allow mobile data to be used instead"
+            android:summaryOff="The uploader won't try to disable Wifi even if there is a timeout"
+            >
+    </com.nightscout.android.utils.CustomSwitchPreference>
+    <com.nightscout.android.utils.CustomSwitchPreference
+            android:title="2 Days at Startup"
+            android:key="InitialTwoDayUpload"
+            android:disableDependentsState="false"
+            android:defaultValue="true"
+            android:summaryOn="When the upload application first starts it will upload ~2.5 days of data"
+            android:summaryOff="The uploader won't try upload old data"
+            >
+    </com.nightscout.android.utils.CustomSwitchPreference>
+    </PreferenceCategory>
+     <PreferenceCategory android:title="Disclaimer">
+	    <com.nightscout.android.utils.CustomSwitchPreference
+	            android:title="I UNDERSTAND"
+	            android:key="IUNDERSTAND"
+	            android:disableDependentsState="false"
+	            android:switchTextOn="YES"
+	            android:switchTextOff="NO"
+	            android:summaryOn="Activated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
+	            android:summaryOff="Deactivated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers">
+	    </com.nightscout.android.utils.CustomSwitchPreference>
+	      <Preference 
+		 android:key="version"
+		 android:title="@string/version" />
+   		 </PreferenceCategory>
+    <PreferenceCategory android:title="Debug">
+    <ListPreference
+        android:key="logLevel"
+        android:disableDependentsState="false"
+        android:title="Logging Level"
+        android:summary="Select item from array"
+        android:entries="@array/levelList"
+        android:entryValues="@array/calib_types_values"
+        android:defaultValue="1"
+        />
+     </PreferenceCategory>
+</PreferenceScreen>

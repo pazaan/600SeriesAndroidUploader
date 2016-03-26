@@ -1,0 +1,35 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/background_dark"
+    android:orientation="horizontal"
+    android:padding="@dimen/widget_margin" >
+
+    <ImageButton
+        android:id="@+id/imageButton1"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:contentDescription="@string/but_contentDesc"
+        android:src="@drawable/ic_launcher" />
+
+    <TextView
+        android:id="@+id/sgv_id"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="@string/arrow_none"
+        android:textColor="#ffffff"
+        android:textSize="40sp"
+         android:gravity="center_vertical|right" />
+
+    <TextView
+        android:id="@+id/arrow_id"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="@string/arrow_none"
+        android:textColor="#ffffff"
+        android:textSize="18sp" 
+         android:gravity="center_vertical|right"/>
+
+</LinearLayout>
