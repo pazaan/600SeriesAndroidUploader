@@ -4,8 +4,8 @@ import android.util.Log;
 
 import com.nightscout.android.USB.UsbHidDriver;
 import com.nightscout.android.dexcom.USB.HexDump;
-import com.nightscout.android.medtronic.message.ContourNextLinkBinaryMessage;
 import com.nightscout.android.medtronic.message.ChannelNegotiateMessage;
+import com.nightscout.android.medtronic.message.ContourNextLinkBinaryMessage;
 import com.nightscout.android.medtronic.service.MedtronicCNLService;
 
 import java.io.ByteArrayOutputStream;
@@ -24,25 +24,9 @@ public class MedtronicCNLReader {
     private static final String BAYER_USB_HEADER = "ABC";
 
     private static final byte[] RADIO_CHANNELS = { 0x14, 0x11, 0x0e, 0x17, 0x1a };
-
-    public enum ASCII {
-        STX(0x02),
-        EOT(0x04),
-        ENQ(0x05),
-        ACK(0x06),
-        NAK(0x15);
-
-        private byte value;
-
-        ASCII(int code) {
-            this.value = (byte) code;
-        }
-    }
-
+    public String deviceInfo;
     private UsbHidDriver mDevice;
     private MedtronicCNLSession mPumpSession = new MedtronicCNLSession();
-    public String deviceInfo;
-
     public MedtronicCNLReader(UsbHidDriver device) {
         mDevice = device;
     }
@@ -51,8 +35,8 @@ public class MedtronicCNLReader {
         ByteArrayOutputStream responseMessage = new ByteArrayOutputStream();
 
         byte[] responseBuffer = new byte[USB_BLOCKSIZE];
-        int bytesRead = 0;
-        int messageSize = 0;
+        int bytesRead;
+        int messageSize;
 
         do {
             bytesRead = mDevice.read(responseBuffer, READ_TIMEOUT_MS);
@@ -133,7 +117,7 @@ public class MedtronicCNLReader {
 
     public void openConnection() throws IOException {
         ContourNextLinkBinaryMessage message = new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.OPEN_CONNECTION, mPumpSession, mPumpSession.getHMAC());
-        message.send(this);
+        //message.send(this);
         sendMessage(message.encode());
         // FIXME - We need to care what the response message is - wrong MAC and all that
         readMessage();
@@ -150,6 +134,20 @@ public class MedtronicCNLReader {
         for( byte channel: RADIO_CHANNELS ) {
             ChannelNegotiateMessage message = new ChannelNegotiateMessage( mPumpSession );
             sendMessage(message.encode());
+        }
+    }
+
+    public enum ASCII {
+        STX(0x02),
+        EOT(0x04),
+        ENQ(0x05),
+        ACK(0x06),
+        NAK(0x15);
+
+        private byte value;
+
+        ASCII(int code) {
+            this.value = (byte) code;
         }
     }
 }
