@@ -25,20 +25,21 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Closeable;
+import java.util.Map;
 
 import com.nightscout.android.R;
 
 /**
  * Displays an EULA ("End User License Agreement") that the user has to accept before
- * using the application. Your application should call {@link Eula#show(android.app.Activity)}
+ * using the application. Your application should call {@link Eula#show(android.app.Activity, SharedPreferences)}
  * in the onCreate() method of the first activity. If the user accepts the EULA, it will never
  * be shown again. If the user refuses, {@link android.app.Activity#finish()} is invoked
  * on your activity.
  */
 public class Eula {
     private static final String ASSET_EULA = "EULA";
-    private static final String PREFERENCE_EULA_ACCEPTED = "eula.accepted";
-    private static final String PREFERENCES_EULA = "eula";
+    private static final String PREFERENCE_EULA_ACCEPTED = "IUNDERSTAND";
+    private static final String PREFERENCES_EULA = "Disclaimer";
     private static AlertDialog aDialog = null;
 
     /**
@@ -63,9 +64,11 @@ public class Eula {
      * @param activity The Activity to finish if the user rejects the EULA.
      * @return Whether the user has agreed already.
      */
-    public static boolean show(final Activity activity) {
-        final SharedPreferences preferences = activity.getSharedPreferences(PREFERENCES_EULA,
-                Activity.MODE_PRIVATE);
+    public static boolean show(final Activity activity, final SharedPreferences preferences ) {
+        //final SharedPreferences preferences = activity.getSharedPreferences(PREFERENCES_EULA,
+        //        Activity.MODE_PRIVATE);
+
+        Map<String, ?> preferencesAll = preferences.getAll();
         if (!preferences.getBoolean(PREFERENCE_EULA_ACCEPTED, false)) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
             builder.setTitle(R.string.eula_title);

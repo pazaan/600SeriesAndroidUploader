@@ -2,15 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:paddingTop="15dp">
     
 
     <TextView
         android:id="@+id/demoTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:textSize="50px"
+        android:textSize="70sp"
         android:gravity="center"
 		android:textStyle="bold"
  
@@ -19,15 +19,16 @@
     <ScrollView
         android:id="@+id/demoScroller"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:padding="10dp">
 
         <TextView
             android:id="@+id/demoText"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:textSize="40px"
+            android:layout_height="wrap_content"
+            android:textSize="30sp"
 			
- 			android:gravity="center" />
+ 			android:gravity="left" />
     </ScrollView>
       <LinearLayout android:id="@+id/container"
       android:orientation="vertical"

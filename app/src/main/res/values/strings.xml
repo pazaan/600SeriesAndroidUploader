@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="hello">Hello World, DemoActivity!</string>
+    <string name="hello">---</string>
     <string name="app_name">NightScout</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
@@ -28,8 +28,6 @@
     <item name="android:shadowRadius">2</item>
 	</style>
 	<string-array name="types">
-     <item>Dexcom G4</item>
-     <item>Medtronic CGM</item>
         <item>Contour NextLink 2.4</item>
     </string-array>
     <string-array name="types_values">

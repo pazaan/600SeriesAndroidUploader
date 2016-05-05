@@ -1,5 +1,46 @@
 package com.nightscout.android.upload;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
+import android.preference.PreferenceManager;
+import android.util.Log;
+
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientOptions.Builder;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import com.nightscout.android.dexcom.DexcomG4Activity;
+import com.nightscout.android.dexcom.EGVRecord;
+import com.nightscout.android.medtronic.MedtronicConstants;
+import com.nightscout.android.medtronic.MedtronicReader;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.bson.Document;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,62 +57,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-import javax.crypto.spec.GCMParameterSpec;
-
-import static com.mongodb.client.model.Filters.*;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.bson.BsonDocument;
-import org.bson.Document;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import org.slf4j.LoggerFactory;
-
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
-import android.preference.PreferenceManager;
-import android.util.Log;
-
 import ch.qos.logback.classic.Logger;
-import ch.qos.logback.core.status.WarnStatus;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientOptions.Builder;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
-import com.mongodb.WriteConcern;
-import com.nightscout.android.dexcom.DexcomG4Activity;
-import com.nightscout.android.dexcom.EGVRecord;
-import com.nightscout.android.medtronic.MedtronicConstants;
-import com.nightscout.android.medtronic.MedtronicReader;
+import static com.mongodb.client.model.Filters.eq;
 
 public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 	
@@ -212,7 +200,6 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     /**
      * Sends an error message to be printed in the display (DEBUG) if it is repeated, It is not printed again. If UI is not visible, It will launch a pop-up message.
      * @param valuetosend
-     * @param clear, if true, the display is cleared before printing "valuetosend"
      */
 	private void sendErrorMessageToUI(String valuetosend) {
 		Log.e("medtronicCGMService", valuetosend);
@@ -697,14 +684,25 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     }
     
     private void populateV1APIEntry(JSONObject json, Record oRecord) throws Exception {
-    	Date date = DATE_FORMAT.parse(oRecord.displayTime);
-    	json.put("date", date.getTime());
+		if (oRecord instanceof Medtronic640gPumpRecord) {
+			json.put("date", ((Medtronic640gPumpRecord) oRecord).sensorBGLDate.getTime());
+			json.put("dateString",  oRecord.displayTime);
+		} else {
+			Date date = DATE_FORMAT.parse(oRecord.displayTime);
+			json.put("date", date.getTime());
+		}
 
-    	if (oRecord instanceof GlucometerRecord){
-    		 json.put("gdValue", ((GlucometerRecord)oRecord).numGlucometerValue);
-             json.put("device", getSelectedDeviceName());
-             json.put("type", "mbg");
-             json.put("mbg", ((GlucometerRecord)oRecord).numGlucometerValue);
+    	if (oRecord instanceof GlucometerRecord) {
+			json.put("gdValue", ((GlucometerRecord) oRecord).numGlucometerValue);
+			json.put("device", getSelectedDeviceName());
+			json.put("type", "mbg");
+			json.put("mbg", ((GlucometerRecord) oRecord).numGlucometerValue);
+		}else if (oRecord instanceof Medtronic640gPumpRecord){
+				Medtronic640gPumpRecord pumpRecord = (Medtronic640gPumpRecord) oRecord;
+				json.put("sgv", pumpRecord.sensorBGL);
+				json.put("direction", pumpRecord.direction);
+				json.put("device", pumpRecord.getDeviceName());
+				json.put("type", "sgv");
     	}else if (oRecord instanceof EGVRecord){
     		EGVRecord record = (EGVRecord) oRecord;
     		json.put("device", getSelectedDeviceName());

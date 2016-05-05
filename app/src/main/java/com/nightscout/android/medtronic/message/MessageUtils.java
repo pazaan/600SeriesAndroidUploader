@@ -1,5 +1,9 @@
 package com.nightscout.android.medtronic.message;
 
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+
 /**
  * Created by lgoedhart on 26/03/2016.
  */
@@ -14,32 +18,20 @@ public class MessageUtils {
         return sum;
     }
 
-    static public short ccittChecksum(byte[] bytes) {
-        // From http://stackoverflow.com/questions/7961964/android-crc-ccitt
-        short crc = (short) 0xFFFF;
-        int temp;
-        int crc_byte;
-
-        for (int byte_index = 0; byte_index < bytes.length; byte_index++) {
-            crc_byte = bytes[byte_index];
-
-            for (int bit_index = 0; bit_index < 8; bit_index++) {
-
-                temp = ((crc >> 15)) ^ ((crc_byte >> 7));
-
+    public static int CRC16CCITT(byte[] data, int initialValue, int polynomial, int bytesToCheck) {
+        // From http://introcs.cs.princeton.edu/java/61data/CRC16CCITT.java
+        int crc = initialValue;
+        for (int c = 0; c < bytesToCheck; c++) {
+            byte b = data[c];
+            for (int i = 0; i < 8; i++) {
+                boolean bit = ((b >> (7 - i) & 1) == 1);
+                boolean c15 = ((crc >> 15 & 1) == 1);
                 crc <<= 1;
-                crc &= 0xFFFF;
-
-                if (temp > 0) {
-                    crc ^= 0x1021;
-                    crc &= 0xFFFF;
-                }
-
-                crc_byte <<= 1;
-                crc_byte &= 0xFF;
+                if (c15 ^ bit) crc ^= polynomial;
             }
         }
 
+        crc &= 0xffff;
         return crc;
     }
 
@@ -51,5 +43,16 @@ public class MessageUtils {
                     + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
+    }
+
+    public static Date decodeDateTime( long rtc, long offset ) {
+        TimeZone currentTz = java.util.Calendar.getInstance().getTimeZone();
+        GregorianCalendar gregorianCalendar = new GregorianCalendar(2000, 0, 1, 0, 0, 0);
+        gregorianCalendar.setTimeZone(currentTz);
+
+        long epochTime = gregorianCalendar.getTime().getTime();
+
+        Date pumpDate = new Date(epochTime + (( rtc + offset ) * 1000 ) );
+        return pumpDate;
     }
 }
