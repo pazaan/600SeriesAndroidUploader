@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
@@ -21,9 +22,12 @@ import android.util.Log;
 import com.nightscout.android.R;
 import com.nightscout.android.USB.UsbHidDriver;
 import com.nightscout.android.dexcom.DexcomG4Activity;
+import com.nightscout.android.dexcom.LoginActivity;
 import com.nightscout.android.medtronic.MedtronicCNLReader;
+import com.nightscout.android.medtronic.data.CNLConfigDbHelper;
 import com.nightscout.android.medtronic.message.ChecksumException;
 import com.nightscout.android.medtronic.message.EncryptionException;
+import com.nightscout.android.medtronic.message.MessageUtils;
 import com.nightscout.android.medtronic.message.UnexpectedMessageException;
 import com.nightscout.android.service.AbstractService;
 import com.nightscout.android.upload.Medtronic640gPumpRecord;
@@ -128,8 +132,23 @@ public class MedtronicCNLService extends AbstractService {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
             try {
-                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_STATUS, "Connecting to the Contour CareLink Next..."));
+                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_STATUS, "Connecting to the Contour Next Link..."));
                 cnlReader.requestDeviceInfo();
+
+                // Is the device already configured?
+                CNLConfigDbHelper configDbHelper = new CNLConfigDbHelper(mContext);
+                configDbHelper.insertStickSerial( cnlReader.getStickSerial() );
+                String hmac = configDbHelper.getHmac( cnlReader.getStickSerial() );
+                String key = configDbHelper.getKey( cnlReader.getStickSerial() );
+
+                if( hmac.equals( "" ) || key.equals("") ) {
+                    send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Before you can use the Contour Next Link, you need to register it with the app. Select 'Register USB Stick' from the menu."));
+                    return;
+                }
+
+                cnlReader.getPumpSession().setHMAC( MessageUtils.hexStringToByteArray( hmac ) );
+                cnlReader.getPumpSession().setKey( MessageUtils.hexStringToByteArray( key ) );
+
                 cnlReader.enterControlMode();
                 cnlReader.enterPassthroughMode();
                 cnlReader.openConnection();
@@ -138,7 +157,7 @@ public class MedtronicCNLService extends AbstractService {
                 if (radioChannel == 0) {
                     send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Could not communicate with the 640g. Are you near the pump?"));
                 } else {
-                    send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_STATUS, String.format("Connected to Contour CareLink Next on channel %d.", (int) radioChannel)));
+                    send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_STATUS, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel)));
                     cnlReader.beginEHSMSession();
 
                     cnlReader.getPumpTime(pumpRecord);
@@ -152,16 +171,16 @@ public class MedtronicCNLService extends AbstractService {
                 cnlReader.endControlMode();
             } catch (IOException e) {
                 Log.e(TAG, "Error getting BGLs", e);
-                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Error connecting to Contour CareLink Next."));
+                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Error connecting to Contour Next Link."));
             } catch (ChecksumException e) {
                 Log.e(TAG, "Checksum error", e);
-                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Checksum error getting message from the Contour CareLink Next."));
+                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Checksum error getting message from the Contour Next Link."));
             } catch (EncryptionException e) {
                 Log.e(TAG, "Encryption exception", e);
-                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Error decrypting messages from Contour CareLink Next."));
+                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Error decrypting messages from Contour Next Link."));
             } catch (TimeoutException e) {
                 Log.e(TAG, "Timeout communicating with Contour", e);
-                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Timeout communicating with the Contour CareLink Next."));
+                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Timeout communicating with the Contour Next Link."));
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
                 send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Communication Error: " + e.getMessage()));

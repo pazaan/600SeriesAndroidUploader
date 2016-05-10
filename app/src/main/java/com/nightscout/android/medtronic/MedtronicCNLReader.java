@@ -19,6 +19,7 @@ import com.nightscout.android.medtronic.message.PumpStatusRequestMessage;
 import com.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import com.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import com.nightscout.android.medtronic.message.PumpTimeResponseMessage;
+import com.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import com.nightscout.android.medtronic.message.UnexpectedMessageException;
 import com.nightscout.android.medtronic.service.MedtronicCNLService;
 import com.nightscout.android.upload.Medtronic640gPumpRecord;
@@ -34,6 +35,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by lgoedhart on 24/03/2016.
@@ -48,10 +51,21 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
 
     private static final byte[] RADIO_CHANNELS = {0x14, 0x11, 0x0e, 0x17, 0x1a};
     private UsbHidDriver mDevice;
+
     private MedtronicCNLSession mPumpSession = new MedtronicCNLSession();
+
+    private String mStickSerial = null;
 
     public MedtronicCNLReader(UsbHidDriver device) {
         mDevice = device;
+    }
+
+    public String getStickSerial() {
+        return mStickSerial;
+    }
+
+    public MedtronicCNLSession getPumpSession() {
+        return mPumpSession;
     }
 
     public byte[] readMessage() throws IOException, TimeoutException {
@@ -146,9 +160,11 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
             if (response1[0] == ASCII.EOT.value) {
                 // response 1 is the ASTM message
                 checkControlMessage(response2, ASCII.ENQ.value);
+                extractStickSerial( new String( response1 ) );
             } else {
                 // response 2 is the ASTM message
                 checkControlMessage(response1, ASCII.ENQ.value);
+                extractStickSerial( new String( response2 ) );
             }
         } catch (TimeoutException e) {
             // Terminate comms with the pump, then try again
@@ -162,12 +178,19 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         }
     }
 
+    private void extractStickSerial( String astmMessage ) {
+        Pattern pattern = Pattern.compile( ".*?\\^(\\d{4}-\\d{7})\\^.*" );
+        Matcher matcher = pattern.matcher( astmMessage );
+        if( matcher.find() ) {
+            mStickSerial = matcher.group(1);
+        }
+    }
+
     public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException {
         new ContourNextLinkCommandMessage(ASCII.NAK.value).send(this);
         checkControlMessage(readMessage(), ASCII.EOT.value);
         new ContourNextLinkCommandMessage(ASCII.ENQ.value).send(this);
         checkControlMessage(readMessage(), ASCII.ACK.value);
-
     }
 
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException {
@@ -185,10 +208,20 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         readMessage();
     }
 
-    public void requestReadInfo() throws IOException, TimeoutException {
+    public void requestReadInfo() throws IOException, TimeoutException, EncryptionException, ChecksumException {
         new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.READ_INFO, mPumpSession, null).send(this);
-        // FIXME - pull the linkMAC and pumpMAC from here. It needs to go into the session.
-        readMessage();
+
+        ContourNextLinkMessage response = ReadInfoResponseMessage.fromBytes(mPumpSession, readMessage());
+
+        // FIXME - this needs to go into ReadInfoResponseMessage
+        ByteBuffer infoBuffer = ByteBuffer.allocate(16);
+        infoBuffer.order(ByteOrder.BIG_ENDIAN);
+        infoBuffer.put(response.encode(), 0x21, 16);
+        long linkMAC = infoBuffer.getLong(0);
+        long pumpMAC = infoBuffer.getLong(8);
+
+        this.getPumpSession().setLinkMAC( linkMAC );
+        this.getPumpSession().setPumpMAC( pumpMAC );
     }
 
     public byte negotiateChannel() throws IOException, ChecksumException, TimeoutException {

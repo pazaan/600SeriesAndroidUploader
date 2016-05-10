@@ -6,13 +6,11 @@ import com.nightscout.android.medtronic.message.MessageUtils;
  * Created by lgoedhart on 26/03/2016.
  */
 public class MedtronicCNLSession {
-    // FIXME - Lennart's hard coded key and HMAC
-    private final static byte[] HMAC = MessageUtils.hexStringToByteArray("e28fe4e5cf3c1eb6d6a2ec5a093093d4f397237dc60b3f2c1ef64f31e32077c4");
-    private final static byte[] KEY = MessageUtils.hexStringToByteArray("57833334130906a587b7a0437bc28a69");
+    private byte[] HMAC;
+    private byte[] key;
 
-    // FIXME - Lennart's hard coded serial numbers
-    private final static long linkMAC = 1055866 + 0x0023F70682000000L;
-    private final static long pumpMAC = 1057941 + 0x0023F745EE000000L;
+    private long linkMAC;
+    private long pumpMAC;
 
     private byte radioChannel;
     private int bayerSequenceNumber = 1;
@@ -22,22 +20,30 @@ public class MedtronicCNLSession {
         return HMAC;
     }
 
-    public static byte[] getKey() {
-        return KEY;
+    public byte[] getKey() {
+        return key;
     }
     public byte[] getIV() {
-        byte[] iv = new byte[KEY.length];
-        System.arraycopy(KEY,0,iv,0,KEY.length);
+        byte[] iv = new byte[key.length];
+        System.arraycopy(key,0,iv,0,key.length);
         iv[0] = radioChannel;
         return iv;
     }
 
-    public static long getLinkMAC() {
+    public long getLinkMAC() {
         return linkMAC;
     }
 
-    public static long getPumpMAC() {
+    public void setLinkMAC( long linkMAC ) {
+        this.linkMAC = linkMAC;
+    }
+
+    public long getPumpMAC() {
         return pumpMAC;
+    }
+
+    public void setPumpMAC( long pumpMAC ) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getBayerSequenceNumber() {
@@ -62,5 +68,13 @@ public class MedtronicCNLSession {
 
     public void setRadioChannel(byte radioChannel) {
         this.radioChannel = radioChannel;
+    }
+
+    public void setHMAC( byte[] hmac ) {
+        this.HMAC = hmac;
+    }
+
+    public void setKey( byte[] key ) {
+        this.key = key;
     }
 }

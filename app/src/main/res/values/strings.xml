@@ -99,4 +99,18 @@
      <item>10</item>
      <item>11</item>
     </string-array>
+    <string name="title_activity_login">CareLink login</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_username">CareLink Username</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Retrieve keys for USB</string>
+    <string name="action_sign_in_short">Retrieve keys</string>
+    <string name="error_invalid_username">This username is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">The Username or password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email
+        completions."
+    </string>
 </resources>

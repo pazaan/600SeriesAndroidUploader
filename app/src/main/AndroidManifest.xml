@@ -1,62 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.nightscout.android"
-          android:versionCode="1"
-     	  android:versionName="1.0">
+    package="com.nightscout.android"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:maxSdkVersion="21"
+        android:minSdkVersion="15"
+        android:targetSdkVersion="21" />
+
     <uses-feature android:name="android.hardware.usb.host" />
-    <uses-sdk android:minSdkVersion="15" android:maxSdkVersion="21" android:targetSdkVersion="21"/>
-    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
-    <uses-permission android:name="android.permission.VIBRATE"></uses-permission>
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"></uses-permission>
-    <uses-permission android:name="android.permission.UPDATE_DEVICE_STATS"></uses-permission>
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"></uses-permission>
-    <uses-permission android:name="android.permission.WAKE_LOCK"></uses-permission>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.UPDATE_DEVICE_STATS" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <application  android:allowBackup="true"  android:icon="@drawable/ic_launcher" android:label="@string/app_name">
+    <!-- To auto-complete the email text field in the login form with the user's emails -->
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_PROFILE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <android:uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <android:uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <android:uses-permission android:name="android.permission.READ_CALL_LOG" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppBaseTheme" >
+
         <!-- I have set screenOrientation to "portrait" to avoid the restart of AsyncTasks when you rotate the phone -->
-         <activity
-                android:name=".dexcom.DexcomG4Activity"
-                android:icon="@drawable/ic_launcher"
-                android:label="NightScout"
-                android:launchMode="singleTask"
-                android:screenOrientation="portrait" 
-                >
-            <intent-filter  android:icon="@drawable/ic_launcher">
+        <activity
+            android:name=".dexcom.DexcomG4Activity"
+            android:icon="@drawable/ic_launcher"
+            android:label="NightScout"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" >
+            <intent-filter android:icon="@drawable/ic_launcher" >
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter  android:icon="@drawable/ic_launcher" >
+            <intent-filter android:icon="@drawable/ic_launcher" >
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
 
             <meta-data
-                    android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
-                    android:resource="@xml/device_filter" />
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/device_filter" />
         </activity>
-        <activity android:name=".settings.SettingsActivity"
-                  android:icon="@drawable/ic_launcher"
-                  android:label="Settings"/>
-        
-        <service android:icon="@drawable/ic_launcher" android:name=".dexcom.DexcomG4Service" >
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:icon="@drawable/ic_launcher"
+            android:label="Settings" />
+
+        <service
+            android:name=".dexcom.DexcomG4Service"
+            android:icon="@drawable/ic_launcher" >
         </service>
-        <!--<service  android:icon="@drawable/ic_launcher"
-                android:label="NightScout" android:name=".medtronic.MedtronicCGMService">
-        </service>-->
-        <service android:icon="@drawable/ic_launcher" android:name=".medtronic.service.MedtronicCNLService" >
-        </service>
-        <service android:icon="@drawable/ic_launcher" android:process=":nightscoutcnlservice" android:name=".medtronic.service.TestService" >
-        </service>
+        <!--
         <service  android:icon="@drawable/ic_launcher"
-                android:label="NightScout" android:name=".widget.CGMWidgetUpdater">
+                android:label="NightScout" android:name=".medtronic.MedtronicCGMService">
         </service>
-		<receiver android:name=".widget.CGMWidget" >
-		    <intent-filter>
-		        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-		    </intent-filter>
-		    <meta-data android:name="android.appwidget.provider"
-		               android:resource="@xml/example_appwidget_info" />
-		</receiver>
+        -->
+        <service
+            android:name=".medtronic.service.MedtronicCNLService"
+            android:icon="@drawable/ic_launcher" >
+        </service>
+        <service
+            android:name=".medtronic.service.TestService"
+            android:icon="@drawable/ic_launcher"
+            android:process=":nightscoutcnlservice" >
+        </service>
+        <service
+            android:name=".widget.CGMWidgetUpdater"
+            android:icon="@drawable/ic_launcher"
+            android:label="NightScout" >
+        </service>
+
+        <receiver android:name=".widget.CGMWidget" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/example_appwidget_info" />
+        </receiver>
+
+        <activity
+            android:name=".dexcom.LoginActivity"
+            android:label="@string/title_activity_login" >
+        </activity>
     </application>
+
 </manifest>

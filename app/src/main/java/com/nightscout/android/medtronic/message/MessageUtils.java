@@ -45,6 +45,14 @@ public class MessageUtils {
         return data;
     }
 
+    public static String byteArrayToHexString(byte[] in) {
+        final StringBuilder builder = new StringBuilder();
+        for(byte b : in) {
+            builder.append(String.format("%02x", b));
+        }
+        return builder.toString();
+    }
+
     public static Date decodeDateTime( long rtc, long offset ) {
         TimeZone currentTz = java.util.Calendar.getInstance().getTimeZone();
         GregorianCalendar gregorianCalendar = new GregorianCalendar(2000, 0, 1, 0, 0, 0);
