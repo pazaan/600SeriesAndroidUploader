@@ -2,7 +2,7 @@
 <resources>
 
     <string name="hello">---</string>
-    <string name="app_name">NightScout</string>
+    <string name="app_name">NS 640g Uploader</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="sgv_id">sgv_id</string>
