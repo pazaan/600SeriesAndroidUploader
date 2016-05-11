@@ -7,7 +7,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.BitmapFactory;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
@@ -22,7 +21,6 @@ import android.util.Log;
 import com.nightscout.android.R;
 import com.nightscout.android.USB.UsbHidDriver;
 import com.nightscout.android.dexcom.DexcomG4Activity;
-import com.nightscout.android.dexcom.LoginActivity;
 import com.nightscout.android.medtronic.MedtronicCNLReader;
 import com.nightscout.android.medtronic.data.CNLConfigDbHelper;
 import com.nightscout.android.medtronic.message.ChecksumException;
@@ -124,6 +122,7 @@ public class MedtronicCNLService extends AbstractService {
                 mHidDevice.open();
             } catch (Exception e) {
                 Log.e(TAG, "Unable to open serial device", e);
+                return;
             }
 
             // Go get the data
@@ -150,25 +149,33 @@ public class MedtronicCNLService extends AbstractService {
                 cnlReader.getPumpSession().setKey( MessageUtils.hexStringToByteArray( key ) );
 
                 cnlReader.enterControlMode();
-                cnlReader.enterPassthroughMode();
-                cnlReader.openConnection();
-                cnlReader.requestReadInfo();
-                byte radioChannel = cnlReader.negotiateChannel();
-                if (radioChannel == 0) {
-                    send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Could not communicate with the 640g. Are you near the pump?"));
-                } else {
-                    send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_STATUS, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel)));
-                    cnlReader.beginEHSMSession();
+                try {
+                    cnlReader.enterPassthroughMode();
+                    cnlReader.openConnection();
+                    cnlReader.requestReadInfo();
+                    byte radioChannel = cnlReader.negotiateChannel();
+                    if (radioChannel == 0) {
+                        send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Could not communicate with the 640g. Are you near the pump?"));
+                        Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
+                    } else {
+                        send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_STATUS, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel)));
+                        Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
+                        cnlReader.beginEHSMSession();
 
-                    cnlReader.getPumpTime(pumpRecord);
-                    cnlReader.getPumpStatus(pumpRecord);
-                    writeData(pumpRecord);
-                    send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_DATA, pumpRecord));
-                    cnlReader.endEHSMSession();
+                        cnlReader.getPumpTime(pumpRecord);
+                        cnlReader.getPumpStatus(pumpRecord);
+                        writeData(pumpRecord);
+                        send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_DATA, pumpRecord));
+                        cnlReader.endEHSMSession();
+                    }
+                    cnlReader.closeConnection();
+                } catch (UnexpectedMessageException e) {
+                    Log.e(TAG, "Unexpected Message", e);
+                    send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Communication Error: " + e.getMessage()));
+                } finally {
+                    cnlReader.endPassthroughMode();
+                    cnlReader.endControlMode();
                 }
-                cnlReader.closeConnection();
-                cnlReader.endPassthroughMode();
-                cnlReader.endControlMode();
             } catch (IOException e) {
                 Log.e(TAG, "Error getting BGLs", e);
                 send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Error connecting to Contour Next Link."));
@@ -183,7 +190,7 @@ public class MedtronicCNLService extends AbstractService {
                 send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Timeout communicating with the Contour Next Link."));
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
-                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Communication Error: " + e.getMessage()));
+                send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Could not close connection: " + e.getMessage()));
             }
 
             mUploader.execute(pumpRecord);

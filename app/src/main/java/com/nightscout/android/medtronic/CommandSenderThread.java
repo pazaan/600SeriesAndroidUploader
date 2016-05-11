@@ -1,10 +1,5 @@
 package com.nightscout.android.medtronic;
 
-import java.util.ArrayList;
-
-
-import org.slf4j.LoggerFactory;
-
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -12,10 +7,14 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
-import ch.qos.logback.classic.Logger;
-
 import com.nightscout.android.dexcom.USB.HexDump;
 import com.physicaloid.lib.Physicaloid;
+
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+
+import ch.qos.logback.classic.Logger;
 
 
 /**
