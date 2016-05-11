@@ -156,8 +156,10 @@ public class MedtronicCNLService extends AbstractService {
                 byte radioChannel = cnlReader.negotiateChannel();
                 if (radioChannel == 0) {
                     send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Could not communicate with the 640g. Are you near the pump?"));
+                    Log.e(TAG, "Could not communicate with the 640g. Are you near the pump?");
                 } else {
                     send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_STATUS, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel)));
+                    Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     cnlReader.beginEHSMSession();
 
                     cnlReader.getPumpTime(pumpRecord);
