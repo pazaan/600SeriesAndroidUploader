@@ -1,7 +1,7 @@
 package com.nightscout.android.medtronic.message;
 
+import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 /**
@@ -55,12 +55,18 @@ public class MessageUtils {
 
     public static Date decodeDateTime( long rtc, long offset ) {
         TimeZone currentTz = java.util.Calendar.getInstance().getTimeZone();
-        GregorianCalendar gregorianCalendar = new GregorianCalendar(2000, 0, 1, 0, 0, 0);
-        gregorianCalendar.setTimeZone(currentTz);
 
-        long epochTime = gregorianCalendar.getTime().getTime();
+        // Base time is midnight 1st Jan 2000 (GMT)
+        long baseTime = 946684800;
 
-        Date pumpDate = new Date(epochTime + (( rtc + offset ) * 1000 ) );
+        // The time from the pump represents epochTime in GMT, but we treat it as if it were in our own timezone
+        // We do this, because the pump does not have a concept of timezone
+        // For example, if baseTime + rtc + offset was 1463137668, this would be
+        // Fri, 13 May 2016 21:07:48 GMT.
+        // However, the time the pump *means* is Fri, 13 May 2016 21:07:48 in our own timezone
+        long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
+
+        Date pumpDate = new Date((( baseTime + rtc + offset ) * 1000 ) - offsetFromUTC );
         return pumpDate;
     }
 }

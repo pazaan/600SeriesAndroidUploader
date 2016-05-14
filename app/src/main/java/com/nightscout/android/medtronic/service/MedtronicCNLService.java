@@ -28,7 +28,7 @@ import com.nightscout.android.medtronic.message.EncryptionException;
 import com.nightscout.android.medtronic.message.MessageUtils;
 import com.nightscout.android.medtronic.message.UnexpectedMessageException;
 import com.nightscout.android.service.AbstractService;
-import com.nightscout.android.upload.Medtronic640gPumpRecord;
+import com.nightscout.android.upload.MedtronicNG.CGMRecord;
 import com.nightscout.android.upload.UploadHelper;
 
 import java.io.File;
@@ -104,7 +104,7 @@ public class MedtronicCNLService extends AbstractService {
         mHidDevice = UsbHidDriver.acquire(mUsbManager, USB_VID, USB_PID);
 
         // Load the initial data to the display
-        Medtronic640gPumpRecord pumpRecord = loadData();
+        CGMRecord pumpRecord = loadData();
         send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_DATA, pumpRecord));
 
         if (!isOnline()) {
@@ -139,6 +139,9 @@ public class MedtronicCNLService extends AbstractService {
                 configDbHelper.insertStickSerial( cnlReader.getStickSerial() );
                 String hmac = configDbHelper.getHmac( cnlReader.getStickSerial() );
                 String key = configDbHelper.getKey( cnlReader.getStickSerial() );
+                String deviceName = String.format( "medtronic-640g://%s", cnlReader.getStickSerial() );
+                pumpRecord.setDeviceName( deviceName );
+                DexcomG4Activity.pumpStatusRecord.setDeviceName( deviceName );
 
                 if( hmac.equals( "" ) || key.equals("") ) {
                     send(Message.obtain(null, DexcomG4Activity.DexcomG4ActivityHandler.MSG_ERROR, "Before you can use the Contour Next Link, you need to register it with the app. Select 'Register USB Stick' from the menu."));
@@ -259,7 +262,7 @@ public class MedtronicCNLService extends AbstractService {
         nm.notify(R.string.app_name, n);
     }
 
-    private void writeData(Medtronic640gPumpRecord mostRecentData) {
+    private void writeData(CGMRecord mostRecentData) {
         //Write most recent data
         try {
             Context context = getBaseContext();
@@ -272,14 +275,14 @@ public class MedtronicCNLService extends AbstractService {
         }
     }
 
-    private Medtronic640gPumpRecord loadData() {
+    private CGMRecord loadData() {
         ObjectInputStream ois = null;
         try {
             Context context = getBaseContext();
             ois = new ObjectInputStream(new FileInputStream(new File(context.getFilesDir(), "save.bin")));
             Object o = ois.readObject();
             ois.close();
-            return (Medtronic640gPumpRecord) o;
+            return (CGMRecord) o;
         } catch (Exception ex) {
             Log.w(TAG, " unable to load Medtronic640g data");
             try {
@@ -289,6 +292,6 @@ public class MedtronicCNLService extends AbstractService {
                 Log.e(TAG, " Error closing ObjectInputStream");
             }
         }
-        return new Medtronic640gPumpRecord();
+        return new CGMRecord();
     }
 }

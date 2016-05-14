@@ -3,6 +3,7 @@ package com.nightscout.android.medtronic;
 import android.util.Log;
 
 import com.nightscout.android.USB.UsbHidDriver;
+import com.nightscout.android.dexcom.DexcomG4Activity;
 import com.nightscout.android.dexcom.USB.HexDump;
 import com.nightscout.android.medtronic.message.BeginEHSMMessage;
 import com.nightscout.android.medtronic.message.ChannelNegotiateMessage;
@@ -22,15 +23,15 @@ import com.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import com.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import com.nightscout.android.medtronic.message.UnexpectedMessageException;
 import com.nightscout.android.medtronic.service.MedtronicCNLService;
-import com.nightscout.android.upload.Medtronic640gPumpRecord;
+import com.nightscout.android.upload.MedtronicNG.CGMRecord;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -256,7 +257,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         readMessage();
     }
 
-    public void getPumpTime(Medtronic640gPumpRecord pumpRecord) throws EncryptionException, IOException, ChecksumException, TimeoutException {
+    public void getPumpTime(CGMRecord pumpRecord) throws EncryptionException, IOException, ChecksumException, TimeoutException {
         // FIXME - throw if not in EHSM mode (add a state machine)
 
         new PumpTimeRequestMessage(mPumpSession).send(this);
@@ -279,19 +280,15 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         long offset = dateBuffer.getInt(4);
 
         Date pumpDate = MessageUtils.decodeDateTime(rtc, offset);
-        // FIXME - HAX! Add 1 hour during AEST until we can figure out what Medtronic is doing
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(pumpDate);
-        cal.add(Calendar.HOUR_OF_DAY, 1);
-        pumpDate = cal.getTime();
+
         // Set displayTime to be an ISO 8601 date (so that it's parsable).
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         pumpRecord.displayTime = dateFormat.format(pumpDate);
-        pumpRecord.pumpDate = pumpDate;
+        DexcomG4Activity.pumpStatusRecord.pumpDate = pumpDate;
     }
 
-    public void getPumpStatus(Medtronic640gPumpRecord pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException {
+    public void getPumpStatus(CGMRecord pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException {
         // FIXME - throw if not in EHSM mode (add a state machine)
 
         new PumpStatusRequestMessage(mPumpSession).send(this);
@@ -309,11 +306,12 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         // FIXME - this needs to go into PumpStatusResponseMessage
         ByteBuffer statusBuffer = ByteBuffer.allocate(96);
         statusBuffer.order(ByteOrder.BIG_ENDIAN);
-        statusBuffer.put(response.encode(), 57, 96);
+        statusBuffer.put(response.encode(), 0x39, 96);
 
         // Read the data into the record
-        pumpRecord.activeInsulin = (statusBuffer.getShort(51) & 0x0000ffff) / 10000f;
-        pumpRecord.sensorBGL = statusBuffer.getShort(53) & 0x0000ffff; // In mg/DL. 0 means no CGM reading
+        long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
+        DexcomG4Activity.pumpStatusRecord.activeInsulin = new BigDecimal( rawActiveInsulin / 10000f ).setScale(3, BigDecimal.ROUND_HALF_UP);
+        pumpRecord.sensorBGL = statusBuffer.getShort(0x35) & 0x0000ffff; // In mg/DL. 0 means no CGM reading
         long rtc;
         long offset;
         if( ( pumpRecord.sensorBGL & 0x200 ) == 0x200 ) {
@@ -321,19 +319,18 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
             pumpRecord.sensorBGL = 0;
             rtc = 0;
             offset = 0;
+            pumpRecord.setTrend(CGMRecord.TREND.NOT_SET);
         } else {
-            rtc = statusBuffer.getInt(55) & 0x00000000ffffffffL;
-            offset = statusBuffer.getInt(59);
-            pumpRecord.setTrend(Medtronic640gPumpRecord.fromMessageByte( statusBuffer.get(64)));
+            rtc = statusBuffer.getInt(0x37) & 0x00000000ffffffffL;
+            offset = statusBuffer.getInt(0x3b);
+            pumpRecord.setTrend(CGMRecord.fromMessageByte( statusBuffer.get(0x40)));
         }
         pumpRecord.sensorBGLDate = MessageUtils.decodeDateTime(rtc, offset);
-        // FIXME - HAX! Add 1 hour during AEST until we can figure out what Medtronic is doing
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(pumpRecord.sensorBGLDate);
-        cal.add(Calendar.HOUR_OF_DAY, 1);
-        pumpRecord.sensorBGLDate = cal.getTime();
-        pumpRecord.recentBolusWizard = statusBuffer.get(72) != 0;
-        pumpRecord.bolusWizardBGL = statusBuffer.getShort(73); // In mg/DL
+        DexcomG4Activity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
+        DexcomG4Activity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
+        long rawReservoirAmount = statusBuffer.getInt(0x2b) &  0xffffffff;
+        DexcomG4Activity.pumpStatusRecord.reservoirAmount = new BigDecimal( rawReservoirAmount / 10000f ).setScale(3, BigDecimal.ROUND_HALF_UP);
+        DexcomG4Activity.pumpStatusRecord.batteryPercentage = ( statusBuffer.get(0x2a) );
     }
 
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException {
