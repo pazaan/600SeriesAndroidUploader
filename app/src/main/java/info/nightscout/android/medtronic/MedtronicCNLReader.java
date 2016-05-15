@@ -148,7 +148,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
     public void requestDeviceInfo() throws IOException, TimeoutException, UnexpectedMessageException {
         new ContourNextLinkCommandMessage("X").send(this);
 
-        boolean gotTimeout = false;
+        boolean doRetry = false;
 
         // TODO - parse this into an ASTM record for the device info.
         try {
@@ -169,10 +169,9 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         } catch (TimeoutException e) {
             // Terminate comms with the pump, then try again
             new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
-            gotTimeout = true;
+            doRetry = true;
         } finally {
-            // If we timed out - try to start the session again.
-            if (gotTimeout) {
+            if (doRetry) {
                 requestDeviceInfo();
             }
         }
@@ -187,10 +186,22 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
     }
 
     public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException {
-        new ContourNextLinkCommandMessage(ASCII.NAK.value).send(this);
-        checkControlMessage(readMessage(), ASCII.EOT.value);
-        new ContourNextLinkCommandMessage(ASCII.ENQ.value).send(this);
-        checkControlMessage(readMessage(), ASCII.ACK.value);
+        boolean doRetry = false;
+
+        try {
+            new ContourNextLinkCommandMessage(ASCII.NAK.value).send(this);
+            checkControlMessage(readMessage(), ASCII.EOT.value);
+            new ContourNextLinkCommandMessage(ASCII.ENQ.value).send(this);
+            checkControlMessage(readMessage(), ASCII.ACK.value);
+        } catch( UnexpectedMessageException e2 ) {
+            // Terminate comms with the pump, then try again
+            new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
+            doRetry = true;
+        } finally {
+            if (doRetry) {
+                enterControlMode();
+            }
+        }
     }
 
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException {
