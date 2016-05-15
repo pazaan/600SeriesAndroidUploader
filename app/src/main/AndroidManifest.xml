@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="info.nightscout.android"
     android:versionCode="1"
-    android:versionName="1.0" >
+    android:versionName="@string/version" >
 
     <uses-sdk
         android:maxSdkVersion="21"

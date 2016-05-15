@@ -56,6 +56,8 @@
 	            android:summaryOn="Activated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
 	            android:summaryOff="Deactivated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers">
 	    </info.nightscout.android.utils.CustomSwitchPreference>
+	 </PreferenceCategory>
+	<PreferenceCategory android:title="App Version">
 	      <Preference 
 		 android:key="version"
 		 android:title="@string/version" />
