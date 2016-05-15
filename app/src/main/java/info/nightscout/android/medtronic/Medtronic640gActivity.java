@@ -123,9 +123,9 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
 
                             DecimalFormat df = null;
                             if (prefs.getBoolean("mmolDecimals", false))
-                                df = new DecimalFormat("#.##");
+                                df = new DecimalFormat("#.00");
                             else
-                                df = new DecimalFormat("#.#");
+                                df = new DecimalFormat("#.0");
                             String bglString = "---";
                             String unitsString = "mg/dL";
                             if (prefs.getBoolean("mmolxl", false)) {
