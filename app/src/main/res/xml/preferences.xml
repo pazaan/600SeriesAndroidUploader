@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="Monitor">
-         <com.nightscout.android.utils.CustomSwitchPreference
+         <info.nightscout.android.utils.CustomSwitchPreference
 	            android:title="mmol/l"
 	            android:key="mmolxl"
 	            android:disableDependentsState="false"
@@ -9,8 +9,8 @@
 	            android:switchTextOff="mg/dl"
 	            android:summaryOn="mmol/l. Values are shown and set in mmol/l"
 	            android:summaryOff="mg/dl. Values are shown and set in mg/dl">
-	    </com.nightscout.android.utils.CustomSwitchPreference>
-	    <com.nightscout.android.utils.CustomSwitchPreference
+	    </info.nightscout.android.utils.CustomSwitchPreference>
+	    <info.nightscout.android.utils.CustomSwitchPreference
 	            android:title="mmol/l decimals"
 	            android:key="mmolDecimals"
 	            android:dependency = "mmolxl"
@@ -19,15 +19,15 @@
 	            android:switchTextOff="1"
 	            android:summaryOn="Activated. 2 Decimal values will be shown ."
 	            android:summaryOff="Deactivated. 1 Decimal value will be shown .">
-	    </com.nightscout.android.utils.CustomSwitchPreference>
+	    </info.nightscout.android.utils.CustomSwitchPreference>
     </PreferenceCategory>
     <PreferenceCategory android:title="Sharing">    
-    <com.nightscout.android.utils.CustomSwitchPreference
+    <info.nightscout.android.utils.CustomSwitchPreference
             android:title="REST API Upload"
             android:key="EnableRESTUpload"
             android:disableDependentsState="false"
             android:summary="Enable upload of BGL data to Nightscout">
-    </com.nightscout.android.utils.CustomSwitchPreference>
+    </info.nightscout.android.utils.CustomSwitchPreference>
     <EditTextPreference
             android:dependency="EnableRESTUpload"
             android:title="API Base URL"
@@ -36,7 +36,7 @@
             android:defaultValue="http://{YOUR-API-SERVER}/api"
             android:dialogMessage="This only the base URL, the uploader will automatically append /entries for the POST of CGM data and /gdentries for the POST of glucometer data values">
     </EditTextPreference>
-    <com.nightscout.android.utils.CustomSwitchPreference
+    <info.nightscout.android.utils.CustomSwitchPreference
             android:title="Wifi Hack"
             android:key="EnableWifiHack"
             android:disableDependentsState="false"
@@ -44,10 +44,10 @@
             android:summaryOn="Wifi will be disabled if there is a timeout (poor wifi signal/access point), this will allow mobile data to be used instead"
             android:summaryOff="The uploader won't try to disable Wifi even if there is a timeout"
             >
-    </com.nightscout.android.utils.CustomSwitchPreference>
+    </info.nightscout.android.utils.CustomSwitchPreference>
     </PreferenceCategory>
      <PreferenceCategory android:title="Disclaimer">
-	    <com.nightscout.android.utils.CustomSwitchPreference
+	    <info.nightscout.android.utils.CustomSwitchPreference
 	            android:title="I UNDERSTAND"
 	            android:key="IUNDERSTAND"
 	            android:disableDependentsState="false"
@@ -55,7 +55,7 @@
 	            android:switchTextOff="NO"
 	            android:summaryOn="Activated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
 	            android:summaryOff="Deactivated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers">
-	    </com.nightscout.android.utils.CustomSwitchPreference>
+	    </info.nightscout.android.utils.CustomSwitchPreference>
 	      <Preference 
 		 android:key="version"
 		 android:title="@string/version" />
