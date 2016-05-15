@@ -107,7 +107,7 @@
     <string name="action_sign_in">Retrieve keys for USB</string>
     <string name="action_sign_in_short">Retrieve keys</string>
     <string name="error_invalid_username">This username is invalid</string>
-    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_invalid_password">Password is required</string>
     <string name="error_incorrect_password">The Username or password is incorrect</string>
     <string name="error_field_required">This field is required</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing email

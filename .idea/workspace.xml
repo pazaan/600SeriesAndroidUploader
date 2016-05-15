@@ -10,81 +10,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ffce6e62-d498-4e17-b121-42833fbda3f5" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCalibration.java" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/MedtronicCalibration.java" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/USB/CommonUsbDriver.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/USB/CommonUsbDriver.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/USB/HidBridge.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/USB/HidBridge.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/USB/USBPower.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/USB/USBPower.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/USB/UsbDriver.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/USB/UsbDriver.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/USB/UsbHidDriver.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/USB/UsbHidDriver.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/CSVWriter.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/CSVWriter.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/DexcomG4Activity.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/DexcomG4Service.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/DexcomG4Service.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/DexcomReader.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/DexcomReader.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/EGVRecord.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/EGVRecord.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/LoginActivity.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/GetHmacAndKeyActivity.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/ResultSetHelper.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/ResultSetHelper.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/ResultSetHelperService.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/ResultSetHelperService.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/USB/CdcAcmSerialDriver.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/USB/CdcAcmSerialDriver.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/USB/CommonUsbSerialDriver.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/USB/CommonUsbSerialDriver.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/USB/HexDump.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/USB/HexDump.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/USB/SerialInputOutputManager.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/USB/SerialInputOutputManager.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/USB/UsbSerialDriver.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/USB/UsbSerialDriver.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/USB/UsbSerialProber.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/USB/UsbSerialProber.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/eula/Eula.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/eula/Eula.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/CommandSenderThread.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/CommandSenderThread.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/DataLog.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/DataLog.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/HistoricGetterThread.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/HistoricGetterThread.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/MedtronicCGMService.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCGMService.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/MedtronicCNLReader.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/MedtronicCNLSession.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLSession.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/MedtronicConstants.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicConstants.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/MedtronicReader.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicReader.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/data/CNLConfigContract.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/data/CNLConfigContract.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/data/CNLConfigDbHelper.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/data/CNLConfigDbHelper.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/BeginEHSMMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/BeginEHSMMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/ChannelNegotiateMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/ChannelNegotiateMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/ChecksumException.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/ChecksumException.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/ContourNextLinkBinaryMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/ContourNextLinkBinaryMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/ContourNextLinkCommandMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/ContourNextLinkCommandMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/ContourNextLinkMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/ContourNextLinkMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/ContourNextLinkMessageHandler.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/ContourNextLinkMessageHandler.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/EncryptionException.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/EncryptionException.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/EndEHSMMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/EndEHSMMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/MedtronicMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/MedtronicMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/MedtronicReceiveMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/MedtronicReceiveMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/MedtronicSendMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/MedtronicSendMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/MessageUtils.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/MessageUtils.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/PumpStatusRequestMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/PumpStatusRequestMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/PumpStatusResponseMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/PumpStatusResponseMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/PumpTimeRequestMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/PumpTimeRequestMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/PumpTimeResponseMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/PumpTimeResponseMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/ReadInfoResponseMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/ReadInfoResponseMessage.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/message/UnexpectedMessageException.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/message/UnexpectedMessageException.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/service/MedtronicCNLService.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/service/TestService.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/TestService.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/service/AbstractService.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/service/AbstractService.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/service/ServiceManager.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/service/ServiceManager.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/settings/SettingsActivity.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/settings/SettingsActivity.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/settings/SettingsFragment.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/settings/SettingsFragment.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/DeviceRecord.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/DeviceRecord.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/GlucometerRecord.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/GlucometerRecord.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/MedtronicNG/CGMRecord.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/MedtronicNG/CGMRecord.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/MedtronicNG/PumpStatusRecord.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/MedtronicNG/PumpStatusRecord.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/MedtronicPumpRecord.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/MedtronicPumpRecord.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/MedtronicSensorRecord.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/MedtronicSensorRecord.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/Record.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/Record.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/upload/UploadHelper.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/UploadHelper.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/utils/CustomSwitchPreference.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/utils/CustomSwitchPreference.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/widget/CGMWidget.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/widget/CGMWidget.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/widget/CGMWidgetUpdater.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/widget/CGMWidgetUpdater.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/app.iml" afterPath="$PROJECT_DIR$/app/app.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/build.gradle" afterPath="$PROJECT_DIR$/app/build.gradle" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_login.xml" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_login.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/res/xml/preferences.xml" afterPath="$PROJECT_DIR$/app/src/main/res/xml/preferences.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" afterPath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" />
     </list>
     <ignored path="Medtronic640gUploader.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -105,34 +34,25 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="Medtronic640gActivity.java" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Medtronic640gActivity.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-2.7777777">
-              <caret line="56" column="13" selection-start-line="56" selection-start-column="13" selection-end-line="56" selection-end-column="13" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ResultSetHelperService.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/ResultSetHelperService.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33333334">
-              <caret line="31" column="13" selection-start-line="31" selection-start-column="13" selection-end-line="31" selection-end-column="13" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="UploadHelper.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/UploadHelper.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-10.0">
-              <caret line="688" column="43" selection-start-line="688" selection-start-column="43" selection-end-line="688" selection-end-column="43" />
+            <state vertical-scroll-proportion="1.0638766">
+              <caret line="411" column="114" selection-start-line="411" selection-start-column="114" selection-end-line="411" selection-end-column="114" />
               <folding>
-                <element signature="imports" expanded="true" />
+                <element signature="e#15673#15939#0" expanded="true" />
+                <element signature="e#15938#15939#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Eula.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/eula/Eula.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="42" column="38" selection-start-line="42" selection-start-column="4" selection-end-line="42" selection-end-column="38" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -140,8 +60,8 @@
       <file leaf-file-name="MedtronicCNLService.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-7.6296296">
-              <caret line="145" column="0" selection-start-line="145" selection-start-column="0" selection-end-line="145" selection-end-column="0" />
+            <state vertical-scroll-proportion="-7.259259">
+              <caret line="241" column="5" selection-start-line="237" selection-start-column="4" selection-end-line="241" selection-end-column="5" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -149,21 +69,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MedtronicCNLReader.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java">
+      <file leaf-file-name="GetHmacAndKeyActivity.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/GetHmacAndKeyActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="331" column="0" selection-start-line="331" selection-start-column="0" selection-end-line="331" selection-end-column="0" />
+            <state vertical-scroll-proportion="11.074074">
+              <caret line="115" column="59" selection-start-line="115" selection-start-column="54" selection-end-line="115" selection-end-column="76" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="PumpStatusRecord.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/MedtronicNG/PumpStatusRecord.java">
+      <file leaf-file-name="strings.xml" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/app/src/main/res/values/strings.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="20" column="56" selection-start-line="20" selection-start-column="56" selection-end-line="20" selection-end-column="56" />
+            <state vertical-scroll-proportion="-4.607843">
+              <caret line="109" column="62" selection-start-line="109" selection-start-column="62" selection-end-line="109" selection-end-column="62" />
               <folding />
             </state>
           </provider>
@@ -1842,7 +1762,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/app/src/main/res/values/strings.xml" />
         <option value="$PROJECT_DIR$/app/build.gradle" />
         <option value="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/medtronic/CommandSenderThread.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/com/nightscout/android/dexcom/DexcomG4Service.java" />
@@ -1863,9 +1782,11 @@
         <option value="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
         <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/DexcomG4Activity.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/DexcomG4Activity.java" />
-        <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/LoginActivity.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/GetHmacAndKeyActivity.java" />
+        <option value="$PROJECT_DIR$/app/src/main/res/values/strings.xml" />
+        <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java" />
+        <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java" />
       </list>
     </option>
   </component>
@@ -1921,6 +1842,42 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="app" />
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="res" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Medtronic640gUploader" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="app" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="res" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="values" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderTypeNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Medtronic640gUploader" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="app" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="assets" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidSourceTypeNode" />
             </PATH_ELEMENT>
           </PATH>
           <PATH>
@@ -2008,6 +1965,32 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="upload" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Medtronic640gUploader" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="app" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="java" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidSourceTypeNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="android" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidPsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="upload" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="MedtronicNG" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -2117,6 +2100,16 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Medtronic640gUploader" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="app" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
       <pane id="Scope" />
@@ -2129,7 +2122,7 @@
     <property name="SearchEverywhereHistoryKey" value="uploa&#9;PSI&#9;JAVA://com.nightscout.android.upload.UploadHelper&#10;g4&#9;PSI&#9;JAVA://com.nightscout.android.dexcom.DexcomG4Activity&#10;cnlread&#9;PSI&#9;JAVA://com.nightscout.android.medtronic.MedtronicCNLReader" />
     <property name="android.project.structure.last.selected" value="app" />
     <property name="android.project.structure.proportion" value="0.15" />
-    <property name="device.picker.selection" value="192.168.0.115:5555" />
+    <property name="device.picker.selection" value="110137f6104ca200" />
   </component>
   <component name="RecentsManager">
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
@@ -2427,7 +2420,7 @@
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Android Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.41678727" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Android Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2633864" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3299566" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3299566" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -2436,7 +2429,7 @@
       <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2496318" sideWeight="0.4949349" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3299566" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3299566" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2496318" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Android Model" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
@@ -2476,7 +2469,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="166" column="77" selection-start-line="166" selection-start-column="71" selection-end-line="166" selection-end-column="77" />
-          <folding />
+          <folding>
+            <element signature="e#15673#15939#0" expanded="true" />
+            <element signature="e#15938#15939#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -2512,7 +2508,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#15673#15939#0" expanded="true" />
+            <element signature="e#15938#15939#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -2540,7 +2539,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="166" column="77" selection-start-line="166" selection-start-column="71" selection-end-line="166" selection-end-column="77" />
-          <folding />
+          <folding>
+            <element signature="e#15673#15939#0" expanded="true" />
+            <element signature="e#15938#15939#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -2576,7 +2578,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="72" column="0" selection-start-line="72" selection-start-column="0" selection-end-line="72" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#15673#15939#0" expanded="true" />
+            <element signature="e#15938#15939#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -2736,19 +2741,33 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java">
+    <entry file="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-7.6296296">
-          <caret line="145" column="0" selection-start-line="145" selection-start-column="0" selection-end-line="145" selection-end-column="0" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
+        <state vertical-scroll-proportion="3.3333333">
+          <caret line="78" column="43" selection-start-line="78" selection-start-column="43" selection-end-line="78" selection-end-column="43" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/ResultSetHelperService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="31" column="35" selection-start-line="31" selection-start-column="13" selection-end-line="31" selection-end-column="35" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/EGVRecord.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="6" column="16" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="22" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/MedtronicNG/CGMRecord.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.61085975">
+        <state vertical-scroll-proportion="0.0">
           <caret line="32" column="6" selection-start-line="32" selection-start-column="6" selection-end-line="32" selection-end-column="6" />
           <folding />
         </state>
@@ -2756,60 +2775,70 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/MedtronicNG/PumpStatusRecord.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state vertical-scroll-proportion="0.55172414">
           <caret line="20" column="56" selection-start-line="20" selection-start-column="56" selection-end-line="20" selection-end-column="56" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="1.0114943">
+          <caret line="331" column="0" selection-start-line="331" selection-start-column="0" selection-end-line="331" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/build/generated/source/r/debug/info/nightscout/android/R.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.3524229">
+          <caret line="1463" column="32" selection-start-line="1463" selection-start-column="32" selection-end-line="1463" selection-end-column="32" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/res/values/strings.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.18518518">
-          <caret line="4" column="21" selection-start-line="4" selection-start-column="18" selection-end-line="4" selection-end-column="21" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="3.3333333">
-          <caret line="78" column="43" selection-start-line="78" selection-start-column="43" selection-end-line="78" selection-end-column="43" />
-          <folding>
-            <element signature="e#1665#1683#0" expanded="true" />
-            <element signature="e#2005#2023#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="331" column="0" selection-start-line="331" selection-start-column="0" selection-end-line="331" selection-end-column="0" />
+        <state vertical-scroll-proportion="-4.607843">
+          <caret line="109" column="62" selection-start-line="109" selection-start-column="62" selection-end-line="109" selection-end-column="62" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/GetHmacAndKeyActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.2413793">
-          <caret line="48" column="13" selection-start-line="48" selection-start-column="13" selection-end-line="48" selection-end-column="13" />
+        <state vertical-scroll-proportion="11.074074">
+          <caret line="115" column="59" selection-start-line="115" selection-start-column="54" selection-end-line="115" selection-end-column="76" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-7.259259">
+          <caret line="241" column="5" selection-start-line="237" selection-start-column="4" selection-end-line="241" selection-end-column="5" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/eula/Eula.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="42" column="38" selection-start-line="42" selection-start-column="4" selection-end-line="42" selection-end-column="38" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-2.7777777">
-          <caret line="56" column="13" selection-start-line="56" selection-start-column="13" selection-end-line="56" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/ResultSetHelperService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33333334">
-          <caret line="31" column="13" selection-start-line="31" selection-start-column="13" selection-end-line="31" selection-end-column="13" />
-          <folding />
+        <state vertical-scroll-proportion="1.0638766">
+          <caret line="411" column="114" selection-start-line="411" selection-start-column="114" selection-end-line="411" selection-end-column="114" />
+          <folding>
+            <element signature="e#15673#15939#0" expanded="true" />
+            <element signature="e#15938#15939#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

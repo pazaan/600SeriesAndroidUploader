@@ -3,13 +3,17 @@ package info.nightscout.android.medtronic;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -372,6 +376,30 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
         return true;
     }
 
+    private boolean checkOnline( String title, String message ) {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+
+        boolean isOnline = ( netInfo != null && netInfo.isConnectedOrConnecting() );
+
+        if( !isOnline ) {
+            new AlertDialog.Builder(this)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setCancelable(false)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            // continue with delete
+                            dialog.dismiss();
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
+
+        return isOnline;
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
@@ -381,8 +409,10 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                 startActivity(settingsIntent);
                 break;
             case R.id.registerCNL:
-                Intent loginIntent = new Intent(this, GetHmacAndKeyActivity.class);
-                startActivity(loginIntent);
+                if( checkOnline( "Please connect to the Internet", "You must be online to register your USB stick.") ) {
+                    Intent loginIntent = new Intent(this, GetHmacAndKeyActivity.class);
+                    startActivity(loginIntent);
+                }
                 break;
             default:
                 break;
