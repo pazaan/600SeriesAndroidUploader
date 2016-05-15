@@ -87,7 +87,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     public MongoCollection<Document> deviceData = null;
     public MongoCollection<Document> dsCollection = null;
     public static Boolean isModifyingRecords = false;
-    public static Object isModifyingRecordsLock = new Object();
+    public static final Object isModifyingRecordsLock = new Object();
     private MongoClient client = null;
     public UploadHelper(Context context) {
         this(context, Medtronic640gActivity.DEXCOMG4);
@@ -516,7 +516,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
                     String jsonString = json.toString();
 
-                    Log.i(TAG, "DEXCOM JSON: " + jsonString);
+                    Log.i(TAG, "Upload JSON: " + jsonString);
                     log.debug("JSON to Upload "+ jsonString);
 
                     try {
@@ -589,8 +589,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
                 String jsonString = json.toString();
 
-                Log.i(TAG, "DEXCOM JSON: " + jsonString);
-                log.info("DEXCOM JSON: " + jsonString);
+                Log.i(TAG, "Upload JSON: " + jsonString);
+                log.info("Upload JSON: " + jsonString);
 
                 try {
                     StringEntity se = new StringEntity(jsonString);
@@ -614,7 +614,6 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                     log.warn( "Unable to post data to: '" + post.getURI().toString() + "'", e);
                 }
             }
-            postDeviceStatus(baseURL, httpclient);
         } catch (Exception e) {
             Log.e(TAG, "Unable to post data", e);
             log.error("Unable to post data", e);
@@ -689,6 +688,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 		pumpInfo.put( "battery", battery );
 		json.put( "pump", pumpInfo );
         String jsonString = json.toString();
+		Log.i(TAG, "Device Status JSON: " + jsonString);
+		log.debug("Device Status JSON: "+ jsonString);
 
         HttpPost post = new HttpPost(devicestatusURL);
         StringEntity se = new StringEntity(jsonString);

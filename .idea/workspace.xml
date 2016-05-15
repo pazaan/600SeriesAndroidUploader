@@ -10,10 +10,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ffce6e62-d498-4e17-b121-42833fbda3f5" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/USB/HidBridge.java" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCGMService.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCGMService.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/UploadHelper.java" afterPath="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/UploadHelper.java" />
     </list>
     <ignored path="Medtronic640gUploader.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -37,8 +35,8 @@
       <file leaf-file-name="Medtronic640gActivity.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-8.407408">
-              <caret line="543" column="58" selection-start-line="543" selection-start-column="48" selection-end-line="543" selection-end-column="58" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="559" column="21" selection-start-line="559" selection-start-column="19" selection-end-line="559" selection-end-column="21" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#15673#15939#0" expanded="true" />
@@ -48,11 +46,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MedtronicCNLService.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java">
+      <file leaf-file-name="UploadHelper.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/UploadHelper.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-10.185185">
-              <caret line="150" column="25" selection-start-line="150" selection-start-column="16" selection-end-line="150" selection-end-column="25" />
+            <state vertical-scroll-proportion="0.49842766">
+              <caret line="691" column="38" selection-start-line="691" selection-start-column="38" selection-end-line="691" selection-end-column="38" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -60,24 +58,24 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MedtronicCNLReader.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java">
+      <file leaf-file-name="MedtronicCNLService.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.7641509">
-              <caret line="197" column="12" selection-start-line="197" selection-start-column="12" selection-end-line="197" selection-end-column="12" />
-              <folding />
+            <state vertical-scroll-proportion="-9.518518">
+              <caret line="116" column="63" selection-start-line="116" selection-start-column="56" selection-end-line="116" selection-end-column="63" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="AndroidManifest.xml" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml">
+      <file leaf-file-name="MedtronicCNLReader.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-11.291667">
-              <caret line="54" column="77" selection-start-line="54" selection-start-column="58" selection-end-line="54" selection-end-column="77" />
-              <folding>
-                <element signature="e#198#215#0" expanded="true" />
-              </folding>
+            <state vertical-scroll-proportion="-18.0">
+              <caret line="197" column="12" selection-start-line="197" selection-start-column="12" selection-end-line="197" selection-end-column="12" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -1783,6 +1781,7 @@
         <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCGMService.java" />
         <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java" />
+        <option value="$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/UploadHelper.java" />
       </list>
     </option>
   </component>
@@ -2137,7 +2136,7 @@
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="android.sdk-updates" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
-    <property name="SearchEverywhereHistoryKey" value="reader&#9;FILE&#9;file:///Users/lgoedhart/StudioProjects/Medtronic640gUploader/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java&#10;uploa&#9;PSI&#9;JAVA://com.nightscout.android.upload.UploadHelper&#10;g4&#9;PSI&#9;JAVA://com.nightscout.android.dexcom.DexcomG4Activity&#10;cnlread&#9;PSI&#9;JAVA://com.nightscout.android.medtronic.MedtronicCNLReader" />
+    <property name="SearchEverywhereHistoryKey" value="upload&#9;FILE&#9;file:///Users/lgoedhart/StudioProjects/Medtronic640gUploader/app/src/main/java/info/nightscout/android/upload/UploadHelper.java&#10;reader&#9;FILE&#9;file:///Users/lgoedhart/StudioProjects/Medtronic640gUploader/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java&#10;uploa&#9;PSI&#9;JAVA://com.nightscout.android.upload.UploadHelper&#10;g4&#9;PSI&#9;JAVA://com.nightscout.android.dexcom.DexcomG4Activity&#10;cnlread&#9;PSI&#9;JAVA://com.nightscout.android.medtronic.MedtronicCNLReader" />
     <property name="android.project.structure.last.selected" value="app" />
     <property name="android.project.structure.proportion" value="0.15" />
     <property name="device.picker.selection" value="192.168.0.115:5555" />
@@ -2742,16 +2741,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/UploadHelper.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-10.0">
-          <caret line="688" column="43" selection-start-line="688" selection-start-column="43" selection-end-line="688" selection-end-column="43" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/dexcom/ResultSetHelperService.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -2832,26 +2821,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/GetHmacAndKeyActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-5.5925927">
-          <caret line="114" column="42" selection-start-line="114" selection-start-column="42" selection-end-line="114" selection-end-column="42" />
-          <folding>
-            <element signature="e#4031#4073#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-10.185185">
-          <caret line="150" column="25" selection-start-line="150" selection-start-column="16" selection-end-line="150" selection-end-column="25" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/res/xml/device_filter.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-0.21387284">
@@ -2899,16 +2868,42 @@
         <state vertical-scroll-proportion="-4.0740743">
           <caret line="1352" column="28" selection-start-line="1352" selection-start-column="22" selection-end-line="1352" selection-end-column="28" />
           <folding>
-            <element signature="e#50698#50964#0" expanded="true" />
-            <element signature="e#50963#50964#0" expanded="true" />
+            <element signature="e#50698#50952#0" expanded="true" />
+            <element signature="e#50951#50952#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-18.0">
+          <caret line="197" column="12" selection-start-line="197" selection-start-column="12" selection-end-line="197" selection-end-column="12" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/GetHmacAndKeyActivity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="114" column="42" selection-start-line="114" selection-start-column="42" selection-end-line="114" selection-end-column="42" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/service/MedtronicCNLService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-9.518518">
+          <caret line="116" column="63" selection-start-line="116" selection-start-column="56" selection-end-line="116" selection-end-column="63" />
+          <folding>
+            <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/Medtronic640gActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-8.407408">
-          <caret line="543" column="58" selection-start-line="543" selection-start-column="48" selection-end-line="543" selection-end-column="58" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="559" column="21" selection-start-line="559" selection-start-column="19" selection-end-line="559" selection-end-column="21" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#15673#15939#0" expanded="true" />
@@ -2917,11 +2912,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/medtronic/MedtronicCNLReader.java">
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/info/nightscout/android/upload/UploadHelper.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7641509">
-          <caret line="197" column="12" selection-start-line="197" selection-start-column="12" selection-end-line="197" selection-end-column="12" />
-          <folding />
+        <state vertical-scroll-proportion="0.49842766">
+          <caret line="691" column="38" selection-start-line="691" selection-start-column="38" selection-end-line="691" selection-end-column="38" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
