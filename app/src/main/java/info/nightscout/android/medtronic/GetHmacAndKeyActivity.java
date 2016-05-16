@@ -222,7 +222,7 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
                 nameValuePairs.add(new BasicNameValuePair("j_username", mUsername));
                 nameValuePairs.add(new BasicNameValuePair("j_password", mPassword));
                 nameValuePairs.add(new BasicNameValuePair("j_character_encoding", "UTF-8"));
-                loginPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                loginPost.setEntity(new UrlEncodedFormEntity(nameValuePairs, "UTF-8"));
                 HttpResponse response = client.execute(loginPost);
 
                 if (response.getStatusLine().getStatusCode() == 200) {

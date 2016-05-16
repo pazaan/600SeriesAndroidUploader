@@ -2,3 +2,4 @@
 app/build
 build/generated
 build
+workspace.xml
