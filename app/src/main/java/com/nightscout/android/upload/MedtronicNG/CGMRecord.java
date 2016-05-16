@@ -1,4 +1,6 @@
-package com.nightscout.android.upload;
+package com.nightscout.android.upload.MedtronicNG;
+
+import com.nightscout.android.upload.DeviceRecord;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -6,7 +8,7 @@ import java.util.Date;
 /**
  * Created by lgoedhart on 27/03/2016.
  */
-public class Medtronic640gPumpRecord extends DeviceRecord implements Serializable {
+public class CGMRecord extends DeviceRecord implements Serializable {
     public enum TREND {
         NONE(0),
         DOUBLE_UP(1),
@@ -22,28 +24,16 @@ public class Medtronic640gPumpRecord extends DeviceRecord implements Serializabl
 
         private byte value;
         TREND(int trend) {
-           this.value = (byte)value;
+           this.value = (byte)trend;
         }
     }
-    public String alarm = "---"; // Not sure where this is yet
-    public String temporaryBasal = "---"; // Not sure where this is yet
-    public String batteryPercentage = "---";
-    public String batteryVoltage = "---"; // Available?
-    public String model = "---"; // Available?
+
     private TREND trend = TREND.NOT_SET;
 
-    public Date pumpDate = new Date(); // Store as a date, so we can parse to string later.
-    public float activeInsulin = 0f;
+    //public Date pumpDate = new Date(); // Store as a date, so we can parse to string later.
     public int sensorBGL = 0; // in mg/dL. 0 means no sensor reading
     public Date sensorBGLDate = new Date();
-    public boolean recentBolusWizard = false; // Whether a bolus wizard has been run recently
-    public int bolusWizardBGL = 0; // in mg/dL. 0 means no recent bolus wizard reading.
     public String direction;
-
-    public Medtronic640gPumpRecord() {
-        // TODO - Add serial number
-        this.deviceName = "medtronic-640g";
-    }
 
     public void setTrend( TREND trend ) {
         this.trend = trend;

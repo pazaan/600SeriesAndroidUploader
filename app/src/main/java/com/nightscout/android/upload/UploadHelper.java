@@ -22,6 +22,7 @@ import com.nightscout.android.dexcom.DexcomG4Activity;
 import com.nightscout.android.dexcom.EGVRecord;
 import com.nightscout.android.medtronic.MedtronicConstants;
 import com.nightscout.android.medtronic.MedtronicReader;
+import com.nightscout.android.upload.MedtronicNG.CGMRecord;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -671,6 +672,22 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 
         JSONObject json = new JSONObject();
         json.put("uploaderBattery", DexcomG4Activity.batLevel);
+		json.put("device", DexcomG4Activity.pumpStatusRecord.getDeviceName() );
+
+		JSONObject pumpInfo = new JSONObject();
+		pumpInfo.put( "clock", DexcomG4Activity.pumpStatusRecord.pumpDate );
+		pumpInfo.put( "reservoir", DexcomG4Activity.pumpStatusRecord.reservoirAmount);
+
+		JSONObject iob = new JSONObject();
+		iob.put( "timestamp", DexcomG4Activity.pumpStatusRecord.pumpDate );
+		iob.put( "bolusiob", DexcomG4Activity.pumpStatusRecord.activeInsulin );
+
+		JSONObject battery = new JSONObject();
+		battery.put( "percent", DexcomG4Activity.pumpStatusRecord.batteryPercentage );
+
+		pumpInfo.put( "iob", iob );
+		pumpInfo.put( "battery", battery );
+		json.put( "pump", pumpInfo );
         String jsonString = json.toString();
 
         HttpPost post = new HttpPost(devicestatusURL);
@@ -684,8 +701,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     }
     
     private void populateV1APIEntry(JSONObject json, Record oRecord) throws Exception {
-		if (oRecord instanceof Medtronic640gPumpRecord) {
-			json.put("date", ((Medtronic640gPumpRecord) oRecord).sensorBGLDate.getTime());
+		if (oRecord instanceof CGMRecord) {
+			json.put("date", ((CGMRecord) oRecord).sensorBGLDate.getTime());
 			json.put("dateString",  oRecord.displayTime);
 		} else {
 			Date date = DATE_FORMAT.parse(oRecord.displayTime);
@@ -697,8 +714,8 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 			json.put("device", getSelectedDeviceName());
 			json.put("type", "mbg");
 			json.put("mbg", ((GlucometerRecord) oRecord).numGlucometerValue);
-		}else if (oRecord instanceof Medtronic640gPumpRecord){
-				Medtronic640gPumpRecord pumpRecord = (Medtronic640gPumpRecord) oRecord;
+		}else if (oRecord instanceof CGMRecord){
+				CGMRecord pumpRecord = (CGMRecord) oRecord;
 				json.put("sgv", pumpRecord.sensorBGL);
 				json.put("direction", pumpRecord.direction);
 				json.put("device", pumpRecord.getDeviceName());

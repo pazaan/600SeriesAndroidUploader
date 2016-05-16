@@ -42,7 +42,8 @@ import com.nightscout.android.medtronic.MedtronicConstants;
 import com.nightscout.android.medtronic.service.MedtronicCNLService;
 import com.nightscout.android.service.ServiceManager;
 import com.nightscout.android.settings.SettingsActivity;
-import com.nightscout.android.upload.Medtronic640gPumpRecord;
+import com.nightscout.android.upload.MedtronicNG.CGMRecord;
+import com.nightscout.android.upload.MedtronicNG.PumpStatusRecord;
 import com.nightscout.android.upload.Record;
 
 import org.slf4j.Logger;
@@ -81,6 +82,7 @@ public class DexcomG4Activity extends Activity implements OnSharedPreferenceChan
     private ServiceManager cgmService; // > service
     private int msgsDisplayed = 0;
     public static int batLevel = 0;
+    public static PumpStatusRecord pumpStatusRecord = new PumpStatusRecord();
     BatteryReceiver mArrow;
     IBinder bService = null;
     Intent batteryReceiver;
@@ -114,7 +116,7 @@ public class DexcomG4Activity extends Activity implements OnSharedPreferenceChan
                             display.setText(msg.obj.toString(), BufferType.EDITABLE);
                             break;
                         case MSG_DATA:
-                            Medtronic640gPumpRecord record = (Medtronic640gPumpRecord) msg.obj;
+                            CGMRecord record = (CGMRecord) msg.obj;
 
                             DecimalFormat df = null;
                             if (prefs.getBoolean("mmolDecimals", false))
@@ -146,8 +148,8 @@ public class DexcomG4Activity extends Activity implements OnSharedPreferenceChan
                             mDumpTextView.setText(Html.fromHtml(
                                 String.format( "<b>BGL at:</b> %s<br/><b>Pump Time:</b> %s<br/><b>Active Insulin: </b>%.3f<br/><b>Rate of Change: </b>%s",
                                     DateUtils.formatDateTime(getBaseContext(),record.sensorBGLDate.getTime(),DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
-                                    DateUtils.formatDateTime(getBaseContext(),record.pumpDate.getTime(),DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
-                                    record.activeInsulin,
+                                    DateUtils.formatDateTime(getBaseContext(),pumpStatusRecord.pumpDate.getTime(),DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
+                                    pumpStatusRecord.activeInsulin,
                                     record.direction
                                 )
                             ));
@@ -259,7 +261,6 @@ public class DexcomG4Activity extends Activity implements OnSharedPreferenceChan
             @Override
             public void onClick(View v) {
                 display.setKeyListener(null);
-                Log.d( TAG, "Pursh de butten" );
                 if( cgmService != null ) {
                     if (!cgmService.isRunning()) {
                         cgmService.start();
@@ -543,7 +544,7 @@ public class DexcomG4Activity extends Activity implements OnSharedPreferenceChan
 
     }
 
-    private String renderTrendHtml(Medtronic640gPumpRecord.TREND trend)
+    private String renderTrendHtml(CGMRecord.TREND trend)
     {
         switch( trend )
         {

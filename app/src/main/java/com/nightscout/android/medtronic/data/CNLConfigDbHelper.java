@@ -58,6 +58,7 @@ public class CNLConfigDbHelper extends SQLiteOpenHelper {
         insertValues.put(CNLConfigContract.ConfigEntry.COLUMN_NAME_KEY, "");
         insertValues.put(CNLConfigContract.ConfigEntry.COLUMN_NAME_LAST_RADIO_CHANNEL, 0x14 );
         configDb.insertWithOnConflict(CNLConfigContract.ConfigEntry.TABLE_NAME, null, insertValues, SQLiteDatabase.CONFLICT_IGNORE);
+        configDb.close();
     }
 
     public String getHmac( String stickSerial ){
@@ -67,14 +68,16 @@ public class CNLConfigDbHelper extends SQLiteOpenHelper {
                 new String[] { CNLConfigContract.ConfigEntry.COLUMN_NAME_HMAC },
                 CNLConfigContract.ConfigEntry.COLUMN_NAME_STICK_SERIAL + " = ?", new String[]{ stickSerial }, null, null, null);
 
-        if (cursor != null && cursor.moveToFirst()) {
-            String hmac = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_HMAC));
-            cursor.close();
+        String hmac = null;
 
-            return hmac;
-        } else {
-            return null;
+        if (cursor != null && cursor.moveToFirst()) {
+            hmac = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_HMAC));
+            cursor.close();
         }
+
+        configDb.close();
+
+        return hmac;
     }
 
     public String getKey( String stickSerial ){
@@ -84,14 +87,16 @@ public class CNLConfigDbHelper extends SQLiteOpenHelper {
                 new String[] { CNLConfigContract.ConfigEntry.COLUMN_NAME_KEY },
                 CNLConfigContract.ConfigEntry.COLUMN_NAME_STICK_SERIAL + " = ?", new String[]{ stickSerial }, null, null, null);
 
-        if (cursor != null && cursor.moveToFirst()) {
-            String hmac = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_KEY));
-            cursor.close();
+        String key = null;
 
-            return hmac;
-        } else {
-            return null;
+        if (cursor != null && cursor.moveToFirst()) {
+            key = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_KEY));
+            cursor.close();
         }
+
+        configDb.close();
+
+        return key;
     }
 
     public int setHmacAndKey( String stickSerial, String hmac, String key ) {
@@ -112,6 +117,7 @@ public class CNLConfigDbHelper extends SQLiteOpenHelper {
                 whereArgs
         );
 
+        configDb.close();
         return affectedRows;
     }
 
