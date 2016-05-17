@@ -33,7 +33,7 @@
             android:title="API Base URL"
             android:key="API Base URL"
             android:dialogTitle="Enter Base API URL"
-            android:defaultValue="http://{YOUR-API-SERVER}/api"
+            android:defaultValue="{YOURAPISECRET}@https://{YOUR.NIGHTSCOUT.SITE}/api/v1/"
             android:dialogMessage="This only the base URL, the uploader will automatically append /entries for the POST of CGM data and /gdentries for the POST of glucometer data values">
     </EditTextPreference>
     <info.nightscout.android.utils.CustomSwitchPreference
