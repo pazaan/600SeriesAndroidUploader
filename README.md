@@ -4,7 +4,7 @@
 
 Android app to upload data from the Medtronic 640g to Nightscout using the Contour Next Link 2.4 USB stick
 
-#### [Click here for the Main Project Page](http://http://pazaan.github.io/640gAndroidUploader/)
+#### [Click here for the Main Project Page](http://pazaan.github.io/640gAndroidUploader/)
 
 #### Credits/Contributors:
 * Android app based on https://github.com/arbox0/MedtronicUploader, through the internals are completely changed for the Medtronic 640g
