@@ -11,3 +11,5 @@ Android app to upload data from the Medtronic 640g to Nightscout using the Conto
 * [@pazaan](https://github.com/pazaan)
 * [@LittleDMatt](https://github.com/LittleDMatt)
 * [@wright-david](https://github.com/wright-david)
+
+*All product names, trademarks, servicemarks, registered trademarks, and registered servicemarks are the property of their respective owners, which are in no way associated or affiliated with this project. Product names are used solely for the purpose of identification only. Use of these names does not imply any co-operation or endorsement.*
