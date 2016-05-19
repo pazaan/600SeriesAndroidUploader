@@ -13,5 +13,5 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Initial public beta release
 
-[Unreleased]: https://github.com/pazaan/Medtronic640gUploader/compare/v0.1.1...HEAD
-[v0.1.1]: https://github.com/pazaan/Medtronic640gUploader/compare/v0.1.0...v0.1.1
+[Unreleased]: https://github.com/pazaan/640gAndroidUploader/compare/v0.1.1...HEAD
+[v0.1.1]: https://github.com/pazaan/640gAndroidUploader/compare/v0.1.0...v0.1.1
