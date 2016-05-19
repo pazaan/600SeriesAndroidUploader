@@ -14,6 +14,7 @@ Android app to upload data from the Medtronic 640g to Nightscout using the Conto
 
 #### Credits/Contributors:
 * Android app based on https://github.com/arbox0/MedtronicUploader, through the internals are completely changed for the Medtronic 640g
+* This app uses the [android-service-example](https://code.launchpad.net/~binwiederhier/+junk/android-service-example) by Philipp C. Heckel
 * [@pazaan](https://github.com/pazaan)
 * [@LittleDMatt](https://github.com/LittleDMatt)
 * [@wright-david](https://github.com/wright-david)
