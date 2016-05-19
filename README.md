@@ -6,6 +6,12 @@ Android app to upload data from the Medtronic 640g to Nightscout using the Conto
 
 #### [Click here for the Main Project Page](http://pazaan.github.io/640gAndroidUploader/)
 
+<br/>
+<a target="blank" href="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-showing-app.jpg"><img src="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-showing-app.jpg" width="200"></a>
+<a target="blank" href="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-1.jpg"><img src="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-1.jpg" width="200"></a>
+<a target="blank" href="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-2.jpg"><img src="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-2.jpg" width="200"></a>
+<br/>
+
 #### Credits/Contributors:
 * Android app based on https://github.com/arbox0/MedtronicUploader, through the internals are completely changed for the Medtronic 640g
 * [@pazaan](https://github.com/pazaan)
