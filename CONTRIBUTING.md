@@ -18,6 +18,7 @@
 Thanks! :heart: :squirrel: :heart:
 
 **The 640g Nightscout Support Team**  
-Lennart Goedhart (@pazaan)  
-Matt Guy (@LittleDMatt)  
-David Wright (@wright-david)  
++ Lennart Goedhart (@pazaan)  
++ Matt Guy (@LittleDMatt)  
++ David Wright (@wright-david)  
++ Tom Collins (@Bal00)
