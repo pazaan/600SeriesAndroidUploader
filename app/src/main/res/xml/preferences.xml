@@ -30,12 +30,20 @@
     </info.nightscout.android.utils.CustomSwitchPreference>
     <EditTextPreference
             android:dependency="EnableRESTUpload"
-            android:title="API Base URL"
-            android:key="API Base URL"
-            android:dialogTitle="Enter Base API URL"
-            android:defaultValue="{YOURAPISECRET}@https://{YOUR.NIGHTSCOUT.SITE}/api/v1/"
-            android:dialogMessage="This only the base URL, the uploader will automatically append /entries for the POST of CGM data and /gdentries for the POST of glucometer data values">
+            android:title="Nightscout URL"
+            android:key="@string/preference_nightscout_url"
+            android:dialogTitle="Enter Nightscout URL"
+            android:defaultValue="https://YOUR.NIGHTSCOUT.SITE"
+            android:dialogMessage="The hostname of your Nightscout site">
     </EditTextPreference>
+	<EditTextPreference
+		android:dependency="EnableRESTUpload"
+		android:title="API Secret"
+		android:key="@string/preference_api_secret"
+		android:dialogTitle="Enter your Nightscout API secret"
+		android:defaultValue="YOURAPISECRET"
+		android:dialogMessage="Your Nightscout API secret">
+	</EditTextPreference>
     <info.nightscout.android.utils.CustomSwitchPreference
             android:title="Wifi Hack"
             android:key="EnableWifiHack"
