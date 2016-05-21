@@ -26,7 +26,7 @@
             android:title="REST API Upload"
             android:key="EnableRESTUpload"
             android:disableDependentsState="false"
-            android:summary="Enable upload of BGL data to Nightscout">
+            android:summary="Enable upload of data to Nightscout">
     </info.nightscout.android.utils.CustomSwitchPreference>
     <EditTextPreference
             android:dependency="EnableRESTUpload"

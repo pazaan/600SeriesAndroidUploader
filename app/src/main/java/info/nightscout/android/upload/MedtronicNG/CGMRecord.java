@@ -31,8 +31,8 @@ public class CGMRecord extends DeviceRecord implements Serializable {
     private TREND trend = TREND.NOT_SET;
 
     //public Date pumpDate = new Date(); // Store as a date, so we can parse to string later.
-    public int sensorBGL = 0; // in mg/dL. 0 means no sensor reading
-    public Date sensorBGLDate = new Date();
+    public int sgv = 0; // in mg/dL. 0 means no sensor reading
+    public Date sgvDate = new Date();
     public String direction;
 
     public void setTrend( TREND trend ) {

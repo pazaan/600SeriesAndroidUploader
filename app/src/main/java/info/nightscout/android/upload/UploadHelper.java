@@ -719,7 +719,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     
     private void populateV1APIEntry(JSONObject json, Record oRecord) throws Exception {
 		if (oRecord instanceof CGMRecord) {
-			json.put("date", ((CGMRecord) oRecord).sensorBGLDate.getTime());
+			json.put("date", ((CGMRecord) oRecord).sgvDate.getTime());
 			json.put("dateString",  oRecord.displayTime);
 		} else {
 			Date date = DATE_FORMAT.parse(oRecord.displayTime);
@@ -733,7 +733,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 			json.put("mbg", ((GlucometerRecord) oRecord).numGlucometerValue);
 		}else if (oRecord instanceof CGMRecord){
 				CGMRecord pumpRecord = (CGMRecord) oRecord;
-				json.put("sgv", pumpRecord.sensorBGL);
+				json.put("sgv", pumpRecord.sgv);
 				json.put("direction", pumpRecord.direction);
 				json.put("device", pumpRecord.getDeviceName());
 				json.put("type", "sgv");

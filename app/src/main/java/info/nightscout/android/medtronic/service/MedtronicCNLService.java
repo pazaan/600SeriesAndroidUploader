@@ -180,7 +180,7 @@ public class MedtronicCNLService extends AbstractService {
                     cnlReader.endControlMode();
                 }
             } catch (IOException e) {
-                Log.e(TAG, "Error getting BGLs", e);
+                Log.e(TAG, "Error getting SGVs", e);
                 send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Error connecting to Contour Next Link."));
             } catch (ChecksumException e) {
                 Log.e(TAG, "Checksum error", e);

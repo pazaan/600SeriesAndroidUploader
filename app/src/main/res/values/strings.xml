@@ -115,4 +115,6 @@
     </string>
     <string name="preference_nightscout_url">Nightscout URL</string>
     <string name="preference_api_secret">API SECRET</string>
+    <string name="prompt_carelink_username_password">Please enter your CareLink details.\nThey will not be stored.</string>
+    <string name="close">Close</string>
 </resources>
