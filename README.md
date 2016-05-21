@@ -1,22 +1,31 @@
-640gAndroidUploader
-===================
-**This product is NOT created by Medtronic. You can find more information about them and their insulin pumps [here](https://www.medtronic-diabetes.com.au/pump-therapy/640g)**
+# 640gAndroidUploader
 
-Android app to upload data from the Medtronic 640g to Nightscout using the Contour Next Link 2.4 USB stick
+This is an Android app to upload data from the Medtronic 640G to a Nightscout website using the Contour Next Link 2.4 USB stick
 
-#### [Click here for the Main Project Page](http://pazaan.github.io/640gAndroidUploader/)
+###### [Click here for more info](https://github.com/pazaan/640gAndroidUploader/wiki)
+###### [Click here for Releases](https://github.com/pazaan/640gAndroidUploader/releases)
+###### [Click here for the Main Project Page](http://pazaan.github.io/640gAndroidUploader/)
 
 <br/>
 <a target="blank" href="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-showing-app.jpg"><img src="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-showing-app.jpg" width="200"></a>
 <a target="blank" href="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-1.jpg"><img src="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-1.jpg" width="200"></a>
 <a target="blank" href="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-2.jpg"><img src="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-2.jpg" width="200"></a>
-<br/>
+<br/><br/>
 
-#### Credits/Contributors:
-* Android app based on https://github.com/arbox0/MedtronicUploader, through the internals are completely changed for the Medtronic 640g
-* This app uses the [android-service-example](https://code.launchpad.net/~binwiederhier/+junk/android-service-example) by Philipp C. Heckel
-* [@pazaan](https://github.com/pazaan)
-* [@LittleDMatt](https://github.com/LittleDMatt)
-* [@wright-david](https://github.com/wright-david)
+#### App Credits
+* Based on https://github.com/arbox0/MedtronicUploader though the internals are completely changed for the 640G
+* Uses the [android-service-example](https://code.launchpad.net/~binwiederhier/+junk/android-service-example) by Philipp C. Heckel
+* Project initiated by [@pazaan](https://github.com/pazaan)
 
-*All product names, trademarks, servicemarks, registered trademarks, and registered servicemarks are the property of their respective owners, which are in no way associated or affiliated with this project. Product names are used solely for the purpose of identification. Use of these names does not imply any co-operation or endorsement.*
+<br/><br/>
+#### Disclaimer And Warning
+
++ All information, thought, and code described here is intended for informational and educational purposes only. Nightscout currently makes no attempt at HIPAA privacy compliance. Use Nightscout at your own risk, and do not use the information or code to make medical decisions.
+
++ Use of code from github.com is without warranty or formal support of any kind. Please review this repository's [LICENSE](https://github.com/pazaan/640gAndroidUploader/blob/master/LICENSE) for details. 
+
++ All product and company names, trademarks, servicemarks, registered trademarks, and registered servicemarks are the property of their respective holders. Their use is for information purposes and does not imply any affiliation with or endorsement by them. 
+
++ Please note - this project has **no** association with and is **not** endorsed by:
+ + [Medtronic](http://www.medtronicdiabetes.com/)
+ + [Ascensia Diabetes Care (formerly Bayer Diabetes Care)](http://www.ascensia.com/)
