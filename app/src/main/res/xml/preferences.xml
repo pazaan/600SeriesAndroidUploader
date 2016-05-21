@@ -44,15 +44,6 @@
 		android:defaultValue="YOURAPISECRET"
 		android:dialogMessage="Your Nightscout API secret">
 	</EditTextPreference>
-    <info.nightscout.android.utils.CustomSwitchPreference
-            android:title="Wifi Hack"
-            android:key="EnableWifiHack"
-            android:disableDependentsState="false"
-            android:defaultValue="false"
-            android:summaryOn="Wifi will be disabled if there is a timeout (poor wifi signal/access point), this will allow mobile data to be used instead"
-            android:summaryOff="The uploader won't try to disable Wifi even if there is a timeout"
-            >
-    </info.nightscout.android.utils.CustomSwitchPreference>
     </PreferenceCategory>
      <PreferenceCategory android:title="Disclaimer">
 	    <info.nightscout.android.utils.CustomSwitchPreference

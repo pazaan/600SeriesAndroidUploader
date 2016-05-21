@@ -144,7 +144,7 @@ public class MedtronicCNLService extends AbstractService {
                 Medtronic640gActivity.pumpStatusRecord.setDeviceName( deviceName );
 
                 if( hmac.equals( "" ) || key.equals("") ) {
-                    send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Before you can use the Contour Next Link, you need to register it with the app. Select 'Register USB Stick' from the menu."));
+                    send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, String.format( "Before you can use the Contour Next Link, you need to register it with the app. Select '%s' from the menu.", getString(R.string.register_contour_next_link))));
                     return;
                 }
 
@@ -197,42 +197,7 @@ public class MedtronicCNLService extends AbstractService {
             }
 
             mUploader.execute(pumpRecord);
-
-            if (prefs.getBoolean("EnableWifiHack", false)) {
-                doWifiHack();
-            }
         }
-    }
-
-    private void doWifiHack() {
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            //Interesting case: location with lousy wifi
-            //toggle it off to use cellular
-            //toggle back on for next try
-            public void run() {
-                Status dataUp = mUploader.getStatus();
-                if (dataUp == Status.RUNNING) {
-                    mUploader.cancel(true);
-
-                    if (mWifiManager.isWifiEnabled()) {
-                        mWifiManager.setWifiEnabled(false);
-                        try {
-                            Thread.sleep(2500);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, "Sleep after setWifiEnabled(false) interrupted", e);
-                        }
-                        mWifiManager.setWifiEnabled(true);
-                        try {
-                            Thread.sleep(2500);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, "Sleep after setWifiEnabled(true) interrupted", e);
-                        }
-                    }
-                }
-            }
-        }, 22500);
     }
 
     private boolean isOnline() {

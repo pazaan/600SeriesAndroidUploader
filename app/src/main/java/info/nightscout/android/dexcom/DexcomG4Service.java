@@ -196,43 +196,7 @@ public class DexcomG4Service extends Service {
             initialRead = false;
 
             nextUploadTimer = getNextUploadTimer(dexcomReader);
-
-            if (prefs.getBoolean("EnableWifiHack", false)) {
-                doWifiHack();
-            }
         }
-    }
-
-    private void doWifiHack() {
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            //Interesting case: location with lousy wifi
-            //toggle it off to use cellular
-            //toggle back on for next try
-            public void run() {
-                Status dataUp = uploader.getStatus();
-                if (dataUp == Status.RUNNING) {
-                    uploader.cancel(true);
-
-                    if (wifiManager.isWifiEnabled()) {
-                        wifiManager.setWifiEnabled(false);
-                        try {
-                            Thread.sleep(2500);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, "Sleep after setWifiEnabled(false) interrupted", e);
-                        }
-                        wifiManager.setWifiEnabled(true);
-                        try {
-                            Thread.sleep(2500);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, "Sleep after setWifiEnabled(true) interrupted", e);
-                        }
-                    }
-                }
-
-            }
-        }, 22500);
     }
 
     private void USBOff() {

@@ -200,7 +200,7 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
             String longSerial = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_STICK_SERIAL));
             String key = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_KEY));
 
-            deviceTableHtml += String.format("<b>Serial Number:</b> %s<br/><b>Key:</b> %s<br/>", longSerial, key );
+            deviceTableHtml += String.format("<b>Serial Number:</b> %s %s<br/>", longSerial, key.equals("") ? "&#x2718;" : "&#x2714;" );
 
             cursor.moveToNext();
         }

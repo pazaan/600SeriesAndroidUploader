@@ -8,6 +8,6 @@
     <item
             android:id="@+id/registerCNL"
             android:orderInCategory="100"
-            android:title="Register Contour Next Link">
+            android:title="@string/register_contour_next_link">
     </item>
 </menu>

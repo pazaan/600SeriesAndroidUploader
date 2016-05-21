@@ -13,7 +13,7 @@
     <string name="eula_title">Disclaimer</string>
     <string name="eula_accept">Accept</string>
     <string name="eula_refuse">Refuse</string>
-    <string name="version">0.1.0</string>
+    <string name="version">0.2.0</string>
     <style name="ButtonText">
     <item name="android:layout_width">fill_parent</item>
     <item name="android:layout_height">wrap_content</item>
@@ -117,4 +117,5 @@
     <string name="preference_api_secret">API SECRET</string>
     <string name="prompt_carelink_username_password">Please enter your CareLink details.\nThey will not be stored.</string>
     <string name="close">Close</string>
+    <string name="register_contour_next_link">Register Contour Next Link</string>
 </resources>
