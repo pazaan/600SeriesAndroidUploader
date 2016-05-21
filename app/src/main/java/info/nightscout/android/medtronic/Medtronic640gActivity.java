@@ -126,31 +126,31 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                                 df = new DecimalFormat("#.00");
                             else
                                 df = new DecimalFormat("#.0");
-                            String bglString = "---";
+                            String sgvString = "---";
                             String unitsString = "mg/dL";
                             if (prefs.getBoolean("mmolxl", false)) {
                                 try {
-                                    float fBgValue = Float.valueOf(record.sensorBGL);
-                                    bglString = df.format(fBgValue / 18.016f);
+                                    float fBgValue = Float.valueOf(record.sgv);
+                                    sgvString = df.format(fBgValue / 18.016f);
                                     unitsString = "mmol/L";
-                                    log.info("mmolxl true --> " + bglString);
+                                    log.info("mmolxl true --> " + sgvString);
                                 } catch (Exception e) {
 
                                 }
                             } else {
-                                bglString = String.valueOf(record.sensorBGL);
-                                log.info("mmolxl false --> " + bglString);
+                                sgvString = String.valueOf(record.sgv);
+                                log.info("mmolxl false --> " + sgvString);
                             }
 
                             //mTitleTextView.setTextColor(Color.YELLOW);
                             mTitleTextView.setText(Html.fromHtml(
                                     String.format( "<big><b>%s</b></big> <small>%s %s</small>",
-                                            bglString, unitsString, renderTrendHtml(record.getTrend()))));
+                                            sgvString, unitsString, renderTrendHtml(record.getTrend()))));
 
                             mDumpTextView.setTextColor(Color.WHITE);
                             mDumpTextView.setText(Html.fromHtml(
-                                String.format( "<b>BGL at:</b> %s<br/><b>Pump Time:</b> %s<br/><b>Active Insulin: </b>%.3f<br/><b>Rate of Change: </b>%s",
-                                    DateUtils.formatDateTime(getBaseContext(),record.sensorBGLDate.getTime(),DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
+                                String.format( "<b>SG at:</b> %s<br/><b>Pump Time:</b> %s<br/><b>Active Insulin: </b>%.3f<br/><b>Rate of Change: </b>%s",
+                                    DateUtils.formatDateTime(getBaseContext(),record.sgvDate.getTime(),DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
                                     DateUtils.formatDateTime(getBaseContext(),pumpStatusRecord.pumpDate.getTime(),DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
                                     pumpStatusRecord.activeInsulin,
                                     record.direction

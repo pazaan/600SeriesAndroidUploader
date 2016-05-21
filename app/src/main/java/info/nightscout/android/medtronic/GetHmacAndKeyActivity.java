@@ -5,16 +5,19 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
+import android.content.Context;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Html;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -58,6 +61,8 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private TextView mRegisteredStickView;
+    private Button mCloseButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,16 +83,27 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
             }
         });
 
-        Button mUsernameSignInButton = (Button) findViewById(R.id.username_sign_in_button);
-        mUsernameSignInButton.setOnClickListener(new OnClickListener() {
+        Button usernameSignInButton = (Button) findViewById(R.id.username_sign_in_button);
+        usernameSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 attemptLogin();
             }
         });
+        Button closeButton = (Button) findViewById(R.id.close_button);
+        closeButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+        mRegisteredStickView = (TextView)findViewById(R.id.registered_usb_devices);
+        mCloseButton = (Button)findViewById(R.id.close_button);
+        showRegisteredSticks();
     }
 
     /**
@@ -123,10 +139,6 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
             mUsernameView.setError(getString(R.string.error_field_required));
             focusView = mUsernameView;
             cancel = true;
-        } else if (!isUsernameValid(username)) {
-            mUsernameView.setError(getString(R.string.error_invalid_username));
-            focusView = mUsernameView;
-            cancel = true;
         }
 
         if (cancel) {
@@ -140,14 +152,6 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
             mHmacAndKeyTask = new GetHmacAndKey(username, password);
             mHmacAndKeyTask.execute((Void) null);
         }
-    }
-
-    private boolean isUsernameValid(String username) {
-        return true;
-    }
-
-    private boolean isPasswordValid(String password) {
-        return true;
     }
 
     /**
@@ -186,6 +190,24 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
         }
     }
 
+    private void showRegisteredSticks() {
+        CNLConfigDbHelper configDbHelper = new CNLConfigDbHelper(getBaseContext());
+        Cursor cursor = configDbHelper.getAllRows();
+
+        String deviceTableHtml = "<big><b>Registered Devices</b></big><br/>";
+
+        while( !cursor.isAfterLast() ) {
+            String longSerial = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_STICK_SERIAL));
+            String key = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_KEY));
+
+            deviceTableHtml += String.format("<b>Serial Number:</b> %s %s<br/>", longSerial, key.equals("") ? "&#x2718;" : "&#x2714;" );
+
+            cursor.moveToNext();
+        }
+
+        mRegisteredStickView.setText(Html.fromHtml( deviceTableHtml ));
+    }
+
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         return null;
@@ -218,7 +240,7 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
             try {
                 DefaultHttpClient client = new DefaultHttpClient();
                 HttpPost loginPost = new HttpPost("https://carelink.minimed.eu/patient/j_security_check");
-                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
+                List<NameValuePair> nameValuePairs = new ArrayList<>();
                 nameValuePairs.add(new BasicNameValuePair("j_username", mUsername));
                 nameValuePairs.add(new BasicNameValuePair("j_password", mPassword));
                 nameValuePairs.add(new BasicNameValuePair("j_character_encoding", "UTF-8"));
@@ -289,11 +311,16 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
         @Override
         protected void onPostExecute(final Boolean success) {
             mHmacAndKeyTask = null;
-            showProgress(false);
 
             if (success) {
-                finish();
+                showRegisteredSticks();
+                mCloseButton.setVisibility(View.VISIBLE);
+                mLoginFormView.setVisibility(View.GONE);
+                mProgressView.setVisibility(View.GONE);
+                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(mLoginFormView.getWindowToken(), 0);
             } else {
+                showProgress(false);
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
             }

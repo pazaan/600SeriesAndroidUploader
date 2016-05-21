@@ -1182,9 +1182,6 @@ public class MedtronicCGMService extends Service implements
 					params = null;
 	
 					listToUpload.clear();
-					if (prefs.getBoolean("EnableWifiHack", false)) {
-						doWifiHack();
-					}
 				} catch (Exception e) {
 					StringBuffer sb1 = new StringBuffer("");
 					sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " "
@@ -1199,43 +1196,7 @@ public class MedtronicCGMService extends Service implements
 		}
 
 	};
-
-	private void doWifiHack() {
-		Handler handler = new Handler();
-		handler.postDelayed(new Runnable() {
-			@Override
-			// Interesting case: location with lousy wifi
-			// toggle it off to use cellular
-			// toggle back on for next try
-			public void run() {
-				Status dataUp = uploader.getStatus();
-				if (dataUp == Status.RUNNING) {
-					uploader.cancel(true);
-
-					if (wifiManager.isWifiEnabled()) {
-						wifiManager.setWifiEnabled(false);
-						try {
-							Thread.sleep(2500);
-						} catch (InterruptedException e) {
-							Log.e(TAG,
-									"Sleep after setWifiEnabled(false) interrupted",
-									e);
-						}
-						wifiManager.setWifiEnabled(true);
-						try {
-							Thread.sleep(2500);
-						} catch (InterruptedException e) {
-							Log.e(TAG,
-									"Sleep after setWifiEnabled(true) interrupted",
-									e);
-						}
-					}
-				}
-
-			}
-		}, 22500);
-	}
-
+	
 	private boolean isConnected() {
 		return mSerial.isOpened();
 	}
