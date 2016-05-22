@@ -59,7 +59,7 @@
 	<PreferenceCategory android:title="App Version">
 	      <Preference 
 		 android:key="version"
-		 android:title="@string/version" />
+		 android:title="@string/versionName" />
    		 </PreferenceCategory>
     <PreferenceCategory android:title="Debug">
     <ListPreference

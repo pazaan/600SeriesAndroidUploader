@@ -4,14 +4,25 @@ plugins {
 
 apply plugin: 'com.android.application'
 
+def gitVersion() {
+    def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
+    return process.toInteger() + 1
+}
+
 android {
     compileSdkVersion 21
     buildToolsVersion "23.0.3"
+
+    applicationVariants.all { variant ->
+        variant.resValue "string", "versionName", variant.versionName
+    }
 
     defaultConfig {
         applicationId "info.nightscout.android"
         minSdkVersion 15
         targetSdkVersion 21
+        versionName project.properties['version']
+        versionCode gitVersion()
     }
 
     buildTypes {
@@ -28,8 +39,59 @@ android {
     }
 }
 
+task signRelease << {
+    def command = [
+            'jarsigner',
+            '-verbose',
+            '-sigalg',
+            'SHA1withRSA',
+            '-digestalg',
+            'SHA1',
+            '-keystore',
+            '/Users/lgoedhart/keystores/nightscout_android.jks',
+            'app/build/outputs/apk/app-release-unsigned.apk',
+            'nightscoutandroidkey'
+    ]
+
+    def proc = new ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            .redirectInput(ProcessBuilder.Redirect.INHERIT)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+
+    proc.waitFor()
+
+    if (0 != proc.exitValue()) {
+        throw new RuntimeException("Could not sign APK.")
+    }
+}
+
+task zipalignRelease << {
+    def command = [
+            '/Users/lgoedhart/Library/Android/sdk/build-tools/23.0.3/zipalign',
+            '-v',
+            '4',
+            'app/build/outputs/apk/app-release-unsigned.apk',
+            'app/build/outputs/apk/640g-android-uploader.apk'
+    ]
+
+    def proc = new ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            .redirectInput(ProcessBuilder.Redirect.INHERIT)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+
+    proc.waitFor()
+
+    if (0 != proc.exitValue()) {
+        throw new RuntimeException("Could not align APK.")
+    }
+}
+
 release {
     tagTemplate = 'v${version}'
+    buildTasks = ['assembleRelease']
+    afterReleaseBuild.dependsOn 'signRelease', 'zipalignRelease'
 }
 
 dependencies {
