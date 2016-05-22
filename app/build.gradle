@@ -91,6 +91,7 @@ task zipalignRelease << {
 release {
     tagTemplate = 'v${version}'
     buildTasks = ['assembleRelease']
+    beforeReleaseBuild.dependsOn 'clean'
     afterReleaseBuild.dependsOn 'signRelease', 'zipalignRelease'
 }
 
