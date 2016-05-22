@@ -13,7 +13,7 @@
     <string name="eula_title">Disclaimer</string>
     <string name="eula_accept">Accept</string>
     <string name="eula_refuse">Refuse</string>
-    <string  name="version">Version: 03.07.15</string>
+    <string name="version">0.1.0</string>
     <style name="ButtonText">
     <item name="android:layout_width">fill_parent</item>
     <item name="android:layout_height">wrap_content</item>
@@ -107,7 +107,7 @@
     <string name="action_sign_in">Retrieve keys for USB</string>
     <string name="action_sign_in_short">Retrieve keys</string>
     <string name="error_invalid_username">This username is invalid</string>
-    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_invalid_password">Password is required</string>
     <string name="error_incorrect_password">The Username or password is incorrect</string>
     <string name="error_field_required">This field is required</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing email

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.nightscout.android"
+    package="info.nightscout.android"
     android:versionCode="1"
-    android:versionName="1.0" >
+    android:versionName="@string/version" >
 
     <uses-sdk
         android:maxSdkVersion="21"
@@ -14,19 +14,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.UPDATE_DEVICE_STATS" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!-- To auto-complete the email text field in the login form with the user's emails -->
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.READ_PROFILE" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
-    <android:uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <android:uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <android:uses-permission android:name="android.permission.READ_CALL_LOG" />
 
     <application
         android:allowBackup="true"
@@ -36,9 +29,9 @@
 
         <!-- I have set screenOrientation to "portrait" to avoid the restart of AsyncTasks when you rotate the phone -->
         <activity
-            android:name=".dexcom.DexcomG4Activity"
+            android:name=".medtronic.Medtronic640gActivity"
             android:icon="@drawable/ic_launcher"
-            android:label="NightScout"
+            android:label="@string/app_name"
             android:launchMode="singleTask"
             android:screenOrientation="portrait" >
             <intent-filter android:icon="@drawable/ic_launcher" >
@@ -64,11 +57,6 @@
             android:name=".dexcom.DexcomG4Service"
             android:icon="@drawable/ic_launcher" >
         </service>
-        <!--
-        <service  android:icon="@drawable/ic_launcher"
-                android:label="NightScout" android:name=".medtronic.MedtronicCGMService">
-        </service>
-        -->
         <service
             android:name=".medtronic.service.MedtronicCNLService"
             android:icon="@drawable/ic_launcher" >
@@ -81,7 +69,7 @@
         <service
             android:name=".widget.CGMWidgetUpdater"
             android:icon="@drawable/ic_launcher"
-            android:label="NightScout" >
+            android:label="@string/app_name" >
         </service>
 
         <receiver android:name=".widget.CGMWidget" >
@@ -95,7 +83,7 @@
         </receiver>
 
         <activity
-            android:name=".dexcom.LoginActivity"
+            android:name=".medtronic.GetHmacAndKeyActivity"
             android:label="@string/title_activity_login" >
         </activity>
     </application>
