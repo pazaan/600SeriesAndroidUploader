@@ -52,18 +52,13 @@ public class MedtronicCNLService extends AbstractService {
     private Context mContext;
     private NotificationManager nm;
     private final static long FIVE_MINS_MS = 300000L;
-    private UploadHelper mUploader;
-    private WifiManager mWifiManager;
     private UsbManager mUsbManager;
-    private SharedPreferences prefs;
 
     @Override
     public void onStartService() {
         Log.i(TAG, "onStartService called");
         mContext = this.getBaseContext();
-        mWifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
         mUsbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
-        prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
         // Add a small start delay - for some reason, having no start delay causes initial
         // binding/rendering issues
@@ -100,7 +95,7 @@ public class MedtronicCNLService extends AbstractService {
     }
 
     protected void doReadAndUpload() {
-        mUploader = new UploadHelper(getBaseContext());
+        UploadHelper mUploader = new UploadHelper(getBaseContext());
         mHidDevice = UsbHidDriver.acquire(mUsbManager, USB_VID, USB_PID);
 
         // Load the initial data to the display
@@ -127,8 +122,6 @@ public class MedtronicCNLService extends AbstractService {
 
             // Go get the data
             MedtronicCNLReader cnlReader = new MedtronicCNLReader(mHidDevice);
-
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
             try {
                 send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_STATUS, "Connecting to the Contour Next Link..."));
