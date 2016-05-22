@@ -1,8 +1,23 @@
+buildscript {
+    repositories {
+        maven { url 'https://maven.fabric.io/public' }
+    }
+
+    dependencies {
+        classpath 'io.fabric.tools:gradle:1.+'
+    }
+}
 plugins {
     id 'net.researchgate.release' version '2.3.4'
 }
 
 apply plugin: 'com.android.application'
+apply plugin: 'io.fabric'
+
+repositories {
+    maven { url 'https://maven.fabric.io/public' }
+}
+
 
 def gitVersion() {
     def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
@@ -102,4 +117,7 @@ dependencies {
     compile files('libs/mongo-java-driver-3.0.2.jar')
     compile files('libs/physicaloidlibrary.jar')
     compile files('libs/slf4j-api-1.7.2.jar')
+    compile('com.crashlytics.sdk.android:crashlytics:2.5.5@aar') {
+        transitive = true;
+    }
 }

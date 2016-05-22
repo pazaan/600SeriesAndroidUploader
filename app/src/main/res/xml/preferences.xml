@@ -1,75 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="Monitor">
-         <info.nightscout.android.utils.CustomSwitchPreference
-	            android:title="mmol/l"
-	            android:key="mmolxl"
-	            android:disableDependentsState="false"
-	            android:switchTextOn="mmol/l"
-	            android:switchTextOff="mg/dl"
-	            android:summaryOn="mmol/l. Values are shown and set in mmol/l"
-	            android:summaryOff="mg/dl. Values are shown and set in mg/dl">
-	    </info.nightscout.android.utils.CustomSwitchPreference>
-	    <info.nightscout.android.utils.CustomSwitchPreference
-	            android:title="mmol/l decimals"
-	            android:key="mmolDecimals"
-	            android:dependency = "mmolxl"
-	            android:defaultValue="false"
-	            android:switchTextOn="2"
-	            android:switchTextOff="1"
-	            android:summaryOn="Activated. 2 Decimal values will be shown ."
-	            android:summaryOff="Deactivated. 1 Decimal value will be shown .">
-	    </info.nightscout.android.utils.CustomSwitchPreference>
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Sharing">    
-    <info.nightscout.android.utils.CustomSwitchPreference
-            android:title="REST API Upload"
-            android:key="EnableRESTUpload"
+        <info.nightscout.android.utils.CustomSwitchPreference
             android:disableDependentsState="false"
-            android:summary="Enable upload of data to Nightscout">
-    </info.nightscout.android.utils.CustomSwitchPreference>
-    <EditTextPreference
-            android:dependency="EnableRESTUpload"
-            android:title="Nightscout URL"
-            android:key="@string/preference_nightscout_url"
-            android:dialogTitle="Enter Nightscout URL"
-            android:defaultValue="https://YOUR.NIGHTSCOUT.SITE"
-            android:dialogMessage="The hostname of your Nightscout site">
-    </EditTextPreference>
-	<EditTextPreference
-		android:dependency="EnableRESTUpload"
-		android:title="API Secret"
-		android:key="@string/preference_api_secret"
-		android:dialogTitle="Enter your Nightscout API secret"
-		android:defaultValue="YOURAPISECRET"
-		android:dialogMessage="Your Nightscout API secret">
-	</EditTextPreference>
+            android:key="mmolxl"
+            android:summaryOff="mg/dl. Values are shown and set in mg/dl"
+            android:summaryOn="mmol/l. Values are shown and set in mmol/l"
+            android:switchTextOff="mg/dl"
+            android:switchTextOn="mmol/l"
+            android:title="mmol/l"></info.nightscout.android.utils.CustomSwitchPreference>
+        <info.nightscout.android.utils.CustomSwitchPreference
+            android:defaultValue="false"
+            android:dependency="mmolxl"
+            android:key="mmolDecimals"
+            android:summaryOff="Deactivated. 1 Decimal value will be shown ."
+            android:summaryOn="Activated. 2 Decimal values will be shown ."
+            android:switchTextOff="1"
+            android:switchTextOn="2"
+            android:title="mmol/l decimals"></info.nightscout.android.utils.CustomSwitchPreference>
     </PreferenceCategory>
-     <PreferenceCategory android:title="Disclaimer">
-	    <info.nightscout.android.utils.CustomSwitchPreference
-	            android:title="I UNDERSTAND"
-	            android:key="IUNDERSTAND"
-	            android:disableDependentsState="false"
-	            android:switchTextOn="YES"
-	            android:switchTextOff="NO"
-	            android:summaryOn="Activated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
-	            android:summaryOff="Deactivated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers">
-	    </info.nightscout.android.utils.CustomSwitchPreference>
-	 </PreferenceCategory>
-	<PreferenceCategory android:title="App Version">
-	      <Preference 
-		 android:key="version"
-		 android:title="@string/versionName" />
-   		 </PreferenceCategory>
+    <PreferenceCategory android:title="Sharing">
+        <info.nightscout.android.utils.CustomSwitchPreference
+            android:disableDependentsState="false"
+            android:key="EnableRESTUpload"
+            android:summary="Enable upload of data to Nightscout"
+            android:title="REST API Upload"></info.nightscout.android.utils.CustomSwitchPreference>
+        <EditTextPreference
+            android:defaultValue="https://YOUR.NIGHTSCOUT.SITE"
+            android:dependency="EnableRESTUpload"
+            android:dialogMessage="The hostname of your Nightscout site"
+            android:dialogTitle="Enter Nightscout URL"
+            android:key="@string/preference_nightscout_url"
+            android:title="Nightscout URL"></EditTextPreference>
+        <EditTextPreference
+            android:defaultValue="YOURAPISECRET"
+            android:dependency="EnableRESTUpload"
+            android:dialogMessage="Your Nightscout API secret"
+            android:dialogTitle="Enter your Nightscout API secret"
+            android:key="@string/preference_api_secret"
+            android:title="API Secret"></EditTextPreference>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Disclaimer">
+        <info.nightscout.android.utils.CustomSwitchPreference
+            android:disableDependentsState="false"
+            android:key="IUNDERSTAND"
+            android:summaryOff="Deactivated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
+            android:summaryOn="Activated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
+            android:switchTextOff="NO"
+            android:switchTextOn="YES"
+            android:title="I UNDERSTAND"></info.nightscout.android.utils.CustomSwitchPreference>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="App Version">
+        <Preference
+            android:key="version"
+            android:title="@string/versionName" />
+    </PreferenceCategory>
     <PreferenceCategory android:title="Debug">
-    <ListPreference
-        android:key="logLevel"
-        android:disableDependentsState="false"
-        android:title="Logging Level"
-        android:summary="Select item from array"
-        android:entries="@array/levelList"
-        android:entryValues="@array/calib_types_values"
-        android:defaultValue="1"
-        />
-     </PreferenceCategory>
+        <info.nightscout.android.utils.CustomSwitchPreference
+            android:defaultValue="true"
+            android:key="@string/preferences_enable_crashlytics"
+            android:summary="Send crash errors to developer"
+            android:title="Automatic Crash Reporting" />
+        <info.nightscout.android.utils.CustomSwitchPreference
+            android:defaultValue="true"
+            android:key="@string/preferences_enable_answers"
+            android:summary="Sends usage data to the developer to help develop a better app."
+            android:title="Share usage data" />
+        <ListPreference
+            android:defaultValue="1"
+            android:disableDependentsState="false"
+            android:entries="@array/levelList"
+            android:entryValues="@array/calib_types_values"
+            android:key="logLevel"
+            android:summary="Select item from array"
+            android:title="Logging Level" />
+    </PreferenceCategory>
 </PreferenceScreen>

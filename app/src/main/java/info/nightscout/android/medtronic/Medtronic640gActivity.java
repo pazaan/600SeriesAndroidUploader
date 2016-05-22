@@ -38,6 +38,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 
+import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.answers.Answers;
+
 import info.nightscout.android.R;
 import info.nightscout.android.dexcom.DexcomG4Service;
 import info.nightscout.android.eula.Eula;
@@ -49,6 +52,7 @@ import info.nightscout.android.upload.MedtronicNG.CGMRecord;
 import info.nightscout.android.upload.MedtronicNG.PumpStatusRecord;
 import info.nightscout.android.upload.Record;
 
+import io.fabric.sdk.android.Fabric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,6 +196,13 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                 MedtronicConstants.PREFS_NAME, 0);
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).registerOnSharedPreferenceChangeListener(this);
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+
+        if( prefs.getBoolean( getString(R.string.preferences_enable_crashlytics), true ) ) {
+            Fabric.with(this, new Crashlytics());
+        }
+        if( prefs.getBoolean( getString(R.string.preferences_enable_answers), true ) ) {
+            Fabric.with(this, new Answers());
+        }
 
         keepServiceAlive = Eula.show(this, prefs);
 
