@@ -1196,7 +1196,7 @@ public class MedtronicCGMService extends Service implements
 		}
 
 	};
-	
+
 	private boolean isConnected() {
 		return mSerial.isOpened();
 	}
