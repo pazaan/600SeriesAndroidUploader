@@ -1,13 +1,43 @@
+buildscript {
+    repositories {
+        maven { url 'https://maven.fabric.io/public' }
+    }
+
+    dependencies {
+        classpath 'io.fabric.tools:gradle:1.+'
+    }
+}
+plugins {
+    id 'net.researchgate.release' version '2.3.4'
+}
+
 apply plugin: 'com.android.application'
+apply plugin: 'io.fabric'
+
+repositories {
+    maven { url 'https://maven.fabric.io/public' }
+}
+
+
+def gitVersion() {
+    def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
+    return process.toInteger() + 1
+}
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "23.0.1"
+    buildToolsVersion "23.0.3"
+
+    applicationVariants.all { variant ->
+        variant.resValue "string", "versionName", variant.versionName
+    }
 
     defaultConfig {
         applicationId "info.nightscout.android"
         minSdkVersion 15
         targetSdkVersion 21
+        versionName project.properties['version']
+        versionCode gitVersion()
     }
 
     buildTypes {
@@ -16,6 +46,68 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+
+    // FIXME - we really shouldn't be doing this.
+    // See https://github.com/pazaan/640gAndroidUploader/issues/43
+    lintOptions {
+        abortOnError false
+    }
+}
+
+task signRelease << {
+    def command = [
+            'jarsigner',
+            '-verbose',
+            '-sigalg',
+            'SHA1withRSA',
+            '-digestalg',
+            'SHA1',
+            '-keystore',
+            '/Users/lgoedhart/keystores/nightscout_android.jks',
+            'app/build/outputs/apk/app-release-unsigned.apk',
+            'nightscoutandroidkey'
+    ]
+
+    def proc = new ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            .redirectInput(ProcessBuilder.Redirect.INHERIT)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+
+    proc.waitFor()
+
+    if (0 != proc.exitValue()) {
+        throw new RuntimeException("Could not sign APK.")
+    }
+}
+
+task zipalignRelease << {
+    def command = [
+            '/Users/lgoedhart/Library/Android/sdk/build-tools/23.0.3/zipalign',
+            '-v',
+            '4',
+            'app/build/outputs/apk/app-release-unsigned.apk',
+            'app/build/outputs/apk/640g-android-uploader.apk'
+    ]
+
+    def proc = new ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+            .redirectInput(ProcessBuilder.Redirect.INHERIT)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+
+    proc.waitFor()
+
+    if (0 != proc.exitValue()) {
+        throw new RuntimeException("Could not align APK.")
+    }
+}
+
+release {
+    tagTemplate = 'v${version}'
+    buildTasks = ['assembleRelease']
+    beforeReleaseBuild.dependsOn 'clean'
+    afterReleaseBuild.dependsOn 'signRelease', 'zipalignRelease'
 }
 
 dependencies {
@@ -25,4 +117,7 @@ dependencies {
     compile files('libs/mongo-java-driver-3.0.2.jar')
     compile files('libs/physicaloidlibrary.jar')
     compile files('libs/slf4j-api-1.7.2.jar')
+    compile('com.crashlytics.sdk.android:crashlytics:2.5.5@aar') {
+        transitive = true;
+    }
 }

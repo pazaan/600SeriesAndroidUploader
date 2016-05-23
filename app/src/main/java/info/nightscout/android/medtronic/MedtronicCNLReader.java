@@ -321,12 +321,12 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         // Read the data into the record
         long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
         Medtronic640gActivity.pumpStatusRecord.activeInsulin = new BigDecimal( rawActiveInsulin / 10000f ).setScale(3, BigDecimal.ROUND_HALF_UP);
-        pumpRecord.sensorBGL = statusBuffer.getShort(0x35) & 0x0000ffff; // In mg/DL. 0 means no CGM reading
+        pumpRecord.sgv = statusBuffer.getShort(0x35) & 0x0000ffff; // In mg/DL. 0 means no CGM reading
         long rtc;
         long offset;
-        if( ( pumpRecord.sensorBGL & 0x200 ) == 0x200 ) {
+        if( ( pumpRecord.sgv & 0x200 ) == 0x200 ) {
             // Sensor error. Let's reset. FIXME - solve this more elegantly later
-            pumpRecord.sensorBGL = 0;
+            pumpRecord.sgv = 0;
             rtc = 0;
             offset = 0;
             pumpRecord.setTrend(CGMRecord.TREND.NOT_SET);
@@ -335,7 +335,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
             offset = statusBuffer.getInt(0x3b);
             pumpRecord.setTrend(CGMRecord.fromMessageByte( statusBuffer.get(0x40)));
         }
-        pumpRecord.sensorBGLDate = MessageUtils.decodeDateTime(rtc, offset);
+        pumpRecord.sgvDate = MessageUtils.decodeDateTime(rtc, offset);
         Medtronic640gActivity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
         Medtronic640gActivity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
         long rawReservoirAmount = statusBuffer.getInt(0x2b) &  0xffffffff;

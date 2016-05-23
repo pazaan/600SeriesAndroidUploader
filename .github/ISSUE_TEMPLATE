@@ -1,0 +1,28 @@
+<!--- Provide a general summary of the issue in the Title above -->
+
+#### Your Environment
+<!--- Include as many relevant details about the environment you experienced the bug in -->
+* Uploader Version Number:
+* Your Android Phone Model Name (e.g. Samsung J1 Ace):
+* Android Version Number (e.g. use 4.4 for 4.4.4):
+* Network Connection at the time the issue occurred (Wi-Fi, Mobile):
+* (if relevant) Nightscout website version (e.g. 0.8.4 Funnel cake, master / dev branch):
+
+#### Brief Explanation of Issue
+<!-- e.g. triggered when moved out of range, switched network -->
+
+#### Uploader Error Code
+<!--- if any -->
+
+#### Steps to Reproduce (for bugs)
+<!--- Provide a link to a live example, or an unambiguous set of steps to -->
+<!--- reproduce this bug. -->
+1.
+2.
+3.
+4.
+
+#### Severity Score
+<!-- Your take on how serious the issue was from 1 to 5 -->
+<!-- 1 = Mild (no impact on care) -->
+<!-- 5 = Severe (potential impact on care) -->

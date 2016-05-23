@@ -3,3 +3,4 @@ app/build
 build/generated
 build
 workspace.xml
+fabric.properties

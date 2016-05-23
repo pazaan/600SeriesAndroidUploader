@@ -13,7 +13,6 @@
     <string name="eula_title">Disclaimer</string>
     <string name="eula_accept">Accept</string>
     <string name="eula_refuse">Refuse</string>
-    <string name="version">0.1.0</string>
     <style name="ButtonText">
     <item name="android:layout_width">fill_parent</item>
     <item name="android:layout_height">wrap_content</item>
@@ -113,4 +112,11 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="preference_nightscout_url">Nightscout URL</string>
+    <string name="preference_api_secret">API SECRET</string>
+    <string name="prompt_carelink_username_password">Please enter your CareLink details.\nThey will not be stored.</string>
+    <string name="close">Close</string>
+    <string name="register_contour_next_link">Register Contour Next Link</string>
+    <string name="preferences_enable_crashlytics">prefs_enable_crashlytics</string>
+    <string name="preferences_enable_answers">prefs_enable_answers</string>
 </resources>

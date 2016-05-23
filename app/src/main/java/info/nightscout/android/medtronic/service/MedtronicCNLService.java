@@ -52,18 +52,13 @@ public class MedtronicCNLService extends AbstractService {
     private Context mContext;
     private NotificationManager nm;
     private final static long FIVE_MINS_MS = 300000L;
-    private UploadHelper mUploader;
-    private WifiManager mWifiManager;
     private UsbManager mUsbManager;
-    private SharedPreferences prefs;
 
     @Override
     public void onStartService() {
         Log.i(TAG, "onStartService called");
         mContext = this.getBaseContext();
-        mWifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
         mUsbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
-        prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
         // Add a small start delay - for some reason, having no start delay causes initial
         // binding/rendering issues
@@ -100,7 +95,7 @@ public class MedtronicCNLService extends AbstractService {
     }
 
     protected void doReadAndUpload() {
-        mUploader = new UploadHelper(getBaseContext());
+        UploadHelper mUploader = new UploadHelper(getBaseContext());
         mHidDevice = UsbHidDriver.acquire(mUsbManager, USB_VID, USB_PID);
 
         // Load the initial data to the display
@@ -128,8 +123,6 @@ public class MedtronicCNLService extends AbstractService {
             // Go get the data
             MedtronicCNLReader cnlReader = new MedtronicCNLReader(mHidDevice);
 
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-
             try {
                 send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_STATUS, "Connecting to the Contour Next Link..."));
                 cnlReader.requestDeviceInfo();
@@ -144,7 +137,7 @@ public class MedtronicCNLService extends AbstractService {
                 Medtronic640gActivity.pumpStatusRecord.setDeviceName( deviceName );
 
                 if( hmac.equals( "" ) || key.equals("") ) {
-                    send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Before you can use the Contour Next Link, you need to register it with the app. Select 'Register USB Stick' from the menu."));
+                    send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, String.format( "Before you can use the Contour Next Link, you need to register it with the app. Select '%s' from the menu.", getString(R.string.register_contour_next_link))));
                     return;
                 }
 
@@ -180,7 +173,7 @@ public class MedtronicCNLService extends AbstractService {
                     cnlReader.endControlMode();
                 }
             } catch (IOException e) {
-                Log.e(TAG, "Error getting BGLs", e);
+                Log.e(TAG, "Error getting SGVs", e);
                 send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Error connecting to Contour Next Link."));
             } catch (ChecksumException e) {
                 Log.e(TAG, "Checksum error", e);
@@ -197,42 +190,7 @@ public class MedtronicCNLService extends AbstractService {
             }
 
             mUploader.execute(pumpRecord);
-
-            if (prefs.getBoolean("EnableWifiHack", false)) {
-                doWifiHack();
-            }
         }
-    }
-
-    private void doWifiHack() {
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            //Interesting case: location with lousy wifi
-            //toggle it off to use cellular
-            //toggle back on for next try
-            public void run() {
-                Status dataUp = mUploader.getStatus();
-                if (dataUp == Status.RUNNING) {
-                    mUploader.cancel(true);
-
-                    if (mWifiManager.isWifiEnabled()) {
-                        mWifiManager.setWifiEnabled(false);
-                        try {
-                            Thread.sleep(2500);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, "Sleep after setWifiEnabled(false) interrupted", e);
-                        }
-                        mWifiManager.setWifiEnabled(true);
-                        try {
-                            Thread.sleep(2500);
-                        } catch (InterruptedException e) {
-                            Log.e(TAG, "Sleep after setWifiEnabled(true) interrupted", e);
-                        }
-                    }
-                }
-            }
-        }, 22500);
     }
 
     private boolean isOnline() {

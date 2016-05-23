@@ -18,6 +18,8 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+
+import info.nightscout.android.R;
 import info.nightscout.android.medtronic.Medtronic640gActivity;
 import info.nightscout.android.dexcom.EGVRecord;
 import info.nightscout.android.medtronic.MedtronicConstants;
@@ -57,13 +59,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import ch.qos.logback.classic.Logger;
 
 import static com.mongodb.client.model.Filters.eq;
 
 public class UploadHelper extends AsyncTask<Record, Integer, Long> {
-	
+
 	private Logger log = (Logger) LoggerFactory.getLogger(MedtronicReader.class.getName());
     private static final String TAG = "DexcomUploadHelper";
     private SharedPreferences settings = null;// common application preferences
@@ -397,29 +401,41 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     }
 
     private void doRESTUpload(SharedPreferences prefs, Record... records) {
-        String baseURLSettings = prefs.getString("API Base URL", "");
-        ArrayList<String> baseURIs = new ArrayList<String>();
+        String apiScheme = "https://";
+		String apiUrl = "";
+		String apiSecret = prefs.getString(context.getString(R.string.preference_api_secret), "YOURAPISECRET");
 
-        try {
-            for (String baseURLSetting : baseURLSettings.split(" ")) {
-                String baseURL = baseURLSetting.trim();
-                if (baseURL.isEmpty()) continue;
-                baseURIs.add(baseURL + (baseURL.endsWith("/") ? "" : "/"));
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Unable to process API Base URL setting: " + baseURLSettings, e);
-            log.error("Unable to process API Base URL setting: " + baseURLSettings, e);
-            return;
-        }
+		// Add the extra match for "KEY@" to support the previous single field
+		Pattern p = Pattern.compile("(.*\\/\\/)?(.*@)?([^\\/]*)(.*)");
+		Matcher m = p.matcher(prefs.getString(context.getString(R.string.preference_nightscout_url), ""));
 
-        for (String baseURI : baseURIs) {
-            try {
-                doRESTUploadTo(baseURI, records);
-            } catch (Exception e) {
-                Log.e(TAG, "Unable to do REST API Upload to: " + baseURI, e);
-                log.error("Unable to do REST API Upload to: " + baseURI, e);
-            }
-        }
+		if( m.find() ) {
+			apiUrl = m.group(3);
+
+			// Only override apiSecret from URL (the "old" way), if the API secret preference is empty
+			if( apiSecret.equals("YOURAPISECRET") || apiSecret.equals("") ) {
+				apiSecret = ( m.group(2) == null ) ? "" : m.group(2).replace("@", "");
+			}
+
+			// Override the URI scheme if it's been provided in the preference)
+			if( m.group(1) != null && !m.group(1).equals("") ) {
+				apiScheme = m.group(1);
+			}
+		}
+
+		// Update the preferences to match what we expect. Only really used from converting from the
+		// old format to the new format. Aren't we nice for managing backward compatibility?
+		prefs.edit().putString(context.getString(R.string.preference_api_secret), apiSecret ).apply();
+		prefs.edit().putString(context.getString(R.string.preference_nightscout_url), String.format("%s%s", apiScheme, apiUrl ) ).apply();
+
+		String uploadUrl = String.format("%s%s@%s/api/v1/", apiScheme, apiSecret, apiUrl );
+
+		try {
+			doRESTUploadTo(uploadUrl, records);
+		} catch (Exception e) {
+			Log.e(TAG, "Unable to do REST API Upload to: " + uploadUrl, e);
+			log.error("Unable to do REST API Upload to: " + uploadUrl, e);
+		}
     }
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private void doRESTUploadTo(String baseURI, Record[] records) {
@@ -703,7 +719,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     
     private void populateV1APIEntry(JSONObject json, Record oRecord) throws Exception {
 		if (oRecord instanceof CGMRecord) {
-			json.put("date", ((CGMRecord) oRecord).sensorBGLDate.getTime());
+			json.put("date", ((CGMRecord) oRecord).sgvDate.getTime());
 			json.put("dateString",  oRecord.displayTime);
 		} else {
 			Date date = DATE_FORMAT.parse(oRecord.displayTime);
@@ -717,7 +733,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 			json.put("mbg", ((GlucometerRecord) oRecord).numGlucometerValue);
 		}else if (oRecord instanceof CGMRecord){
 				CGMRecord pumpRecord = (CGMRecord) oRecord;
-				json.put("sgv", pumpRecord.sensorBGL);
+				json.put("sgv", pumpRecord.sgv);
 				json.put("direction", pumpRecord.direction);
 				json.put("device", pumpRecord.getDeviceName());
 				json.put("type", "sgv");
