@@ -1,4 +1,4 @@
-[![Stories in Ready](https://badge.waffle.io/pazaan/640gAndroidUploader.svg?label=ready&title=Ready)](http://waffle.io/pazaan/640gAndroidUploader)
+[![Stories in Progress](https://badge.waffle.io/pazaan/640gAndroidUploader.svg?label=in%20progress&title=In%20Progress)](http://waffle.io/pazaan/640gAndroidUploader)
 
 ## 640gAndroidUploader
 
