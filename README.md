@@ -1,3 +1,5 @@
+[![Stories in Ready](https://badge.waffle.io/pazaan/640gAndroidUploader.svg?label=ready&title=Ready)](http://waffle.io/pazaan/640gAndroidUploader)
+
 ## 640gAndroidUploader
 
 This is an Android app to upload data from a MiniMed 640G insulin pump to a Nightscout website via a Contour Next Link 2.4 blood glucose meter
