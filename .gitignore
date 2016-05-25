@@ -4,3 +4,5 @@ build/generated
 build
 workspace.xml
 fabric.properties
+local.properties
+.idea
