@@ -1,21 +1,17 @@
 package info.nightscout.android.medtronic.service;
 
 import android.annotation.SuppressLint;
-import android.app.Notification;
-import android.app.NotificationManager;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
-import android.os.AsyncTask.Status;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import info.nightscout.android.R;
@@ -50,9 +46,16 @@ public class MedtronicCNLService extends AbstractService {
     private Timer mTimer = new Timer();
     private static final String TAG = MedtronicCNLService.class.getSimpleName();
     private Context mContext;
-    private NotificationManager nm;
+    private NotificationManagerCompat nm;
     private final static long FIVE_MINS_MS = 300000L;
     private UsbManager mUsbManager;
+    private Handler handler;
+
+    @Override
+    public void onCreate() {
+        this.handler = new Handler();
+        super.onCreate();
+    }
 
     @Override
     public void onStartService() {
@@ -64,7 +67,11 @@ public class MedtronicCNLService extends AbstractService {
         // binding/rendering issues
         mTimer.scheduleAtFixedRate(new TimerTask() {
             public void run() {
-                doReadAndUpload();
+                handler.post(new Runnable() {
+                    public void run() {
+                        doReadAndUpload();
+                    }
+                });
             }
         }, 250, FIVE_MINS_MS);
     }
@@ -129,20 +136,20 @@ public class MedtronicCNLService extends AbstractService {
 
                 // Is the device already configured?
                 CNLConfigDbHelper configDbHelper = new CNLConfigDbHelper(mContext);
-                configDbHelper.insertStickSerial( cnlReader.getStickSerial() );
-                String hmac = configDbHelper.getHmac( cnlReader.getStickSerial() );
-                String key = configDbHelper.getKey( cnlReader.getStickSerial() );
-                String deviceName = String.format( "medtronic-640g://%s", cnlReader.getStickSerial() );
-                pumpRecord.setDeviceName( deviceName );
-                Medtronic640gActivity.pumpStatusRecord.setDeviceName( deviceName );
+                configDbHelper.insertStickSerial(cnlReader.getStickSerial());
+                String hmac = configDbHelper.getHmac(cnlReader.getStickSerial());
+                String key = configDbHelper.getKey(cnlReader.getStickSerial());
+                String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
+                pumpRecord.setDeviceName(deviceName);
+                Medtronic640gActivity.pumpStatusRecord.setDeviceName(deviceName);
 
-                if( hmac.equals( "" ) || key.equals("") ) {
-                    send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, String.format( "Before you can use the Contour Next Link, you need to register it with the app. Select '%s' from the menu.", getString(R.string.register_contour_next_link))));
+                if (hmac.equals("") || key.equals("")) {
+                    send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, String.format("Before you can use the Contour Next Link, you need to register it with the app. Select '%s' from the menu.", getString(R.string.register_contour_next_link))));
                     return;
                 }
 
-                cnlReader.getPumpSession().setHMAC( MessageUtils.hexStringToByteArray( hmac ) );
-                cnlReader.getPumpSession().setKey( MessageUtils.hexStringToByteArray( key ) );
+                cnlReader.getPumpSession().setHMAC(MessageUtils.hexStringToByteArray(hmac));
+                cnlReader.getPumpSession().setKey(MessageUtils.hexStringToByteArray(key));
 
                 cnlReader.enterControlMode();
                 try {
@@ -200,24 +207,22 @@ public class MedtronicCNLService extends AbstractService {
     }
 
     private void showNotification(String title, String message) {
-        nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        NotificationManagerCompat nm = NotificationManagerCompat.from(mContext);
 
         // The PendingIntent to launch our activity if the user selects this notification
-        nm = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, Medtronic640gActivity.class), 0);
-        Notification n = new Notification.Builder(mContext)
-                .setDefaults(Notification.DEFAULT_ALL)
+        nm.notify(R.string.app_name, new NotificationCompat.Builder(mContext)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setContentTitle(title)
-                .setStyle(new Notification.BigTextStyle()
+                .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(message))
                 .setContentText(message)
                 .setTicker(message)
-                        //.setSmallIcon(R.drawable.ic_action_warning)
+                //.setSmallIcon(R.drawable.ic_action_warning)
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher))
                 .setContentIntent(contentIntent)
-                .getNotification();
-        nm.notify(R.string.app_name, n);
+                .build());
     }
 
     private void writeData(CGMRecord mostRecentData) {
