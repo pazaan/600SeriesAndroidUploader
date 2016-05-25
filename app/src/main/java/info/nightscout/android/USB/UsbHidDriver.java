@@ -8,7 +8,6 @@ import android.hardware.usb.UsbManager;
 import android.util.Log;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 //import com.hoho.android.usbserial.driver.UsbId;
 
@@ -17,8 +16,8 @@ import java.util.Iterator;
  *
  * @author mike wakerly (opensource@hoho.com), Lennart Goedhart (lennart@omnibase.com.au)
  * @see <a
- *      href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
- *      Serial Bus Class Definitions for Communication Devices, v1.1</a>
+ * href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
+ * Serial Bus Class Definitions for Communication Devices, v1.1</a>
  */
 public class UsbHidDriver extends CommonUsbDriver {
 
@@ -35,17 +34,14 @@ public class UsbHidDriver extends CommonUsbDriver {
         super(device, connection);
     }
 
-    public static UsbHidDriver acquire( UsbManager usbManager, int vendorId, int productId ) {
-        Iterator<UsbDevice> deviceIterator = usbManager.getDeviceList().values().iterator();
+    public static UsbHidDriver acquire(UsbManager usbManager, int vendorId, int productId) {
 
         // Iterate all the available devices and find ours.
-        while( deviceIterator.hasNext() ){
-            UsbDevice device = deviceIterator.next();
+        for (UsbDevice device : usbManager.getDeviceList().values()) {
             if (device.getProductId() == productId && device.getVendorId() == vendorId) {
-                final UsbDevice mDevice = device;
-                final UsbDeviceConnection mConnection = usbManager.openDevice( mDevice );
+                final UsbDeviceConnection mConnection = usbManager.openDevice(device);
 
-                return new UsbHidDriver( mDevice, mConnection );
+                return new UsbHidDriver(device, mConnection);
             }
         }
 
@@ -54,14 +50,11 @@ public class UsbHidDriver extends CommonUsbDriver {
 
     @Override
     public void open() throws IOException {
-        Log.d(TAG, "claiming interfaces, count=" + mDevice.getInterfaceCount());
-        int count = mDevice.getInterfaceCount();
         Log.d(TAG, "Claiming HID interface.");
         mInterface = mDevice.getInterface(0);
-        Log.d(TAG, "data iface=" + mInterface);
 
         if (!mConnection.claimInterface(mInterface, true)) {
-        	isConnectionOpen = false;
+            isConnectionOpen = false;
             throw new IOException("Could not claim data interface.");
         }
 
@@ -75,7 +68,9 @@ public class UsbHidDriver extends CommonUsbDriver {
 
     @Override
     public void close() {
-        mConnection.close();
+        if (mConnection != null) {
+            mConnection.close();
+        }
         isConnectionOpen = false;
     }
 
@@ -136,8 +131,8 @@ public class UsbHidDriver extends CommonUsbDriver {
         return offset;
     }
 
-    @Override 
-    public boolean isConnectionOpen(){
-    	return isConnectionOpen;
+    @Override
+    public boolean isConnectionOpen() {
+        return isConnectionOpen;
     }
 }
