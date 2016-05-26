@@ -115,13 +115,13 @@ public class MedtronicCNLService extends AbstractService {
         CGMRecord cgmRecord = loadData();
         PumpStatusRecord pumpRecord = Medtronic640gActivity.pumpStatusRecord;
 
-        send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_DATA, cgmRecord));
+        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_DATA, cgmRecord));
 
         if (mHidDevice == null) {
             String title = "USB connection error";
             String msg = "Is the Bayer Contour NextLink plugged in?";
             //showNotification(title, msg);
-            send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, title + "\n" + msg));
+            send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, title + "\n" + msg));
         } else {
             try {
                 mHidDevice.open();
@@ -134,7 +134,7 @@ public class MedtronicCNLService extends AbstractService {
             MedtronicCNLReader cnlReader = new MedtronicCNLReader(mHidDevice);
 
             try {
-                send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_STATUS, "Connecting to the Contour Next Link..."));
+                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_STATUS, "Connecting to the Contour Next Link..."));
                 cnlReader.requestDeviceInfo();
 
                 // Is the device already configured?
@@ -147,7 +147,7 @@ public class MedtronicCNLService extends AbstractService {
                 Medtronic640gActivity.pumpStatusRecord.setDeviceName(deviceName);
 
                 if (hmac.equals("") || key.equals("")) {
-                    send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, String.format("Before you can use the Contour Next Link, you need to register it with the app. Select '%s' from the menu.", getString(R.string.register_contour_next_link))));
+                    send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, String.format("Before you can use the Contour Next Link, you need to register it with the app. Select '%s' from the menu.", getString(R.string.register_contour_next_link))));
                     return;
                 }
 
@@ -161,10 +161,10 @@ public class MedtronicCNLService extends AbstractService {
                     cnlReader.requestReadInfo();
                     byte radioChannel = cnlReader.negotiateChannel();
                     if (radioChannel == 0) {
-                        send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Could not communicate with the 640g. Are you near the pump?"));
+                        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Could not communicate with the 640g. Are you near the pump?"));
                         Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
                     } else {
-                        send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_STATUS, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel)));
+                        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_STATUS, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel)));
                         Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                         cnlReader.beginEHSMSession();
 
@@ -174,32 +174,32 @@ public class MedtronicCNLService extends AbstractService {
                         long pumpToUploaderTimeOffset = (new java.util.Date()).getTime() - Medtronic640gActivity.pumpStatusRecord.pumpDate.getTime();
 
                         writeData(cgmRecord);
-                        send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_DATA, cgmRecord));
+                        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_DATA, cgmRecord));
                         cnlReader.endEHSMSession();
                     }
                     cnlReader.closeConnection();
                 } catch (UnexpectedMessageException e) {
                     Log.e(TAG, "Unexpected Message", e);
-                    send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Communication Error: " + e.getMessage()));
+                    send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Communication Error: " + e.getMessage()));
                 } finally {
                     cnlReader.endPassthroughMode();
                     cnlReader.endControlMode();
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Error getting SGVs", e);
-                send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Error connecting to Contour Next Link."));
+                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Error connecting to Contour Next Link."));
             } catch (ChecksumException e) {
                 Log.e(TAG, "Checksum error", e);
-                send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Checksum error getting message from the Contour Next Link."));
+                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Checksum error getting message from the Contour Next Link."));
             } catch (EncryptionException e) {
                 Log.e(TAG, "Encryption exception", e);
-                send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Error decrypting messages from Contour Next Link."));
+                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Error decrypting messages from Contour Next Link."));
             } catch (TimeoutException e) {
                 Log.e(TAG, "Timeout communicating with Contour", e);
-                send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Timeout communicating with the Contour Next Link."));
+                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Timeout communicating with the Contour Next Link."));
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
-                send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, "Could not close connection: " + e.getMessage()));
+                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Could not close connection: " + e.getMessage()));
             }
 
             // TODO - add retries.
@@ -207,7 +207,7 @@ public class MedtronicCNLService extends AbstractService {
                 String title = "Cannot upload data";
                 String msg = "Please check that you're connected to the Internet";
                 //showNotification(title, msg);
-                send(Message.obtain(null, Medtronic640gActivity.DexcomG4ActivityHandler.MSG_ERROR, title + "\n" + msg));
+                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, title + "\n" + msg));
             } else {
                 mUploader.execute(cgmRecord);
             }

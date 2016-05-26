@@ -2,7 +2,6 @@ package info.nightscout.android.medtronic;
 
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -16,10 +15,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.text.Html;
@@ -33,7 +29,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
@@ -41,8 +36,12 @@ import android.widget.TextView.BufferType;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.text.DecimalFormat;
+
 import info.nightscout.android.R;
-import info.nightscout.android.dexcom.DexcomG4Service;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import info.nightscout.android.medtronic.service.MedtronicCNLService;
@@ -50,136 +49,33 @@ import info.nightscout.android.service.ServiceManager;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.upload.MedtronicNG.CGMRecord;
 import info.nightscout.android.upload.MedtronicNG.PumpStatusRecord;
-import info.nightscout.android.upload.Record;
-
 import io.fabric.sdk.android.Fabric;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
-import java.text.DecimalFormat;
 
 /* Main activity for the Medtronic640gActivity program */
 public class Medtronic640gActivity extends Activity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
-    private Logger log = (Logger) LoggerFactory.getLogger(Medtronic640gActivity.class.getName());
     //CGMs supported
-    public static final int DEXCOMG4 = 0;
-    public static final int MEDTRONIC_CGM = 1;
     public static final int CNL_24 = 2;
-
     private static final String TAG = Medtronic640gActivity.class.getSimpleName();
-    private int cgmSelected = CNL_24;
-    private int calibrationSelected = MedtronicConstants.CALIBRATION_GLUCOMETER;
-
-    private Handler mHandler = new DexcomG4ActivityHandler();
-
-    private int maxRetries = 20;
-    private int retryCount = 0;
-    EditText input;
-
-    private TextView mTitleTextView;
-    private TextView mDumpTextView;
-    private Button b1;
-    private Button b4;
-    private TextView display;
-    private Menu menu = null;
-    private Intent service = null;
-    private ServiceManager cgmService; // > service
-    private int msgsDisplayed = 0;
+    private static final boolean ISDEBUG = true;
     public static int batLevel = 0;
     public static PumpStatusRecord pumpStatusRecord = new PumpStatusRecord();
     BatteryReceiver mArrow;
-    IBinder bService = null;
     Intent batteryReceiver;
-    Messenger mService = null;
-    boolean mIsBound;
     boolean keepServiceAlive = true;
     Boolean mHandlerActive = false;
-    Object mHandlerActiveLock = new Object();
-    Boolean usbAllowedPermission = false;
+    final Object mHandlerActiveLock = new Object();
     ActivityManager manager = null;
-    final Context ctx = this;
     SharedPreferences settings = null;
     SharedPreferences prefs = null;
-    private static final boolean ISDEBUG = true;
-
-    public class DexcomG4ActivityHandler extends Handler {
-        public static final int MSG_ERROR = 1;
-        public static final int MSG_STATUS = 2;
-        public static final int MSG_DATA = 3;
-
-        @Override
-        public void handleMessage(Message msg) {
-            Log.d( TAG, "Got message from Service." );
-            switch ( cgmSelected ) {
-                case CNL_24:
-                    switch (msg.what) {
-                        case MSG_ERROR:
-                            display.setText(msg.obj.toString(), BufferType.EDITABLE);
-                            break;
-                        case MSG_STATUS:
-                            display.setText(msg.obj.toString(), BufferType.EDITABLE);
-                            break;
-                        case MSG_DATA:
-                            CGMRecord record = (CGMRecord) msg.obj;
-
-                            DecimalFormat df = null;
-                            if (prefs.getBoolean("mmolDecimals", false))
-                                df = new DecimalFormat("#.00");
-                            else
-                                df = new DecimalFormat("#.0");
-                            String sgvString = "---";
-                            String unitsString = "mg/dL";
-                            if (prefs.getBoolean("mmolxl", false)) {
-                                try {
-                                    float fBgValue = Float.valueOf(record.sgv);
-                                    sgvString = df.format(fBgValue / 18.016f);
-                                    unitsString = "mmol/L";
-                                    log.info("mmolxl true --> " + sgvString);
-                                } catch (Exception e) {
-
-                                }
-                            } else {
-                                sgvString = String.valueOf(record.sgv);
-                                log.info("mmolxl false --> " + sgvString);
-                            }
-
-                            //mTitleTextView.setTextColor(Color.YELLOW);
-                            mTitleTextView.setText(Html.fromHtml(
-                                    String.format( "<big><b>%s</b></big> <small>%s %s</small>",
-                                            sgvString, unitsString, renderTrendHtml(record.getTrend()))));
-
-                            mDumpTextView.setTextColor(Color.WHITE);
-                            mDumpTextView.setText(Html.fromHtml(
-                                String.format( "<b>SG at:</b> %s<br/><b>Pump Time:</b> %s<br/><b>Active Insulin: </b>%.3f<br/><b>Rate of Change: </b>%s",
-                                    DateUtils.formatDateTime(getBaseContext(),record.sgvDate.getTime(),DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
-                                    DateUtils.formatDateTime(getBaseContext(),pumpStatusRecord.pumpDate.getTime(),DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
-                                    pumpStatusRecord.activeInsulin,
-                                    record.direction
-                                )
-                            ));
-
-                            break;
-                    }
-                default:
-                    super.handleMessage(msg);
-            }
-        }
-    }
-
-    private class BatteryReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context arg0, Intent arg1) {
-            if (arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_LOW)
-                    || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)
-                    || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_OKAY)) {
-                Log.i("BatteryReceived", "BatteryReceived");
-                batLevel = arg1.getIntExtra("level", 0);
-            }
-        }
-    }
+    private Logger log = (Logger) LoggerFactory.getLogger(Medtronic640gActivity.class.getName());
+    private int cgmSelected = CNL_24;
+    private Handler mHandler = new Medtronic640gActivityHandler();
+    private TextView mTitleTextView;
+    private TextView mDumpTextView;
+    private Button b1;
+    private TextView display;
+    private Intent service = null;
+    private ServiceManager cgmService; // > service
 
     //Look for and launch the service, display status to user
     @Override
@@ -197,10 +93,10 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).registerOnSharedPreferenceChangeListener(this);
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
-        if( prefs.getBoolean( getString(R.string.preferences_enable_crashlytics), true ) ) {
+        if (prefs.getBoolean(getString(R.string.preferences_enable_crashlytics), true)) {
             Fabric.with(this, new Crashlytics());
         }
-        if( prefs.getBoolean( getString(R.string.preferences_enable_answers), true ) ) {
+        if (prefs.getBoolean(getString(R.string.preferences_enable_answers), true)) {
             Fabric.with(this, new Answers());
         }
 
@@ -226,10 +122,6 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
         if (!prefs.getBoolean("IUNDERSTAND", false)) {
             stopCGMServices();
         } else {
-            if (isMyServiceRunning() && cgmSelected == MEDTRONIC_CGM) {
-                doBindService();
-            }
-            //mHandler.post(updateDataView);
             mHandlerActive = true;
         }
 
@@ -240,7 +132,7 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
         Button b2 = new Button(this);
         b2.setText("Clear Log");
         b2.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, 1.0f));
-        b4 = new Button(this);
+        Button b4 = new Button(this);
         b4.setText("Get Now");
         b4.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, 1.0f));
         lnr3.addView(b4);
@@ -267,7 +159,6 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
             public void onClick(View v) {
                 display.setText("", BufferType.EDITABLE);
                 display.setKeyListener(null);
-                msgsDisplayed = 0;
             }
         });
 
@@ -275,7 +166,7 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
             @Override
             public void onClick(View v) {
                 display.setKeyListener(null);
-                if( cgmService != null ) {
+                if (cgmService != null) {
                     if (!cgmService.isRunning()) {
                         cgmService.start();
                     } else {
@@ -296,26 +187,10 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                         keepServiceAlive = false;
                         stopCGMServices();
                         b1.setText("Start Uploading CGM Data");
-                        //mTitleTextView.setTextColor(Color.RED);
-                        //mTitleTextView.setText("CGM Service Stopped");
                         finish();
                     } else {
-                        mHandlerActive = false;
-                        //mHandler.removeCallbacks(updateDataView);
-                        //mHandler.post(updateDataView);
-                        if (!usbAllowedPermission)
-                            if (mService == null && bService != null) {
-                                mService = new Messenger(bService);
-                            }
-                        if (mService != null) {
-                            try {
-                                Message msg = Message.obtain(null, MedtronicConstants.MSG_MEDTRONIC_CGM_REQUEST_PERMISSION, 0, 0);
-                                //msg.replyTo = mMessenger;
-                                mService.send(msg);
-                            } catch (RemoteException e) {
-                                mService = null;
-                            }
-                        }
+                        startCGMServices();
+
                         mHandlerActive = true;
                         b1.setText("Stop Uploading CGM Data");
                     }
@@ -329,8 +204,8 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         startCGMServices();
-        if( cgmService != null ) {
-            Log.d( TAG, "onPostCreate: Starting the service");
+        if (cgmService != null) {
+            Log.d(TAG, "onPostCreate: Starting the service");
             cgmService.start();
         }
     }
@@ -348,52 +223,21 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
         super.onResume();
     }
 
-    //Check to see if service is running
-    private boolean isMyServiceRunning() {
-
-        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (isServiceAlive(service.service.getClassName()))
-                return true;
-        }
-        return false;
-    }
-
-    //Deserialize the EGVRecord (most recent) value
-    public Record loadClassFile(File f) {
-        ObjectInputStream ois = null;
-        try {
-            ois = new ObjectInputStream(new FileInputStream(f));
-            Object o = ois.readObject();
-            ois.close();
-            return (Record) o;
-        } catch (Exception ex) {
-            Log.w(TAG, " unable to loadEGVRecord");
-            try {
-                if (ois != null)
-                    ois.close();
-            } catch (Exception e) {
-                Log.e(TAG, " Error closing ObjectInputStream");
-            }
-        }
-        return new Record();
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        this.menu = menu;
         inflater.inflate(R.menu.menu, menu);
 
         return true;
     }
 
-    private boolean checkOnline( String title, String message ) {
+    private boolean checkOnline(String title, String message) {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
 
-        boolean isOnline = ( netInfo != null && netInfo.isConnectedOrConnecting() );
+        boolean isOnline = (netInfo != null && netInfo.isConnectedOrConnecting());
 
-        if( !isOnline ) {
+        if (!isOnline) {
             new AlertDialog.Builder(this)
                     .setTitle(title)
                     .setMessage(message)
@@ -420,7 +264,7 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                 startActivity(settingsIntent);
                 break;
             case R.id.registerCNL:
-                if( checkOnline( "Please connect to the Internet", "You must be online to register your USB stick.") ) {
+                if (checkOnline("Please connect to the Internet", "You must be online to register your USB stick.")) {
                     Intent loginIntent = new Intent(this, GetHmacAndKeyActivity.class);
                     startActivity(loginIntent);
                 }
@@ -434,49 +278,20 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
     private void startCGMServices() {
         Log.d("DexcomActivity", "Starting service for CGM: " + cgmSelected);
         switch (cgmSelected) {
-            case MEDTRONIC_CGM:
-                if (service != null || isMyServiceRunning())
-                    stopCGMServices();
-                doBindService();
-                return;
-            case CNL_24:
-                Log.d("DexcomActivity", "Starting Medtronic CNL service");
-                cgmService = new ServiceManager(this, MedtronicCNLService.class, mHandler );
-                //cgmService.start();
-                break;
             default:
-                startService(new Intent(Medtronic640gActivity.this, DexcomG4Service.class));
+                Log.d("DexcomActivity", "Starting Medtronic CNL service");
+                cgmService = new ServiceManager(this, MedtronicCNLService.class, mHandler);
+                break;
         }
-        return;
     }
 
     private void stopCGMServices() {
         switch (cgmSelected) {
-            case MEDTRONIC_CGM:
-                if (service != null) {
-                    doUnbindService();
-                    killService();
-                }
-                return;
-            case CNL_24:
-                if( cgmService != null ) {
+            default:
+                if (cgmService != null) {
                     cgmService.stop();
                 }
                 break;
-            default:
-                stopService(new Intent(Medtronic640gActivity.this, DexcomG4Service.class));
-        }
-        return;
-    }
-
-    private boolean isServiceAlive(String name) {
-        switch (cgmSelected) {
-            case MEDTRONIC_CGM:
-                return MedtronicCGMService.class.getName().equals(name);
-            case CNL_24:
-                return MedtronicCNLService.class.getName().equals(name);
-            default:
-                return DexcomG4Service.class.getName().equals(name);
         }
     }
 
@@ -488,54 +303,16 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
         unregisterReceiver(mArrow);
         synchronized (mHandlerActiveLock) {
             //mHandler.removeCallbacks(updateDataView);
-            doUnbindService();
+
+            stopCGMServices();
             if (keepServiceAlive) {
-                killService();
-                service = new Intent(this, MedtronicCGMService.class);
-                startService(service);
+                startCGMServices();
             }
             mHandlerActive = false;
             SharedPreferences.Editor editor = getBaseContext().getSharedPreferences(MedtronicConstants.PREFS_NAME, 0).edit();
             editor.putLong("lastDestroy", System.currentTimeMillis());
-            editor.commit();
+            editor.apply();
             super.onDestroy();
-        }
-        stopCGMServices();
-    }
-
-    void doBindService() {
-        if ((service != null && isMyServiceRunning()) || mIsBound)
-            stopCGMServices();
-        service = new Intent(this, MedtronicCGMService.class);
-        //bindService(service, mConnection, Context.BIND_AUTO_CREATE);
-        mIsBound = true;
-    }
-
-    void doUnbindService() {
-        if (mIsBound) {
-            // If we have received the service, and hence registered with it, then now is the time to unregister.
-            if (mService == null && bService != null) {
-                mService = new Messenger(bService);
-            }
-            if (mService != null) {
-                try {
-                    Message msg = Message.obtain(null, MedtronicConstants.MSG_UNREGISTER_CLIENT);
-                    //msg.replyTo = mMessenger;
-                    mService.send(msg);
-                } catch (RemoteException e) {
-                    // There is nothing special we need to do if the service has crashed.
-                }
-            }
-            // Detach our existing connection.
-            //unbindService(mConnection);
-            mIsBound = false;
-        }
-    }
-
-    protected void killService() {
-        if (service != null) {
-            stopService(service);
-            service = null;
         }
     }
 
@@ -584,10 +361,8 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
 
     }
 
-    private String renderTrendHtml(CGMRecord.TREND trend)
-    {
-        switch( trend )
-        {
+    private String renderTrendHtml(CGMRecord.TREND trend) {
+        switch (trend) {
             case DOUBLE_UP:
                 return "&#x21c8;";
             case SINGLE_UP:
@@ -604,6 +379,80 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                 return "&#x21ca;";
             default:
                 return "&mdash;";
+        }
+    }
+
+    public class Medtronic640gActivityHandler extends Handler {
+        public static final int MSG_ERROR = 1;
+        public static final int MSG_STATUS = 2;
+        public static final int MSG_DATA = 3;
+
+        @Override
+        public void handleMessage(Message msg) {
+            Log.d(TAG, "Got message from Service.");
+            switch (cgmSelected) {
+                case CNL_24:
+                    switch (msg.what) {
+                        case MSG_ERROR:
+                            display.setText(msg.obj.toString(), BufferType.EDITABLE);
+                            break;
+                        case MSG_STATUS:
+                            display.setText(msg.obj.toString(), BufferType.EDITABLE);
+                            break;
+                        case MSG_DATA:
+                            CGMRecord record = (CGMRecord) msg.obj;
+
+                            DecimalFormat df;
+                            if (prefs.getBoolean("mmolDecimals", false))
+                                df = new DecimalFormat("#.00");
+                            else
+                                df = new DecimalFormat("#.0");
+                            String sgvString = "---";
+                            String unitsString = "mg/dL";
+                            if (prefs.getBoolean("mmolxl", false)) {
+
+                                float fBgValue = (float) record.sgv;
+                                sgvString = df.format(fBgValue / 18.016f);
+                                unitsString = "mmol/L";
+                                log.info("mmolxl true --> " + sgvString);
+
+                            } else {
+                                sgvString = String.valueOf(record.sgv);
+                                log.info("mmolxl false --> " + sgvString);
+                            }
+
+                            //mTitleTextView.setTextColor(Color.YELLOW);
+                            mTitleTextView.setText(Html.fromHtml(
+                                    String.format("<big><b>%s</b></big> <small>%s %s</small>",
+                                            sgvString, unitsString, renderTrendHtml(record.getTrend()))));
+
+                            mDumpTextView.setTextColor(Color.WHITE);
+                            mDumpTextView.setText(Html.fromHtml(
+                                    String.format("<b>SG at:</b> %s<br/><b>Pump Time:</b> %s<br/><b>Active Insulin: </b>%.3f<br/><b>Rate of Change: </b>%s",
+                                            DateUtils.formatDateTime(getBaseContext(), record.sgvDate.getTime(), DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
+                                            DateUtils.formatDateTime(getBaseContext(), pumpStatusRecord.pumpDate.getTime(), DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
+                                            pumpStatusRecord.activeInsulin,
+                                            record.direction
+                                    )
+                            ));
+
+                            break;
+                    }
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
+
+    private class BatteryReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context arg0, Intent arg1) {
+            if (arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_LOW)
+                    || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)
+                    || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_OKAY)) {
+                Log.i("BatteryReceived", "BatteryReceived");
+                batLevel = arg1.getIntExtra("level", 0);
+            }
         }
     }
 }
