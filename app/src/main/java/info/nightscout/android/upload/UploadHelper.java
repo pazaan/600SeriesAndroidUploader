@@ -3,17 +3,11 @@ package info.nightscout.android.upload;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.os.Messenger;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -28,8 +22,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -55,8 +47,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     private static final int CONNECTION_TIMEOUT = 30 * 1000;
 
     Context context;
-    private int cgmSelected = Medtronic640gActivity.CNL_24;
-    private List<JSONObject> recordsNotUploadedList = new ArrayList<JSONObject>();
+	private List<JSONObject> recordsNotUploadedList = new ArrayList<JSONObject>();
     private List<JSONObject> recordsNotUploadedListJson = new ArrayList<JSONObject>();
 
     public static final Object isModifyingRecordsLock = new Object();
@@ -67,8 +58,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     
     public UploadHelper(Context context, int cgmSelected) {
         this.context = context;
-        this.cgmSelected = cgmSelected;
-        settings = context.getSharedPreferences(MedtronicConstants.PREFS_NAME, 0);
+		settings = context.getSharedPreferences(MedtronicConstants.PREFS_NAME, 0);
         synchronized (isModifyingRecordsLock) {
 	        try {
 	        	long currentTime = System.currentTimeMillis();
@@ -80,7 +70,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 	    				editor.remove("recordsNotUploaded");
 	    			if (settings.contains("recordsNotUploadedJson"))
 	    				editor.remove("recordsNotUploadedJson");
-	            	editor.commit();
+	            	editor.apply();
 	    		}
 	        	if (settings.contains("recordsNotUploaded")){
 	        		JSONArray recordsNotUploaded = new JSONArray(settings.getString("recordsNotUploaded","[]"));
@@ -90,7 +80,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 	        		log.debug("retrieve older json records -->" +recordsNotUploaded.length());
 	            	SharedPreferences.Editor editor = settings.edit();
 	            	editor.remove("recordsNotUploaded");
-	            	editor.commit();
+	            	editor.apply();
 	            }	
 	        	if (settings.contains("recordsNotUploadedJson")){
 	        		JSONArray recordsNotUploadedJson = new JSONArray(settings.getString("recordsNotUploadedJson","[]"));
@@ -100,134 +90,23 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 	        		log.debug("retrieve older json records -->" +recordsNotUploadedJson.length());
 	            	SharedPreferences.Editor editor = settings.edit();
 	            	editor.remove("recordsNotUploadedJson");
-	            	editor.commit();
+	            	editor.apply();
 	            }	
 			} catch (Exception e) {
 				log.debug("ERROR Retrieving older list, I have lost them");
-				recordsNotUploadedList = new ArrayList<JSONObject>();
-				recordsNotUploadedListJson = new ArrayList<JSONObject>();
+				recordsNotUploadedList = new ArrayList<>();
+				recordsNotUploadedListJson = new ArrayList<>();
 				SharedPreferences.Editor editor = settings.edit();
 				if (settings.contains("recordsNotUploaded"))
 					editor.remove("recordsNotUploaded");
 				if (settings.contains("recordsNotUploadedJson"))
 					editor.remove("recordsNotUploadedJson");
-	        	editor.commit();
+	        	editor.apply();
 			}
         }
     }
-    
-    public UploadHelper(Context context, int cgmSelected, ArrayList<Messenger> mClients) {
-    	this(context, cgmSelected);
-    }
-	
-	private JSONArray doGetRequest(HttpClient client, String url, String filter, String sort, String limit, String apiKey){
-		JSONArray result = null;
-		 URI nUri = null;
-		 String query = "";
-		 if (filter != null && filter.length() > 0) {
-			 query += filter + "&";
-		 }
-		 if (sort != null && sort.length() > 0) {
-			 query += sort + "&";
-		 }
-		 if (limit != null && limit.length() > 0) {
-			 query += limit + "&";
-		 }
-		    try {
-				nUri = new URI("https", null, "api.mongolab.com", 443, url, query + "apiKey="+apiKey,null);
-			} catch (URISyntaxException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-			}
-		    //URIUtils.
-		    HttpGet getRequest = new HttpGet(nUri);
-		    HttpPost postRequest = null;
-		    getRequest.addHeader("accept", "application/json");
-		    try {
-				HttpResponse response = client.execute(getRequest);
-				InputStream instream = response.getEntity().getContent();
-		        String sResult = convertStreamToString(instream);
-		        // now you have the string representation of the HTML request
-		        System.out.println("RESPONSE: " + sResult);
-		        instream.close();
-		        result = new JSONArray(sResult);
-			} catch (ClientProtocolException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (Exception e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-			}
-		return result;
-	}
-	
-	private boolean doPutRequest(HttpClient client, String url, String filter, String apiKey, JSONObject data){
-		 String query = "";
-		 if (filter != null && filter.length() > 0) {
-			 query += filter + "&";
-		 }
-	
-		try {
-			URI nUri = null;
-		    try {
-				nUri = new URI("https", null, "api.mongolab.com", 443, url, query + "&apiKey="+apiKey,null);
-			} catch (URISyntaxException e2) {
-				// TODO Auto-generated catch block
-				e2.printStackTrace();
-				return false;
-			}
-			HttpPut putRequest = new HttpPut(nUri);
-			putRequest.setHeader("Accept", "application/json");
-			putRequest.setHeader("Content-type", "application/json");
-	        StringEntity se = new StringEntity(data.toString());
-	        putRequest.setEntity(se);
-	        HttpResponse resp = client.execute(putRequest);
-	        if (resp.getStatusLine().getStatusCode() > 201) {
-	        	Log.e("UploaderHelper", "The can't be uploaded");
-				log.error("The record can't be uploaded Code: "+resp.getStatusLine().getStatusCode());
-				return false;
-	        }
-		}catch(IllegalArgumentException ex){
-			log.error("UploaderHelper", "Illegal record");
-			return false;
-		}catch (Exception e){
-			Log.e("UploaderHelper", "The retried can't be uploaded");
-			log.error("The retried record can't be uploaded ", e);
-			return false;
-		}
-		return true;
-	}
-	
-	private boolean doPostRequest(HttpClient client, String url, String apiKey, JSONObject data){
-		URI nUri = null;
-		try {
-			nUri = new URI("https", null, "api.mongolab.com", 443, url, "apiKey="+apiKey, null);
-			HttpPost postRequest = new HttpPost(nUri);
-			postRequest.setHeader("Accept", "application/json");
-	        postRequest.setHeader("Content-type", "application/json");
-	        StringEntity se = new StringEntity(data.toString());
-	        postRequest.setEntity(se);
-	        HttpResponse resp = client.execute(postRequest);
-	        if (resp.getStatusLine().getStatusCode() > 201) {
-	        	Log.e("UploaderHelper", "The can't be uploaded");
-				log.error("The record can't be uploaded Code: "+resp.getStatusLine().getStatusCode());
-				return false;
-	        }
-		}catch(IllegalArgumentException ex){
-			log.error("UploaderHelper", "Illegal record");
-			return false;
-		}catch (Exception e){
-			Log.e("UploaderHelper", "The retried can't be uploaded");
-			log.error("The retried record can't be uploaded ", e);
-			return false;
-		}
-		return true;
-	}
 
-    /**
+	/**
      * doInBackground
      */
     protected Long doInBackground(Record... records) {
@@ -297,23 +176,22 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     }
 
     private void doRESTUploadTo(String baseURI, Record[] records) {
-    	Integer typeSaved = null;
-        try {
+		try {
             int apiVersion = 0;
             if (baseURI.endsWith("/v1/")) apiVersion = 1;
 
-            String baseURL = null;
+            String baseURL;
             String secret = null;
             String[] uriParts = baseURI.split("@");
 
             if (uriParts.length == 1 && apiVersion == 0) {
                 baseURL = uriParts[0];
-            } else if (uriParts.length == 1 && apiVersion > 0) {
+            } else if (uriParts.length == 1) {
             	if (recordsNotUploadedListJson.size() > 0){
                  	JSONArray jsonArray = new JSONArray(recordsNotUploadedListJson);
                  	SharedPreferences.Editor editor = settings.edit();
                  	editor.putString("recordsNotUploaded", jsonArray.toString());
-                 	editor.commit();
+                 	editor.apply();
                  }
                 throw new Exception("Starting with API v1, a pass phase is required");
             } else if (uriParts.length == 2 && apiVersion > 0) {
@@ -323,8 +201,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                 // new format URL!
 
                 if (secret.contains("http")) {
-                    String b = "http://";
-                    if (secret.contains("https")) {
+					if (secret.contains("https")) {
                         baseURL = "https://" + baseURL;
                     } else {
                         baseURL = "http://" + baseURL;
@@ -339,7 +216,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                  	JSONArray jsonArray = new JSONArray(recordsNotUploadedListJson);
                  	SharedPreferences.Editor editor = settings.edit();
                  	editor.putString("recordsNotUploadedJson", jsonArray.toString());
-                 	editor.commit();
+                 	editor.apply();
                  }
                 throw new Exception(String.format("Unexpected baseURI: %s, uriParts.length: %s, apiVersion: %s", baseURI, uriParts.length, apiVersion));
             }
@@ -371,7 +248,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                              	JSONArray jsonArray = new JSONArray(auxList);
                              	SharedPreferences.Editor editor = settings.edit();
                              	editor.putString("recordsNotUploaded", jsonArray.toString());
-                             	editor.commit();
+                             	editor.apply();
                              }
                             throw new Exception("Starting with API v1, a pass phase is required");
                         } else {
@@ -411,11 +288,9 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
             for (Record record : records) {
             	String postURL = baseURL; 
             	if (record instanceof GlucometerRecord){
-            		typeSaved = 0;
-            		postURL +=  "entries";
+					postURL +=  "entries";
             	}else{
-            		typeSaved = 0;
-            		postURL += "entries";
+					postURL += "entries";
             	}
                 Log.i(TAG, "postURL: " + postURL);
                 log.info( "postURL: " + postURL);
@@ -428,7 +303,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
                           	JSONArray jsonArray = new JSONArray(recordsNotUploadedListJson);
                           	SharedPreferences.Editor editor = settings.edit();
                           	editor.putString("recordsNotUploadedJson", jsonArray.toString());
-                          	editor.commit();
+                          	editor.apply();
                           }
                         throw new Exception("Starting with API v1, a pass phase is required");
                     } else {
@@ -469,16 +344,15 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 					ResponseHandler responseHandler = new BasicResponseHandler();
                     httpclient.execute(post, responseHandler);
                 } catch (Exception e) {
-                    if ((typeSaved != null) && (typeSaved == 0)){//Only EGV records are important enough.
-    	                if (recordsNotUploadedListJson.size() > 49){
-    	                	recordsNotUploadedListJson.remove(0);
-    	                	recordsNotUploadedListJson.add(49,json);
-    	            	}else{
-    	            		recordsNotUploadedListJson.add(json);
-    	            	}
+					//Only EGV records are important enough.
+					if (recordsNotUploadedListJson.size() > 49){
+                        recordsNotUploadedListJson.remove(0);
+                        recordsNotUploadedListJson.add(49,json);
+                    }else{
+                        recordsNotUploadedListJson.add(json);
                     }
 
-                    Log.w(TAG, "Unable to post data to: '" + post.getURI().toString() + "'", e);
+					Log.w(TAG, "Unable to post data to: '" + post.getURI().toString() + "'", e);
                     log.warn( "Unable to post data to: '" + post.getURI().toString() + "'", e);
                 }
             }
@@ -515,18 +389,18 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 	        		log.debug("retrieve older json records -->" +recordsNotUploadedJson.length());
 	            	SharedPreferences.Editor editor = settings.edit();
 	            	editor.remove("recordsNotUploadedJson");
-	            	editor.commit();	
+	            	editor.apply();
     			} catch (Exception e) {
     				log.debug("ERROR RETRIEVING OLDER LISTs, I HAVE LOST THEM");	
     				SharedPreferences.Editor editor = settings.edit();
     				if (settings.contains("recordsNotUploadedJson"))
     					editor.remove("recordsNotUploadedJson");
-    	        	editor.commit();
+    	        	editor.apply();
     			}
     	        JSONArray jsonArray = new JSONArray(recordsNotUploadedListJson);
             	SharedPreferences.Editor editor = settings.edit();
             	editor.putString("recordsNotUploadedJson", jsonArray.toString());
-            	editor.commit();
+            	editor.apply();
             }
         }
     }
@@ -594,7 +468,7 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
 	    String line = null;
 	    try {
 	        while ((line = reader.readLine()) != null) {
-	            sb.append(line + "\n");
+	            sb.append(line).append("\n");
 	        }
 	    } catch (IOException e) {
 	        e.printStackTrace();

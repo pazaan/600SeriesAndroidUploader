@@ -4,9 +4,7 @@
     >
 
     <uses-sdk
-        android:maxSdkVersion="21"
-        android:minSdkVersion="15"
-        android:targetSdkVersion="21" />
+        android:maxSdkVersion="23" />
 
     <uses-feature android:name="android.hardware.usb.host" />
 
@@ -17,13 +15,13 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
-    <android:uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
+        android:supportsRtl="true"
         android:theme="@style/AppBaseTheme" >
 
         <!-- I have set screenOrientation to "portrait" to avoid the restart of AsyncTasks when you rotate the phone -->
@@ -53,28 +51,9 @@
             android:label="Settings" />
 
         <service
-            android:name=".dexcom.DexcomG4Service"
-            android:icon="@drawable/ic_launcher" >
-        </service>
-        <service
             android:name=".medtronic.service.MedtronicCNLService"
             android:icon="@drawable/ic_launcher" >
         </service>
-        <service
-            android:name=".widget.CGMWidgetUpdater"
-            android:icon="@drawable/ic_launcher"
-            android:label="@string/app_name" >
-        </service>
-
-        <receiver android:name=".widget.CGMWidget" >
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/example_appwidget_info" />
-        </receiver>
 
         <activity
             android:name=".medtronic.GetHmacAndKeyActivity"

@@ -4,6 +4,7 @@ import info.nightscout.android.medtronic.MedtronicCNLSession;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Locale;
 
 /**
  * Created by lgoedhart on 26/03/2016.
@@ -76,7 +77,7 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage{
         byte calculatedChecksum = (byte) (MessageUtils.oneByteSum(message.mPayload.array()) - messageChecksum);
 
         if (messageChecksum != calculatedChecksum) {
-            throw new ChecksumException(String.format("Expected to get %d. Got %d", (int) calculatedChecksum, (int) messageChecksum));
+            throw new ChecksumException(String.format(Locale.getDefault(), "Expected to get %d. Got %d", (int) calculatedChecksum, (int) messageChecksum));
         }
 
         return message;

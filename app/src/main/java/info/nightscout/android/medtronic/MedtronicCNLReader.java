@@ -141,7 +141,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
     // TODO - get rid of this - it should be in a message decoder
     private void checkControlMessage(byte[] msg, byte controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
         if (msg.length != 1 || msg[0] != controlCharacter) {
-            throw new UnexpectedMessageException(String.format("Expected to get control character '%d' Got '%d'.",
+            throw new UnexpectedMessageException(String.format( Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
                     (int) controlCharacter, (int) msg[0]));
         }
     }
@@ -252,7 +252,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
                 if (responseBytes[76] == mPumpSession.getRadioChannel()) {
                     break;
                 } else {
-                    throw new IOException(String.format("Expected to get a message for channel %d. Got %d", mPumpSession.getRadioChannel(), responseBytes[76]));
+                    throw new IOException(String.format( Locale.getDefault(), "Expected to get a message for channel %d. Got %d", mPumpSession.getRadioChannel(), responseBytes[76]));
                 }
             } else {
                 mPumpSession.setRadioChannel((byte) 0);
@@ -338,7 +338,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         cgmRecord.sgvDate = MessageUtils.decodeDateTime(rtc, offset);
         Medtronic640gActivity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
         Medtronic640gActivity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
-        long rawReservoirAmount = statusBuffer.getInt(0x2b) & 0xffffffff;
+        long rawReservoirAmount = statusBuffer.getInt(0x2b);
         Medtronic640gActivity.pumpStatusRecord.reservoirAmount = new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP);
         Medtronic640gActivity.pumpStatusRecord.batteryPercentage = (statusBuffer.get(0x2a));
     }

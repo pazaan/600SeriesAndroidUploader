@@ -3,7 +3,7 @@
     <item
             android:id="@+id/menu_settings"
             android:orderInCategory="100"
-            android:title="Preferences">
+            android:title="@string/menu_name_preferences">
     </item>
     <item
             android:id="@+id/registerCNL"

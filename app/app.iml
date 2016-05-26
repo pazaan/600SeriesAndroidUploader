@@ -83,12 +83,13 @@
       <sourceFolder url="file://$MODULE_DIR$/src/androidTest/shaders" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/assets" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/blame" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/builds" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/bundles" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/classes" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/dependency-cache" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.3/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.3/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/animated-vector-drawable/23.4.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/appcompat-v7/23.4.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/support-v4/23.4.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/23.4.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.crashlytics.sdk.android/answers/1.3.6/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.crashlytics.sdk.android/beta/1.1.4/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.crashlytics.sdk.android/crashlytics-core/2.3.8/jars" />
@@ -101,6 +102,7 @@
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/incremental-verifier" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/instant-run-support" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/jniLibs" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/lint" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/manifests" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/pre-dexed" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/reload-dex" />
@@ -113,20 +115,21 @@
       <excludeFolder url="file://$MODULE_DIR$/build/outputs" />
       <excludeFolder url="file://$MODULE_DIR$/build/tmp" />
     </content>
-    <orderEntry type="jdk" jdkName="Android API 21 Platform" jdkType="Android SDK" />
+    <orderEntry type="jdk" jdkName="Android API 23 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="physicaloidlibrary" level="project" />
+    <orderEntry type="library" exported="" name="support-annotations-23.4.0" level="project" />
     <orderEntry type="library" exported="" name="crashlytics-2.5.5" level="project" />
-    <orderEntry type="library" exported="" name="support-v4-21.0.3" level="project" />
     <orderEntry type="library" exported="" name="crashlytics-core-2.3.8" level="project" />
     <orderEntry type="library" exported="" name="beta-1.1.4" level="project" />
     <orderEntry type="library" exported="" name="logback-android-1.1.1-3" level="project" />
-    <orderEntry type="library" exported="" name="appcompat-v7-21.0.3" level="project" />
-    <orderEntry type="library" exported="" name="mongo-java-driver-3.0.2" level="project" />
+    <orderEntry type="library" exported="" name="animated-vector-drawable-23.4.0" level="project" />
     <orderEntry type="library" exported="" name="commons-lang3-3.4" level="project" />
-    <orderEntry type="library" exported="" name="support-annotations-21.0.3" level="project" />
+    <orderEntry type="library" exported="" name="support-v4-23.4.0" level="project" />
     <orderEntry type="library" exported="" name="slf4j-api-1.7.2" level="project" />
     <orderEntry type="library" exported="" name="answers-1.3.6" level="project" />
+    <orderEntry type="library" exported="" name="support-vector-drawable-23.4.0" level="project" />
+    <orderEntry type="library" exported="" name="appcompat-v7-23.4.0" level="project" />
     <orderEntry type="library" exported="" name="fabric-1.3.10" level="project" />
+    <orderEntry type="library" exported="" name="org.apache.http.legacy-android-23" level="project" />
   </component>
 </module>

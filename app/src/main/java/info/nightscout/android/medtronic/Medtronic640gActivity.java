@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
+import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.eula.Eula;
@@ -74,7 +75,6 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
     private TextView mDumpTextView;
     private Button b1;
     private TextView display;
-    private Intent service = null;
     private ServiceManager cgmService; // > service
 
     //Look for and launch the service, display status to user
@@ -125,15 +125,15 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
             mHandlerActive = true;
         }
 
-        b1.setText("Stop Uploading CGM Data");
+        b1.setText(R.string.button_text_stop_uploading_data);
         lnr.addView(b1);
         lnr2.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         lnr3.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         Button b2 = new Button(this);
-        b2.setText("Clear Log");
+        b2.setText(R.string.button_text_clear_log);
         b2.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, 1.0f));
         Button b4 = new Button(this);
-        b4.setText("Get Now");
+        b4.setText(R.string.button_text_get_now);
         b4.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, 1.0f));
         lnr3.addView(b4);
 
@@ -186,13 +186,13 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                         //mHandler.removeCallbacks(updateDataView);
                         keepServiceAlive = false;
                         stopCGMServices();
-                        b1.setText("Start Uploading CGM Data");
+                        b1.setText(R.string.button_text_start_uploading_data);
                         finish();
                     } else {
                         startCGMServices();
 
                         mHandlerActive = true;
-                        b1.setText("Stop Uploading CGM Data");
+                        b1.setText(R.string.button_text_stop_uploading_data);
                     }
                 }
 
@@ -327,9 +327,7 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                         //mHandler.removeCallbacks(updateDataView);
                         mHandlerActive = false;
                     }
-                    b1.setText("Start Uploading CGM Data");
-                    mTitleTextView.setTextColor(Color.RED);
-                    mTitleTextView.setText("CGM Service Stopped");
+                    b1.setText(R.string.button_text_start_uploading_data);
                     stopCGMServices();
                 } else {
                     startCGMServices();
@@ -338,8 +336,8 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                 }
             }
         } catch (Exception e) {
-            StringBuffer sb1 = new StringBuffer("");
-            sb1.append("EXCEPTION!!!!!! " + e.getMessage() + " " + e.getCause());
+            StringBuilder sb1 = new StringBuilder("");
+            sb1.append("EXCEPTION!!!!!! ").append(e.getMessage()).append(" ").append(e.getCause());
             for (StackTraceElement st : e.getStackTrace()) {
                 sb1.append(st.toString()).append("\n");
             }
@@ -407,7 +405,7 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                                 df = new DecimalFormat("#.00");
                             else
                                 df = new DecimalFormat("#.0");
-                            String sgvString = "---";
+                            String sgvString;
                             String unitsString = "mg/dL";
                             if (prefs.getBoolean("mmolxl", false)) {
 
@@ -428,7 +426,7 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
 
                             mDumpTextView.setTextColor(Color.WHITE);
                             mDumpTextView.setText(Html.fromHtml(
-                                    String.format("<b>SG at:</b> %s<br/><b>Pump Time:</b> %s<br/><b>Active Insulin: </b>%.3f<br/><b>Rate of Change: </b>%s",
+                                    String.format( Locale.getDefault(), "<b>SG at:</b> %s<br/><b>Pump Time:</b> %s<br/><b>Active Insulin: </b>%.3f<br/><b>Rate of Change: </b>%s",
                                             DateUtils.formatDateTime(getBaseContext(), record.sgvDate.getTime(), DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
                                             DateUtils.formatDateTime(getBaseContext(), pumpStatusRecord.pumpDate.getTime(), DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME),
                                             pumpStatusRecord.activeInsulin,

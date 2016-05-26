@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeoutException;
@@ -164,7 +165,7 @@ public class MedtronicCNLService extends AbstractService {
                         send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Could not communicate with the 640g. Are you near the pump?"));
                         Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
                     } else {
-                        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_STATUS, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel)));
+                        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_STATUS, String.format( Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel)));
                         Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                         cnlReader.beginEHSMSession();
 
@@ -220,6 +221,9 @@ public class MedtronicCNLService extends AbstractService {
         return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
+    /*
+    // FIXME - when we want to enable notifications, start with this. We'll need to fix the icon to match
+    // the Android standards (linter will fail anyway)
     private void showNotification(String title, String message) {
         NotificationManagerCompat nm = NotificationManagerCompat.from(mContext);
 
@@ -238,6 +242,7 @@ public class MedtronicCNLService extends AbstractService {
                 .setContentIntent(contentIntent)
                 .build());
     }
+    */
 
     // FIXME - replace this with writing to the SQLite DB.
     private void writeData(CGMRecord mostRecentData) {
