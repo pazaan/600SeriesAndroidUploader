@@ -23,6 +23,7 @@ import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
 import info.nightscout.android.medtronic.service.MedtronicCNLService;
 import info.nightscout.android.upload.MedtronicNG.CGMRecord;
+import info.nightscout.android.upload.MedtronicNG.PumpStatusRecord;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -267,7 +268,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         readMessage();
     }
 
-    public void getPumpTime(CGMRecord pumpRecord) throws EncryptionException, IOException, ChecksumException, TimeoutException {
+    public void getPumpTime(PumpStatusRecord pumpRecord) throws EncryptionException, IOException, ChecksumException, TimeoutException {
         // FIXME - throw if not in EHSM mode (add a state machine)
 
         new PumpTimeRequestMessage(mPumpSession).send(this);
@@ -295,10 +296,9 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         pumpRecord.displayTime = dateFormat.format(pumpDate);
-        Medtronic640gActivity.pumpStatusRecord.pumpDate = pumpDate;
     }
 
-    public void getPumpStatus(CGMRecord pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException {
+    public void getPumpStatus(CGMRecord cgmRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException {
         // FIXME - throw if not in EHSM mode (add a state machine)
 
         new PumpStatusRequestMessage(mPumpSession).send(this);
@@ -321,21 +321,21 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         // Read the data into the record
         long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
         Medtronic640gActivity.pumpStatusRecord.activeInsulin = new BigDecimal( rawActiveInsulin / 10000f ).setScale(3, BigDecimal.ROUND_HALF_UP);
-        pumpRecord.sgv = statusBuffer.getShort(0x35) & 0x0000ffff; // In mg/DL. 0 means no CGM reading
+        cgmRecord.sgv = statusBuffer.getShort(0x35) & 0x0000ffff; // In mg/DL. 0 means no CGM reading
         long rtc;
         long offset;
-        if( ( pumpRecord.sgv & 0x200 ) == 0x200 ) {
+        if( ( cgmRecord.sgv & 0x200 ) == 0x200 ) {
             // Sensor error. Let's reset. FIXME - solve this more elegantly later
-            pumpRecord.sgv = 0;
+            cgmRecord.sgv = 0;
             rtc = 0;
             offset = 0;
-            pumpRecord.setTrend(CGMRecord.TREND.NOT_SET);
+            cgmRecord.setTrend(CGMRecord.TREND.NOT_SET);
         } else {
             rtc = statusBuffer.getInt(0x37) & 0x00000000ffffffffL;
             offset = statusBuffer.getInt(0x3b);
-            pumpRecord.setTrend(CGMRecord.fromMessageByte( statusBuffer.get(0x40)));
+            cgmRecord.setTrend(CGMRecord.fromMessageByte( statusBuffer.get(0x40)));
         }
-        pumpRecord.sgvDate = MessageUtils.decodeDateTime(rtc, offset);
+        cgmRecord.sgvDate = MessageUtils.decodeDateTime(rtc, offset);
         Medtronic640gActivity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
         Medtronic640gActivity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
         long rawReservoirAmount = statusBuffer.getInt(0x2b) &  0xffffffff;
