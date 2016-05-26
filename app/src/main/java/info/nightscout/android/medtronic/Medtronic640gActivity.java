@@ -13,6 +13,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -449,7 +450,7 @@ public class Medtronic640gActivity extends Activity implements OnSharedPreferenc
                     || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)
                     || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_OKAY)) {
                 Log.i("BatteryReceived", "BatteryReceived");
-                batLevel = arg1.getIntExtra("level", 0);
+                batLevel = arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
             }
         }
     }
