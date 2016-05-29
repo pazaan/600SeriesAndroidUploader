@@ -38,4 +38,7 @@
     <string name="button_text_clear_log">Clear Log</string>
     <string name="button_text_get_now">Get Now</string>
     <string name="button_text_start_uploading_data">Start Uploading CGM Data</string>
+    <string name="preference_eula_accepted">IUNDERSTAND</string>
+    <string name="preference_enable_rest_upload">EnableRESTUpload</string>
+    <string name="error_msg_api_secret_length">API Secret must be 12 characters or longer.</string>
 </resources>
