@@ -22,28 +22,28 @@
     <PreferenceCategory android:title="Sharing">
         <info.nightscout.android.utils.CustomSwitchPreference
             android:disableDependentsState="false"
-            android:key="EnableRESTUpload"
+            android:key="@string/preference_enable_rest_upload"
             android:summary="Enable upload of data to Nightscout"
             android:title="REST API Upload"></info.nightscout.android.utils.CustomSwitchPreference>
         <EditTextPreference
             android:defaultValue="https://YOUR.NIGHTSCOUT.SITE"
-            android:dependency="EnableRESTUpload"
+            android:dependency="@string/preference_enable_rest_upload"
             android:dialogMessage="The hostname of your Nightscout site"
             android:dialogTitle="Enter Nightscout URL"
             android:key="@string/preference_nightscout_url"
             android:title="Nightscout URL"></EditTextPreference>
-        <EditTextPreference
+        <info.nightscout.android.utils.ValidatingEditTextPreference
             android:defaultValue="YOURAPISECRET"
-            android:dependency="EnableRESTUpload"
+            android:dependency="@string/preference_enable_rest_upload"
             android:dialogMessage="Your Nightscout API secret"
             android:dialogTitle="Enter your Nightscout API secret"
             android:key="@string/preference_api_secret"
-            android:title="API Secret"></EditTextPreference>
+            android:title="API Secret"></info.nightscout.android.utils.ValidatingEditTextPreference>
     </PreferenceCategory>
     <PreferenceCategory android:title="Disclaimer">
         <info.nightscout.android.utils.CustomSwitchPreference
             android:disableDependentsState="false"
-            android:key="IUNDERSTAND"
+            android:key="@string/preference_eula_accepted"
             android:summaryOff="Deactivated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
             android:summaryOn="Activated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
             android:switchTextOff="NO"

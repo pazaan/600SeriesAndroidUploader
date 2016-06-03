@@ -20,14 +20,13 @@
         android:visibility="gone"/>
 
     <ScrollView
-        android:id="@+id/scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content">
 
             <LinearLayout
                 android:id="@+id/login_form"
@@ -39,8 +38,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:text="@string/prompt_carelink_username_password"
-                    android:id="@+id/textView" />
+                    android:text="@string/prompt_carelink_username_password" />
 
                 <AutoCompleteTextView
                     android:id="@+id/username"

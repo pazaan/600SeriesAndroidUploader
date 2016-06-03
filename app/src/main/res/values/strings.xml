@@ -3,100 +3,18 @@
 
     <string name="hello">---</string>
     <string name="app_name">NS 640g Uploader</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
-    <string name="sgv_id">sgv_id</string>
-    <string name="arrow_id">arrow_id</string>
-    <string name="arrow_none">---</string>
-    <string name="self_destruct">Close It</string>
-    <string name="but_contentDesc">Launch Nightscout</string>
     <string name="eula_title">Disclaimer</string>
     <string name="eula_accept">Accept</string>
     <string name="eula_refuse">Refuse</string>
-    <style name="ButtonText">
-    <item name="android:layout_width">fill_parent</item>
-    <item name="android:layout_height">wrap_content</item>
-    <item name="android:textColor">#ffffff</item>
-    <item name="android:gravity">center</item>
-    <item name="android:layout_margin">3dp</item>
-    <item name="android:textSize">30dp</item>
-    <item name="android:textStyle">bold</item>
-    <item name="android:shadowColor">#000000</item>
-    <item name="android:shadowDx">1</item>
-    <item name="android:shadowDy">1</item>
-    <item name="android:shadowRadius">2</item>
-	</style>
-	<string-array name="types">
-        <item>Contour NextLink 2.4</item>
-    </string-array>
-    <string-array name="types_values">
-     <item>1</item>
-     <item>2</item>
-        <item>3</item>
-    </string-array>
-     <string-array name="calib_types_values">
+    <string-array name="calib_types_values">
      <item>1</item>
      <item>2</item>
      <item>3</item>
-    </string-array>
-    <string-array name="calibrationTypes">
-     <item>Glucometer</item>
-     <item>Medtronic Pump</item>
-     <item>Manual</item>
-    </string-array>
-     <string-array name="sourceTypes">
-     <item>Medtronic Sensor</item>
-     <item>Medtronic Pump</item>
-     <item>Both (sensor + pump support)</item>
-    </string-array>
-    <string-array name="pumpPeriodList">
-     <item>30 min.</item>
-     <item>60 min.</item>
-     <item>90 min.</item>
-     <item>120 min.</item>
-    </string-array>
-    <string-array name="pumpperiod_values">
-     <item>1</item>
-     <item>2</item>
-     <item>3</item>
-     <item>4</item>
-    </string-array>
-     <string-array name="historicPeriodList">
-     <item>5 min.</item>
-     <item>10 min.</item>
-     <item>15 min.</item>
-     <item>20 min.</item>
     </string-array>
     <string-array name="levelList">
      <item>Error</item>
      <item>Info</item>
      <item>Debug</item>
-    </string-array>
-     <string-array name="historicMixPeriodList">
-     <item>10 min.</item>
-     <item>15 min.</item>
-     <item>20 min.</item>
-     <item>25 min.</item>
-     <item>30 min.</item>
-     <item>35 min.</item>
-     <item>40 min.</item>
-     <item>45 min.</item>
-     <item>50 min.</item>
-     <item>55 min.</item>
-     <item>60 min.</item>
-    </string-array>
-     <string-array name="historicMixPeriodVal">
-     <item>1</item>
-     <item>2</item>
-     <item>3</item>
-     <item>4</item>
-     <item>5</item>
-     <item>6</item>
-     <item>7</item>
-     <item>8</item>
-     <item>9</item>
-     <item>10</item>
-     <item>11</item>
     </string-array>
     <string name="title_activity_login">CareLink login</string>
 
@@ -105,13 +23,9 @@
     <string name="prompt_password">Password</string>
     <string name="action_sign_in">Retrieve keys for USB</string>
     <string name="action_sign_in_short">Retrieve keys</string>
-    <string name="error_invalid_username">This username is invalid</string>
     <string name="error_invalid_password">Password is required</string>
     <string name="error_incorrect_password">The Username or password is incorrect</string>
     <string name="error_field_required">This field is required</string>
-    <string name="permission_rationale">"Contacts permissions are needed for providing email
-        completions."
-    </string>
     <string name="preference_nightscout_url">Nightscout URL</string>
     <string name="preference_api_secret">API SECRET</string>
     <string name="prompt_carelink_username_password">Please enter your CareLink details.\nThey will not be stored.</string>
@@ -119,4 +33,12 @@
     <string name="register_contour_next_link">Register Contour Next Link</string>
     <string name="preferences_enable_crashlytics">prefs_enable_crashlytics</string>
     <string name="preferences_enable_answers">prefs_enable_answers</string>
+    <string name="menu_name_preferences">Preferences</string>
+    <string name="button_text_stop_uploading_data">Stop Uploading CGM Data</string>
+    <string name="button_text_clear_log">Clear Log</string>
+    <string name="button_text_get_now">Get Now</string>
+    <string name="button_text_start_uploading_data">Start Uploading CGM Data</string>
+    <string name="preference_eula_accepted">IUNDERSTAND</string>
+    <string name="preference_enable_rest_upload">EnableRESTUpload</string>
+    <string name="error_msg_api_secret_length">API Secret must be 12 characters or longer.</string>
 </resources>

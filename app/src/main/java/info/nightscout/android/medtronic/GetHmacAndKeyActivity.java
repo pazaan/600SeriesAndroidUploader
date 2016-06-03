@@ -90,19 +90,18 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
                 attemptLogin();
             }
         });
-        Button closeButton = (Button) findViewById(R.id.close_button);
-        closeButton.setOnClickListener(new OnClickListener() {
+
+        mLoginFormView = findViewById(R.id.login_form);
+        mProgressView = findViewById(R.id.login_progress);
+        mRegisteredStickView = (TextView)findViewById(R.id.registered_usb_devices);
+        mCloseButton = (Button)findViewById(R.id.close_button);
+        mCloseButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 finish();
             }
         });
 
-
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
-        mRegisteredStickView = (TextView)findViewById(R.id.registered_usb_devices);
-        mCloseButton = (Button)findViewById(R.id.close_button);
         showRegisteredSticks();
     }
 
