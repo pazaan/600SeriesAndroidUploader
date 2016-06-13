@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="info.nightscout.android"
-    >
+    package="info.nightscout.android">
 
-    <uses-sdk
-        android:maxSdkVersion="23" />
+    <uses-sdk android:maxSdkVersion="23" />
 
     <uses-feature android:name="android.hardware.usb.host" />
 
@@ -16,28 +14,30 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.USB_PERMISSION" />
 
     <application
+        android:name=".UploaderApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppBaseTheme" >
+        android:theme="@style/AppTheme">
 
         <!-- I have set screenOrientation to "portrait" to avoid the restart of AsyncTasks when you rotate the phone -->
         <activity
-            android:name=".medtronic.Medtronic640gActivity"
+            android:name=".medtronic.MainActivity"
             android:icon="@drawable/ic_launcher"
             android:label="@string/app_name"
             android:launchMode="singleTask"
-            android:screenOrientation="portrait" >
-            <intent-filter android:icon="@drawable/ic_launcher" >
+            android:screenOrientation="portrait">
+            <intent-filter android:icon="@drawable/ic_launcher">
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter android:icon="@drawable/ic_launcher" >
+            <intent-filter android:icon="@drawable/ic_launcher">
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
 
@@ -48,17 +48,18 @@
         <activity
             android:name=".settings.SettingsActivity"
             android:icon="@drawable/ic_launcher"
-            android:label="Settings" />
-
-        <service
-            android:name=".medtronic.service.MedtronicCNLService"
-            android:icon="@drawable/ic_launcher" >
-        </service>
+            android:label="Settings"
+            android:theme="@style/SettingsTheme"/>
 
         <activity
             android:name=".medtronic.GetHmacAndKeyActivity"
-            android:label="@string/title_activity_login" >
-        </activity>
+            android:label="@string/title_activity_login"
+            android:theme="@style/SettingsTheme" />
+
+        <service
+            android:name=".medtronic.service.MedtronicCnlIntentService"
+            android:icon="@drawable/ic_launcher"></service>
+
     </application>
 
 </manifest>

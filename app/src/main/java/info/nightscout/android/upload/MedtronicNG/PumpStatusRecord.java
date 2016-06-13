@@ -10,11 +10,6 @@ import java.util.Date;
  * Created by lgoedhart on 27/03/2016.
  */
 public class PumpStatusRecord extends DeviceRecord implements Serializable {
-
-    public String alarm = "---"; // Not sure where this is yet
-    public String temporaryBasal = "---"; // Not sure where this is yet
-    public String model = "---"; // Available?
-
     public int batteryPercentage;
     public Date pumpDate = new Date();
     public BigDecimal activeInsulin = new BigDecimal(0);

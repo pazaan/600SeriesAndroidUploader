@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 
 import ch.qos.logback.classic.Logger;
 import info.nightscout.android.R;
-import info.nightscout.android.medtronic.Medtronic640gActivity;
+import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.medtronic.MedtronicConstants;
 import info.nightscout.android.upload.MedtronicNG.CGMRecord;
 
@@ -53,10 +53,6 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     public static final Object isModifyingRecordsLock = new Object();
 
     public UploadHelper(Context context) {
-        this(context, Medtronic640gActivity.CNL_24);
-    }
-    
-    public UploadHelper(Context context, int cgmSelected) {
         this.context = context;
 		settings = context.getSharedPreferences(MedtronicConstants.PREFS_NAME, 0);
         synchronized (isModifyingRecordsLock) {
@@ -411,19 +407,19 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
         log.info("devicestatusURL: " + devicestatusURL);
 
         JSONObject json = new JSONObject();
-        json.put("uploaderBattery", Medtronic640gActivity.batLevel);
-		json.put("device", Medtronic640gActivity.pumpStatusRecord.getDeviceName() );
+        json.put("uploaderBattery", MainActivity.batLevel);
+		json.put("device", MainActivity.pumpStatusRecord.getDeviceName() );
 
 		JSONObject pumpInfo = new JSONObject();
-		pumpInfo.put( "clock", Medtronic640gActivity.pumpStatusRecord.pumpDate );
-		pumpInfo.put( "reservoir", Medtronic640gActivity.pumpStatusRecord.reservoirAmount);
+		pumpInfo.put( "clock", MainActivity.pumpStatusRecord.pumpDate );
+		pumpInfo.put( "reservoir", MainActivity.pumpStatusRecord.reservoirAmount);
 
 		JSONObject iob = new JSONObject();
-		iob.put( "timestamp", Medtronic640gActivity.pumpStatusRecord.pumpDate );
-		iob.put( "bolusiob", Medtronic640gActivity.pumpStatusRecord.activeInsulin );
+		iob.put( "timestamp", MainActivity.pumpStatusRecord.pumpDate );
+		iob.put( "bolusiob", MainActivity.pumpStatusRecord.activeInsulin );
 
 		JSONObject battery = new JSONObject();
-		battery.put( "percent", Medtronic640gActivity.pumpStatusRecord.batteryPercentage );
+		battery.put( "percent", MainActivity.pumpStatusRecord.batteryPercentage );
 
 		pumpInfo.put( "iob", iob );
 		pumpInfo.put( "battery", battery );
@@ -444,20 +440,17 @@ public class UploadHelper extends AsyncTask<Record, Integer, Long> {
     
     private void populateV1APIEntry(JSONObject json, Record oRecord) throws Exception {
 		if (oRecord instanceof CGMRecord) {
-			json.put("date", ((CGMRecord) oRecord).sgvDate.getTime());
-			json.put("dateString",  oRecord.displayTime);
+			CGMRecord pumpRecord = (CGMRecord) oRecord;
+			json.put("sgv", pumpRecord.sgv);
+			json.put("direction", pumpRecord.direction);
+			json.put("device", pumpRecord.getDeviceName());
+			json.put("type", "sgv");
+			json.put("date", pumpRecord.sgvDate.getTime());
+			json.put("dateString",  pumpRecord.sgvDate);
 		} else {
 			Date date = DATE_FORMAT.parse(oRecord.displayTime);
 			json.put("date", date.getTime());
 		}
-
-    	if (oRecord instanceof CGMRecord){
-				CGMRecord pumpRecord = (CGMRecord) oRecord;
-				json.put("sgv", pumpRecord.sgv);
-				json.put("direction", pumpRecord.direction);
-				json.put("device", pumpRecord.getDeviceName());
-				json.put("type", "sgv");
-    	}
     }
 
 	private static String convertStreamToString(InputStream is) {

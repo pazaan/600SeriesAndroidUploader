@@ -13,6 +13,7 @@ plugins {
 
 apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
+apply plugin: 'realm-android'
 
 repositories {
     maven { url 'https://maven.fabric.io/public' }
@@ -36,7 +37,7 @@ android {
 
     defaultConfig {
         applicationId "info.nightscout.android"
-        minSdkVersion 15
+        minSdkVersion 14
         targetSdkVersion 23
         versionName project.properties['version']
         versionCode gitVersion()
@@ -119,4 +120,10 @@ dependencies {
     compile('com.crashlytics.sdk.android:crashlytics:2.5.5@aar') {
         transitive = true;
     }
+    compile('com.mikepenz:materialdrawer:5.2.9@aar') {
+        transitive = true
+    }
+    compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
+    compile 'uk.co.chrisjenx:calligraphy:2.2.0'
+    compile 'com.bugfender.sdk:android:0.3.5'
 }

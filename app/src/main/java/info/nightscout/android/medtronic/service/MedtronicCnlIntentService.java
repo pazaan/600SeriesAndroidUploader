@@ -1,16 +1,14 @@
 package info.nightscout.android.medtronic.service;
 
-import android.app.PendingIntent;
+import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
+import android.content.pm.PackageManager;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Handler;
-import android.os.Message;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.io.File;
@@ -19,78 +17,74 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
-import info.nightscout.android.medtronic.Medtronic640gActivity;
+import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.medtronic.MedtronicCNLReader;
-import info.nightscout.android.medtronic.data.CNLConfigDbHelper;
 import info.nightscout.android.medtronic.message.ChecksumException;
 import info.nightscout.android.medtronic.message.EncryptionException;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
-import info.nightscout.android.service.AbstractService;
+import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.upload.MedtronicNG.CGMRecord;
 import info.nightscout.android.upload.MedtronicNG.PumpStatusRecord;
 import info.nightscout.android.upload.UploadHelper;
+import io.realm.Realm;
 
-public class MedtronicCNLService extends AbstractService {
+public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_VID = 0x1a79;
     public final static int USB_PID = 0x6210;
-
+    public final static long POLL_PERIOD_MS = 300000L;
+    // Number of additional seconds to wait after the next expected CGM poll, so that we don't interfere with CGM radio comms.
+    public final static long POLL_GRACE_PERIOD_MS = 30000L;
+    private static final String TAG = MedtronicCnlIntentService.class.getSimpleName();
     private UsbHidDriver mHidDevice;
-    private Timer mTimer = new Timer();
-    private static final String TAG = MedtronicCNLService.class.getSimpleName();
     private Context mContext;
     private NotificationManagerCompat nm;
-    private final static long POLL_PERIOD_MS = 300000L;
-    private final static long POLL_DELAY_MS = 30000L;
-    // If the polling is within this many milliseconds (either side), then we don't reset the timer
-    private final static long POLL_MARGIN_MS = 10000L;
     private UsbManager mUsbManager;
-    private Handler handler;
+
+    public MedtronicCnlIntentService() {
+        super(MedtronicCnlIntentService.class.getName());
+    }
+
+    public final class Constants {
+        public static final String ACTION_STATUS_MESSAGE = "info.nightscout.android.medtronic.service.STATUS_MESSAGE";
+        public static final String ACTION_CGM_DATA = "info.nightscout.android.medtronic.service.CGM_DATA";
+        public static final String EXTENDED_DATA = "info.nightscout.android.medtronic.service.DATA";
+    }
+
+    protected void sendStatus(String message) {
+        Intent localIntent =
+                new Intent(Constants.ACTION_STATUS_MESSAGE)
+                        .putExtra(Constants.EXTENDED_DATA, message);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+    }
+
+    protected void sendCgmRecord(Serializable cgmRecord) {
+        Intent localIntent =
+                new Intent(Constants.ACTION_CGM_DATA)
+                        .putExtra(Constants.EXTENDED_DATA, cgmRecord);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+    }
 
     @Override
     public void onCreate() {
-        this.handler = new Handler();
         super.onCreate();
-    }
 
-    @Override
-    public void onStartService() {
-        Log.i(TAG, "onStartService called");
+        Log.i(TAG, "onCreate called");
         mContext = this.getBaseContext();
-        mUsbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
-
-        // Add a small start delay - for some reason, having no start delay causes initial
-        // binding/rendering issues
-        startPollingLoop(250L);
-    }
-
-    private void startPollingLoop(long delay) {
-        mTimer.scheduleAtFixedRate(new TimerTask() {
-            public void run() {
-                handler.post(new Runnable() {
-                    public void run() {
-                        doReadAndUpload();
-                    }
-                });
-            }
-        }, delay, POLL_PERIOD_MS);
+        mUsbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
     }
 
     @Override
-    public void onStopService() {
-        Log.d(TAG, "onStopService called");
+    public void onDestroy() {
+        super.onDestroy();
 
-        if (mTimer != null) {
-            mTimer.cancel();
-            mTimer = null;
-        }
+        Log.d(TAG, "onDestroy called");
 
         if (nm != null) {
             nm.cancelAll();
@@ -104,25 +98,29 @@ public class MedtronicCNLService extends AbstractService {
         }
     }
 
-    @Override
-    public void onReceiveMessage(Message msg) {
-    }
+    protected void onHandleIntent(Intent intent) {
+        Log.i(TAG, "onHandleIntent called");
 
-    protected void doReadAndUpload() {
+        if (!hasUsbHostFeature()) {
+            sendStatus("It appears that this device doesn't support USB OTG.");
+            return;
+        }
+
         UploadHelper mUploader = new UploadHelper(getBaseContext());
         mHidDevice = UsbHidDriver.acquire(mUsbManager, USB_VID, USB_PID);
+        Realm realm = Realm.getDefaultInstance();
 
         // Load the initial data to the display
         CGMRecord cgmRecord = loadData();
-        PumpStatusRecord pumpRecord = Medtronic640gActivity.pumpStatusRecord;
+        PumpStatusRecord pumpRecord = MainActivity.pumpStatusRecord;
 
-        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_DATA, cgmRecord));
+        sendCgmRecord(cgmRecord);
 
         if (mHidDevice == null) {
             String title = "USB connection error";
             String msg = "Is the Bayer Contour NextLink plugged in?";
             //showNotification(title, msg);
-            send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, title + "\n" + msg));
+            sendStatus(title + "\n" + msg);
         } else {
             try {
                 mHidDevice.open();
@@ -135,20 +133,32 @@ public class MedtronicCNLService extends AbstractService {
             MedtronicCNLReader cnlReader = new MedtronicCNLReader(mHidDevice);
 
             try {
-                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_STATUS, "Connecting to the Contour Next Link..."));
+                sendStatus("Connecting to the Contour Next Link...");
                 cnlReader.requestDeviceInfo();
 
                 // Is the device already configured?
-                CNLConfigDbHelper configDbHelper = new CNLConfigDbHelper(mContext);
-                configDbHelper.insertStickSerial(cnlReader.getStickSerial());
-                String hmac = configDbHelper.getHmac(cnlReader.getStickSerial());
-                String key = configDbHelper.getKey(cnlReader.getStickSerial());
+                ContourNextLinkInfo info = realm
+                        .where(ContourNextLinkInfo.class).equalTo("serialNumber", cnlReader.getStickSerial())
+                        .findFirst();
+
+                if (info == null) {
+                    info = new ContourNextLinkInfo();
+                    info.setSerialNumber(cnlReader.getStickSerial());
+
+                    realm.beginTransaction();
+                    info = realm.copyToRealm(info);
+                    realm.commitTransaction();
+                }
+
+                String hmac = info.getHmac();
+                String key = info.getKey();
+
                 String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
                 cgmRecord.setDeviceName(deviceName);
-                Medtronic640gActivity.pumpStatusRecord.setDeviceName(deviceName);
+                pumpRecord.setDeviceName(deviceName);
 
-                if (hmac.equals("") || key.equals("")) {
-                    send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, String.format("Before you can use the Contour Next Link, you need to register it with the app. Select '%s' from the menu.", getString(R.string.register_contour_next_link))));
+                if (hmac == null || key == null) {
+                    sendStatus(String.format("Before you can use the Contour Next Link, you need to register it with the app. Select '%s' from the menu.", getString(R.string.register_contour_next_link)));
                     return;
                 }
 
@@ -162,45 +172,44 @@ public class MedtronicCNLService extends AbstractService {
                     cnlReader.requestReadInfo();
                     byte radioChannel = cnlReader.negotiateChannel();
                     if (radioChannel == 0) {
-                        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Could not communicate with the 640g. Are you near the pump?"));
+                        sendStatus("Could not communicate with the 640g. Are you near the pump?");
                         Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
                     } else {
-                        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_STATUS, String.format( Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel)));
+                        sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
                         Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                         cnlReader.beginEHSMSession();
 
-                        cnlReader.getPumpTime(pumpRecord);
+                        pumpRecord.pumpDate = cnlReader.getPumpTime();
                         cnlReader.getPumpStatus(cgmRecord);
 
-                        long pumpToUploaderTimeOffset = (new java.util.Date()).getTime() - Medtronic640gActivity.pumpStatusRecord.pumpDate.getTime();
-
                         writeData(cgmRecord);
-                        send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_DATA, cgmRecord));
+                        sendCgmRecord(cgmRecord);
                         cnlReader.endEHSMSession();
                     }
                     cnlReader.closeConnection();
                 } catch (UnexpectedMessageException e) {
                     Log.e(TAG, "Unexpected Message", e);
-                    send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Communication Error: " + e.getMessage()));
+                    sendStatus("Communication Error: " + e.getMessage());
+
                 } finally {
                     cnlReader.endPassthroughMode();
                     cnlReader.endControlMode();
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Error getting SGVs", e);
-                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Error connecting to Contour Next Link."));
+                sendStatus("Error connecting to Contour Next Link.");
             } catch (ChecksumException e) {
                 Log.e(TAG, "Checksum error", e);
-                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Checksum error getting message from the Contour Next Link."));
+                sendStatus("Checksum error getting message from the Contour Next Link.");
             } catch (EncryptionException e) {
                 Log.e(TAG, "Encryption exception", e);
-                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Error decrypting messages from Contour Next Link."));
+                sendStatus("Error decrypting messages from Contour Next Link.");
             } catch (TimeoutException e) {
                 Log.e(TAG, "Timeout communicating with Contour", e);
-                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Timeout communicating with the Contour Next Link."));
+                sendStatus("Timeout communicating with the Contour Next Link.");
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
-                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, "Could not close connection: " + e.getMessage()));
+                sendStatus("Could not close connection: " + e.getMessage());
             }
 
             // TODO - add retries.
@@ -208,17 +217,38 @@ public class MedtronicCNLService extends AbstractService {
                 String title = "Cannot upload data";
                 String msg = "Please check that you're connected to the Internet";
                 //showNotification(title, msg);
-                send(Message.obtain(null, Medtronic640gActivity.Medtronic640gActivityHandler.MSG_ERROR, title + "\n" + msg));
+                sendStatus(title + "\n" + msg);
             } else {
-                mUploader.execute(cgmRecord);
+                // FIXME - DO THE UPLOAD!
+                //mUploader.execute(cgmRecord);
             }
+
+            realm.close();
         }
     }
 
     private boolean isOnline() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
+    private boolean hasUsbHostFeature() {
+        return mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
+    }
+
+    // FIXME - replace this with writing to the SQLite DB.
+    private void writeData(CGMRecord cgmRecord) {
+        //Write most recent data
+        try {
+            Context context = getBaseContext();
+            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(context.getFilesDir(), "save.bin"))); //Select where you wish to save the file...
+            oos.writeObject(cgmRecord); // write the class as an 'object'
+            oos.flush(); // flush the stream to insure all of the information was written to 'save.bin'
+            oos.close();// close the stream
+        } catch (Exception e) {
+            Log.e(TAG, "write to OutputStream failed", e);
+        }
     }
 
     /*
@@ -228,7 +258,7 @@ public class MedtronicCNLService extends AbstractService {
         NotificationManagerCompat nm = NotificationManagerCompat.from(mContext);
 
         // The PendingIntent to launch our activity if the user selects this notification
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, Medtronic640gActivity.class), 0);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
         nm.notify(R.string.app_name, new NotificationCompat.Builder(mContext)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setContentTitle(title)
@@ -243,20 +273,6 @@ public class MedtronicCNLService extends AbstractService {
                 .build());
     }
     */
-
-    // FIXME - replace this with writing to the SQLite DB.
-    private void writeData(CGMRecord mostRecentData) {
-        //Write most recent data
-        try {
-            Context context = getBaseContext();
-            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(context.getFilesDir(), "save.bin"))); //Select where you wish to save the file...
-            oos.writeObject(mostRecentData); // write the class as an 'object'
-            oos.flush(); // flush the stream to insure all of the information was written to 'save.bin'
-            oos.close();// close the stream
-        } catch (Exception e) {
-            Log.e(TAG, "write to OutputStream failed", e);
-        }
-    }
 
     private CGMRecord loadData() {
         ObjectInputStream ois = null;
