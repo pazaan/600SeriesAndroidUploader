@@ -32,13 +32,10 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait">
             <intent-filter android:icon="@drawable/ic_launcher">
-                <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter android:icon="@drawable/ic_launcher">
+
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
             </intent-filter>
 
             <meta-data
@@ -49,17 +46,30 @@
             android:name=".settings.SettingsActivity"
             android:icon="@drawable/ic_launcher"
             android:label="Settings"
-            android:theme="@style/SettingsTheme"/>
+            android:theme="@style/SettingsTheme" />
+        <activity
+            android:name=".SplashActivity"
+            android:theme="@style/SplashTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".medtronic.GetHmacAndKeyActivity"
             android:label="@string/title_activity_login"
             android:theme="@style/SettingsTheme" />
 
         <service
-            android:name=".medtronic.service.MedtronicCnlIntentService"
-            android:icon="@drawable/ic_launcher"></service>
+            android:name=".upload.nightscout.NightscoutUploadIntentService"
+            android:icon="@drawable/ic_launcher" />
 
+        <service
+            android:name=".medtronic.service.MedtronicCnlIntentService"
+            android:icon="@drawable/ic_launcher" />
+
+        <activity android:name=".medtronic.StatusActivity"></activity>
     </application>
 
 </manifest>

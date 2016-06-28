@@ -5,12 +5,16 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.TextUtils;
@@ -87,7 +91,7 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
-                if (id == R.id.login || id == EditorInfo.IME_NULL) {
+                if (id == EditorInfo.IME_ACTION_DONE) {
                     attemptLogin();
                     return true;
                 }
@@ -137,7 +141,7 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-        if (mHmacAndKeyTask != null) {
+        if (mHmacAndKeyTask != null || !checkOnline("Please connect to the Internet", "You must be online to register your USB stick.")) {
             return;
         }
 
@@ -230,6 +234,29 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
         }
 
         mRegisteredStickView.setText(Html.fromHtml(deviceTableHtml));
+    }
+
+    private boolean checkOnline(String title, String message) {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+
+        boolean isOnline = (netInfo != null && netInfo.isConnectedOrConnecting());
+
+        if (!isOnline) {
+            new AlertDialog.Builder(this, R.style.AppTheme)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setCancelable(false)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
+
+        return isOnline;
     }
 
     @Override

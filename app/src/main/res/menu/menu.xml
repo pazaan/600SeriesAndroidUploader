@@ -2,13 +2,9 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-            android:id="@+id/menu_settings"
-            android:orderInCategory="100"
-            android:title="@string/menu_name_preferences">
-    </item>
-    <item
-            android:id="@+id/registerCNL"
-            android:orderInCategory="100"
-            android:title="@string/register_contour_next_link">
-    </item>
+        android:id="@+id/action_menu_status"
+        android:icon="@drawable/ic_launcher"
+        android:orderInCategory="100"
+        app:showAsAction="always"
+        android:title="@string/menu_name_status"/>
 </menu>

@@ -34,15 +34,22 @@ public class UsbHidDriver extends CommonUsbDriver {
         super(device, connection);
     }
 
-    public static UsbHidDriver acquire(UsbManager usbManager, int vendorId, int productId) {
-
+    public static UsbDevice getUsbDevice(UsbManager usbManager, int vendorId, int productId) {
         // Iterate all the available devices and find ours.
         for (UsbDevice device : usbManager.getDeviceList().values()) {
             if (device.getProductId() == productId && device.getVendorId() == vendorId) {
-                final UsbDeviceConnection mConnection = usbManager.openDevice(device);
-
-                return new UsbHidDriver(device, mConnection);
+                return device;
             }
+        }
+
+        return null;
+    }
+
+    public static UsbHidDriver acquire(UsbManager usbManager, UsbDevice device) {
+        if (device != null) {
+            final UsbDeviceConnection mConnection = usbManager.openDevice(device);
+
+            return new UsbHidDriver(device, mConnection);
         }
 
         return null;

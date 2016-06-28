@@ -9,25 +9,14 @@ import io.realm.annotations.Index;
  * Created by lgoedhart on 4/06/2016.
  */
 public class CgmStatusEvent extends RealmObject {
-    public enum TREND {
-        NONE,
-        DOUBLE_UP,
-        SINGLE_UP,
-        FOURTY_FIVE_UP,
-        FLAT,
-        FOURTY_FIVE_DOWN,
-        SINGLE_DOWN,
-        DOUBLE_DOWN,
-        NOT_COMPUTABLE,
-        RATE_OUT_OF_RANGE,
-        NOT_SET
-    }
-
     @Index
     private Date eventDate; // The actual time of the event (assume the capture device eventDate/time is accurate)
     private Date pumpDate; // The eventDate/time on the pump at the time of the event
+    private String deviceName;
     private int sgv;
     private String trend;
+    @Index
+    private boolean uploaded = false;
 
     public Date getEventDate() {
         return eventDate;
@@ -45,6 +34,14 @@ public class CgmStatusEvent extends RealmObject {
         this.pumpDate = pumpDate;
     }
 
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
     public int getSgv() {
         return sgv;
     }
@@ -59,5 +56,27 @@ public class CgmStatusEvent extends RealmObject {
 
     public void setTrend(TREND trend) {
         this.trend = trend.name();
+    }
+
+    public boolean isUploaded() {
+        return uploaded;
+    }
+
+    public void setUploaded(boolean uploaded) {
+        this.uploaded = uploaded;
+    }
+
+    public enum TREND {
+        NONE,
+        DOUBLE_UP,
+        SINGLE_UP,
+        FOURTY_FIVE_UP,
+        FLAT,
+        FOURTY_FIVE_DOWN,
+        SINGLE_DOWN,
+        DOUBLE_DOWN,
+        NOT_COMPUTABLE,
+        RATE_OUT_OF_RANGE,
+        NOT_SET
     }
 }
