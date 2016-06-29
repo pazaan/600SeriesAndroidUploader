@@ -6,3 +6,4 @@ workspace.xml
 fabric.properties
 local.properties
 .idea
+bugfender.properties

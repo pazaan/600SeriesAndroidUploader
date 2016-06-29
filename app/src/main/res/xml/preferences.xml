@@ -4,51 +4,51 @@
         <info.nightscout.android.utils.CustomSwitchPreference
             android:disableDependentsState="false"
             android:key="mmolxl"
-            android:summaryOff="mg/dl. Values are shown and set in mg/dl"
-            android:summaryOn="mmol/l. Values are shown and set in mmol/l"
-            android:switchTextOff="mg/dl"
-            android:switchTextOn="mmol/l"
-            android:title="mmol/l"></info.nightscout.android.utils.CustomSwitchPreference>
+            android:summaryOff="Values are shown and set in mg/dL"
+            android:summaryOn="Values are shown and set in mmol/L"
+            android:switchTextOff="mg/dL"
+            android:switchTextOn="mmol/L"
+            android:title="BG Unit"/>
         <info.nightscout.android.utils.CustomSwitchPreference
             android:defaultValue="false"
             android:dependency="mmolxl"
             android:key="mmolDecimals"
-            android:summaryOff="Deactivated. 1 Decimal value will be shown ."
-            android:summaryOn="Activated. 2 Decimal values will be shown ."
+            android:summaryOff="1 decimal value will be shown"
+            android:summaryOn="2 decimal values will be shown"
             android:switchTextOff="1"
             android:switchTextOn="2"
-            android:title="mmol/l decimals"></info.nightscout.android.utils.CustomSwitchPreference>
+            android:title="Decimals"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="Sharing">
-        <info.nightscout.android.utils.CustomSwitchPreference
+        <CheckBoxPreference
             android:disableDependentsState="false"
             android:key="@string/preference_enable_rest_upload"
             android:summary="Enable upload of data to Nightscout"
-            android:title="REST API Upload"></info.nightscout.android.utils.CustomSwitchPreference>
+            android:title="REST API Upload"/>
         <EditTextPreference
             android:defaultValue="https://YOUR.NIGHTSCOUT.SITE"
             android:dependency="@string/preference_enable_rest_upload"
             android:dialogMessage="The hostname of your Nightscout site"
             android:dialogTitle="Enter Nightscout URL"
             android:key="@string/preference_nightscout_url"
-            android:title="Nightscout URL"></EditTextPreference>
+            android:title="Nightscout URL"/>
         <info.nightscout.android.utils.ValidatingEditTextPreference
             android:defaultValue="YOURAPISECRET"
             android:dependency="@string/preference_enable_rest_upload"
             android:dialogMessage="Your Nightscout API secret"
             android:dialogTitle="Enter your Nightscout API secret"
             android:key="@string/preference_api_secret"
-            android:title="API Secret"></info.nightscout.android.utils.ValidatingEditTextPreference>
+            android:title="API Secret"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="Disclaimer">
-        <info.nightscout.android.utils.CustomSwitchPreference
+        <SwitchPreference
             android:disableDependentsState="false"
             android:key="@string/preference_eula_accepted"
-            android:summaryOff="Deactivated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
-            android:summaryOn="Activated. Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
+            android:summaryOff="Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
+            android:summaryOn="Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers"
             android:switchTextOff="NO"
             android:switchTextOn="YES"
-            android:title="I UNDERSTAND"></info.nightscout.android.utils.CustomSwitchPreference>
+            android:title="I UNDERSTAND"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="App Version">
         <Preference
@@ -56,16 +56,21 @@
             android:title="@string/versionName" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Debug">
-        <info.nightscout.android.utils.CustomSwitchPreference
+        <SwitchPreference
             android:defaultValue="true"
             android:key="@string/preferences_enable_crashlytics"
             android:summary="Send crash errors to developer"
-            android:title="Automatic Crash Reporting" />
-        <info.nightscout.android.utils.CustomSwitchPreference
+            android:title="Crash Reporting" />
+        <SwitchPreference
             android:defaultValue="true"
             android:key="@string/preferences_enable_answers"
             android:summary="Sends usage data to the developer to help develop a better app."
             android:title="Share usage data" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="@string/preferences_enable_remote_logcat"
+            android:summary="Allow the developer to debug your app. Only enable if asked to by the support team."
+            android:title="Remote Debugging" />
         <ListPreference
             android:defaultValue="1"
             android:disableDependentsState="false"

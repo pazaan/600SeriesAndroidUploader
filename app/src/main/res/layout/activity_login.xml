@@ -46,6 +46,7 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/prompt_username"
                     android:inputType="text"
+                    android:imeOptions="actionNext"
                     android:maxLines="1"
                     android:singleLine="true"/>
 
@@ -56,19 +57,10 @@
                     android:hint="@string/prompt_password"
                     android:imeActionId="@+id/login"
                     android:imeActionLabel="@string/action_sign_in_short"
-                    android:imeOptions="actionUnspecified"
+                    android:imeOptions="actionDone|actionUnspecified"
                     android:inputType="textPassword"
                     android:maxLines="1"
                     android:singleLine="true"/>
-
-                <Button
-                    android:id="@+id/username_sign_in_button"
-                    style="?android:textAppearanceSmall"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/action_sign_in"
-                    android:textStyle="bold"/>
 
             </LinearLayout>
 
@@ -82,14 +74,6 @@
                     android:layout_height="wrap_content"
                     android:id="@+id/registered_usb_devices" />
             </LinearLayout>
-
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/close"
-                android:id="@+id/close_button"
-                android:layout_gravity="center_horizontal"
-                android:visibility="invisible" />
 
         </LinearLayout>
     </ScrollView>
