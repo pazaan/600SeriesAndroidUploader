@@ -69,7 +69,7 @@ public class ValidatingEditTextPreference extends EditTextPreference {
      * @return An error message, or null if the value passes validation.
      */
     public String onValidate(String text) {
-        if (text.length() > 12) {
+        if (text.length() >= 12) {
             return null;
         } else {
             return getContext().getString(R.string.error_msg_api_secret_length);
