@@ -21,11 +21,10 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 
-import java.io.IOException;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.Closeable;
-import java.util.Map;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 import info.nightscout.android.R;
 
@@ -39,13 +38,12 @@ import info.nightscout.android.R;
 public class Eula {
     private static final String ASSET_EULA = "EULA";
     private static final String PREFERENCE_EULA_ACCEPTED = "IUNDERSTAND";
-    private static final String PREFERENCES_EULA = "Disclaimer";
     private static AlertDialog aDialog = null;
 
     /**
      * callback to let the activity know when the user has accepted the EULA.
      */
-    public static interface OnEulaAgreedTo {
+    public interface OnEulaAgreedTo {
 
         /**
          * Called when the user has accepted the eula and the dialog closes.
@@ -68,7 +66,6 @@ public class Eula {
         //final SharedPreferences preferences = activity.getSharedPreferences(PREFERENCES_EULA,
         //        Activity.MODE_PRIVATE);
 
-        Map<String, ?> preferencesAll = preferences.getAll();
         if (!preferences.getBoolean(PREFERENCE_EULA_ACCEPTED, false)) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
             builder.setTitle(R.string.eula_title);
@@ -113,7 +110,7 @@ public class Eula {
     }
 
     private static void accept(SharedPreferences preferences) {
-        preferences.edit().putBoolean(PREFERENCE_EULA_ACCEPTED, true).commit();
+        preferences.edit().putBoolean(PREFERENCE_EULA_ACCEPTED, true).apply();
     }
 
     private static void refuse(Activity activity) {

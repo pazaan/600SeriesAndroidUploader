@@ -2,8 +2,18 @@ package info.nightscout.android.medtronic;
 
 import android.util.Log;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Date;
+import java.util.Locale;
+import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import info.nightscout.android.USB.UsbHidDriver;
-import info.nightscout.android.dexcom.USB.HexDump;
 import info.nightscout.android.medtronic.message.BeginEHSMMessage;
 import info.nightscout.android.medtronic.message.ChannelNegotiateMessage;
 import info.nightscout.android.medtronic.message.ChecksumException;
@@ -21,29 +31,16 @@ import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
-import info.nightscout.android.medtronic.service.MedtronicCNLService;
-import info.nightscout.android.upload.MedtronicNG.CGMRecord;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
-import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
+import info.nightscout.android.model.CgmStatusEvent;
+import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by lgoedhart on 24/03/2016.
  */
 public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
 
-    private static final String TAG = MedtronicCNLService.class.getSimpleName();
+    private static final String TAG = MedtronicCnlIntentService.class.getSimpleName();
 
     private static final int USB_BLOCKSIZE = 64;
     private static final int READ_TIMEOUT_MS = 5000;
@@ -140,7 +137,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
     // TODO - get rid of this - it should be in a message decoder
     private void checkControlMessage(byte[] msg, byte controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
         if (msg.length != 1 || msg[0] != controlCharacter) {
-            throw new UnexpectedMessageException(String.format("Expected to get control character '%d' Got '%d'.",
+            throw new UnexpectedMessageException(String.format(Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
                     (int) controlCharacter, (int) msg[0]));
         }
     }
@@ -160,11 +157,11 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
             if (response1[0] == ASCII.EOT.value) {
                 // response 1 is the ASTM message
                 checkControlMessage(response2, ASCII.ENQ.value);
-                extractStickSerial( new String( response1 ) );
+                extractStickSerial(new String(response1));
             } else {
                 // response 2 is the ASTM message
                 checkControlMessage(response1, ASCII.ENQ.value);
-                extractStickSerial( new String( response2 ) );
+                extractStickSerial(new String(response2));
             }
         } catch (TimeoutException e) {
             // Terminate comms with the pump, then try again
@@ -177,11 +174,32 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         }
     }
 
-    private void extractStickSerial( String astmMessage ) {
-        Pattern pattern = Pattern.compile( ".*?\\^(\\d{4}-\\d{7})\\^.*" );
-        Matcher matcher = pattern.matcher( astmMessage );
-        if( matcher.find() ) {
+    private void extractStickSerial(String astmMessage) {
+        Pattern pattern = Pattern.compile(".*?\\^(\\d{4}-\\d{7})\\^.*");
+        Matcher matcher = pattern.matcher(astmMessage);
+        if (matcher.find()) {
             mStickSerial = matcher.group(1);
+        }
+    }
+
+    private static CgmStatusEvent.TREND fromMessageByte(byte messageByte) {
+        switch( messageByte ) {
+            case (byte) 0x60:
+                return CgmStatusEvent.TREND.FLAT;
+            case (byte) 0xc0:
+                return CgmStatusEvent.TREND.DOUBLE_UP;
+            case (byte) 0xa0:
+                return CgmStatusEvent.TREND.SINGLE_UP;
+            case (byte) 0x80:
+                return CgmStatusEvent.TREND.FOURTY_FIVE_UP;
+            case (byte) 0x40:
+                return CgmStatusEvent.TREND.FOURTY_FIVE_DOWN;
+            case (byte) 0x20:
+                return CgmStatusEvent.TREND.SINGLE_DOWN;
+            case (byte) 0x00:
+                return CgmStatusEvent.TREND.DOUBLE_DOWN;
+            default:
+                return CgmStatusEvent.TREND.NOT_COMPUTABLE;
         }
     }
 
@@ -193,7 +211,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
             checkControlMessage(readMessage(), ASCII.EOT.value);
             new ContourNextLinkCommandMessage(ASCII.ENQ.value).send(this);
             checkControlMessage(readMessage(), ASCII.ACK.value);
-        } catch( UnexpectedMessageException e2 ) {
+        } catch (UnexpectedMessageException e2) {
             // Terminate comms with the pump, then try again
             new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
             doRetry = true;
@@ -231,8 +249,8 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         long linkMAC = infoBuffer.getLong(0);
         long pumpMAC = infoBuffer.getLong(8);
 
-        this.getPumpSession().setLinkMAC( linkMAC );
-        this.getPumpSession().setPumpMAC( pumpMAC );
+        this.getPumpSession().setLinkMAC(linkMAC);
+        this.getPumpSession().setPumpMAC(pumpMAC);
     }
 
     public byte negotiateChannel() throws IOException, ChecksumException, TimeoutException {
@@ -251,7 +269,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
                 if (responseBytes[76] == mPumpSession.getRadioChannel()) {
                     break;
                 } else {
-                    throw new IOException(String.format("Expected to get a message for channel %d. Got %d", mPumpSession.getRadioChannel(), responseBytes[76]));
+                    throw new IOException(String.format(Locale.getDefault(), "Expected to get a message for channel %d. Got %d", mPumpSession.getRadioChannel(), responseBytes[76]));
                 }
             } else {
                 mPumpSession.setRadioChannel((byte) 0);
@@ -267,8 +285,9 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         readMessage();
     }
 
-    public void getPumpTime(CGMRecord pumpRecord) throws EncryptionException, IOException, ChecksumException, TimeoutException {
+    public Date getPumpTime() throws EncryptionException, IOException, ChecksumException, TimeoutException {
         // FIXME - throw if not in EHSM mode (add a state machine)
+        Date timeAtCapture = new Date();
 
         new PumpTimeRequestMessage(mPumpSession).send(this);
         // Read the 0x81
@@ -278,27 +297,21 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         ContourNextLinkMessage response = PumpTimeResponseMessage.fromBytes(mPumpSession, readMessage());
 
         if (response.encode().length < 57) {
-            // Invalid message. Don't try and parse it
-            return;
+            // Invalid message. Return an invalid date.
+            return new Date();
         }
 
         // FIXME - this needs to go into PumpTimeResponseMessage
         ByteBuffer dateBuffer = ByteBuffer.allocate(8);
         dateBuffer.order(ByteOrder.BIG_ENDIAN);
-        dateBuffer.put(response.encode(), 61, 8);
+        dateBuffer.put(response.encode(), 0x3d, 8);
         long rtc = dateBuffer.getInt(0) & 0x00000000ffffffffL;
         long offset = dateBuffer.getInt(4);
 
-        Date pumpDate = MessageUtils.decodeDateTime(rtc, offset);
-
-        // Set displayTime to be an ISO 8601 date (so that it's parsable).
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        pumpRecord.displayTime = dateFormat.format(pumpDate);
-        Medtronic640gActivity.pumpStatusRecord.pumpDate = pumpDate;
+        return MessageUtils.decodeDateTime(rtc, offset);
     }
 
-    public void getPumpStatus(CGMRecord pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException {
+    public void getPumpStatus(CgmStatusEvent cgmRecord, long pumpTimeOffset) throws IOException, EncryptionException, ChecksumException, TimeoutException {
         // FIXME - throw if not in EHSM mode (add a state machine)
 
         new PumpStatusRequestMessage(mPumpSession).send(this);
@@ -320,27 +333,27 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
 
         // Read the data into the record
         long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
-        Medtronic640gActivity.pumpStatusRecord.activeInsulin = new BigDecimal( rawActiveInsulin / 10000f ).setScale(3, BigDecimal.ROUND_HALF_UP);
-        pumpRecord.sgv = statusBuffer.getShort(0x35) & 0x0000ffff; // In mg/DL. 0 means no CGM reading
+        MainActivity.pumpStatusRecord.activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP);
+        cgmRecord.setSgv(statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
         long rtc;
         long offset;
-        if( ( pumpRecord.sgv & 0x200 ) == 0x200 ) {
+        if ((cgmRecord.getSgv() & 0x200) == 0x200) {
             // Sensor error. Let's reset. FIXME - solve this more elegantly later
-            pumpRecord.sgv = 0;
+            cgmRecord.setSgv(0);
             rtc = 0;
             offset = 0;
-            pumpRecord.setTrend(CGMRecord.TREND.NOT_SET);
+            cgmRecord.setTrend(CgmStatusEvent.TREND.NOT_SET);
         } else {
             rtc = statusBuffer.getInt(0x37) & 0x00000000ffffffffL;
             offset = statusBuffer.getInt(0x3b);
-            pumpRecord.setTrend(CGMRecord.fromMessageByte( statusBuffer.get(0x40)));
+            cgmRecord.setTrend(fromMessageByte(statusBuffer.get(0x40)));
         }
-        pumpRecord.sgvDate = MessageUtils.decodeDateTime(rtc, offset);
-        Medtronic640gActivity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
-        Medtronic640gActivity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
-        long rawReservoirAmount = statusBuffer.getInt(0x2b) &  0xffffffff;
-        Medtronic640gActivity.pumpStatusRecord.reservoirAmount = new BigDecimal( rawReservoirAmount / 10000f ).setScale(3, BigDecimal.ROUND_HALF_UP);
-        Medtronic640gActivity.pumpStatusRecord.batteryPercentage = ( statusBuffer.get(0x2a) );
+        cgmRecord.setEventDate(new Date(MessageUtils.decodeDateTime(rtc, offset).getTime() - pumpTimeOffset));
+        MainActivity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
+        MainActivity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
+        long rawReservoirAmount = statusBuffer.getInt(0x2b);
+        MainActivity.pumpStatusRecord.reservoirAmount = new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP);
+        MainActivity.pumpStatusRecord.batteryPercentage = (statusBuffer.get(0x2a));
     }
 
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException {

@@ -9,9 +9,14 @@ import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
-import android.preference.SwitchPreference;
+
+import java.io.IOException;
 
 import info.nightscout.android.R;
+import info.nightscout.android.upload.nightscout.NightscoutApi;
+import retrofit2.Call;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class SettingsFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
 
@@ -21,9 +26,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 
         /* set preferences */
         addPreferencesFromResource(R.xml.preferences);
-        
-        addMedtronicOptionsListener();
-       
+
         // iterate through all preferences and update to saved value
         for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
             initSummary(getPreferenceScreen().getPreference(i));
@@ -73,15 +76,5 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
             EditTextPreference editTextPref = (EditTextPreference) p;
             p.setSummary(editTextPref.getText());
         }
-    }
-    
-    private void addMedtronicOptionsListener(){
-         final SwitchPreference enableRest = (SwitchPreference)findPreference("EnableRESTUpload");
-         enableRest.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-           public boolean onPreferenceChange(Preference preference, Object newValue) {
-             final Boolean val = (Boolean)newValue;
-             return true;
-           }
-         });
     }
 }

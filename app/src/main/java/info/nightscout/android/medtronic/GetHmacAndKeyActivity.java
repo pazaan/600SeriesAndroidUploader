@@ -3,29 +3,33 @@ package info.nightscout.android.medtronic;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Loader;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.TextUtils;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import info.nightscout.android.R;
-import info.nightscout.android.medtronic.data.CNLConfigContract;
-import info.nightscout.android.medtronic.data.CNLConfigDbHelper;
-import info.nightscout.android.medtronic.message.MessageUtils;
+import com.mikepenz.google_material_typeface_library.GoogleMaterial;
+import com.mikepenz.iconics.IconicsDrawable;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.HttpResponse;
@@ -46,14 +50,22 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import info.nightscout.android.R;
+import info.nightscout.android.medtronic.message.MessageUtils;
+import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
+import io.realm.Realm;
+import io.realm.RealmResults;
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
+
 /**
  * A login screen that offers login via username/password.
  */
-public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<Cursor> {
+public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
+    // TODO - Replace with Rx.Java
     private GetHmacAndKey mHmacAndKeyTask = null;
 
     // UI references.
@@ -62,12 +74,16 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
     private View mProgressView;
     private View mLoginFormView;
     private TextView mRegisteredStickView;
-    private Button mCloseButton;
+    private MenuItem mLoginMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("Register USB");
+
         // Set up the login form.
         mUsernameView = (EditText) findViewById(R.id.username);
 
@@ -75,7 +91,7 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
-                if (id == R.id.login || id == EditorInfo.IME_NULL) {
+                if (id == EditorInfo.IME_ACTION_DONE) {
                     attemptLogin();
                     return true;
                 }
@@ -83,27 +99,40 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
             }
         });
 
-        Button usernameSignInButton = (Button) findViewById(R.id.username_sign_in_button);
-        usernameSignInButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                attemptLogin();
-            }
-        });
-        Button closeButton = (Button) findViewById(R.id.close_button);
-        closeButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                finish();
-            }
-        });
-
-
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
-        mRegisteredStickView = (TextView)findViewById(R.id.registered_usb_devices);
-        mCloseButton = (Button)findViewById(R.id.close_button);
+        mRegisteredStickView = (TextView) findViewById(R.id.registered_usb_devices);
+
         showRegisteredSticks();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_register_usb, menu);
+
+        mLoginMenuItem = menu.findItem(R.id.action_menu_login);
+        mLoginMenuItem.setIcon(new IconicsDrawable(this, GoogleMaterial.Icon.gmd_cloud_download).color(Color.WHITE).actionBar());
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_menu_login:
+                attemptLogin();
+                break;
+            case android.R.id.home:
+                finish();
+                break;
+        }
+        return true;
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
     /**
@@ -112,7 +141,7 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-        if (mHmacAndKeyTask != null) {
+        if (mHmacAndKeyTask != null || !checkOnline("Please connect to the Internet", "You must be online to register your USB stick.")) {
             return;
         }
 
@@ -191,21 +220,43 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
     }
 
     private void showRegisteredSticks() {
-        CNLConfigDbHelper configDbHelper = new CNLConfigDbHelper(getBaseContext());
-        Cursor cursor = configDbHelper.getAllRows();
+        Realm realm = Realm.getDefaultInstance();
+
+        RealmResults<ContourNextLinkInfo> results = realm.where(ContourNextLinkInfo.class).findAll();
 
         String deviceTableHtml = "<big><b>Registered Devices</b></big><br/>";
 
-        while( !cursor.isAfterLast() ) {
-            String longSerial = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_STICK_SERIAL));
-            String key = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_KEY));
+        for (ContourNextLinkInfo info : results) {
+            String longSerial = info.getSerialNumber();
+            String key = info.getKey();
 
-            deviceTableHtml += String.format("<b>Serial Number:</b> %s %s<br/>", longSerial, key.equals("") ? "&#x2718;" : "&#x2714;" );
-
-            cursor.moveToNext();
+            deviceTableHtml += String.format("<b>Serial Number:</b> %s %s<br/>", longSerial, key == null ? "&#x2718;" : "&#x2714;");
         }
 
-        mRegisteredStickView.setText(Html.fromHtml( deviceTableHtml ));
+        mRegisteredStickView.setText(Html.fromHtml(deviceTableHtml));
+    }
+
+    private boolean checkOnline(String title, String message) {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+
+        boolean isOnline = (netInfo != null && netInfo.isConnectedOrConnecting());
+
+        if (!isOnline) {
+            new AlertDialog.Builder(this, R.style.AppTheme)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setCancelable(false)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        }
+
+        return isOnline;
     }
 
     @Override
@@ -230,7 +281,7 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
         private final String mUsername;
         private final String mPassword;
 
-        GetHmacAndKey(String username, String password ) {
+        GetHmacAndKey(String username, String password) {
             mUsername = username;
             mPassword = password;
         }
@@ -248,12 +299,12 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
                 HttpResponse response = client.execute(loginPost);
 
                 if (response.getStatusLine().getStatusCode() == 200) {
-                    // Get the HMAC/keys for every serial in the Config database
-                    CNLConfigDbHelper configDbHelper = new CNLConfigDbHelper(getBaseContext());
-                    Cursor cursor = configDbHelper.getAllRows();
+                    // Get the HMAC/keys for every serial we have seen
+                    Realm realm = Realm.getDefaultInstance();
 
-                    while( !cursor.isAfterLast() ) {
-                        String longSerial = cursor.getString(cursor.getColumnIndex(CNLConfigContract.ConfigEntry.COLUMN_NAME_STICK_SERIAL));
+                    RealmResults<ContourNextLinkInfo> results = realm.where(ContourNextLinkInfo.class).findAll();
+                    for (ContourNextLinkInfo info : results) {
+                        String longSerial = info.getSerialNumber();
 
                         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                         ObjectOutputStream hmacRequest = new ObjectOutputStream(buffer);
@@ -288,10 +339,10 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
                         keyResponse.readInt(); // Throw away the first int. Not sure what it does
                         String key = MessageUtils.byteArrayToHexString((byte[]) keyResponse.readObject());
 
-                        // TODO - return false if this returns 0? What would we do anyway?
-                        configDbHelper.setHmacAndKey(longSerial, hmac, key);
-
-                        cursor.moveToNext();
+                        realm.beginTransaction();
+                        info.setHmac(hmac);
+                        info.setKey(key);
+                        realm.commitTransaction();
                     }
 
                     return true;
@@ -314,10 +365,10 @@ public class GetHmacAndKeyActivity extends Activity implements LoaderCallbacks<C
 
             if (success) {
                 showRegisteredSticks();
-                mCloseButton.setVisibility(View.VISIBLE);
+                mLoginMenuItem.setVisible(false);
                 mLoginFormView.setVisibility(View.GONE);
                 mProgressView.setVisibility(View.GONE);
-                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(mLoginFormView.getWindowToken(), 0);
             } else {
                 showProgress(false);

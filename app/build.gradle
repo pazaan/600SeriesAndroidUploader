@@ -4,7 +4,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'io.fabric.tools:gradle:1.+'
+        classpath 'io.fabric.tools:gradle:1.21.6'
     }
 }
 plugins {
@@ -13,9 +13,11 @@ plugins {
 
 apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
+apply plugin: 'realm-android'
 
 repositories {
     maven { url 'https://maven.fabric.io/public' }
+    maven { url "https://jitpack.io" }
 }
 
 
@@ -24,9 +26,17 @@ def gitVersion() {
     return process.toInteger() + 1
 }
 
+def getBugfenderApiKey(){
+    Properties properties = new Properties()
+    properties.load(new FileInputStream("app/bugfender.properties"))
+    return "\"" + properties.getProperty("apiKey", "") +"\""
+}
+
 android {
-    compileSdkVersion 21
+    compileSdkVersion 23
     buildToolsVersion "23.0.3"
+    // FIXME - replace with URLConnection. This is used in GetHmacAndKeyActivity.
+    useLibrary 'org.apache.http.legacy'
 
     applicationVariants.all { variant ->
         variant.resValue "string", "versionName", variant.versionName
@@ -34,10 +44,11 @@ android {
 
     defaultConfig {
         applicationId "info.nightscout.android"
-        minSdkVersion 15
-        targetSdkVersion 21
+        minSdkVersion 14
+        targetSdkVersion 23
         versionName project.properties['version']
         versionCode gitVersion()
+        buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
     buildTypes {
@@ -47,10 +58,10 @@ android {
         }
     }
 
-    // FIXME - we really shouldn't be doing this.
-    // See https://github.com/pazaan/640gAndroidUploader/issues/43
     lintOptions {
-        abortOnError false
+        // Dag nabbit :(
+        // Because of http://stackoverflow.com/questions/35492259/lint-error-on-okio
+        warning 'InvalidPackage'
     }
 }
 
@@ -111,13 +122,21 @@ release {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:21.+'
-    compile 'org.apache.commons:commons-lang3:3.4'
-    compile files('libs/logback-android-1.1.1-3.jar')
-    compile files('libs/mongo-java-driver-3.0.2.jar')
-    compile files('libs/physicaloidlibrary.jar')
     compile files('libs/slf4j-api-1.7.2.jar')
     compile('com.crashlytics.sdk.android:crashlytics:2.5.5@aar') {
         transitive = true;
     }
+    compile('com.mikepenz:materialdrawer:5.2.9@aar') {
+        transitive = true
+    }
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
+    compile 'uk.co.chrisjenx:calligraphy:2.2.0'
+    compile 'com.bugfender.sdk:android:0.4'
+    compile 'com.github.PhilJay:MPAndroidChart:v2.2.5'
+    compile 'com.android.support:support-v4:23.4.0'
+    compile 'com.google.code.gson:gson:2.7'
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
 }
