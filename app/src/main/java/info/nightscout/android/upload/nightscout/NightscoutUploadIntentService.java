@@ -85,6 +85,8 @@ public class NightscoutUploadIntentService extends IntentService {
         } catch (Exception e) {
             Log.e(TAG, "ERROR uploading data!!!!!", e);
         }
+
+        NightscoutUploadReceiver.completeWakefulIntent(intent);
     }
 
     private void doRESTUpload(SharedPreferences prefs, RealmResults<PumpStatusEvent> records) {
@@ -185,7 +187,7 @@ public class NightscoutUploadIntentService extends IntentService {
 
                 try {
                     // FIXME - Change this to bulk uploads
-                    populateV1APIEntry(json, record);
+                    populateSgvEntry(json, record);
                 } catch (Exception e) {
                     Log.w(TAG, "Unable to populate entry", e);
                     continue;
@@ -264,7 +266,7 @@ public class NightscoutUploadIntentService extends IntentService {
         httpclient.execute(post, responseHandler);
     }
 
-    private void populateV1APIEntry(JSONObject json, PumpStatusEvent pumpRecord) throws Exception {
+    private void populateSgvEntry(JSONObject json, PumpStatusEvent pumpRecord) throws Exception {
         // TODO replace with Retrofit/EntriesSerializer
         json.put("sgv", pumpRecord.getSgv());
         json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
@@ -272,7 +274,17 @@ public class NightscoutUploadIntentService extends IntentService {
         json.put("type", "sgv");
         json.put("date", pumpRecord.getEventDate().getTime());
         json.put("dateString", pumpRecord.getEventDate());
+    }
 
+    private void populateMbgEntry(JSONObject json, PumpStatusEvent pumpRecord) throws Exception {
+        if(pumpRecord.hasRecentBolusWizard()) {
+            // TODO replace with Retrofit/EntriesSerializer
+            json.put("type", "mbg");
+            json.put("mbg", pumpRecord.getBolusWizardBGL());
+            json.put("device", pumpRecord.getDeviceName());
+            json.put("date", pumpRecord.getEventDate().getTime());
+            json.put("dateString", pumpRecord.getEventDate());
+        }
     }
 
     private boolean isOnline() {

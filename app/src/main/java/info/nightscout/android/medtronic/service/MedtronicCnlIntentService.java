@@ -1,6 +1,8 @@
 package info.nightscout.android.medtronic.service;
 
+import android.app.AlarmManager;
 import android.app.IntentService;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -25,6 +27,7 @@ import info.nightscout.android.medtronic.message.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import info.nightscout.android.upload.nightscout.NightscoutUploadReceiver;
 import io.realm.Realm;
 import io.realm.RealmResults;
 
@@ -267,8 +270,17 @@ public class MedtronicCnlIntentService extends IntentService {
                 realm.close();
             }
 
+            // TODO - set status if offline or Nightscout not reachable
+            uploadToNightscout();
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
+    }
+
+    private void uploadToNightscout() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1000L, pendingIntent);
     }
 
     private boolean hasUsbHostFeature() {

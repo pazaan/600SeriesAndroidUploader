@@ -87,7 +87,7 @@ public class PumpStatusEvent extends RealmObject {
         this.reservoirAmount = reservoirAmount;
     }
 
-    public boolean isRecentBolusWizard() {
+    public boolean hasRecentBolusWizard() {
         return recentBolusWizard;
     }
 

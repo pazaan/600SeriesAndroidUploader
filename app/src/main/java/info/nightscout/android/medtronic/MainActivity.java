@@ -324,10 +324,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 initialPoll, MedtronicCnlIntentService.POLL_PERIOD_MS, pending);
     }
 
-    private void uploadCgmData() {
-        startService(mNightscoutUploadService);
-    }
-
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
 
@@ -452,7 +448,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     .equalTo("pumpMac", MainActivity.activePumpMac)
                     .findFirst();
 
-            if (pump != null & pump.isValid()) {
+            if (pump != null && pump.isValid()) {
                 mActivePump = pump;
             }
         }
@@ -485,19 +481,21 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             TextView textViewTrend = (TextView) findViewById(R.id.textview_trend);
             TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
 
-            // Get the most recently written CGM record.
+            // Get the most recently written CGM record for the active pump.
+            PumpStatusEvent pumpStatusData = null;
+
+            PumpInfo pump = getActivePump();
+
+            if (pump != null & pump.isValid()) {
+                pumpStatusData = pump.getPumpHistory().last();
+            }
+
             // FIXME - grab the last item from the activePump's getPumpHistory
             RealmResults<PumpStatusEvent> results =
                     mRealm.where(PumpStatusEvent.class)
                             .findAllSorted("eventDate", Sort.ASCENDING);
 
-            PumpStatusEvent pumpRecord = null;
-
-            if (results.size() > 0) {
-                pumpRecord = results.last();
-            }
-
-            if (pumpRecord == null) {
+            if (pumpStatusData == null) {
                 return;
             }
 
@@ -509,33 +507,22 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             String sgvString, units;
             if (prefs.getBoolean("mmolxl", false)) {
-                float fBgValue = (float) pumpRecord.getSgv();
+                float fBgValue = (float) pumpStatusData.getSgv();
                 sgvString = df.format(fBgValue / 18.016f);
                 units = "mmol/L";
                 Log.d(TAG, "mmolxl true --> " + sgvString);
 
             } else {
-                sgvString = String.valueOf(pumpRecord.getSgv());
+                sgvString = String.valueOf(pumpStatusData.getSgv());
                 units = "mg/dL";
                 Log.d(TAG, "mmolxl false --> " + sgvString);
             }
 
             textViewBg.setText(sgvString);
             textViewUnits.setText(units);
-            textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpRecord.getEventDate().getTime()));
-            textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpRecord.getCgmTrend())));
-            textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpRecord.getActiveInsulin()));
-
-            /*
-            // Open Realm because we're in a different thread
-            Realm realm = Realm.getDefaultInstance();
-            if (MainActivity.mActivePump != null && MainActivity.mActivePump.isValid()) {
-                PumpInfo pump = MainActivity.mActivePump;
-                long pumpMac = pump.getPumpMac();
-                CgmStatusEvent cgmData = MainActivity.mActivePump.getCgmHistory().last();
-            }
-            realm.close();
-            */
+            textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
+            textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
+            textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
 
             // TODO - waiting for MPAndroidCharts 3.0.0. This will fix:
             // Date support
@@ -580,20 +567,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             PumpInfo pump = getActivePump();
 
-            if (pump != null & pump.isValid()) {
-                long pumpMac = pump.getPumpMac();
+            if (pump != null && pump.isValid()) {
                 pumpStatusData = pump.getPumpHistory().last();
+            } else {
+                return;
             }
 
-            if (pumpStatusData != null) {
-                Log.d(TAG, "It's working yo");
-            }
-
-            PumpStatusEvent record = mRealm.where(PumpStatusEvent.class)
-                    .findAll()
-                    .last();
-
-            long nextPoll = record.getEventDate().getTime() + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
+            long nextPoll = pumpStatusData.getEventDate().getTime() + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
             startCgmService(nextPoll);
             Log.d(TAG, "Next Poll at " + new Date(nextPoll).toString());
 
@@ -616,9 +596,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     }
                 });
             }
-
-            // TODO - handle isOffline in NightscoutUploadIntentService?
-            uploadCgmData();
 
             refreshDisplay();
         }
