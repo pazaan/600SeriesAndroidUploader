@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="info.nightscout.android">
 
-    <uses-sdk android:maxSdkVersion="23" />
+    <uses-sdk android:minSdkVersion="14" android:maxSdkVersion="23"
+        tools:overrideLibrary="com.github.mikephil.charting.data.realm"/>
 
     <uses-feature android:name="android.hardware.usb.host" />
 
@@ -70,6 +72,8 @@
             android:icon="@drawable/ic_launcher" />
 
         <activity android:name=".medtronic.StatusActivity"></activity>
+
+        <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"></receiver>
     </application>
 
 </manifest>
