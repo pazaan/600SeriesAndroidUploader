@@ -267,7 +267,7 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
 
         if (lastRadioChannel != 0x00) {
             // If we know the last channel that was used, shuffle the negotiation order
-            Byte lastChannel = radioChannels.remove(radioChannels.indexOf(new Byte(lastRadioChannel)));
+            Byte lastChannel = radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
 
             if (lastChannel != null) {
                 radioChannels.add(0, lastChannel);
@@ -316,7 +316,6 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
     public Date getPumpTime() throws EncryptionException, IOException, ChecksumException, TimeoutException {
         Log.d(TAG, "Begin getPumpTime");
         // FIXME - throw if not in EHSM mode (add a state machine)
-        Date timeAtCapture = new Date();
 
         new PumpTimeRequestMessage(mPumpSession).send(this);
         // Read the 0x81
@@ -368,7 +367,7 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
 
         // Read the data into the record
         long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
-        MainActivity.pumpStatusRecord.activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP);
+        pumpRecord.setActiveInsulin(new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
         pumpRecord.setSgv(statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
         long rtc;
         long offset;
@@ -384,11 +383,11 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
             pumpRecord.setCgmTrend(fromMessageByte(statusBuffer.get(0x40)));
         }
         pumpRecord.setEventDate(new Date(MessageUtils.decodeDateTime(rtc, offset).getTime() - pumpTimeOffset));
-        MainActivity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
-        MainActivity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
+        pumpRecord.setRecentBolusWizard(statusBuffer.get(0x48) != 0);
+        pumpRecord.setBolusWizardBGL(statusBuffer.getShort(0x49)); // In mg/DL
         long rawReservoirAmount = statusBuffer.getInt(0x2b);
-        MainActivity.pumpStatusRecord.reservoirAmount = new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP);
-        MainActivity.pumpStatusRecord.batteryPercentage = (statusBuffer.get(0x2a));
+        pumpRecord.setReservoirAmount(new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+        pumpRecord.setBatteryPercentage((statusBuffer.get(0x2a)));
 
         Log.d(TAG, "Finished getPumpStatus");
     }

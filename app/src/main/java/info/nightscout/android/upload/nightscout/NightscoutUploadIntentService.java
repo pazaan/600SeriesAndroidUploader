@@ -157,9 +157,9 @@ public class NightscoutUploadIntentService extends IntentService {
 
             DefaultHttpClient httpclient = new DefaultHttpClient(params);
 
-            postDeviceStatus(baseURL, httpclient);
-
             for (PumpStatusEvent record : records) {
+                postDeviceStatus(record, baseURL, httpclient);
+
                 String postURL = baseURL + "entries";
 
                 Log.i(TAG, "postURL: " + postURL);
@@ -229,24 +229,24 @@ public class NightscoutUploadIntentService extends IntentService {
         }
     }
 
-    private void postDeviceStatus(String baseURL, DefaultHttpClient httpclient) throws Exception {
+    private void postDeviceStatus(PumpStatusEvent record, String baseURL, DefaultHttpClient httpclient) throws Exception {
         String devicestatusURL = baseURL + "devicestatus";
         Log.i(TAG, "devicestatusURL: " + devicestatusURL);
 
         JSONObject json = new JSONObject();
         json.put("uploaderBattery", MainActivity.batLevel);
-        json.put("device", MainActivity.pumpStatusRecord.getDeviceName());
+        json.put("device", record.getDeviceName());
 
         JSONObject pumpInfo = new JSONObject();
-        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(MainActivity.pumpStatusRecord.pumpDate));
-        pumpInfo.put("reservoir", MainActivity.pumpStatusRecord.reservoirAmount);
+        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
+        pumpInfo.put("reservoir", record.getReservoirAmount());
 
         JSONObject iob = new JSONObject();
-        iob.put("timestamp", MainActivity.pumpStatusRecord.pumpDate);
-        iob.put("bolusiob", MainActivity.pumpStatusRecord.activeInsulin);
+        iob.put("timestamp", record.getPumpDate());
+        iob.put("bolusiob", record.getActiveInsulin());
 
         JSONObject battery = new JSONObject();
-        battery.put("percent", MainActivity.pumpStatusRecord.batteryPercentage);
+        battery.put("percent", record.getBatteryPercentage());
 
         pumpInfo.put("iob", iob);
         pumpInfo.put("battery", battery);

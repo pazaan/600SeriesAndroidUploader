@@ -60,7 +60,6 @@ import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
-import info.nightscout.android.upload.MedtronicNG.PumpStatusRecord;
 import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -71,7 +70,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private static final String TAG = MainActivity.class.getSimpleName();
 
     public static int batLevel = 0;
-    public static PumpStatusRecord pumpStatusRecord = new PumpStatusRecord();
     private static long activePumpMac;
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
@@ -526,7 +524,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             textViewUnits.setText(units);
             textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpRecord.getEventDate().getTime()));
             textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpRecord.getCgmTrend())));
-            textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusRecord.activeInsulin));
+            textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpRecord.getActiveInsulin()));
 
             /*
             // Open Realm because we're in a different thread
