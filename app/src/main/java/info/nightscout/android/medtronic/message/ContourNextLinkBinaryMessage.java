@@ -48,7 +48,7 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage{
 
         payloadBuffer.put((byte) 0x51);
         payloadBuffer.put((byte) 0x3);
-        payloadBuffer.put("000000".getBytes()); // Text of Pump serial, but 000000 for 640g
+        payloadBuffer.put("000000".getBytes()); // Text of PumpInfo serial, but 000000 for 640g
         byte[] unknownBytes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         payloadBuffer.put(unknownBytes);
         payloadBuffer.put(commandType.value);

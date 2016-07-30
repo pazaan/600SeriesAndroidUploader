@@ -15,6 +15,7 @@ import android.hardware.usb.UsbManager;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -32,7 +33,8 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 
-import com.github.mikephil.charting.data.realm.implementation.RealmLineData;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.realm.implementation.RealmLineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
@@ -52,9 +54,11 @@ import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
+import info.nightscout.android.medtronic.service.MedtronicCnlAlarmReceiver;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.CgmStatusEvent;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
+import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.upload.MedtronicNG.PumpStatusRecord;
 import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
@@ -63,20 +67,25 @@ import io.realm.RealmResults;
 import io.realm.Sort;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
-/* Main activity for the MainActivity program */
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     public static int batLevel = 0;
     public static PumpStatusRecord pumpStatusRecord = new PumpStatusRecord();
+    private static long activePumpMac;
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
+    private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
-    private Intent mCnlIntentService;
+    private LineChart mChart;
     private Intent mNightscoutUploadService;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
+
+    public static void setActivePumpMac(long pumpMac) {
+        activePumpMac = pumpMac;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,7 +93,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         super.onCreate(savedInstanceState);
 
         mRealm = Realm.getDefaultInstance();
-        mCnlIntentService = new Intent(this, MedtronicCnlIntentService.class);
         mNightscoutUploadService = new Intent(this, NightscoutUploadIntentService.class);
 
         setContentView(R.layout.activity_main);
@@ -186,7 +194,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         } else if (drawerItem.equals(itemGetNow)) {
                             startCgmService();
                         } else if (drawerItem.equals(itemClearLog)) {
-                            mTextViewLog.setText("", BufferType.EDITABLE);
+                            clearLogText();
                         }
 
                         return false;
@@ -195,6 +203,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .build();
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
+        mChart = (LineChart) findViewById(R.id.chart);
     }
 
     @Override
@@ -276,6 +285,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         startDisplayRefreshLoop();
     }
 
+    private void clearLogText() {
+        mTextViewLog.setText("", BufferType.EDITABLE);
+    }
+
     private void startDisplayRefreshLoop() {
         mUiRefreshHandler.post(mUiRefreshRunnable);
     }
@@ -288,35 +301,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         startCgmService(0L);
     }
 
-    private void startCgmService(long runAtTime) {
+    private void startCgmService(long initialPoll) {
         Log.i(TAG, "startCgmService called");
 
         if (!mEnableCgmService) {
             return;
         }
 
-        if (runAtTime == 0L) {
-            startService(mCnlIntentService);
-        } else {
-            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            PendingIntent pending = PendingIntent.getService(this, 0, mCnlIntentService, 0);
-
-            alarmManager.set(AlarmManager.RTC_WAKEUP, runAtTime, pending);
+        if (initialPoll == 0) {
+            initialPoll = SystemClock.currentThreadTimeMillis();
         }
-    }
 
-    private void startCgmServicePolling(long initialPoll) {
-        Log.i(TAG, "startCgmServicePolling called");
-
-        if (!mEnableCgmService) {
-            return;
-        }
+        Log.d(TAG, "startCgmService set to fire at " + new Date(initialPoll));
+        clearLogText();
 
         // Cancel any existing polling.
         stopCgmService();
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        PendingIntent pending = PendingIntent.getService(this, 0, mCnlIntentService, 0);
+        Intent receiverIntent = new Intent(this, MedtronicCnlAlarmReceiver.class);
+        PendingIntent pending = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
 
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
                 initialPoll, MedtronicCnlIntentService.POLL_PERIOD_MS, pending);
@@ -330,7 +334,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.i(TAG, "stopCgmService called");
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        PendingIntent pending = PendingIntent.getService(this, 0, mCnlIntentService, 0);
+        Intent receiverIntent = new Intent(this, MedtronicCnlAlarmReceiver.class);
+        PendingIntent pending = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
 
         alarmManager.cancel(pending);
     }
@@ -369,15 +374,16 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     @Override
     protected void onDestroy() {
         Log.i(TAG, "onDestroy called");
+        super.onDestroy();
+
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
         cancelDisplayRefreshLoop();
+
+        mRealm.close();
 
         if (!mEnableCgmService) {
             stopCgmService();
         }
-
-        mRealm.close();
-        super.onDestroy();
     }
 
     @Override
@@ -439,6 +445,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
+    private PumpInfo getActivePump() {
+        if (activePumpMac != 0L && (mActivePump == null || !mActivePump.isValid() || mActivePump.getPumpMac() != activePumpMac)) {
+            mActivePump = null;
+
+            PumpInfo pump = mRealm
+                    .where(PumpInfo.class)
+                    .equalTo("pumpMac", MainActivity.activePumpMac)
+                    .findFirst();
+
+            if (pump != null & pump.isValid()) {
+                mActivePump = pump;
+            }
+        }
+
+        return mActivePump;
+    }
+
     private class StatusMessageReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -463,7 +486,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
             TextView textViewTrend = (TextView) findViewById(R.id.textview_trend);
             TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
-            //LineChart chart = (LineChart) findViewById(R.id.chart);
 
             // Get the most recently written CGM record.
             RealmResults<CgmStatusEvent> results =
@@ -505,17 +527,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             textViewTrend.setText(Html.fromHtml(renderTrendHtml(cgmRecord.getTrend())));
             textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusRecord.activeInsulin));
 
+            /*
+            // Open Realm because we're in a different thread
+            Realm realm = Realm.getDefaultInstance();
+            if (MainActivity.mActivePump != null && MainActivity.mActivePump.isValid()) {
+                PumpInfo pump = MainActivity.mActivePump;
+                long pumpMac = pump.getPumpMac();
+                CgmStatusEvent cgmData = MainActivity.mActivePump.getCgmHistory().last();
+            }
+            realm.close();
+            */
+
             // TODO - waiting for MPAndroidCharts 3.0.0. This will fix:
             // Date support
             // Realm v1.0.0 support
-            // updateChart(results);
+            //updateChart(results);
 
             // Run myself again in 60 seconds;
             mUiRefreshHandler.postDelayed(this, 60000L);
         }
 
         private void updateChart(RealmResults<CgmStatusEvent> results) {
-            RealmLineDataSet<CgmStatusEvent> lineDataSet = new RealmLineDataSet<>(results, "sgv", "eventDate");
+            RealmLineDataSet<CgmStatusEvent> lineDataSet = new RealmLineDataSet<>(results, "eventDate", "sgv");
 
             lineDataSet.setDrawCircleHole(false);
             lineDataSet.setColor(ColorTemplate.rgb("#FF5722"));
@@ -526,11 +559,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
             dataSets.add(lineDataSet);
 
-            RealmLineData lineData = new RealmLineData(results, "eventDate", dataSets);
+            LineData lineData = new LineData(dataSets);
 
             // set data
-            //chart.setMinimumHeight(200);
-            //chart.setData(lineData);
+            mChart.setMinimumHeight(200);
+            mChart.setData(lineData);
         }
     }
 
@@ -538,12 +571,31 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         @Override
         public void onReceive(Context context, Intent intent) {
+            // If the MainActivity has already been destroyed (meaning the Realm instance has been closed)
+            // then don't worry about processing this broadcast
+            if (mRealm.isClosed()) {
+                return;
+            }
+
+            CgmStatusEvent cgmData = null;
+
+            PumpInfo pump = getActivePump();
+
+            if (pump != null & pump.isValid()) {
+                long pumpMac = pump.getPumpMac();
+                cgmData = pump.getCgmHistory().last();
+            }
+
+            if (cgmData != null) {
+                Log.d(TAG, "It's working yo");
+            }
+
             CgmStatusEvent record = mRealm.where(CgmStatusEvent.class)
                     .findAll()
                     .last();
 
             long nextPoll = record.getEventDate().getTime() + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
-            startCgmServicePolling(nextPoll);
+            startCgmService(nextPoll);
             Log.d(TAG, "Next Poll at " + new Date(nextPoll).toString());
 
             // Delete invalid or old records from Realm

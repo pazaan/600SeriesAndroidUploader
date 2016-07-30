@@ -17,13 +17,15 @@ import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MainActivity;
-import info.nightscout.android.medtronic.MedtronicCNLReader;
+import info.nightscout.android.medtronic.MedtronicCnlReader;
 import info.nightscout.android.medtronic.message.ChecksumException;
 import info.nightscout.android.medtronic.message.EncryptionException;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
 import info.nightscout.android.model.CgmStatusEvent;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
+import info.nightscout.android.model.medtronicNg.PumpInfo;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import io.realm.Realm;
 import io.realm.RealmResults;
 
@@ -89,7 +91,9 @@ public class MedtronicCnlIntentService extends IntentService {
 
         if (!hasUsbHostFeature()) {
             sendStatus("It appears that this device doesn't support USB OTG.");
-            Log.w(TAG, "Device does not support USB OTG");
+            Log.e(TAG, "Device does not support USB OTG");
+            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+            // TODO - throw, don't return
             return;
         }
 
@@ -97,26 +101,31 @@ public class MedtronicCnlIntentService extends IntentService {
         if (cnlStick == null) {
             sendStatus("USB connection error. Is the Bayer Contour Next Link plugged in?");
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
+            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+            // TODO - throw, don't return
             return;
         }
 
         if (!mUsbManager.hasPermission(UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID))) {
             sendMessage(Constants.ACTION_NO_USB_PERMISSION);
+            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+            // TODO - throw, don't return
             return;
         }
         mHidDevice = UsbHidDriver.acquire(mUsbManager, cnlStick);
-
-        Realm realm = Realm.getDefaultInstance();
 
         try {
             mHidDevice.open();
         } catch (Exception e) {
             Log.e(TAG, "Unable to open serial device", e);
+            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+            // TODO - throw, don't return
             return;
         }
 
-        MedtronicCNLReader cnlReader = new MedtronicCNLReader(mHidDevice);
+        MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
 
+        Realm realm = Realm.getDefaultInstance();
         realm.beginTransaction();
 
         try {
@@ -131,6 +140,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     .findFirst();
 
             if (info == null) {
+                // TODO - use realm.createObject()?
                 info = new ContourNextLinkInfo();
                 info.setSerialNumber(cnlReader.getStickSerial());
 
@@ -145,6 +155,9 @@ public class MedtronicCnlIntentService extends IntentService {
                 realm.commitTransaction();
 
                 sendMessage(Constants.ACTION_USB_REGISTER);
+                realm.close();
+                MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+                // TODO - throw, don't return
                 return;
             }
 
@@ -157,11 +170,26 @@ public class MedtronicCnlIntentService extends IntentService {
                 cnlReader.enterPassthroughMode();
                 cnlReader.openConnection();
                 cnlReader.requestReadInfo();
-                byte radioChannel = cnlReader.negotiateChannel();
+
+                long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
+                Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xffffff));
+                MainActivity.setActivePumpMac(pumpMAC);
+                PumpInfo activePump = realm
+                        .where(PumpInfo.class)
+                        .equalTo("pumpMac", pumpMAC)
+                        .findFirst();
+
+                if (activePump == null) {
+                    activePump = realm.createObject(PumpInfo.class);
+                    activePump.setPumpMac(pumpMAC);
+                }
+
+                byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                 if (radioChannel == 0) {
                     sendStatus("Could not communicate with the 640g. Are you near the pump?");
                     Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
                 } else {
+                    activePump.setLastRadioChannel(radioChannel);
                     sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     cnlReader.beginEHSMSession();
@@ -170,27 +198,33 @@ public class MedtronicCnlIntentService extends IntentService {
                     CgmStatusEvent cgmRecord = realm.createObject(CgmStatusEvent.class);
 
                     String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
+                    activePump.setDeviceName(deviceName);
+
+                    // TODO - this should not be necessary. We should reverse lookup the device name from PumpInfo
                     cgmRecord.setDeviceName(deviceName);
                     //pumpRecord.setDeviceName(deviceName);
-                    // TODO - legacy. Remove once we've plumbed in pumpRecord.
-                    MainActivity.pumpStatusRecord.setDeviceName(deviceName);
 
-                    //pumpRecord.setPumpDate(cnlReader.getPumpTime());
+                    // TODO - legacy. Remove once we've plumbed in pumpRecord.
+                    //MainActivity.pumpStatusRecord.setDeviceName(deviceName);
+
                     long pumpTime = cnlReader.getPumpTime().getTime();
                     long pumpOffset = pumpTime - System.currentTimeMillis();
+
                     // TODO - send ACTION to MainActivity to show offset between pump and uploader.
                     MainActivity.pumpStatusRecord.pumpDate = new Date(pumpTime - pumpOffset);
+                    //pumpRecord.setPumpDate(cnlReader.getPumpTime());
+                    cgmRecord.setPumpDate(new Date(pumpTime - pumpOffset));
                     cnlReader.getPumpStatus(cgmRecord, pumpOffset);
+                    activePump.getCgmHistory().add(cgmRecord);
 
                     cnlReader.endEHSMSession();
 
                     boolean cancelTransaction = true;
                     if (cgmRecord.getSgv() != 0) {
                         // Check that the record doesn't already exist before committing
-                        RealmResults<CgmStatusEvent> checkExistingRecords = realm
-                                .where(CgmStatusEvent.class)
+                        RealmResults<CgmStatusEvent> checkExistingRecords = activePump.getCgmHistory()
+                                .where()
                                 .equalTo("eventDate", cgmRecord.getEventDate())
-                                .equalTo("deviceName", cgmRecord.getDeviceName())
                                 .equalTo("sgv", cgmRecord.getSgv())
                                 .findAll();
 
@@ -233,13 +267,16 @@ public class MedtronicCnlIntentService extends IntentService {
             Log.e(TAG, "Could not close connection.", e);
             sendStatus("Could not close connection: " + e.getMessage());
         } finally {
-            if (realm.isInTransaction()) {
-                // If we didn't commit the transaction, we've run into an error. Let's roll it back
-                realm.cancelTransaction();
+            if (!realm.isClosed()) {
+                if (realm.isInTransaction()) {
+                    // If we didn't commit the transaction, we've run into an error. Let's roll it back
+                    realm.cancelTransaction();
+                }
+                realm.close();
             }
-        }
 
-        realm.close();
+            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+        }
     }
 
     private boolean hasUsbHostFeature() {
