@@ -5,6 +5,7 @@ buildscript {
 
     dependencies {
         classpath 'io.fabric.tools:gradle:1.21.6'
+        classpath 'io.realm:realm-gradle-plugin:1.1.0'
     }
 }
 plugins {
@@ -12,24 +13,24 @@ plugins {
 }
 
 apply plugin: 'com.android.application'
-apply plugin: 'io.fabric'
-apply plugin: 'realm-android'
 
 repositories {
     maven { url 'https://maven.fabric.io/public' }
     maven { url "https://jitpack.io" }
 }
 
+apply plugin: 'io.fabric'
+apply plugin: 'realm-android'
 
 def gitVersion() {
     def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
     return process.toInteger() + 1
 }
 
-def getBugfenderApiKey(){
+def getBugfenderApiKey() {
     Properties properties = new Properties()
     properties.load(new FileInputStream("app/bugfender.properties"))
-    return "\"" + properties.getProperty("apiKey", "") +"\""
+    return "\"" + properties.getProperty("apiKey", "") + "\""
 }
 
 android {
@@ -123,7 +124,7 @@ release {
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
-    compile('com.crashlytics.sdk.android:crashlytics:2.5.5@aar') {
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.0@aar') {
         transitive = true;
     }
     compile('com.mikepenz:materialdrawer:5.2.9@aar') {
@@ -133,8 +134,9 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
     compile 'uk.co.chrisjenx:calligraphy:2.2.0'
-    compile 'com.bugfender.sdk:android:0.4'
-    compile 'com.github.PhilJay:MPAndroidChart:v2.2.5'
+    compile 'com.bugfender.sdk:android:0.4.4'
+    compile 'com.github.PhilJay:MPAndroidChart:v3.0.0-beta1'
+    compile 'com.github.PhilJay:MPAndroidChart-Realm:v1.1.0@aar'
     compile 'com.android.support:support-v4:23.4.0'
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
