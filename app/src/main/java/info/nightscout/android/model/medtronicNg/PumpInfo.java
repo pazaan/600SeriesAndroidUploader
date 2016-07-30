@@ -1,6 +1,5 @@
 package info.nightscout.android.model.medtronicNg;
 
-import info.nightscout.android.model.CgmStatusEvent;
 import io.realm.RealmList;
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
@@ -14,7 +13,6 @@ public class PumpInfo extends RealmObject {
     private String deviceName;
     private byte lastRadioChannel;
     private RealmList<ContourNextLinkInfo> associatedCnls;
-    private RealmList<CgmStatusEvent> cgmHistory;
     private RealmList<PumpStatusEvent> pumpHistory;
 
     public long getPumpMac() {
@@ -47,14 +45,6 @@ public class PumpInfo extends RealmObject {
 
     public void setAssociatedCnls(RealmList<ContourNextLinkInfo> associatedCnls) {
         this.associatedCnls = associatedCnls;
-    }
-
-    public RealmList<CgmStatusEvent> getCgmHistory() {
-        return cgmHistory;
-    }
-
-    public void setCgmHistory(RealmList<CgmStatusEvent> cgmHistory) {
-        this.cgmHistory = cgmHistory;
     }
 
     public RealmList<PumpStatusEvent> getPumpHistory() {

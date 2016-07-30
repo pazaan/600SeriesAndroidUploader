@@ -56,9 +56,9 @@ import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import info.nightscout.android.medtronic.service.MedtronicCnlAlarmReceiver;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
-import info.nightscout.android.model.CgmStatusEvent;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.upload.MedtronicNG.PumpStatusRecord;
 import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
@@ -424,7 +424,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private String renderTrendHtml(CgmStatusEvent.TREND trend) {
+    private String renderTrendHtml(PumpStatusEvent.CGM_TREND trend) {
         switch (trend) {
             case DOUBLE_UP:
                 return "&#x21c8;";
@@ -488,17 +488,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
 
             // Get the most recently written CGM record.
-            RealmResults<CgmStatusEvent> results =
-                    mRealm.where(CgmStatusEvent.class)
+            // FIXME - grab the last item from the activePump's getPumpHistory
+            RealmResults<PumpStatusEvent> results =
+                    mRealm.where(PumpStatusEvent.class)
                             .findAllSorted("eventDate", Sort.ASCENDING);
 
-            CgmStatusEvent cgmRecord = null;
+            PumpStatusEvent pumpRecord = null;
 
             if (results.size() > 0) {
-                cgmRecord = results.last();
+                pumpRecord = results.last();
             }
 
-            if (cgmRecord == null) {
+            if (pumpRecord == null) {
                 return;
             }
 
@@ -510,21 +511,21 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             String sgvString, units;
             if (prefs.getBoolean("mmolxl", false)) {
-                float fBgValue = (float) cgmRecord.getSgv();
+                float fBgValue = (float) pumpRecord.getSgv();
                 sgvString = df.format(fBgValue / 18.016f);
                 units = "mmol/L";
                 Log.d(TAG, "mmolxl true --> " + sgvString);
 
             } else {
-                sgvString = String.valueOf(cgmRecord.getSgv());
+                sgvString = String.valueOf(pumpRecord.getSgv());
                 units = "mg/dL";
                 Log.d(TAG, "mmolxl false --> " + sgvString);
             }
 
             textViewBg.setText(sgvString);
             textViewUnits.setText(units);
-            textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(cgmRecord.getEventDate().getTime()));
-            textViewTrend.setText(Html.fromHtml(renderTrendHtml(cgmRecord.getTrend())));
+            textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpRecord.getEventDate().getTime()));
+            textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpRecord.getCgmTrend())));
             textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusRecord.activeInsulin));
 
             /*
@@ -547,8 +548,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             mUiRefreshHandler.postDelayed(this, 60000L);
         }
 
-        private void updateChart(RealmResults<CgmStatusEvent> results) {
-            RealmLineDataSet<CgmStatusEvent> lineDataSet = new RealmLineDataSet<>(results, "eventDate", "sgv");
+        private void updateChart(RealmResults<PumpStatusEvent> results) {
+            RealmLineDataSet<PumpStatusEvent> lineDataSet = new RealmLineDataSet<>(results, "eventDate", "sgv");
 
             lineDataSet.setDrawCircleHole(false);
             lineDataSet.setColor(ColorTemplate.rgb("#FF5722"));
@@ -577,20 +578,20 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 return;
             }
 
-            CgmStatusEvent cgmData = null;
+            PumpStatusEvent pumpStatusData = null;
 
             PumpInfo pump = getActivePump();
 
             if (pump != null & pump.isValid()) {
                 long pumpMac = pump.getPumpMac();
-                cgmData = pump.getCgmHistory().last();
+                pumpStatusData = pump.getPumpHistory().last();
             }
 
-            if (cgmData != null) {
+            if (pumpStatusData != null) {
                 Log.d(TAG, "It's working yo");
             }
 
-            CgmStatusEvent record = mRealm.where(CgmStatusEvent.class)
+            PumpStatusEvent record = mRealm.where(PumpStatusEvent.class)
                     .findAll()
                     .last();
 
@@ -600,8 +601,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             // Delete invalid or old records from Realm
             // TODO - show an error message if the valid records haven't been uploaded
-            final RealmResults<CgmStatusEvent> results =
-                    mRealm.where(CgmStatusEvent.class)
+            final RealmResults<PumpStatusEvent> results =
+                    mRealm.where(PumpStatusEvent.class)
                             .equalTo("sgv", 0)
                             .or()
                             .lessThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))

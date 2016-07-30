@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 
 import info.nightscout.android.R;
 import info.nightscout.android.medtronic.MainActivity;
-import info.nightscout.android.model.CgmStatusEvent;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -66,8 +66,8 @@ public class NightscoutUploadIntentService extends IntentService {
         Log.d(TAG, "onHandleIntent called");
         mRealm = Realm.getDefaultInstance();
 
-        RealmResults<CgmStatusEvent> records = mRealm
-                .where(CgmStatusEvent.class)
+        RealmResults<PumpStatusEvent> records = mRealm
+                .where(PumpStatusEvent.class)
                 .equalTo("uploaded", false)
                 .notEqualTo("sgv", 0)
                 .findAll();
@@ -87,7 +87,7 @@ public class NightscoutUploadIntentService extends IntentService {
         }
     }
 
-    private void doRESTUpload(SharedPreferences prefs, RealmResults<CgmStatusEvent> records) {
+    private void doRESTUpload(SharedPreferences prefs, RealmResults<PumpStatusEvent> records) {
         String apiScheme = "https://";
         String apiUrl = "";
         String apiSecret = prefs.getString(mContext.getString(R.string.preference_api_secret), "YOURAPISECRET");
@@ -125,7 +125,7 @@ public class NightscoutUploadIntentService extends IntentService {
         }
     }
 
-    private void doRESTUploadTo(String baseURI, RealmResults<CgmStatusEvent> records) {
+    private void doRESTUploadTo(String baseURI, RealmResults<PumpStatusEvent> records) {
         try {
             String baseURL;
             String secret = null;
@@ -159,7 +159,7 @@ public class NightscoutUploadIntentService extends IntentService {
 
             postDeviceStatus(baseURL, httpclient);
 
-            for (CgmStatusEvent record : records) {
+            for (PumpStatusEvent record : records) {
                 String postURL = baseURL + "entries";
 
                 Log.i(TAG, "postURL: " + postURL);
@@ -212,14 +212,14 @@ public class NightscoutUploadIntentService extends IntentService {
                 // TODO - does realm have auto incrementing keys?
                 // Turns out not yet (https://github.com/realm/realm-java/issues/469),
                 // but in the meantime, use this: https://gist.github.com/carloseduardosx/a7bd88d7337660cd10a2c5dcc580ebd0
-                RealmResults<CgmStatusEvent> updateRecordResults = mRealm
-                        .where(CgmStatusEvent.class)
+                RealmResults<PumpStatusEvent> updateRecordResults = mRealm
+                        .where(PumpStatusEvent.class)
                         .equalTo("eventDate", record.getEventDate())
                         .equalTo("deviceName", record.getDeviceName())
                         .equalTo("sgv", record.getSgv())
                         .findAll();
                 // FIXME - We shouldn't need this after we remove insertion of duplicates
-                for (CgmStatusEvent updateRecord : updateRecordResults) {
+                for (PumpStatusEvent updateRecord : updateRecordResults) {
                     updateRecord.setUploaded(true);
                 }
                 mRealm.commitTransaction();
@@ -264,10 +264,10 @@ public class NightscoutUploadIntentService extends IntentService {
         httpclient.execute(post, responseHandler);
     }
 
-    private void populateV1APIEntry(JSONObject json, CgmStatusEvent pumpRecord) throws Exception {
+    private void populateV1APIEntry(JSONObject json, PumpStatusEvent pumpRecord) throws Exception {
         // TODO replace with Retrofit/EntriesSerializer
         json.put("sgv", pumpRecord.getSgv());
-        json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getTrend()));
+        json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
         json.put("device", pumpRecord.getDeviceName());
         json.put("type", "sgv");
         json.put("date", pumpRecord.getEventDate().getTime());

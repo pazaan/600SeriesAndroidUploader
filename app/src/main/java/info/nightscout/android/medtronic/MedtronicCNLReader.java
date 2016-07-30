@@ -35,7 +35,7 @@ import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
-import info.nightscout.android.model.CgmStatusEvent;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.HexDump;
 
 /**
@@ -60,24 +60,24 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         mDevice = device;
     }
 
-    private static CgmStatusEvent.TREND fromMessageByte(byte messageByte) {
+    private static PumpStatusEvent.CGM_TREND fromMessageByte(byte messageByte) {
         switch (messageByte) {
             case (byte) 0x60:
-                return CgmStatusEvent.TREND.FLAT;
+                return PumpStatusEvent.CGM_TREND.FLAT;
             case (byte) 0xc0:
-                return CgmStatusEvent.TREND.DOUBLE_UP;
+                return PumpStatusEvent.CGM_TREND.DOUBLE_UP;
             case (byte) 0xa0:
-                return CgmStatusEvent.TREND.SINGLE_UP;
+                return PumpStatusEvent.CGM_TREND.SINGLE_UP;
             case (byte) 0x80:
-                return CgmStatusEvent.TREND.FOURTY_FIVE_UP;
+                return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_UP;
             case (byte) 0x40:
-                return CgmStatusEvent.TREND.FOURTY_FIVE_DOWN;
+                return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_DOWN;
             case (byte) 0x20:
-                return CgmStatusEvent.TREND.SINGLE_DOWN;
+                return PumpStatusEvent.CGM_TREND.SINGLE_DOWN;
             case (byte) 0x00:
-                return CgmStatusEvent.TREND.DOUBLE_DOWN;
+                return PumpStatusEvent.CGM_TREND.DOUBLE_DOWN;
             default:
-                return CgmStatusEvent.TREND.NOT_COMPUTABLE;
+                return PumpStatusEvent.CGM_TREND.NOT_COMPUTABLE;
         }
     }
 
@@ -343,7 +343,7 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         return MessageUtils.decodeDateTime(rtc, offset);
     }
 
-    public void getPumpStatus(CgmStatusEvent cgmRecord, long pumpTimeOffset) throws IOException, EncryptionException, ChecksumException, TimeoutException {
+    public void getPumpStatus(PumpStatusEvent pumpRecord, long pumpTimeOffset) throws IOException, EncryptionException, ChecksumException, TimeoutException {
         Log.d(TAG, "Begin getPumpStatus");
         // FIXME - throw if not in EHSM mode (add a state machine)
 
@@ -369,21 +369,21 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         // Read the data into the record
         long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
         MainActivity.pumpStatusRecord.activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP);
-        cgmRecord.setSgv(statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
+        pumpRecord.setSgv(statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
         long rtc;
         long offset;
-        if ((cgmRecord.getSgv() & 0x200) == 0x200) {
+        if ((pumpRecord.getSgv() & 0x200) == 0x200) {
             // Sensor error. Let's reset. FIXME - solve this more elegantly later
-            cgmRecord.setSgv(0);
+            pumpRecord.setSgv(0);
             rtc = 0;
             offset = 0;
-            cgmRecord.setTrend(CgmStatusEvent.TREND.NOT_SET);
+            pumpRecord.setCgmTrend(PumpStatusEvent.CGM_TREND.NOT_SET);
         } else {
             rtc = statusBuffer.getInt(0x37) & 0x00000000ffffffffL;
             offset = statusBuffer.getInt(0x3b);
-            cgmRecord.setTrend(fromMessageByte(statusBuffer.get(0x40)));
+            pumpRecord.setCgmTrend(fromMessageByte(statusBuffer.get(0x40)));
         }
-        cgmRecord.setEventDate(new Date(MessageUtils.decodeDateTime(rtc, offset).getTime() - pumpTimeOffset));
+        pumpRecord.setEventDate(new Date(MessageUtils.decodeDateTime(rtc, offset).getTime() - pumpTimeOffset));
         MainActivity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
         MainActivity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
         long rawReservoirAmount = statusBuffer.getInt(0x2b);

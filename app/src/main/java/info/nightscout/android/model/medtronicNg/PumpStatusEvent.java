@@ -13,6 +13,8 @@ public class PumpStatusEvent extends RealmObject {
     private Date eventDate; // The actual time of the event (assume the capture device eventDate/time is accurate)
     private Date pumpDate; // The eventDate/time on the pump at the time of the event
     private String deviceName;
+    private int sgv;
+    private String cgmTrend;
     private float activeInsulin;
     private short batteryPercentage;
     private float reservoirAmount;
@@ -43,6 +45,22 @@ public class PumpStatusEvent extends RealmObject {
 
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
+    }
+
+    public int getSgv() {
+        return sgv;
+    }
+
+    public void setSgv(int sgv) {
+        this.sgv = sgv;
+    }
+
+    public CGM_TREND getCgmTrend() {
+        return CGM_TREND.valueOf(cgmTrend);
+    }
+
+    public void setCgmTrend(CGM_TREND cgmTrend) {
+        this.cgmTrend = cgmTrend.name();
     }
 
     public float getActiveInsulin() {
@@ -91,5 +109,19 @@ public class PumpStatusEvent extends RealmObject {
 
     public void setUploaded(boolean uploaded) {
         this.uploaded = uploaded;
+    }
+
+    public enum CGM_TREND {
+        NONE,
+        DOUBLE_UP,
+        SINGLE_UP,
+        FOURTY_FIVE_UP,
+        FLAT,
+        FOURTY_FIVE_DOWN,
+        SINGLE_DOWN,
+        DOUBLE_DOWN,
+        NOT_COMPUTABLE,
+        RATE_OUT_OF_RANGE,
+        NOT_SET
     }
 }

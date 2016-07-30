@@ -22,7 +22,6 @@ import info.nightscout.android.medtronic.message.ChecksumException;
 import info.nightscout.android.medtronic.message.EncryptionException;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
-import info.nightscout.android.model.CgmStatusEvent;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -194,38 +193,32 @@ public class MedtronicCnlIntentService extends IntentService {
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     cnlReader.beginEHSMSession();
 
-                    //PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
-                    CgmStatusEvent cgmRecord = realm.createObject(CgmStatusEvent.class);
+                    PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
 
                     String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
                     activePump.setDeviceName(deviceName);
 
                     // TODO - this should not be necessary. We should reverse lookup the device name from PumpInfo
-                    cgmRecord.setDeviceName(deviceName);
-                    //pumpRecord.setDeviceName(deviceName);
-
-                    // TODO - legacy. Remove once we've plumbed in pumpRecord.
-                    //MainActivity.pumpStatusRecord.setDeviceName(deviceName);
+                    pumpRecord.setDeviceName(deviceName);
 
                     long pumpTime = cnlReader.getPumpTime().getTime();
                     long pumpOffset = pumpTime - System.currentTimeMillis();
 
                     // TODO - send ACTION to MainActivity to show offset between pump and uploader.
                     MainActivity.pumpStatusRecord.pumpDate = new Date(pumpTime - pumpOffset);
-                    //pumpRecord.setPumpDate(cnlReader.getPumpTime());
-                    cgmRecord.setPumpDate(new Date(pumpTime - pumpOffset));
-                    cnlReader.getPumpStatus(cgmRecord, pumpOffset);
-                    activePump.getCgmHistory().add(cgmRecord);
+                    pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
+                    cnlReader.getPumpStatus(pumpRecord, pumpOffset);
+                    activePump.getPumpHistory().add(pumpRecord);
 
                     cnlReader.endEHSMSession();
 
                     boolean cancelTransaction = true;
-                    if (cgmRecord.getSgv() != 0) {
+                    if (pumpRecord.getSgv() != 0) {
                         // Check that the record doesn't already exist before committing
-                        RealmResults<CgmStatusEvent> checkExistingRecords = activePump.getCgmHistory()
+                        RealmResults<PumpStatusEvent> checkExistingRecords = activePump.getPumpHistory()
                                 .where()
-                                .equalTo("eventDate", cgmRecord.getEventDate())
-                                .equalTo("sgv", cgmRecord.getSgv())
+                                .equalTo("eventDate", pumpRecord.getEventDate())
+                                .equalTo("sgv", pumpRecord.getSgv())
                                 .findAll();
 
                         // There should be the 1 record we've already added in this transaction.
