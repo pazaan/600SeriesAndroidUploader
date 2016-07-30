@@ -14,9 +14,12 @@ public class PumpStatusEvent extends RealmObject {
     private Date pumpDate; // The eventDate/time on the pump at the time of the event
     private String deviceName;
     private float activeInsulin;
+    private short batteryPercentage;
     private float reservoirAmount;
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int bolusWizardBGL; // in mg/dL. 0 means no recent bolus wizard reading.
+    @Index
+    private boolean uploaded = false;
 
     public Date getEventDate() {
         return eventDate;
@@ -50,6 +53,14 @@ public class PumpStatusEvent extends RealmObject {
         this.activeInsulin = activeInsulin;
     }
 
+    public short getBatteryPercentage() {
+        return batteryPercentage;
+    }
+
+    public void setBatteryPercentage(short batteryPercentage) {
+        this.batteryPercentage = batteryPercentage;
+    }
+
     public float getReservoirAmount() {
         return reservoirAmount;
     }
@@ -72,5 +83,13 @@ public class PumpStatusEvent extends RealmObject {
 
     public void setBolusWizardBGL(int bolusWizardBGL) {
         this.bolusWizardBGL = bolusWizardBGL;
+    }
+
+    public boolean isUploaded() {
+        return uploaded;
+    }
+
+    public void setUploaded(boolean uploaded) {
+        this.uploaded = uploaded;
     }
 }
