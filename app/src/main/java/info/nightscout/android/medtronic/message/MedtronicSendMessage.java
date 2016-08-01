@@ -18,6 +18,7 @@ public class MedtronicSendMessage extends MedtronicMessage {
         BEGIN_EHSM_SESSION(0x412),
         TIME_REQUEST(0x0403),
         READ_PUMP_STATUS_REQUEST(0x0112),
+        READ_BASAL_PATTERN_REQUEST(0x0112),
         END_EHSM_SESSION(0x412);
 
         private short value;
