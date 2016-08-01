@@ -169,7 +169,7 @@ public class NightscoutUploadIntentService extends IntentService {
             uploadToNightscout(new URL(baseURL + "/devicestatus"), secret, devicestatusBody);
 
             // Yay! We uploaded. Tell Realm
-            // TODO - check the upload succeeded!
+            // FIXME - check the upload succeeded!
             mRealm.beginTransaction();
 
             for (PumpStatusEvent updateRecord : records) {

@@ -13,13 +13,31 @@ public class PumpStatusEvent extends RealmObject {
     private Date eventDate; // The actual time of the event (assume the capture device eventDate/time is accurate)
     private Date pumpDate; // The eventDate/time on the pump at the time of the event
     private String deviceName;
-    private int sgv;
-    private String cgmTrend;
-    private float activeInsulin;
+
+    // Data from the Medtronic Pump Status message
+    private boolean suspended;
+    private boolean bolusing;
+    private boolean deliveringInsulin;
+    private boolean tempBasalActive;
+    private boolean cgmActive;
+    private byte activeBasalPattern;
+    private float basalRate;
+    private float tempBasalRate;
+    private byte tempBasalPercentage;
+    private short tempBasalMinutesRemaining;
+    private float basalUnitsDeliveredToday;
     private short batteryPercentage;
     private float reservoirAmount;
+    private short minutesOfInsulinRemaining; // 25h == "more than 1 day"
+    private float activeInsulin;
+    private int sgv;
+    private Date sgvDate;
+    private boolean lowSuspendActive;
+    private String cgmTrend;
+
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int bolusWizardBGL; // in mg/dL. 0 means no recent bolus wizard reading.
+
     @Index
     private boolean uploaded = false;
 
@@ -63,6 +81,10 @@ public class PumpStatusEvent extends RealmObject {
         this.cgmTrend = cgmTrend.name();
     }
 
+    public void setCgmTrend(String cgmTrend) {
+        this.cgmTrend = cgmTrend;
+    }
+
     public float getActiveInsulin() {
         return activeInsulin;
     }
@@ -91,10 +113,6 @@ public class PumpStatusEvent extends RealmObject {
         return recentBolusWizard;
     }
 
-    public void setRecentBolusWizard(boolean recentBolusWizard) {
-        this.recentBolusWizard = recentBolusWizard;
-    }
-
     public int getBolusWizardBGL() {
         return bolusWizardBGL;
     }
@@ -109,6 +127,126 @@ public class PumpStatusEvent extends RealmObject {
 
     public void setUploaded(boolean uploaded) {
         this.uploaded = uploaded;
+    }
+
+    public boolean isSuspended() {
+        return suspended;
+    }
+
+    public void setSuspended(boolean suspended) {
+        this.suspended = suspended;
+    }
+
+    public boolean isBolusing() {
+        return bolusing;
+    }
+
+    public void setBolusing(boolean bolusing) {
+        this.bolusing = bolusing;
+    }
+
+    public boolean isDeliveringInsulin() {
+        return deliveringInsulin;
+    }
+
+    public void setDeliveringInsulin(boolean deliveringInsulin) {
+        this.deliveringInsulin = deliveringInsulin;
+    }
+
+    public boolean isTempBasalActive() {
+        return tempBasalActive;
+    }
+
+    public void setTempBasalActive(boolean tempBasalActive) {
+        this.tempBasalActive = tempBasalActive;
+    }
+
+    public boolean isCgmActive() {
+        return cgmActive;
+    }
+
+    public void setCgmActive(boolean cgmActive) {
+        this.cgmActive = cgmActive;
+    }
+
+    public byte getActiveBasalPattern() {
+        return activeBasalPattern;
+    }
+
+    public void setActiveBasalPattern(byte activeBasalPattern) {
+        this.activeBasalPattern = activeBasalPattern;
+    }
+
+    public float getBasalRate() {
+        return basalRate;
+    }
+
+    public void setBasalRate(float basalRate) {
+        this.basalRate = basalRate;
+    }
+
+    public float getTempBasalRate() {
+        return tempBasalRate;
+    }
+
+    public void setTempBasalRate(float tempBasalRate) {
+        this.tempBasalRate = tempBasalRate;
+    }
+
+    public byte getTempBasalPercentage() {
+        return tempBasalPercentage;
+    }
+
+    public void setTempBasalPercentage(byte tempBasalPercentage) {
+        this.tempBasalPercentage = tempBasalPercentage;
+    }
+
+    public short getTempBasalMinutesRemaining() {
+        return tempBasalMinutesRemaining;
+    }
+
+    public void setTempBasalMinutesRemaining(short tempBasalMinutesRemaining) {
+        this.tempBasalMinutesRemaining = tempBasalMinutesRemaining;
+    }
+
+    public float getBasalUnitsDeliveredToday() {
+        return basalUnitsDeliveredToday;
+    }
+
+    public void setBasalUnitsDeliveredToday(float basalUnitsDeliveredToday) {
+        this.basalUnitsDeliveredToday = basalUnitsDeliveredToday;
+    }
+
+    public short getMinutesOfInsulinRemaining() {
+        return minutesOfInsulinRemaining;
+    }
+
+    public void setMinutesOfInsulinRemaining(short minutesOfInsulinRemaining) {
+        this.minutesOfInsulinRemaining = minutesOfInsulinRemaining;
+    }
+
+    public Date getSgvDate() {
+        return sgvDate;
+    }
+
+    public void setSgvDate(Date sgvDate) {
+        this.sgvDate = sgvDate;
+    }
+
+    public boolean isLowSuspendActive() {
+        return lowSuspendActive;
+    }
+
+    public void setLowSuspendActive(boolean lowSuspendActive) {
+        this.lowSuspendActive = lowSuspendActive;
+    }
+
+    public boolean isRecentBolusWizard() {
+        return recentBolusWizard;
+    }
+
+    public void setRecentBolusWizard(boolean recentBolusWizard) {
+        this.recentBolusWizard = recentBolusWizard;
     }
 
     public enum CGM_TREND {

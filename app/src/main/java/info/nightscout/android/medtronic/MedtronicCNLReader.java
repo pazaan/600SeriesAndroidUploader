@@ -29,6 +29,8 @@ import info.nightscout.android.medtronic.message.EncryptionException;
 import info.nightscout.android.medtronic.message.EndEHSMMessage;
 import info.nightscout.android.medtronic.message.MedtronicMessage;
 import info.nightscout.android.medtronic.message.MessageUtils;
+import info.nightscout.android.medtronic.message.PumpBasalPatternRequestMessage;
+import info.nightscout.android.medtronic.message.PumpBasalPatternResponseMessage;
 import info.nightscout.android.medtronic.message.PumpStatusRequestMessage;
 import info.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
@@ -365,10 +367,55 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         statusBuffer.order(ByteOrder.BIG_ENDIAN);
         statusBuffer.put(response.encode(), 0x39, 96);
 
-        // Read the data into the record
+        // Status Flags
+        pumpRecord.setSuspended((statusBuffer.get(0x03) & 0x01) != 0x00);
+        pumpRecord.setBolusing((statusBuffer.get(0x03) & 0x02) != 0x00);
+        pumpRecord.setDeliveringInsulin((statusBuffer.get(0x03) & 0x10) != 0x00);
+        pumpRecord.setTempBasalActive((statusBuffer.get(0x03) & 0x20) != 0x00);
+        pumpRecord.setCgmActive((statusBuffer.get(0x03) & 0x40) != 0x00);
+
+        // Active basal pattern
+        pumpRecord.setActiveBasalPattern(statusBuffer.get(0x1a));
+
+        // Normal basal rate
+        long rawNormalBasal = statusBuffer.getInt(0x1b);
+        pumpRecord.setBasalRate(new BigDecimal(rawNormalBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+
+        // Temp basal rate
+        // TODO - need to figure this one out
+        //long rawTempBasal = statusBuffer.getShort(0x21) & 0x0000ffff;
+        //pumpRecord.setTempBasalRate(new BigDecimal(rawTempBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+
+        // Temp basal percentage
+        pumpRecord.setTempBasalPercentage(statusBuffer.get(0x23));
+
+        // Temp basal minutes remaining
+        pumpRecord.setTempBasalMinutesRemaining((short) (statusBuffer.getShort(0x24) & 0x0000ffff));
+
+        // Units of insulin delivered as basal today
+        // TODO - is this basal? Do we have a total Units delivered elsewhere?
+        pumpRecord.setBasalUnitsDeliveredToday(statusBuffer.getInt(0x26));
+
+        // Pump battery percentage
+        pumpRecord.setBatteryPercentage((statusBuffer.get(0x2a)));
+
+        // Reservoir amount
+        long rawReservoirAmount = statusBuffer.getInt(0x2b);
+        pumpRecord.setReservoirAmount(new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+
+        // Amount of insulin left in pump (in minutes)
+        byte insulinHours = statusBuffer.get(0x2f);
+        byte insulinMinutes = statusBuffer.get(0x30);
+        pumpRecord.setMinutesOfInsulinRemaining((short) ((insulinHours * 60) + insulinMinutes));
+
+        // Active insulin
         long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
         pumpRecord.setActiveInsulin(new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+
+        // CGM SGV
         pumpRecord.setSgv(statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
+
+        // SGV Date
         long rtc;
         long offset;
         if ((pumpRecord.getSgv() & 0x200) == 0x200) {
@@ -382,14 +429,47 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
             offset = statusBuffer.getInt(0x3b);
             pumpRecord.setCgmTrend(fromMessageByte(statusBuffer.get(0x40)));
         }
+        // TODO - this should go in the sgvDate, and eventDate should be the time of this poll.
         pumpRecord.setEventDate(new Date(MessageUtils.decodeDateTime(rtc, offset).getTime() - pumpTimeOffset));
+
+        // Predictive low suspend
+        // TODO - there is more status info in this byte other than just a boolean yes/no
+        pumpRecord.setLowSuspendActive(statusBuffer.get(0x3f) != 0);
+
+        // Recent Bolus Wizard BGL
         pumpRecord.setRecentBolusWizard(statusBuffer.get(0x48) != 0);
-        pumpRecord.setBolusWizardBGL(statusBuffer.getShort(0x49)); // In mg/DL
-        long rawReservoirAmount = statusBuffer.getInt(0x2b);
-        pumpRecord.setReservoirAmount(new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
-        pumpRecord.setBatteryPercentage((statusBuffer.get(0x2a)));
+        pumpRecord.setBolusWizardBGL(statusBuffer.getShort(0x49) & 0x0000ffff); // In mg/DL
 
         Log.d(TAG, "Finished getPumpStatus");
+    }
+
+    public void getBasalPatterns() throws EncryptionException, IOException, ChecksumException, TimeoutException {
+        Log.d(TAG, "Begin getBasalPatterns");
+        // FIXME - throw if not in EHSM mode (add a state machine)
+
+        new PumpBasalPatternRequestMessage(mPumpSession).send(this);
+        // Read the 0x81
+        readMessage();
+
+        // Read the 0x80
+        ContourNextLinkMessage response = PumpBasalPatternResponseMessage.fromBytes(mPumpSession, readMessage());
+
+        // TODO - determine message validity
+        /*
+        if (response.encode().length < (61 + 8)) {
+            // Invalid message.
+            // TODO - deal with this more elegantly
+            Log.e(TAG, "Invalid message received for getBasalPatterns");
+            return;
+        }
+        */
+
+        // FIXME - this needs to go into PumpBasalPatternResponseMessage
+        ByteBuffer basalRatesBuffer = ByteBuffer.allocate(96);
+        basalRatesBuffer.order(ByteOrder.BIG_ENDIAN);
+        basalRatesBuffer.put(response.encode(), 0x39, 96);
+
+        Log.d(TAG, "Finished getBasalPatterns");
     }
 
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException {
