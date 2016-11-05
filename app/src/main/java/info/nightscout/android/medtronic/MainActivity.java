@@ -54,10 +54,8 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Queue;
-import java.util.Stack;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import info.nightscout.android.R;
