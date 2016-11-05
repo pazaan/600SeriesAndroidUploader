@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -38,6 +39,10 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.realm.implementation.RealmLineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.appindexing.Thing;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -45,10 +50,15 @@ import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
+import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Queue;
+import java.util.Stack;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
@@ -80,6 +90,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
 
     public static void setActivePumpMac(long pumpMac) {
         activePumpMac = pumpMac;
@@ -202,6 +217,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
         mChart = (LineChart) findViewById(R.id.chart);
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     @Override
@@ -456,13 +474,99 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return mActivePump;
     }
 
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        Thing object = new Thing.Builder()
+                .setName("Main Page") // TODO: Define a title for the content shown.
+                // TODO: Make sure this auto-generated URL is correct.
+                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
+                .build();
+        return new Action.Builder(Action.TYPE_VIEW)
+                .setObject(object)
+                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
+                .build();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        AppIndex.AppIndexApi.start(client, getIndexApiAction());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        AppIndex.AppIndexApi.end(client, getIndexApiAction());
+        client.disconnect();
+    }
+
     private class StatusMessageReceiver extends BroadcastReceiver {
+        private class StatusMessage {
+            private long timestamp;
+            private String message;
+
+            public StatusMessage(String message) {
+                this(System.currentTimeMillis(), message);
+            }
+
+            public StatusMessage(long timestamp, String message) {
+                this.timestamp = timestamp;
+                this.message = message;
+            }
+
+            public long getTimestamp() {
+                return timestamp;
+            }
+
+            public void setTimestamp(long timestamp) {
+                this.timestamp = timestamp;
+            }
+
+            public String getMessage() {
+                return message;
+            }
+
+            public void setMessage(String message) {
+                this.message = message;
+            }
+
+            public String toString() {
+                return DateFormat.getTimeInstance(DateFormat.SHORT).format(timestamp) + ": " + message;
+            }
+        }
+
+        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(10);
+
         @Override
         public void onReceive(Context context, Intent intent) {
             String message = intent.getStringExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA);
-
             Log.i(TAG, "Message Receiver: " + message);
-            mTextViewLog.setText(mTextViewLog.getText() + "\n" + message, BufferType.EDITABLE);
+
+            synchronized (this) {
+                while (messages.size() > 8) {
+                    messages.poll();
+                }
+                messages.add(new StatusMessage(message));
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (StatusMessage msg : messages) {
+                if (sb.length() > 0)
+                    sb.append("\n");
+                sb.append(msg);
+            }
+
+            mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
         }
     }
 
@@ -486,7 +590,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             PumpInfo pump = getActivePump();
 
-            if (pump != null & pump.isValid()) {
+            if (pump != null && pump.isValid()) {
                 pumpStatusData = pump.getPumpHistory().last();
             }
 
