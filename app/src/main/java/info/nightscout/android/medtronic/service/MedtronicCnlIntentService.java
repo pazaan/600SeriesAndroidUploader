@@ -237,12 +237,12 @@ public class MedtronicCnlIntentService extends IntentService {
                         realm.cancelTransaction();
                     }
                 }
-
-                cnlReader.closeConnection();
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
             } finally {
+                // FIXME: 05.11.2016 has the close to be here?
+                cnlReader.closeConnection();
                 cnlReader.endPassthroughMode();
                 cnlReader.endControlMode();
             }
