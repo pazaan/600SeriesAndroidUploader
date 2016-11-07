@@ -6,7 +6,7 @@ import retrofit2.http.GET;
 /**
  * Created by lgoedhart on 26/06/2016.
  */
-public interface NightscoutApi {
+public interface NightScoutApi {
     class LoginStatus {
         public final String status;
 
