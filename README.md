@@ -14,6 +14,27 @@ This is an Android app to upload data from a MiniMed 640G insulin pump to a Nigh
 <a target="blank" href="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-2.jpg"><img src="https://raw.githubusercontent.com/wiki/pazaan/640gAndroidUploader/images/kit-in-case-2.jpg" width="200"></a>
 <br/><br/>
 
+#### Development - getting started
+
+ - Install [Android Studio](https://developer.android.com/studio/index.html)
+ - Install [Fabric Plugin](https://fabric.io), enable Crashlytics, this should create `app/fabric.properties` with your fabric apiSecret and also add a fabric key to `app/src/AndroidManifest.xml`
+
+   ```
+   <meta-data
+       android:name="io.fabric.ApiKey"
+       android:value="YOUR-FABRIC-KEY" />
+   ```
+
+   (**take care not to commit this change**)
+ - Create a [BugFender](https://app.bugfender.com) account, create `app/bugfender.properties` and populate with
+
+   ```
+   apiKey=YOUR-BUGFENDER-KEY
+   ```
+ - Set up a virtual device in the AVD manager or connect an Android phone with USB debugging enabled.
+ 
+ - Use one of the run configurations, eg `installDebug`
+
 #### App Credits
 * Based on https://github.com/arbox0/MedtronicUploader *(though the internals are completely changed for the 640G)*
 * Uses the [android-service-example](https://code.launchpad.net/~binwiederhier/+junk/android-service-example) by Philipp C. Heckel
