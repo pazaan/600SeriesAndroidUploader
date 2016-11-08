@@ -486,7 +486,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             PumpInfo pump = getActivePump();
 
-            if (pump != null & pump.isValid()) {
+            if (pump != null && pump.isValid()) {
                 pumpStatusData = pump.getPumpHistory().last();
             }
 

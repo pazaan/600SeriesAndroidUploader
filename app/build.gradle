@@ -117,14 +117,14 @@ task zipalignRelease << {
 
 release {
     tagTemplate = 'v${version}'
-    buildTasks = ['assembleRelease']
+    buildTasks = ['build']
     beforeReleaseBuild.dependsOn 'clean'
     afterReleaseBuild.dependsOn 'signRelease', 'zipalignRelease'
 }
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
-    compile('com.crashlytics.sdk.android:crashlytics:2.6.0@aar') {
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.5@aar') {
         transitive = true;
     }
     compile('com.mikepenz:materialdrawer:5.2.9@aar') {
