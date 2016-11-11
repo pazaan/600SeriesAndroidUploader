@@ -83,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
+    private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
+    private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
 
     public static void setActivePumpMac(long pumpMac) {
         activePumpMac = pumpMac;
@@ -106,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                new StatusMessageReceiver(),
+                statusMessageReceiver,
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 new RefreshDataReceiver(),
@@ -217,6 +219,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+
+        // setup self handling alarm receiver
+        medtronicCnlAlarmReceiver.setContext(getBaseContext());
     }
 
     @Override
@@ -287,7 +292,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void clearLogText() {
-        mTextViewLog.setText("", BufferType.EDITABLE);
+        statusMessageReceiver.clearMessages();
+        //mTextViewLog.setText("", BufferType.EDITABLE);
     }
 
     private void startDisplayRefreshLoop() {
@@ -299,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startCgmService() {
-        startCgmService(0L);
+        startCgmService(System.currentTimeMillis());
     }
 
     private void startCgmService(long initialPoll) {
@@ -309,32 +315,16 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             return;
         }
 
-        if (initialPoll == 0) {
-            initialPoll = SystemClock.currentThreadTimeMillis();
-        }
-
-        Log.d(TAG, "startCgmService set to fire at " + new Date(initialPoll));
-        clearLogText();
+        //clearLogText();
 
         // Cancel any existing polling.
         stopCgmService();
-
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent receiverIntent = new Intent(this, MedtronicCnlAlarmReceiver.class);
-        PendingIntent pending = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
-
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
-                initialPoll, MedtronicCnlIntentService.POLL_PERIOD_MS, pending);
+        medtronicCnlAlarmReceiver.setAlarm(initialPoll);
     }
 
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
-
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent receiverIntent = new Intent(this, MedtronicCnlAlarmReceiver.class);
-        PendingIntent pending = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
-
-        alarmManager.cancel(pending);
+        medtronicCnlAlarmReceiver.cancelAlarm();
     }
 
     private void showDisconnectionNotification(String title, String message) {
@@ -490,7 +480,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             public String toString() {
-                return DateFormat.getTimeInstance(DateFormat.SHORT).format(timestamp) + ": " + message;
+                return DateFormat.getTimeInstance(DateFormat.MEDIUM).format(timestamp) + ": " + message;
             }
         }
 
@@ -501,7 +491,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             String message = intent.getStringExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA);
             Log.i(TAG, "Message Receiver: " + message);
 
-            synchronized (this) {
+            synchronized (messages) {
                 while (messages.size() > 8) {
                     messages.poll();
                 }
@@ -517,11 +507,21 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
         }
+
+        public void clearMessages() {
+            synchronized (messages) {
+                messages.clear();
+            }
+
+            mTextViewLog.setText("", BufferType.EDITABLE);
+        }
     }
 
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
+            Log.d(TAG, "NOW " + new Date(System.currentTimeMillis()).toString());
+
             // UI elements - TODO do these need to be members?
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
@@ -628,6 +628,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             long nextPoll = pumpStatusData.getEventDate().getTime() + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
             startCgmService(nextPoll);
+            Log.d(TAG, "Lokal time " + new Date());
+            Log.d(TAG, "Last event was " + new Date(pumpStatusData.getEventDate().getTime()));
             Log.d(TAG, "Next Poll at " + new Date(nextPoll).toString());
 
             // Delete invalid or old records from Realm

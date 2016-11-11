@@ -103,6 +103,9 @@ public class MedtronicCnlIntentService extends IntentService {
         if (cnlStick == null) {
             sendStatus("USB connection error. Is the Bayer Contour Next Link plugged in?");
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
+
+            // TODO - set status if offline or Nightscout not reachable
+            uploadToNightscout();
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
             // TODO - throw, don't return
             return;
@@ -279,8 +282,9 @@ public class MedtronicCnlIntentService extends IntentService {
     private void uploadToNightscout() {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1000L, pendingIntent);
+        final long timestamp = System.currentTimeMillis() + 1000L;
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int)timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent);
     }
 
     private boolean hasUsbHostFeature() {
