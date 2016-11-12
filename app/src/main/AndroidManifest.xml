@@ -77,8 +77,6 @@
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver" />
         <receiver android:name=".upload.nightscout.NightscoutUploadReceiver" />
 
-        <meta-data android:name="io.fabric.ApiKey" android:value="<fabric_api_key>" />
-
     </application>
 
 </manifest>
