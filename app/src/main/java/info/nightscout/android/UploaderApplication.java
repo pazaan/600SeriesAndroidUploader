@@ -42,7 +42,9 @@ public class UploaderApplication extends Application {
         }
 
         RealmConfiguration realmConfiguration = new RealmConfiguration.Builder(this)
+                .deleteRealmIfMigrationNeeded()
                 .build();
+
         Realm.setDefaultConfiguration(realmConfiguration);
     }
 }

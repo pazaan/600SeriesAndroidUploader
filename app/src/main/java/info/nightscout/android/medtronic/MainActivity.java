@@ -324,6 +324,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 initialPoll, MedtronicCnlIntentService.POLL_PERIOD_MS, pending);
     }
 
+    private void uploadCgmData() {
+        startService(mNightscoutUploadService);
+    }
+
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
 
@@ -486,7 +490,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             PumpInfo pump = getActivePump();
 
-            if (pump != null & pump.isValid()) {
+            if (pump != null && pump.isValid()) {
                 pumpStatusData = pump.getPumpHistory().last();
             }
 
@@ -596,6 +600,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     }
                 });
             }
+
+            // TODO - handle isOffline in NightscoutUploadIntentService?
+            uploadCgmData();
+
 
             refreshDisplay();
         }

@@ -21,6 +21,7 @@ import org.apache.http.params.HttpParams;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
@@ -232,10 +233,11 @@ public class NightscoutUploadIntentService extends IntentService {
         JSONObject json = new JSONObject();
         json.put("uploaderBattery", MainActivity.batLevel);
         json.put("device", record.getDeviceName());
+        json.put("created_at", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
 
         JSONObject pumpInfo = new JSONObject();
         pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
-        pumpInfo.put("reservoir", record.getReservoirAmount());
+        pumpInfo.put("reservoir", new BigDecimal(record.getReservoirAmount()).setScale(3, BigDecimal.ROUND_HALF_UP));
 
         JSONObject iob = new JSONObject();
         iob.put("timestamp", record.getPumpDate());

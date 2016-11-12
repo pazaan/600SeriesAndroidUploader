@@ -75,7 +75,7 @@ task signRelease << {
             '-digestalg',
             'SHA1',
             '-keystore',
-            '/Users/lgoedhart/keystores/nightscout_android.jks',
+            '/Users/lennart/keystores/nightscout_android.jks',
             'app/build/outputs/apk/app-release-unsigned.apk',
             'nightscoutandroidkey'
     ]
@@ -95,7 +95,7 @@ task signRelease << {
 
 task zipalignRelease << {
     def command = [
-            '/Users/lgoedhart/Library/Android/sdk/build-tools/23.0.3/zipalign',
+            '/Users/lennart/Library/Android/sdk/build-tools/23.0.3/zipalign',
             '-v',
             '4',
             'app/build/outputs/apk/app-release-unsigned.apk',
@@ -117,7 +117,7 @@ task zipalignRelease << {
 
 release {
     tagTemplate = 'v${version}'
-    buildTasks = ['assembleRelease']
+    buildTasks = ['build']
     beforeReleaseBuild.dependsOn 'clean'
     afterReleaseBuild.dependsOn 'signRelease', 'zipalignRelease'
 }
