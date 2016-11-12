@@ -119,7 +119,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         } while (bytesRead > 0 && messageSize == 60);
 
         String responseString = HexDump.dumpHexString(responseMessage.toByteArray());
-        Log.d(TAG, "READ (" + this.getClass().getSimpleName() + "): " + responseString);
+        Log.d(TAG, "READ: " + responseString);
 
         return responseMessage.toByteArray();
     }
@@ -156,7 +156,7 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
             pos += sendLength;
 
             String outputString = HexDump.dumpHexString(outputBuffer.array());
-            Log.d(TAG, "WRITE(" + this.getClass().getSimpleName() + "): " + outputString);
+            Log.d(TAG, "WRITE: " + outputString);
         }
     }
 
