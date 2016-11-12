@@ -628,7 +628,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             long nextPoll = pumpStatusData.getEventDate().getTime() + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
             startCgmService(nextPoll);
-            Log.d(TAG, "Lokal time " + new Date());
+            Log.d(TAG, "Local time " + new Date());
             Log.d(TAG, "Last event was " + new Date(pumpStatusData.getEventDate().getTime()));
             Log.d(TAG, "Next Poll at " + new Date(nextPoll).toString());
 

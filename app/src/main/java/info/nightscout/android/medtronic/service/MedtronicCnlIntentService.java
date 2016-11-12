@@ -244,7 +244,7 @@ public class MedtronicCnlIntentService extends IntentService {
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
             } finally {
-                // FIXME: 05.11.2016 has the close to be here?
+                //TODO : 05.11.2016 has the close to be here?
                 cnlReader.closeConnection();
                 cnlReader.endPassthroughMode();
                 cnlReader.endControlMode();
