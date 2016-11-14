@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import info.nightscout.android.R;
 import info.nightscout.android.medtronic.MainActivity;
+import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
 import io.realm.Realm;
@@ -75,18 +76,22 @@ public class NightscoutUploadIntentService extends IntentService {
                 .notEqualTo("sgv", 0)
                 .findAll();
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+        if (records.size() > 0) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 
-        Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
-        try {
-            if (enableRESTUpload) {
-                long start = System.currentTimeMillis();
-                Log.i(TAG, String.format("Starting upload of %s record using a REST API", records.size()));
-                doRESTUpload(prefs, records);
-                Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.size(), System.currentTimeMillis() - start));
+            Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
+            try {
+                if (enableRESTUpload) {
+                    long start = System.currentTimeMillis();
+                    Log.i(TAG, String.format("Starting upload of %s record using a REST API", records.size()));
+                    doRESTUpload(prefs, records);
+                    Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.size(), System.currentTimeMillis() - start));
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "ERROR uploading data!!!!!", e);
             }
-        } catch (Exception e) {
-            Log.e(TAG, "ERROR uploading data!!!!!", e);
+        } else {
+            Log.i(TAG, "No records has to be uploaded");
         }
 
         NightscoutUploadReceiver.completeWakefulIntent(intent);
@@ -160,14 +165,16 @@ public class NightscoutUploadIntentService extends IntentService {
             JSONArray entriesBody = new JSONArray();
 
             for (PumpStatusEvent record : records) {
-
                 addDeviceStatus(devicestatusBody, record);
                 addSgvEntry(entriesBody, record);
                 addMbgEntry(entriesBody, record);
             }
 
             uploadToNightscout(new URL(baseURL + "/entries"), secret, entriesBody);
-            uploadToNightscout(new URL(baseURL + "/devicestatus"), secret, devicestatusBody);
+
+            for(int i = 0; i < devicestatusBody.length(); i++) {
+                uploadToNightscout(new URL(baseURL + "/devicestatus"), secret, devicestatusBody.getJSONObject(i));
+            }
 
             // Yay! We uploaded. Tell Realm
             // FIXME - check the upload succeeded!
@@ -184,7 +191,15 @@ public class NightscoutUploadIntentService extends IntentService {
         }
     }
 
+    private boolean uploadToNightscout(URL endpoint, String secret, JSONObject httpBody) throws Exception {
+        return uploadToNightscout(endpoint, secret, httpBody.toString());
+    }
+
     private boolean uploadToNightscout(URL endpoint, String secret, JSONArray httpBody) throws Exception {
+        return uploadToNightscout(endpoint, secret, httpBody.toString());
+    }
+
+    private boolean uploadToNightscout(URL endpoint, String secret, String httpBody) throws Exception {
         Log.i(TAG, "postURL: " + endpoint.toString());
 
         HttpPost post = new HttpPost(endpoint.toString());
@@ -210,12 +225,10 @@ public class NightscoutUploadIntentService extends IntentService {
 
         DefaultHttpClient httpclient = new DefaultHttpClient(params);
 
-        String jsonString = httpBody.toString();
-
-        Log.i(TAG, "Upload JSON: " + jsonString);
+        Log.i(TAG, "Upload JSON: " + httpBody);
 
         try {
-            StringEntity se = new StringEntity(jsonString);
+            StringEntity se = new StringEntity(httpBody);
             post.setEntity(se);
             post.setHeader("Accept", "application/json");
             post.setHeader("Content-type", "application/json");

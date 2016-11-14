@@ -19,7 +19,7 @@ import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MainActivity;
-import info.nightscout.android.medtronic.MedtronicCnlReader;
+import info.nightscout.android.medtronic.MedtronicCNLReader;
 import info.nightscout.android.medtronic.message.ChecksumException;
 import info.nightscout.android.medtronic.message.EncryptionException;
 import info.nightscout.android.medtronic.message.MessageUtils;
@@ -103,6 +103,9 @@ public class MedtronicCnlIntentService extends IntentService {
         if (cnlStick == null) {
             sendStatus("USB connection error. Is the Bayer Contour Next Link plugged in?");
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
+
+            // TODO - set status if offline or Nightscout not reachable
+            uploadToNightscout();
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
             // TODO - throw, don't return
             return;
@@ -125,7 +128,7 @@ public class MedtronicCnlIntentService extends IntentService {
             return;
         }
 
-        MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
+        MedtronicCNLReader cnlReader = new MedtronicCNLReader(mHidDevice);
 
         Realm realm = Realm.getDefaultInstance();
         realm.beginTransaction();
@@ -237,12 +240,12 @@ public class MedtronicCnlIntentService extends IntentService {
                         realm.cancelTransaction();
                     }
                 }
-
-                cnlReader.closeConnection();
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
             } finally {
+                //TODO : 05.11.2016 has the close to be here?
+                cnlReader.closeConnection();
                 cnlReader.endPassthroughMode();
                 cnlReader.endControlMode();
             }
@@ -279,8 +282,9 @@ public class MedtronicCnlIntentService extends IntentService {
     private void uploadToNightscout() {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1000L, pendingIntent);
+        final long timestamp = System.currentTimeMillis() + 1000L;
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int)timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent);
     }
 
     private boolean hasUsbHostFeature() {

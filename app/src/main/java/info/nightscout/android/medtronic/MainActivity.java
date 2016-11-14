@@ -45,10 +45,13 @@ import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
+import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
@@ -80,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
+    private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
+    private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
 
     public static void setActivePumpMac(long pumpMac) {
         activePumpMac = pumpMac;
@@ -103,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                new StatusMessageReceiver(),
+                statusMessageReceiver,
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 new RefreshDataReceiver(),
@@ -214,6 +219,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+
+        // setup self handling alarm receiver
+        medtronicCnlAlarmReceiver.setContext(getBaseContext());
     }
 
     @Override
@@ -284,7 +292,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void clearLogText() {
-        mTextViewLog.setText("", BufferType.EDITABLE);
+        statusMessageReceiver.clearMessages();
+        //mTextViewLog.setText("", BufferType.EDITABLE);
     }
 
     private void startDisplayRefreshLoop() {
@@ -296,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startCgmService() {
-        startCgmService(0L);
+        startCgmService(System.currentTimeMillis());
     }
 
     private void startCgmService(long initialPoll) {
@@ -306,22 +315,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             return;
         }
 
-        if (initialPoll == 0) {
-            initialPoll = SystemClock.currentThreadTimeMillis();
-        }
-
-        Log.d(TAG, "startCgmService set to fire at " + new Date(initialPoll));
-        clearLogText();
+        //clearLogText();
 
         // Cancel any existing polling.
         stopCgmService();
-
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent receiverIntent = new Intent(this, MedtronicCnlAlarmReceiver.class);
-        PendingIntent pending = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
-
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
-                initialPoll, MedtronicCnlIntentService.POLL_PERIOD_MS, pending);
+        medtronicCnlAlarmReceiver.setAlarm(initialPoll);
     }
 
     private void uploadCgmData() {
@@ -330,12 +328,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
-
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent receiverIntent = new Intent(this, MedtronicCnlAlarmReceiver.class);
-        PendingIntent pending = PendingIntent.getBroadcast(this, 0, receiverIntent, 0);
-
-        alarmManager.cancel(pending);
+        medtronicCnlAlarmReceiver.cancelAlarm();
     }
 
     private void showDisconnectionNotification(String title, String message) {
@@ -461,18 +454,78 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private class StatusMessageReceiver extends BroadcastReceiver {
+        private class StatusMessage {
+            private long timestamp;
+            private String message;
+
+            public StatusMessage(String message) {
+                this(System.currentTimeMillis(), message);
+            }
+
+            public StatusMessage(long timestamp, String message) {
+                this.timestamp = timestamp;
+                this.message = message;
+            }
+
+            public long getTimestamp() {
+                return timestamp;
+            }
+
+            public void setTimestamp(long timestamp) {
+                this.timestamp = timestamp;
+            }
+
+            public String getMessage() {
+                return message;
+            }
+
+            public void setMessage(String message) {
+                this.message = message;
+            }
+
+            public String toString() {
+                return DateFormat.getTimeInstance(DateFormat.MEDIUM).format(timestamp) + ": " + message;
+            }
+        }
+
+        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(10);
+
         @Override
         public void onReceive(Context context, Intent intent) {
             String message = intent.getStringExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA);
-
             Log.i(TAG, "Message Receiver: " + message);
-            mTextViewLog.setText(mTextViewLog.getText() + "\n" + message, BufferType.EDITABLE);
+
+            synchronized (messages) {
+                while (messages.size() > 8) {
+                    messages.poll();
+                }
+                messages.add(new StatusMessage(message));
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (StatusMessage msg : messages) {
+                if (sb.length() > 0)
+                    sb.append("\n");
+                sb.append(msg);
+            }
+
+            mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
+        }
+
+        public void clearMessages() {
+            synchronized (messages) {
+                messages.clear();
+            }
+
+            mTextViewLog.setText("", BufferType.EDITABLE);
         }
     }
 
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
+            Log.d(TAG, "NOW " + new Date(System.currentTimeMillis()).toString());
+
             // UI elements - TODO do these need to be members?
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
@@ -579,6 +632,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             long nextPoll = pumpStatusData.getEventDate().getTime() + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
             startCgmService(nextPoll);
+            Log.d(TAG, "Local time " + new Date());
+            Log.d(TAG, "Last event was " + new Date(pumpStatusData.getEventDate().getTime()));
             Log.d(TAG, "Next Poll at " + new Date(nextPoll).toString());
 
             // Delete invalid or old records from Realm
