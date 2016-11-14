@@ -29,36 +29,43 @@ public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
     }
 
     public void setContext(Context context) {
-        if (am != null && pi != null) {
-            // here is an old alarm. So we cancel it before
-            cancelAlarm();
-        }
+        cancelAlarm();
+
         am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, MedtronicCnlAlarmReceiver.class);
         pi = PendingIntent.getBroadcast(context, ALARM_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    // Setting the alarm to call onRecieve every _REFRESH_INTERVAL seconds
+    // Setting the alarm in 15 seconds from now
     public void setAlarm() {
         setAlarm(System.currentTimeMillis());
     }
 
     // Setting the alarm to call onRecieve
     public void setAlarm(long millis) {
-        try {
-            am.cancel(pi);
-        } catch (Exception ignored) {}
-        Log.d(TAG, "AlarmManager set to fire at " + new Date(millis));
+        if (am == null || pi == null)
+            return;
+
+        cancelAlarm();
+
+        // don't trigger the past and at least 30 sec away
+        if (millis < System.currentTimeMillis())
+            millis = System.currentTimeMillis();
+
+        Log.d(TAG, "AlarmManager set to fire   at " + new Date(millis));
         am.setExact(AlarmManager.RTC_WAKEUP, millis, pi);
     }
 
     // restarting the alarm after MedtronicCnlIntentService.POLL_PERIOD_MS from now
     public void restartAlarm() {
-        setAlarm(System.currentTimeMillis() + MedtronicCnlIntentService.POLL_PERIOD_MS);
+        setAlarm(System.currentTimeMillis() + MedtronicCnlIntentService.POLL_PERIOD_MS + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS);
     }
 
     // Cancel the alarm.
     public void cancelAlarm() {
+        if (am == null || pi == null)
+            return;
+
         am.cancel(pi);
     }
 
