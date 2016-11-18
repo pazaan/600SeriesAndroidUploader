@@ -39,6 +39,10 @@
             android:dialogTitle="Enter your Nightscout API secret"
             android:key="@string/preference_api_secret"
             android:title="API Secret"/>
+        <CheckBoxPreference
+            android:key="@string/preference_enable_xdrip_plus"
+            android:summary="Enable local broadcast of data to xDrip+"
+            android:title="Send to xDrip+"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="Disclaimer">
         <SwitchPreference
