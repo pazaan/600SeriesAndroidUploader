@@ -3,6 +3,7 @@ package info.nightscout.android.model.medtronicNg;
 import java.util.Date;
 
 import io.realm.RealmObject;
+import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
 /**
@@ -37,6 +38,9 @@ public class PumpStatusEvent extends RealmObject {
 
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int bolusWizardBGL; // in mg/dL. 0 means no recent bolus wizard reading.
+
+    @Ignore
+    private long pumpTimeOffset; // millis the pump is ahead
 
     @Index
     private boolean uploaded = false;
@@ -247,6 +251,14 @@ public class PumpStatusEvent extends RealmObject {
 
     public void setRecentBolusWizard(boolean recentBolusWizard) {
         this.recentBolusWizard = recentBolusWizard;
+    }
+
+    public long getPumpTimeOffset() {
+        return pumpTimeOffset;
+    }
+
+    public void setPumpTimeOffset(long pumpTimeOffset) {
+        this.pumpTimeOffset = pumpTimeOffset;
     }
 
     public enum CGM_TREND {

@@ -209,8 +209,10 @@ public class MedtronicCnlIntentService extends IntentService {
 
                     long pumpTime = cnlReader.getPumpTime().getTime();
                     long pumpOffset = pumpTime - System.currentTimeMillis();
+                    Log.d(TAG, "Time offset between pump and device: " + pumpOffset + " millis.");
 
                     // TODO - send ACTION to MainActivity to show offset between pump and uploader.
+                    pumpRecord.setPumpTimeOffset(pumpOffset);
                     pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
                     cnlReader.getPumpStatus(pumpRecord, pumpOffset);
                     activePump.getPumpHistory().add(pumpRecord);
