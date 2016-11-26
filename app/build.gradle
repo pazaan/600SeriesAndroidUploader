@@ -1,3 +1,5 @@
+import org.ajoberstar.grgit.Grgit
+
 buildscript {
     repositories {
         maven { url 'https://maven.fabric.io/public' }
@@ -6,6 +8,7 @@ buildscript {
     dependencies {
         classpath 'io.fabric.tools:gradle:1.21.6'
         classpath 'io.realm:realm-gradle-plugin:1.1.0'
+        classpath 'org.ajoberstar:grgit:1.5.0'
     }
 }
 plugins {
@@ -23,8 +26,25 @@ apply plugin: 'io.fabric'
 apply plugin: 'realm-android'
 
 def gitVersion() {
-    def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
-    return process.toInteger() + 1
+    // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
+    // above.
+    ext.repo = Grgit.open(project.file('..'))
+
+    // should result in the same value as running
+    // git tag -l | wc -l or git tag -l | grep -c ".*" -
+    def numOfTags = ext.repo.tag.list().size()
+    return numOfTags
+}
+
+def gitCommitId() {
+    //def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
+    //return process.toInteger() + 1
+    //return 42
+    // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
+    // above.
+    ext.repo = Grgit.open(project.file('..'))
+
+    return ext.repo.log().first().id.substring(0, 7)
 }
 
 def getBugfenderApiKey() {
@@ -45,9 +65,9 @@ android {
 
     defaultConfig {
         applicationId "info.nightscout.android"
-        minSdkVersion 14
+        minSdkVersion 19
         targetSdkVersion 23
-        versionName project.properties['version']
+        versionName project.properties['version'] + "/" + gitCommitId()
         versionCode gitVersion()
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
