@@ -385,12 +385,9 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
                 mStatus = getString(R.string.error_class_not_found_exception);
                 return false;
             }
-<<<<<<< HEAD
-            mStatus = getString(R.string.error_http_response);
-=======
 
             mStatus = getString(R.string.error_http_response) + "http response: " + response.getStatusLine();
->>>>>>> specify_hostname
+
             return false;
         }
 
