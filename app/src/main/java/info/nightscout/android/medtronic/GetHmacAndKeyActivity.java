@@ -281,6 +281,12 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
         private final String mUsername;
         private final String mPassword;
 
+        // Note: if AsyncTask declaration can be located and changed,
+        // then we can pass status to onPostExecute() in return value
+        // from doInBackground()
+        // and not have to store it this way.
+        private String mStatus = "success";
+
         GetHmacAndKey(String username, String password) {
             mUsername = username;
             mPassword = password;
@@ -349,13 +355,16 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
                 }
 
             } catch (ClientProtocolException e) {
+                mStatus = getString(R.string.error_client_protocol_exception);
                 return false;
             } catch (IOException e) {
+                mStatus = getString(R.string.error_io_exception);
                 return false;
             } catch (ClassNotFoundException e) {
+                mStatus = getString(R.string.error_class_not_found_exception);
                 return false;
             }
-
+            mStatus = getString(R.string.error_http_response);
             return false;
         }
 
@@ -372,7 +381,7 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
                 imm.hideSoftInputFromWindow(mLoginFormView.getWindowToken(), 0);
             } else {
                 showProgress(false);
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
+                mPasswordView.setError(mStatus);
                 mPasswordView.requestFocus();
             }
         }

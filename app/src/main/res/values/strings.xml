@@ -25,6 +25,10 @@
     <string name="action_sign_in_short">Retrieve keys</string>
     <string name="error_invalid_password">Password is required</string>
     <string name="error_incorrect_password">The Username or password is incorrect</string>
+    <string name="error_client_protocol_exception">Could not communicate with server.</string>
+    <string name="error_io_exception">Could not connect to server.</string>
+    <string name="error_class_not_found_exception">Application code error.</string>
+    <string name="error_http_response">Server responded with error. Could be username or password problem.</string>
     <string name="error_field_required">This field is required</string>
     <string name="preference_nightscout_url">Nightscout URL</string>
     <string name="preference_api_secret">API SECRET</string>
