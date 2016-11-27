@@ -71,6 +71,7 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
     // UI references.
     private EditText mUsernameView;
     private EditText mPasswordView;
+    private EditText mHostnameView;
     private View mProgressView;
     private View mLoginFormView;
     private TextView mRegisteredStickView;
@@ -98,6 +99,16 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
                 return false;
             }
         });
+
+        mHostnameView = (EditText) findViewById(R.id.hostname);
+        mHostnameView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
+                attemptLogin();
+                return true;
+            }
+        });
+
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
@@ -148,10 +159,12 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
         // Reset errors.
         mUsernameView.setError(null);
         mPasswordView.setError(null);
+        mHostnameView.setError(null);
 
         // Store values at the time of the login attempt.
         String username = mUsernameView.getText().toString();
         String password = mPasswordView.getText().toString();
+        String hostname = mHostnameView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
@@ -170,6 +183,11 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
             cancel = true;
         }
 
+        // Check for a  carelink server hostname (this is optional for a user to define)
+        if (TextUtils.isEmpty(hostname)) {
+            hostname = getString(R.string.server_hostname); // default
+        }
+
         if (cancel) {
             // There was an error; don't attempt login and focus the first
             // form field with an error.
@@ -178,7 +196,7 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mHmacAndKeyTask = new GetHmacAndKey(username, password);
+            mHmacAndKeyTask = new GetHmacAndKey(username, password, hostname);
             mHmacAndKeyTask.execute((Void) null);
         }
     }
@@ -280,6 +298,7 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
 
         private final String mUsername;
         private final String mPassword;
+        private final String mHostname;
 
         // Note: if AsyncTask declaration can be located and changed,
         // then we can pass status to onPostExecute() in return value
@@ -287,22 +306,24 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
         // and not have to store it this way.
         private String mStatus = "success";
 
-        GetHmacAndKey(String username, String password) {
+        GetHmacAndKey(String username, String password, String hostname) {
             mUsername = username;
             mPassword = password;
+            mHostname = hostname;
         }
 
         @Override
         protected Boolean doInBackground(final Void... params) {
+            HttpResponse response;
             try {
                 DefaultHttpClient client = new DefaultHttpClient();
-                HttpPost loginPost = new HttpPost("https://carelink.minimed.eu/patient/j_security_check");
+                HttpPost loginPost = new HttpPost(mHostname + "/patient/j_security_check");
                 List<NameValuePair> nameValuePairs = new ArrayList<>();
                 nameValuePairs.add(new BasicNameValuePair("j_username", mUsername));
                 nameValuePairs.add(new BasicNameValuePair("j_password", mPassword));
                 nameValuePairs.add(new BasicNameValuePair("j_character_encoding", "UTF-8"));
                 loginPost.setEntity(new UrlEncodedFormEntity(nameValuePairs, "UTF-8"));
-                HttpResponse response = client.execute(loginPost);
+                response = client.execute(loginPost);
 
                 if (response.getStatusLine().getStatusCode() == 200) {
                     // Get the HMAC/keys for every serial we have seen
@@ -317,7 +338,7 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
                         hmacRequest.writeInt(0x1c);
                         hmacRequest.writeObject(longSerial.replaceAll("\\d+-", ""));
 
-                        HttpPost hmacPost = new HttpPost("https://carelink.minimed.eu/patient/secure/SnapshotServer/");
+                        HttpPost hmacPost = new HttpPost(mHostname + "/patient/secure/SnapshotServer/");
                         hmacPost.setEntity(new ByteArrayEntity(buffer.toByteArray()));
                         hmacPost.setHeader("Content-type", "application/octet-stream");
                         response = client.execute(hmacPost);
@@ -335,7 +356,7 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
                         keyRequest.writeInt(0x1f);
                         keyRequest.writeObject(longSerial);
 
-                        HttpPost keyPost = new HttpPost("https://carelink.minimed.eu/patient/secure/SnapshotServer/");
+                        HttpPost keyPost = new HttpPost(mHostname + "/patient/secure/SnapshotServer/");
                         keyPost.setEntity(new ByteArrayEntity(buffer.toByteArray()));
                         keyPost.setHeader("Content-type", "application/octet-stream");
                         response = client.execute(keyPost);
@@ -364,7 +385,12 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
                 mStatus = getString(R.string.error_class_not_found_exception);
                 return false;
             }
+<<<<<<< HEAD
             mStatus = getString(R.string.error_http_response);
+=======
+
+            mStatus = getString(R.string.error_http_response) + "http response: " + response.getStatusLine();
+>>>>>>> specify_hostname
             return false;
         }
 
