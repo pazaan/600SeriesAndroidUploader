@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 
 import info.nightscout.android.R;
 import info.nightscout.android.medtronic.MainActivity;
-import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
 import io.realm.Realm;
