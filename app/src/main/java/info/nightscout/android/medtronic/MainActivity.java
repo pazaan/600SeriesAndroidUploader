@@ -3,6 +3,7 @@ package info.nightscout.android.medtronic;
 import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -12,10 +13,14 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.net.Uri;
 import android.os.BatteryManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
@@ -104,6 +109,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         if (!prefs.getBoolean(getString(R.string.preference_eula_accepted), false)) {
             stopCgmService();
+        }
+
+        // Disable battery optimization to avoid missing values on 6.0+
+        // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            final String packageName = getPackageName();
+            //Log.d(TAG, "Maybe ignoring battery optimization");
+            final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                Log.d(TAG, "Requesting ignore battery optimization");
+                try {
+                    // ignoring battery optimizations required for constant connection
+                    // to peripheral device - eg CGM transmitter.
+                    final Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(Uri.parse("package:" + packageName));
+                    startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    Log.d(TAG, "Device does not appear to support battery optimization whitelisting!");
+                }
+            }
         }
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
