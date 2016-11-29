@@ -65,7 +65,7 @@ android {
 
     defaultConfig {
         applicationId "info.nightscout.android"
-        minSdkVersion 19
+        minSdkVersion 14
         targetSdkVersion 23
         versionName project.properties['version'] + "/" + gitCommitId()
         versionCode gitVersion()
