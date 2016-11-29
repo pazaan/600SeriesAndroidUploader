@@ -310,11 +310,10 @@ public class MedtronicCnlIntentService extends IntentService {
     }
 
     private void uploadToNightscout() {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
         final long timestamp = System.currentTimeMillis() + 1000L;
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int)timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent);
+        final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int)timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
+        wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
     }
 
     private boolean hasUsbHostFeature() {
