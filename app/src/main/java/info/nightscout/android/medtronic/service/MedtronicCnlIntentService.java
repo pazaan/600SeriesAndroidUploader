@@ -23,7 +23,7 @@ import java.util.concurrent.TimeoutException;
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MainActivity;
-import info.nightscout.android.medtronic.MedtronicCNLReader;
+import info.nightscout.android.medtronic.MedtronicCnlReader;
 import info.nightscout.android.medtronic.message.ChecksumException;
 import info.nightscout.android.medtronic.message.EncryptionException;
 import info.nightscout.android.medtronic.message.MessageUtils;
@@ -133,7 +133,7 @@ public class MedtronicCnlIntentService extends IntentService {
             return;
         }
 
-        MedtronicCNLReader cnlReader = new MedtronicCNLReader(mHidDevice);
+        MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
 
         Realm realm = Realm.getDefaultInstance();
         realm.beginTransaction();
