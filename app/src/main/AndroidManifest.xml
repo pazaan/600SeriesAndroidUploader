@@ -63,10 +63,14 @@
             android:name=".medtronic.GetHmacAndKeyActivity"
             android:label="@string/title_activity_login"
             android:theme="@style/SettingsTheme" />
+
         <activity android:name=".medtronic.StatusActivity" />
 
         <service
             android:name=".upload.nightscout.NightscoutUploadIntentService"
+            android:icon="@drawable/ic_launcher" />
+        <service
+            android:name=".xdrip_plus.XDripPlusUploadIntentService"
             android:icon="@drawable/ic_launcher" />
         <service
             android:name=".medtronic.service.MedtronicCnlIntentService"
@@ -74,6 +78,7 @@
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver" />
         <receiver android:name=".upload.nightscout.NightscoutUploadReceiver" />
+        <receiver android:name=".xdrip_plus.XDripPlusUploadReceiver" />
 
     </application>
 
