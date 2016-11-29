@@ -1,6 +1,6 @@
 package info.nightscout.android.medtronic.message;
 
-import info.nightscout.android.medtronic.MedtronicCNLSession;
+import info.nightscout.android.medtronic.MedtronicCnlSession;
 
 import java.nio.ByteBuffer;
 
@@ -12,7 +12,7 @@ public class MedtronicReceiveMessage extends MedtronicMessage {
     static int ENCRYPTED_ENVELOPE_SIZE = 3;
     static int CRC_SIZE = 2;
 
-    protected MedtronicReceiveMessage(CommandType commandType, CommandAction commandAction, MedtronicCNLSession pumpSession, byte[] payload) {
+    protected MedtronicReceiveMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) {
         super(commandType, commandAction, pumpSession, payload);
     }
 
@@ -38,7 +38,7 @@ public class MedtronicReceiveMessage extends MedtronicMessage {
      * | byte receiveSequenceNumber | BE short receiveMessageType | byte[] Payload bytes | BE short CCITT CRC |
      * +----------------------------+-----------------------------+----------------------+--------------------+
      */
-    public static ContourNextLinkMessage fromBytes(MedtronicCNLSession pumpSession, byte[] bytes) throws ChecksumException, EncryptionException {
+    public static ContourNextLinkMessage fromBytes(MedtronicCnlSession pumpSession, byte[] bytes) throws ChecksumException, EncryptionException {
         // TODO - turn this into a factory
         ContourNextLinkMessage message = MedtronicMessage.fromBytes(bytes);
 
