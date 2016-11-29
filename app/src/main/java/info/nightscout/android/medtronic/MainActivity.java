@@ -15,7 +15,6 @@ import android.hardware.usb.UsbManager;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -305,7 +304,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startCgmService() {
-        startCgmService(System.currentTimeMillis());
+        startCgmService(System.currentTimeMillis() + 1000);
     }
 
     private void startCgmService(long initialPoll) {
@@ -524,8 +523,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
-            Log.d(TAG, "NOW " + new Date(System.currentTimeMillis()).toString());
-
             // UI elements - TODO do these need to be members?
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
@@ -630,11 +627,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 return;
             }
 
-            long nextPoll = pumpStatusData.getEventDate().getTime() + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
+            long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
+                    + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
             startCgmService(nextPoll);
-            Log.d(TAG, "Local time " + new Date());
-            Log.d(TAG, "Last event was " + new Date(pumpStatusData.getEventDate().getTime()));
-            Log.d(TAG, "Next Poll at " + new Date(nextPoll).toString());
 
             // Delete invalid or old records from Realm
             // TODO - show an error message if the valid records haven't been uploaded
