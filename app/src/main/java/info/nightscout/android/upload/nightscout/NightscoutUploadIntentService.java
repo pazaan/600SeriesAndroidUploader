@@ -10,6 +10,8 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -169,21 +171,21 @@ public class NightscoutUploadIntentService extends IntentService {
                 addMbgEntry(entriesBody, record);
             }
 
-            uploadToNightscout(new URL(baseURL + "/entries"), secret, entriesBody);
+            boolean isUploaded = uploadToNightscout(new URL(baseURL + "/entries"), secret, entriesBody);
 
-            for(int i = 0; i < devicestatusBody.length(); i++) {
-                uploadToNightscout(new URL(baseURL + "/devicestatus"), secret, devicestatusBody.getJSONObject(i));
+            for(int i = 0; isUploaded && i < devicestatusBody.length(); i++) {
+                isUploaded &= uploadToNightscout(new URL(baseURL + "/devicestatus"), secret, devicestatusBody.getJSONObject(i));
             }
 
-            // Yay! We uploaded. Tell Realm
-            // FIXME - check the upload succeeded!
-            mRealm.beginTransaction();
-
-            for (PumpStatusEvent updateRecord : records) {
-                updateRecord.setUploaded(true);
+            if (isUploaded) {
+                // Yay! We uploaded. Tell Realm
+                // FIXME - check the upload succeeded!
+                mRealm.beginTransaction();
+                for (PumpStatusEvent updateRecord : records) {
+                    updateRecord.setUploaded(true);
+                }
+                mRealm.commitTransaction();
             }
-
-            mRealm.commitTransaction();
 
         } catch (Exception e) {
             Log.e(TAG, "Unable to post data", e);
@@ -236,6 +238,7 @@ public class NightscoutUploadIntentService extends IntentService {
             httpclient.execute(post, responseHandler);
         } catch (Exception e) {
             Log.w(TAG, "Unable to post data to: '" + post.getURI().toString() + "'", e);
+            return false;
         }
 
         return true;
