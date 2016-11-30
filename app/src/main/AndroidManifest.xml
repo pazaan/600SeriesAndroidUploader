@@ -18,6 +18,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
 
+    <!-- allow to disable battery optimization -->
+    <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <application
         android:name=".UploaderApplication"
         android:allowBackup="true"
@@ -26,8 +29,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!-- allow to disable battery optimization -->
-        <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
         <!-- I have set screenOrientation to "portrait" to avoid the restart of AsyncTasks when you rotate the phone -->
         <activity
