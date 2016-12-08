@@ -16,6 +16,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
@@ -157,6 +158,9 @@ public class MedtronicCnlIntentService extends IntentService {
                 info = realm.copyToRealm(info);
             }
 
+            cnlReader.getPumpSession().setStickSerial(info.getSerialNumber());
+
+            /*
             String hmac = info.getHmac();
             String key = info.getKey();
 
@@ -173,6 +177,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
             cnlReader.getPumpSession().setHMAC(MessageUtils.hexStringToByteArray(hmac));
             cnlReader.getPumpSession().setKey(MessageUtils.hexStringToByteArray(key));
+            */
 
             cnlReader.enterControlMode();
 
@@ -180,6 +185,17 @@ public class MedtronicCnlIntentService extends IntentService {
                 cnlReader.enterPassthroughMode();
                 cnlReader.openConnection();
                 cnlReader.requestReadInfo();
+
+                String key = info.getKey();
+
+                if (key == null) {
+                    cnlReader.requestLinkKey();
+
+                    info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
+                    key = info.getKey();
+                }
+
+                cnlReader.getPumpSession().setKey(MessageUtils.hexStringToByteArray(key));
 
                 long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
                 Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xffffff));
@@ -250,6 +266,9 @@ public class MedtronicCnlIntentService extends IntentService {
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
+            } catch (NoSuchAlgorithmException e) {
+                Log.e(TAG, "Could not determine CNL HMAC", e);
+                sendStatus("Error connecting to Contour Next Link: Hashing error.");
             } finally {
                 //TODO : 05.11.2016 has the close to be here?
                 cnlReader.closeConnection();
@@ -304,7 +323,7 @@ public class MedtronicCnlIntentService extends IntentService {
             final Intent receiverIntent = new Intent(this, XDripPlusUploadReceiver.class);
             final long timestamp = System.currentTimeMillis() + 500L;
             final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
-            Log.d(TAG,"Scheduling xDrip+ send");
+            Log.d(TAG, "Scheduling xDrip+ send");
             wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
         }
     }
@@ -312,7 +331,7 @@ public class MedtronicCnlIntentService extends IntentService {
     private void uploadToNightscout() {
         Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
         final long timestamp = System.currentTimeMillis() + 1000L;
-        final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int)timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
+        final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
         wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
     }
 

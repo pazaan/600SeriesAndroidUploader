@@ -45,7 +45,10 @@ public class MedtronicReceiveMessage extends MedtronicMessage {
         // TODO - Validate the message, inner CCITT, serial numbers, etc
 
         // If there's not 57 bytes, then we got back a bad message. Not sure how to process these yet.
-        if( bytes.length >= 57 ) {
+        // Also, READ_INFO and REQUEST_LINK_KEY are not encrypted
+        if (bytes.length >= 57 &&
+                (bytes[18] != CommandType.READ_INFO.getValue()) &&
+                (bytes[18] != CommandType.REQUEST_LINK_KEY_RESPONSE.getValue())) {
             // Replace the encrypted bytes by their decrypted equivalent (same block size)
             byte encryptedPayloadSize = bytes[56];
 

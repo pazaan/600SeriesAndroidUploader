@@ -340,7 +340,6 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
                         String key = MessageUtils.byteArrayToHexString((byte[]) keyResponse.readObject());
 
                         realm.beginTransaction();
-                        info.setHmac(hmac);
                         info.setKey(key);
                         realm.commitTransaction();
                     }

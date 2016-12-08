@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -36,6 +37,7 @@ import info.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
+import info.nightscout.android.medtronic.message.RequestLinkKeyResponseMessage;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.HexDump;
@@ -238,7 +240,7 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         Log.d(TAG, "Finished enterPasshtroughMode");
     }
 
-    public void openConnection() throws IOException, TimeoutException {
+    public void openConnection() throws IOException, TimeoutException, NoSuchAlgorithmException {
         Log.d(TAG, "Begin openConnection");
         new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.OPEN_CONNECTION, mPumpSession, mPumpSession.getHMAC()).send(this);
         // FIXME - We need to care what the response message is - wrong MAC and all that
@@ -262,6 +264,24 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         this.getPumpSession().setLinkMAC(linkMAC);
         this.getPumpSession().setPumpMAC(pumpMAC);
         Log.d(TAG, String.format("Finished requestReadInfo. linkMAC = '%d', pumpMAC = '%d", linkMAC, pumpMAC));
+    }
+
+    public void requestLinkKey() throws IOException, TimeoutException, EncryptionException, ChecksumException {
+        Log.d(TAG, "Begin requestLinkKey");
+        new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.REQUEST_LINK_KEY, mPumpSession, null).send(this);
+
+        ContourNextLinkMessage response = RequestLinkKeyResponseMessage.fromBytes(mPumpSession, readMessage());
+
+        // FIXME - this needs to go into RequestLinkKeyResponseMessage
+        ByteBuffer infoBuffer = ByteBuffer.allocate(55);
+        infoBuffer.order(ByteOrder.BIG_ENDIAN);
+        infoBuffer.put(response.encode(), 0x21, 55);
+
+        byte[] packedLinkKey = infoBuffer.array();
+
+        this.getPumpSession().setPackedLinkKey(packedLinkKey);
+
+        Log.d(TAG, String.format("Finished requestLinkKey. linkKey = '%s'", this.getPumpSession().getKey()));
     }
 
     public byte negotiateChannel(byte lastRadioChannel) throws IOException, ChecksumException, TimeoutException {

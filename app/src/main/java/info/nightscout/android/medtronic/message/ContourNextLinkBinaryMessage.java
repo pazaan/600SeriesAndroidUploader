@@ -34,6 +34,10 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage{
         CommandType(int commandType) {
             value = (byte) commandType;
         }
+
+        public int getValue() {
+            return value;
+        }
     }
 
     public ContourNextLinkBinaryMessage(CommandType commandType, MedtronicCnlSession pumpSession, byte[] payload) {
