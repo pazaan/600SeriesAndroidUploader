@@ -55,7 +55,7 @@ public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
 
         Log.d(TAG, "AlarmManager set to fire   at " + new Date(millis));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, pendingIntent);
+            alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(millis, null), pendingIntent);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, millis, pendingIntent);
         } else
