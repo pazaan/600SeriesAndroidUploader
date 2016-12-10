@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.utils.HexDump;
 
 import static android.R.id.message;
@@ -23,6 +24,7 @@ public class ContourNextLinkMessage {
     private static final String BAYER_USB_HEADER = "ABC";
 
     protected ByteBuffer mPayload;
+    protected MedtronicCnlSession mPumpSession;
 
     protected ContourNextLinkMessage(byte[] bytes) {
         setPayload(bytes);
@@ -99,4 +101,19 @@ public class ContourNextLinkMessage {
     }
 
     protected void validate() {};
+
+
+    public enum ASCII {
+        STX(0x02),
+        EOT(0x04),
+        ENQ(0x05),
+        ACK(0x06),
+        NAK(0x15);
+
+        protected byte value;
+
+        ASCII(int code) {
+            this.value = (byte) code;
+        }
+    }
 }

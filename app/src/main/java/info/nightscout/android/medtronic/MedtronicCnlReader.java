@@ -15,8 +15,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.message.BeginEHSMMessage;
@@ -26,6 +24,7 @@ import info.nightscout.android.medtronic.message.ContourNextLinkBinaryMessage;
 import info.nightscout.android.medtronic.message.ContourNextLinkCommandMessage;
 import info.nightscout.android.medtronic.message.ContourNextLinkMessage;
 import info.nightscout.android.medtronic.message.ContourNextLinkMessageHandler;
+import info.nightscout.android.medtronic.message.DeviceInfoResponseCommandMessage;
 import info.nightscout.android.medtronic.message.EncryptionException;
 import info.nightscout.android.medtronic.message.EndEHSMMessage;
 import info.nightscout.android.medtronic.message.MedtronicMessage;
@@ -40,6 +39,7 @@ import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyRequestMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyResponseMessage;
+import info.nightscout.android.medtronic.message.DeviceInfoRequestCommandMessage;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.HexDump;
@@ -172,73 +172,44 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         }
     }
 
-    public void requestDeviceInfo() throws IOException, TimeoutException, UnexpectedMessageException {
-        new ContourNextLinkCommandMessage("X").send(this);
+    public void requestDeviceInfo()
+            throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
+        DeviceInfoResponseCommandMessage response = new DeviceInfoRequestCommandMessage().send(mDevice);
 
-        boolean doRetry = false;
-
-        // TODO - parse this into an ASTM record for the device info.
-        try {
-            // The stick will return either the ASTM message, or the ENQ first. The order can change,
-            // so we need to handle both cases
-            byte[] response1 = readMessage();
-            byte[] response2 = readMessage();
-
-            if (response1[0] == ASCII.EOT.value) {
-                // response 1 is the ASTM message
-                checkControlMessage(response2, ASCII.ENQ.value);
-                extractStickSerial(new String(response1));
-            } else {
-                // response 2 is the ASTM message
-                checkControlMessage(response1, ASCII.ENQ.value);
-                extractStickSerial(new String(response2));
-            }
-        } catch (TimeoutException e) {
-            // Terminate comms with the pump, then try again
-            new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
-            doRetry = true;
-        } finally {
-            if (doRetry) {
-                requestDeviceInfo();
-            }
-        }
+        //TODO - extract more details form the device info.
+        mStickSerial = response.getSerial();
     }
 
-    private void extractStickSerial(String astmMessage) {
-        Pattern pattern = Pattern.compile(".*?\\^(\\d{4}-\\d{7})\\^.*");
-        Matcher matcher = pattern.matcher(astmMessage);
-        if (matcher.find()) {
-            mStickSerial = matcher.group(1);
-        }
-    }
 
-    public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException {
-        boolean doRetry = false;
+    public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
+        boolean doRetry;
 
-        try {
-            new ContourNextLinkCommandMessage(ASCII.NAK.value).send(this);
-            checkControlMessage(readMessage(), ASCII.EOT.value);
-            new ContourNextLinkCommandMessage(ASCII.ENQ.value).send(this);
-            checkControlMessage(readMessage(), ASCII.ACK.value);
-        } catch (UnexpectedMessageException e2) {
-            // Terminate comms with the pump, then try again
-            new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
-            doRetry = true;
-        } finally {
-            if (doRetry) {
-                enterControlMode();
+        do {
+            doRetry = false;
+            try {
+                new ContourNextLinkCommandMessage(ASCII.NAK.value)
+                        .send(mDevice).checkControlMessage(ASCII.EOT.value);
+                new ContourNextLinkCommandMessage(ASCII.ENQ.value)
+                        .send(mDevice).checkControlMessage(ASCII.ACK.value);
+            } catch (UnexpectedMessageException e2) {
+                try {
+                    new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
+                } catch (IOException e) {}
+                finally {
+                    doRetry = true;
+                }
             }
-        }
+        } while (doRetry);
     }
 
-    public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException {
+    public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin enterPasshtroughMode");
-        new ContourNextLinkCommandMessage("W|").send(this);
-        checkControlMessage(readMessage(), ASCII.ACK.value);
-        new ContourNextLinkCommandMessage("Q|").send(this);
-        checkControlMessage(readMessage(), ASCII.ACK.value);
-        new ContourNextLinkCommandMessage("1|").send(this);
-        checkControlMessage(readMessage(), ASCII.ACK.value);
+        new ContourNextLinkCommandMessage("W|")
+                .send(mDevice).checkControlMessage(ASCII.ACK.value);
+        new ContourNextLinkCommandMessage("Q|")
+                .send(mDevice).checkControlMessage(ASCII.ACK.value);
+        new ContourNextLinkCommandMessage("1|")
+                .send(mDevice).checkControlMessage(ASCII.ACK.value);
         Log.d(TAG, "Finished enterPasshtroughMode");
     }
 

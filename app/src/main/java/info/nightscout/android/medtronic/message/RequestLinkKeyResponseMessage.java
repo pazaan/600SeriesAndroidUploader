@@ -22,15 +22,6 @@ public class RequestLinkKeyResponseMessage extends MedtronicResponseMessage {
         setPackedLinkKey(infoBuffer.array());
     }
 
-    public static ContourNextLinkMessage fromBytes(MedtronicCnlSession pumpSession, byte[] bytes) throws ChecksumException, EncryptionException {
-        // TODO - turn this into a factory
-        ContourNextLinkMessage message = MedtronicResponseMessage.fromBytes(pumpSession, bytes);
-
-        // TODO - Validate the MessageType
-
-        return message;
-    }
-
     public byte[] getKey() {
         return key;
     }

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Locale;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by lgoedhart on 26/03/2016.
@@ -14,7 +15,6 @@ import java.util.Locale;
 public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
     //protected ByteBuffer mBayerEnvelope;
     //protected ByteBuffer mBayerPayload;
-    protected MedtronicCnlSession mPumpSession;
     protected CommandType mCommandType = CommandType.NO_TYPE;
 
     static int ENVELOPE_SIZE = 33;
@@ -56,6 +56,19 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
         }
     }
 
+    public static ContourNextLinkMessage fromBytes(byte[] bytes) throws ChecksumException {
+        ContourNextLinkMessage message = new ContourNextLinkMessage(bytes);
+        message.validate();
+
+        return message;
+    }
+
+
+    public void checkControlMessage(byte controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
+        checkControlMessage(mPayload.array(), controlCharacter);
+    }
+
+
     /**
      * Handle incrementing sequence number
      *
@@ -96,13 +109,6 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
         return payloadBuffer.array();
     }
 
-    public static ContourNextLinkMessage fromBytes(byte[] bytes) throws ChecksumException {
-        ContourNextLinkMessage message = new ContourNextLinkMessage(bytes);
-        message.validate();
-
-        return message;
-    }
-
     protected void validate(ContourNextLinkMessage message)  throws ChecksumException {
         // Validate checksum
         byte messageChecksum = message.mPayload.get(32);
@@ -111,7 +117,13 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
         if (messageChecksum != calculatedChecksum) {
             throw new ChecksumException(String.format(Locale.getDefault(), "Expected to get %d. Got %d", (int) calculatedChecksum, (int) messageChecksum));
         }
-
-
     }
+
+    protected void checkControlMessage(byte[] msg, byte controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
+        if (msg.length != 1 || msg[0] != controlCharacter) {
+            throw new UnexpectedMessageException(String.format(Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
+                    (int) controlCharacter, (int) msg[0]));
+        }
+    }
+
 }

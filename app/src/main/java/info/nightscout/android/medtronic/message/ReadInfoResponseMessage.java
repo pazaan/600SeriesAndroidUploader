@@ -22,10 +22,6 @@ public class ReadInfoResponseMessage extends MedtronicResponseMessage {
         pumpMAC = infoBuffer.getLong(8);
     }
 
-    public static ContourNextLinkMessage fromBytes(MedtronicCnlSession pumpSession, byte[] bytes) throws ChecksumException, EncryptionException {
-        return new ReadInfoResponseMessage(pumpSession, bytes);
-    }
-
     public long getLinkMAC() {
         return linkMAC;
     }
