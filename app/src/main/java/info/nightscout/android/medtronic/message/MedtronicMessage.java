@@ -1,7 +1,9 @@
 package info.nightscout.android.medtronic.message;
 
+import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -29,7 +31,7 @@ public class MedtronicMessage extends ContourNextLinkBinaryMessage {
         }
     }
 
-    protected MedtronicMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) {
+    protected MedtronicMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
         super(commandType, pumpSession, buildPayload(commandAction, payload));
     }
 
@@ -92,5 +94,10 @@ public class MedtronicMessage extends ContourNextLinkBinaryMessage {
             throw new EncryptionException( "Could not decrypt Medtronic Message" );
         }
         return decrypted;
+    }
+
+    protected void sendMessage(UsbHidDriver mDevice) throws IOException {
+        super.sendMessage(mDevice);
+        mPumpSession.incrMedtronicSequenceNumber();
     }
 }

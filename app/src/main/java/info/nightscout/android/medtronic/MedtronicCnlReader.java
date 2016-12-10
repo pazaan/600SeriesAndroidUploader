@@ -32,6 +32,7 @@ import info.nightscout.android.medtronic.message.MedtronicMessage;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.medtronic.message.PumpBasalPatternRequestMessage;
 import info.nightscout.android.medtronic.message.PumpBasalPatternResponseMessage;
+import info.nightscout.android.medtronic.message.ReadInfoRequestMessage;
 import info.nightscout.android.medtronic.message.PumpStatusRequestMessage;
 import info.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
@@ -240,7 +241,7 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         Log.d(TAG, "Finished enterPasshtroughMode");
     }
 
-    public void openConnection() throws IOException, TimeoutException, NoSuchAlgorithmException {
+    public void openConnection() throws IOException, TimeoutException, NoSuchAlgorithmException, ChecksumException {
         Log.d(TAG, "Begin openConnection");
         new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.OPEN_CONNECTION, mPumpSession, mPumpSession.getHMAC()).send(this);
         // FIXME - We need to care what the response message is - wrong MAC and all that
@@ -250,16 +251,11 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
 
     public void requestReadInfo() throws IOException, TimeoutException, EncryptionException, ChecksumException {
         Log.d(TAG, "Begin requestReadInfo");
-        new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.READ_INFO, mPumpSession, null).send(this);
 
-        ContourNextLinkMessage response = ReadInfoResponseMessage.fromBytes(mPumpSession, readMessage());
+        ReadInfoResponseMessage response = new ReadInfoRequestMessage(mPumpSession).send(mDevice);
 
-        // FIXME - this needs to go into ReadInfoResponseMessage
-        ByteBuffer infoBuffer = ByteBuffer.allocate(16);
-        infoBuffer.order(ByteOrder.BIG_ENDIAN);
-        infoBuffer.put(response.encode(), 0x21, 16);
-        long linkMAC = infoBuffer.getLong(0);
-        long pumpMAC = infoBuffer.getLong(8);
+        long linkMAC = response.getLinkMAC();
+        long pumpMAC = response.getPumpMAC();
 
         this.getPumpSession().setLinkMAC(linkMAC);
         this.getPumpSession().setPumpMAC(pumpMAC);
@@ -327,7 +323,7 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         return mPumpSession.getRadioChannel();
     }
 
-    public void beginEHSMSession() throws EncryptionException, IOException, TimeoutException {
+    public void beginEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException {
         Log.d(TAG, "Begin beginEHSMSession");
         new BeginEHSMMessage(mPumpSession).send(this);
         // The Begin EHSM Session only has an 0x81 response
@@ -492,7 +488,7 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         Log.d(TAG, "Finished getBasalPatterns");
     }
 
-    public void endEHSMSession() throws EncryptionException, IOException, TimeoutException {
+    public void endEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException {
         Log.d(TAG, "Begin endEHSMSession");
         new EndEHSMMessage(mPumpSession).send(this);
         // The End EHSM Session only has an 0x81 response
@@ -500,7 +496,7 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         Log.d(TAG, "Finished endEHSMSession");
     }
 
-    public void closeConnection() throws IOException, TimeoutException {
+    public void closeConnection() throws IOException, TimeoutException, ChecksumException {
         Log.d(TAG, "Begin closeConnection");
         new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.CLOSE_CONNECTION, mPumpSession, null).send(this);
         // FIXME - We need to care what the response message is - wrong MAC and all that

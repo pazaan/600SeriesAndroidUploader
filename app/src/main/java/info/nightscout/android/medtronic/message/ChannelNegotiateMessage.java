@@ -9,7 +9,7 @@ import java.nio.ByteOrder;
  * Created by lgoedhart on 26/03/2016.
  */
 public class ChannelNegotiateMessage extends MedtronicMessage {
-    public ChannelNegotiateMessage(MedtronicCnlSession pumpSession) {
+    public ChannelNegotiateMessage(MedtronicCnlSession pumpSession) throws ChecksumException {
         super(CommandType.SEND_MESSAGE, CommandAction.CHANNEL_NEGOTIATE, pumpSession, buildPayload(pumpSession));
     }
 

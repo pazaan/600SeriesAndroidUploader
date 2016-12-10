@@ -1,7 +1,9 @@
 package info.nightscout.android.medtronic.message;
 
+import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Locale;
@@ -9,11 +11,11 @@ import java.util.Locale;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage{
+public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
     //protected ByteBuffer mBayerEnvelope;
     //protected ByteBuffer mBayerPayload;
-    //protected MedtronicCNLSession mPumpSession;
-    //protected CommandType mCommandType = CommandType.NO_TYPE;
+    protected MedtronicCnlSession mPumpSession;
+    protected CommandType mCommandType = CommandType.NO_TYPE;
 
     static int ENVELOPE_SIZE = 33;
 
@@ -40,8 +42,29 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage{
         }
     }
 
-    public ContourNextLinkBinaryMessage(CommandType commandType, MedtronicCnlSession pumpSession, byte[] payload) {
+    public ContourNextLinkBinaryMessage(CommandType commandType, MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
         super(buildPayload(commandType, pumpSession, payload));
+        mCommandType = commandType;
+        mPumpSession = pumpSession;
+
+        // Validate checksum
+        byte messageChecksum = this.mPayload.get(32);
+        byte calculatedChecksum = (byte) (MessageUtils.oneByteSum(this.mPayload.array()) - messageChecksum);
+
+        if (messageChecksum != calculatedChecksum) {
+            throw new ChecksumException(String.format(Locale.getDefault(), "Expected to get %d. Got %d", (int) calculatedChecksum, (int) messageChecksum));
+        }
+    }
+
+    /**
+     * Handle incrementing sequence number
+     *
+     * @param mDevice
+     * @throws IOException
+     */
+    protected void sendMessage(UsbHidDriver mDevice) throws IOException {
+        super.sendMessage(mDevice);
+        mPumpSession.incrBayerSequenceNumber();
     }
 
     protected static byte[] buildPayload(CommandType commandType, MedtronicCnlSession pumpSession, byte[] payload) {
@@ -75,7 +98,12 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage{
 
     public static ContourNextLinkMessage fromBytes(byte[] bytes) throws ChecksumException {
         ContourNextLinkMessage message = new ContourNextLinkMessage(bytes);
+        message.validate();
 
+        return message;
+    }
+
+    protected void validate(ContourNextLinkMessage message)  throws ChecksumException {
         // Validate checksum
         byte messageChecksum = message.mPayload.get(32);
         byte calculatedChecksum = (byte) (MessageUtils.oneByteSum(message.mPayload.array()) - messageChecksum);
@@ -84,6 +112,6 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage{
             throw new ChecksumException(String.format(Locale.getDefault(), "Expected to get %d. Got %d", (int) calculatedChecksum, (int) messageChecksum));
         }
 
-        return message;
+
     }
 }

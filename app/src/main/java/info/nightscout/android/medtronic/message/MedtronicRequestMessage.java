@@ -1,14 +1,16 @@
 package info.nightscout.android.medtronic.message;
 
+import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class MedtronicSendMessage extends MedtronicMessage {
+public class MedtronicRequestMessage extends MedtronicMessage {
     static int ENVELOPE_SIZE = 11;
     static int ENCRYPTED_ENVELOPE_SIZE = 3;
     static int CRC_SIZE = 2;
@@ -28,17 +30,17 @@ public class MedtronicSendMessage extends MedtronicMessage {
         }
     }
 
-    protected MedtronicSendMessage(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException {
+    protected MedtronicRequestMessage(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
         super(CommandType.SEND_MESSAGE, CommandAction.PUMP_REQUEST, pumpSession, buildPayload(sendMessageType, pumpSession, payload));
     }
 
     /**
-     * MedtronicSendMessage:
+     * MedtronicRequestMessage:
      * +-----------------+------------------------------+--------------+-------------------+--------------------------------+
      * | LE long pumpMAC | byte medtronicSequenceNumber | byte unknown | byte Payload size | byte[] Encrypted Payload bytes |
      * +-----------------+------------------------------+--------------+-------------------+--------------------------------+
      * <p/>
-     * MedtronicSendMessage (decrypted payload):
+     * MedtronicRequestMessage (decrypted payload):
      * +-------------------------+----------------------+----------------------+--------------------+
      * | byte sendSequenceNumber | BE short sendMessageType | byte[] Payload bytes | BE short CCITT CRC |
      * +-------------------------+----------------------+----------------------+--------------------+
@@ -81,4 +83,5 @@ public class MedtronicSendMessage extends MedtronicMessage {
                 return 0x00;
         }
     }
+
 }
