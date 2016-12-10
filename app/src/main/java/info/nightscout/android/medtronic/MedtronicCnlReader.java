@@ -187,13 +187,13 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         do {
             doRetry = false;
             try {
-                new ContourNextLinkCommandMessage(ASCII.NAK.value)
-                        .send(mDevice).checkControlMessage(ASCII.EOT.value);
-                new ContourNextLinkCommandMessage(ASCII.ENQ.value)
-                        .send(mDevice).checkControlMessage(ASCII.ACK.value);
+                new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.NAK)
+                        .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
+                new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.ENQ)
+                        .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
             } catch (UnexpectedMessageException e2) {
                 try {
-                    new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
+                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(this);
                 } catch (IOException e) {}
                 finally {
                     doRetry = true;
@@ -205,11 +205,11 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin enterPasshtroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice).checkControlMessage(ASCII.ACK.value);
+                .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice).checkControlMessage(ASCII.ACK.value);
+                .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("1|")
-                .send(mDevice).checkControlMessage(ASCII.ACK.value);
+                .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished enterPasshtroughMode");
     }
 
@@ -466,35 +466,21 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         Log.d(TAG, "Finished closeConnection");
     }
 
-    public void endPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException {
+    public void endPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endPassthroughMode");
-        new ContourNextLinkCommandMessage("W|").send(this);
-        checkControlMessage(readMessage(), ASCII.ACK.value);
-        new ContourNextLinkCommandMessage("Q|").send(this);
-        checkControlMessage(readMessage(), ASCII.ACK.value);
-        new ContourNextLinkCommandMessage("0|").send(this);
-        checkControlMessage(readMessage(), ASCII.ACK.value);
+        new ContourNextLinkCommandMessage("W|")
+                .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+        new ContourNextLinkCommandMessage("Q|")
+                .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+        new ContourNextLinkCommandMessage("0|")
+                .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished endPassthroughMode");
     }
 
-    public void endControlMode() throws IOException, TimeoutException, UnexpectedMessageException {
+    public void endControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endControlMode");
-        new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
-        checkControlMessage(readMessage(), ASCII.ENQ.value);
+        new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
+                .send(mDevice).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
         Log.d(TAG, "Finished endControlMode");
-    }
-
-    public enum ASCII {
-        STX(0x02),
-        EOT(0x04),
-        ENQ(0x05),
-        ACK(0x06),
-        NAK(0x15);
-
-        private byte value;
-
-        ASCII(int code) {
-            this.value = (byte) code;
-        }
     }
 }

@@ -64,7 +64,7 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
     }
 
 
-    public void checkControlMessage(byte controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
+    public void checkControlMessage(ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
         checkControlMessage(mPayload.array(), controlCharacter);
     }
 
@@ -119,10 +119,10 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
         }
     }
 
-    protected void checkControlMessage(byte[] msg, byte controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
-        if (msg.length != 1 || msg[0] != controlCharacter) {
+    protected void checkControlMessage(byte[] msg, ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
+        if (msg.length != 1 || msg[0] != controlCharacter.value) {
             throw new UnexpectedMessageException(String.format(Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
-                    (int) controlCharacter, (int) msg[0]));
+                    (int) controlCharacter.value, (int) msg[0]));
         }
     }
 
