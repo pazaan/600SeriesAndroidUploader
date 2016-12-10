@@ -115,5 +115,9 @@ public class ContourNextLinkMessage {
         ASCII(int code) {
             this.value = (byte) code;
         }
+
+        public boolean equals(byte value) {
+            return this.value == value;
+        }
     }
 }

@@ -17,7 +17,7 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
     //protected ByteBuffer mBayerPayload;
     protected CommandType mCommandType = CommandType.NO_TYPE;
 
-    static int ENVELOPE_SIZE = 33;
+    private final static int ENVELOPE_SIZE = 33;
 
     public enum CommandType {
         NO_TYPE(0x0),

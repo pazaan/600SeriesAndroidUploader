@@ -164,14 +164,6 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
         }
     }
 
-    // TODO - get rid of this - it should be in a message decoder
-    private void checkControlMessage(byte[] msg, byte controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
-        if (msg.length != 1 || msg[0] != controlCharacter) {
-            throw new UnexpectedMessageException(String.format(Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
-                    (int) controlCharacter, (int) msg[0]));
-        }
-    }
-
     public void requestDeviceInfo()
             throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         DeviceInfoResponseCommandMessage response = new DeviceInfoRequestCommandMessage().send(mDevice);

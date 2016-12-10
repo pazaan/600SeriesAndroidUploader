@@ -25,14 +25,16 @@ public class DeviceInfoRequestCommandMessage extends ContourNextLinkMessage {
 
         do {
             try {
-                if (response1[0] == ASCII.EOT.value) {
+                if (ASCII.EOT.equals(response1[0])) {
                     // response 1 is the ASTM message
                     response = new DeviceInfoResponseCommandMessage(mPumpSession, response1);
-                    response.checkControlMessage(response2, ASCII.ENQ.value);
+                    // ugly....
+                    response.checkControlMessage(response2, ASCII.ENQ);
                 } else {
                     // response 2 is the ASTM message
                     response = new DeviceInfoResponseCommandMessage(mPumpSession, response1);
-                    response.checkControlMessage(response1, ASCII.ENQ.value);
+                    // ugly, too....
+                    response.checkControlMessage(response1, ASCII.ENQ);
                 }
             } catch (TimeoutException e) {
                 doRetry = true;
