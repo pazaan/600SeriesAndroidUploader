@@ -38,6 +38,7 @@ import info.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
+import info.nightscout.android.medtronic.message.RequestLinkKeyRequestMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyResponseMessage;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -251,7 +252,6 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
 
     public void requestReadInfo() throws IOException, TimeoutException, EncryptionException, ChecksumException {
         Log.d(TAG, "Begin requestReadInfo");
-
         ReadInfoResponseMessage response = new ReadInfoRequestMessage(mPumpSession).send(mDevice);
 
         long linkMAC = response.getLinkMAC();
@@ -264,18 +264,9 @@ public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
 
     public void requestLinkKey() throws IOException, TimeoutException, EncryptionException, ChecksumException {
         Log.d(TAG, "Begin requestLinkKey");
-        new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.REQUEST_LINK_KEY, mPumpSession, null).send(this);
 
-        ContourNextLinkMessage response = RequestLinkKeyResponseMessage.fromBytes(mPumpSession, readMessage());
-
-        // FIXME - this needs to go into RequestLinkKeyResponseMessage
-        ByteBuffer infoBuffer = ByteBuffer.allocate(55);
-        infoBuffer.order(ByteOrder.BIG_ENDIAN);
-        infoBuffer.put(response.encode(), 0x21, 55);
-
-        byte[] packedLinkKey = infoBuffer.array();
-
-        this.getPumpSession().setPackedLinkKey(packedLinkKey);
+        RequestLinkKeyResponseMessage response = new RequestLinkKeyRequestMessage(mPumpSession).send(mDevice);
+        this.getPumpSession().setKey(response.getKey());
 
         Log.d(TAG, String.format("Finished requestLinkKey. linkKey = '%s'", this.getPumpSession().getKey()));
     }
