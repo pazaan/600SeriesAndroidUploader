@@ -4,16 +4,20 @@ import info.nightscout.android.medtronic.MedtronicCnlSession;
 
 import java.nio.ByteBuffer;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class MedtronicResponseMessage extends MedtronicMessage {
+public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
     static int ENVELOPE_SIZE = 22;
     static int ENCRYPTED_ENVELOPE_SIZE = 3;
     static int CRC_SIZE = 2;
 
     protected MedtronicResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        super(CommandType.NO_TYPE, CommandAction.NO_TYPE, pumpSession, payload);
+        super(pumpSession, payload);
 
         // TODO - Validate the message, inner CCITT, serial numbers, etc
         // If there's not 57 bytes, then we got back a bad message. Not sure how to process these yet.
@@ -89,4 +93,18 @@ public class MedtronicResponseMessage extends MedtronicMessage {
         return message;*/
     }
 
+    protected static byte[] decrypt(byte[] key, byte[] iv, byte[] encrypted) throws EncryptionException {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        byte[] decrypted;
+
+        try {
+            Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivSpec);
+            decrypted = cipher.doFinal(encrypted);
+        } catch (Exception e ) {
+            throw new EncryptionException( "Could not decrypt Medtronic Message" );
+        }
+        return decrypted;
+    }
 }

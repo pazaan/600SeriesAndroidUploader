@@ -5,6 +5,7 @@ import android.util.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
@@ -26,7 +27,64 @@ public class ContourNextLinkMessage {
     protected ByteBuffer mPayload;
     protected MedtronicCnlSession mPumpSession;
 
-    protected ContourNextLinkMessage(byte[] bytes) {
+    protected void checkControlMessage(byte[] msg, ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
+        if (msg.length != 1 || msg[0] != controlCharacter.value) {
+            throw new UnexpectedMessageException(String.format(Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
+                    (int) controlCharacter.value, (int) msg[0]));
+        }
+    }
+
+
+    public enum CommandAction {
+        NO_TYPE(0x0),
+        CHANNEL_NEGOTIATE(0x03),
+        PUMP_REQUEST(0x05),
+        PUMP_RESPONSE(0x55);
+
+        private byte value;
+
+        CommandAction(int commandAction) {
+            value = (byte) commandAction;
+        }
+
+        public final byte getValue() {
+            return value;
+        }
+
+        public final boolean equals(byte value) {
+            return this.value == value;
+        }
+    }
+
+    public enum CommandType {
+        NO_TYPE(0x0),
+        OPEN_CONNECTION(0x10),
+        CLOSE_CONNECTION(0x11),
+        SEND_MESSAGE(0x12),
+        READ_INFO(0x14),
+        REQUEST_LINK_KEY(0x16),
+        SEND_LINK_KEY(0x17),
+        RECEIVE_MESSAGE(0x80),
+        SEND_MESSAGE_RESPONSE(0x81),
+        REQUEST_LINK_KEY_RESPONSE(0x86);
+
+        private byte value;
+
+        CommandType(int commandType) {
+            value = (byte) commandType;
+        }
+
+        public final byte getValue() {
+            return value;
+        }
+
+        public final boolean equals(byte value) {
+            return this.value == value;
+        }
+    }
+
+    protected ContourNextLinkMessage(MedtronicCnlSession pumpSession, byte[] bytes) {
+        this.mPumpSession = pumpSession;
         setPayload(bytes);
     }
 
@@ -46,6 +104,10 @@ public class ContourNextLinkMessage {
             mPayload = ByteBuffer.allocate(payload.length);
             mPayload.put(payload);
         }
+    }
+
+    public void checkControlMessage(ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
+        checkControlMessage(mPayload.array(), controlCharacter);
     }
 
     protected void sendMessage(UsbHidDriver mDevice) throws IOException {

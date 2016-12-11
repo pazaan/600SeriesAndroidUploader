@@ -19,31 +19,8 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
 
     private final static int ENVELOPE_SIZE = 33;
 
-    public enum CommandType {
-        NO_TYPE(0x0),
-        OPEN_CONNECTION(0x10),
-        CLOSE_CONNECTION(0x11),
-        SEND_MESSAGE(0x12),
-        READ_INFO(0x14),
-        REQUEST_LINK_KEY(0x16),
-        SEND_LINK_KEY(0x17),
-        RECEIVE_MESSAGE(0x80),
-        SEND_MESSAGE_RESPONSE(0x81),
-        REQUEST_LINK_KEY_RESPONSE(0x86);
-
-        private byte value;
-
-        CommandType(int commandType) {
-            value = (byte) commandType;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
-
     public ContourNextLinkBinaryMessage(CommandType commandType, MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
-        super(buildPayload(commandType, pumpSession, payload));
+        super(pumpSession, buildPayload(commandType, pumpSession, payload));
         mCommandType = commandType;
         mPumpSession = pumpSession;
 
@@ -61,11 +38,6 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
         message.validate();
 
         return message;
-    }
-
-
-    public void checkControlMessage(ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
-        checkControlMessage(mPayload.array(), controlCharacter);
     }
 
 
@@ -91,7 +63,7 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
         payloadBuffer.put("000000".getBytes()); // Text of PumpInfo serial, but 000000 for 640g
         byte[] unknownBytes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         payloadBuffer.put(unknownBytes);
-        payloadBuffer.put(commandType.value);
+        payloadBuffer.put(commandType.getValue());
         payloadBuffer.putInt(pumpSession.getBayerSequenceNumber());
         byte[] unknownBytes2 = {0, 0, 0, 0, 0};
         payloadBuffer.put(unknownBytes2);
@@ -116,13 +88,6 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
 
         if (messageChecksum != calculatedChecksum) {
             throw new ChecksumException(String.format(Locale.getDefault(), "Expected to get %d. Got %d", (int) calculatedChecksum, (int) messageChecksum));
-        }
-    }
-
-    protected void checkControlMessage(byte[] msg, ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
-        if (msg.length != 1 || msg[0] != controlCharacter.value) {
-            throw new UnexpectedMessageException(String.format(Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
-                    (int) controlCharacter.value, (int) msg[0]));
         }
     }
 

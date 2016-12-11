@@ -4,14 +4,15 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.medtronic.MedtronicCnlSession;
 
 /**
  * Created by volker on 10.12.2016.
  */
 
 public class DeviceInfoRequestCommandMessage extends ContourNextLinkMessage {
-    public DeviceInfoRequestCommandMessage() {
-        super("X".getBytes());
+    public DeviceInfoRequestCommandMessage(MedtronicCnlSession pumpSession) {
+        super(pumpSession, "X".getBytes());
     }
 
     public DeviceInfoResponseCommandMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {

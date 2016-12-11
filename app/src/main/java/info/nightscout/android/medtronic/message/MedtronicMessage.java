@@ -18,21 +18,9 @@ public class MedtronicMessage extends ContourNextLinkBinaryMessage {
     static int ENVELOPE_SIZE = 2;
     static int CRC_SIZE = 2;
 
-    public enum CommandAction {
-        NO_TYPE(0x0),
-        CHANNEL_NEGOTIATE(0x03),
-        PUMP_REQUEST(0x05),
-        PUMP_RESPONSE(0x55);
-
-        private byte value;
-
-        CommandAction(int commandAction) {
-            value = (byte) commandAction;
-        }
-    }
 
     protected MedtronicMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
-        super(commandType, pumpSession, buildPayload(commandAction, payload));
+       super(commandType, pumpSession, buildPayload(commandAction, payload));
     }
 
     /**
@@ -47,7 +35,7 @@ public class MedtronicMessage extends ContourNextLinkBinaryMessage {
         ByteBuffer payloadBuffer = ByteBuffer.allocate(ENVELOPE_SIZE + payloadLength + CRC_SIZE);
         payloadBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-        payloadBuffer.put(commandAction.value);
+        payloadBuffer.put(commandAction.getValue());
         payloadBuffer.put((byte) (ENVELOPE_SIZE + payloadLength));
         if (payloadLength != 0) {
             payloadBuffer.put(payload != null ? payload : new byte[0]);
@@ -79,21 +67,6 @@ public class MedtronicMessage extends ContourNextLinkBinaryMessage {
             throw new EncryptionException( "Could not encrypt Medtronic Message" );
         }
         return encrypted;
-    }
-
-    protected static byte[] decrypt(byte[] key, byte[] iv, byte[] encrypted) throws EncryptionException {
-        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        byte[] decrypted;
-
-        try {
-            Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivSpec);
-            decrypted = cipher.doFinal(encrypted);
-        } catch (Exception e ) {
-            throw new EncryptionException( "Could not decrypt Medtronic Message" );
-        }
-        return decrypted;
     }
 
     protected void sendMessage(UsbHidDriver mDevice) throws IOException {
