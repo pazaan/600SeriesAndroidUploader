@@ -1,14 +1,14 @@
 package info.nightscout.android.medtronic.message;
 
-import info.nightscout.android.medtronic.MedtronicCnlSession;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import info.nightscout.android.medtronic.MedtronicCnlSession;
 
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class ChannelNegotiateMessage extends MedtronicMessage {
+public class ChannelNegotiateMessage extends MedtronicRequestMessage {
     public ChannelNegotiateMessage(MedtronicCnlSession pumpSession) throws ChecksumException {
         super(CommandType.SEND_MESSAGE, CommandAction.CHANNEL_NEGOTIATE, pumpSession, buildPayload(pumpSession));
     }

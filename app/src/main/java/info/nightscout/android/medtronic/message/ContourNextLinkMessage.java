@@ -25,15 +25,6 @@ public class ContourNextLinkMessage {
     private static final String BAYER_USB_HEADER = "ABC";
 
     protected ByteBuffer mPayload;
-    protected MedtronicCnlSession mPumpSession;
-
-    protected void checkControlMessage(byte[] msg, ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
-        if (msg.length != 1 || msg[0] != controlCharacter.value) {
-            throw new UnexpectedMessageException(String.format(Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
-                    (int) controlCharacter.value, (int) msg[0]));
-        }
-    }
-
 
     public enum CommandAction {
         NO_TYPE(0x0),
@@ -47,14 +38,15 @@ public class ContourNextLinkMessage {
             value = (byte) commandAction;
         }
 
-        public final byte getValue() {
+        public byte getValue() {
             return value;
         }
 
-        public final boolean equals(byte value) {
+        public boolean equals(byte value) {
             return this.value == value;
         }
     }
+
 
     public enum CommandType {
         NO_TYPE(0x0),
@@ -74,17 +66,16 @@ public class ContourNextLinkMessage {
             value = (byte) commandType;
         }
 
-        public final byte getValue() {
+        public byte getValue() {
             return value;
         }
 
-        public final boolean equals(byte value) {
+        public boolean equals(byte value) {
             return this.value == value;
         }
     }
 
-    protected ContourNextLinkMessage(MedtronicCnlSession pumpSession, byte[] bytes) {
-        this.mPumpSession = pumpSession;
+    protected ContourNextLinkMessage(byte[] bytes) {
         setPayload(bytes);
     }
 
@@ -104,10 +95,6 @@ public class ContourNextLinkMessage {
             mPayload = ByteBuffer.allocate(payload.length);
             mPayload.put(payload);
         }
-    }
-
-    public void checkControlMessage(ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
-        checkControlMessage(mPayload.array(), controlCharacter);
     }
 
     protected void sendMessage(UsbHidDriver mDevice) throws IOException {
@@ -162,9 +149,6 @@ public class ContourNextLinkMessage {
         return responseMessage.toByteArray();
     }
 
-    protected void validate() {};
-
-
     public enum ASCII {
         STX(0x02),
         EOT(0x04),
@@ -176,6 +160,10 @@ public class ContourNextLinkMessage {
 
         ASCII(int code) {
             this.value = (byte) code;
+        }
+
+        public byte getValue() {
+            return value;
         }
 
         public boolean equals(byte value) {

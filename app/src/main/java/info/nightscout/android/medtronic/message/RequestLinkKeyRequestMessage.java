@@ -10,7 +10,7 @@ import info.nightscout.android.medtronic.MedtronicCnlSession;
  * Created by volker on 10.12.2016.
  */
 
-public class RequestLinkKeyRequestMessage extends ContourNextLinkBinaryMessage {
+public class RequestLinkKeyRequestMessage extends ContourNextLinkBinaryRequestMessage {
     public RequestLinkKeyRequestMessage(MedtronicCnlSession pumpSession) throws ChecksumException {
         super(CommandType.REQUEST_LINK_KEY, pumpSession, null);
     }

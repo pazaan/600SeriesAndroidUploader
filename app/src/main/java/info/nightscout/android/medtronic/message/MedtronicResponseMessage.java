@@ -17,7 +17,7 @@ public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
     static int CRC_SIZE = 2;
 
     protected MedtronicResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        super(pumpSession, payload);
+        super(payload);
 
         // TODO - Validate the message, inner CCITT, serial numbers, etc
         // If there's not 57 bytes, then we got back a bad message. Not sure how to process these yet.

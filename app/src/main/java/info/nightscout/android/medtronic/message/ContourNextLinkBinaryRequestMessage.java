@@ -1,28 +1,30 @@
 package info.nightscout.android.medtronic.message;
 
-import info.nightscout.android.USB.UsbHidDriver;
-import info.nightscout.android.medtronic.MedtronicCnlSession;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
+import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.medtronic.MedtronicCnlSession;
+
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
+public class ContourNextLinkBinaryRequestMessage extends ContourNextLinkRequestMessage {
+    private final static int ENVELOPE_SIZE = 33;
+
     //protected ByteBuffer mBayerEnvelope;
     //protected ByteBuffer mBayerPayload;
     protected CommandType mCommandType = CommandType.NO_TYPE;
+    protected MedtronicCnlSession mPumpSession;
 
-    private final static int ENVELOPE_SIZE = 33;
+    public ContourNextLinkBinaryRequestMessage(CommandType commandType, MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
+        super(buildPayload(commandType, pumpSession, payload));
 
-    public ContourNextLinkBinaryMessage(CommandType commandType, MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
-        super(pumpSession, buildPayload(commandType, pumpSession, payload));
-        mCommandType = commandType;
-        mPumpSession = pumpSession;
+        this.mPumpSession = pumpSession;
+        this.mCommandType = commandType;
 
         // Validate checksum
         byte messageChecksum = this.mPayload.get(32);
@@ -32,14 +34,6 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
             throw new ChecksumException(String.format(Locale.getDefault(), "Expected to get %d. Got %d", (int) calculatedChecksum, (int) messageChecksum));
         }
     }
-
-    public static ContourNextLinkMessage fromBytes(byte[] bytes) throws ChecksumException {
-        ContourNextLinkMessage message = new ContourNextLinkMessage(bytes);
-        message.validate();
-
-        return message;
-    }
-
 
     /**
      * Handle incrementing sequence number
@@ -79,16 +73,6 @@ public class ContourNextLinkBinaryMessage extends ContourNextLinkMessage {
         payloadBuffer.put(MessageUtils.oneByteSum(payloadBuffer.array()));
 
         return payloadBuffer.array();
-    }
-
-    protected void validate(ContourNextLinkMessage message)  throws ChecksumException {
-        // Validate checksum
-        byte messageChecksum = message.mPayload.get(32);
-        byte calculatedChecksum = (byte) (MessageUtils.oneByteSum(message.mPayload.array()) - messageChecksum);
-
-        if (messageChecksum != calculatedChecksum) {
-            throw new ChecksumException(String.format(Locale.getDefault(), "Expected to get %d. Got %d", (int) calculatedChecksum, (int) messageChecksum));
-        }
     }
 
 }
