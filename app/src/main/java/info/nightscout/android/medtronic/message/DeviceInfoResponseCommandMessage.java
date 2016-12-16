@@ -6,10 +6,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import info.nightscout.android.medtronic.MedtronicCnlSession;
-import info.nightscout.android.medtronic.message.ChecksumException;
-import info.nightscout.android.medtronic.message.EncryptionException;
-import info.nightscout.android.medtronic.message.MedtronicResponseMessage;
-import info.nightscout.android.medtronic.message.UnexpectedMessageException;
 
 /**
  * Created by lgoedhart on 10/05/2016.

@@ -1,11 +1,10 @@
 package info.nightscout.android.medtronic.message;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
-
-import java.util.concurrent.TimeoutException;
 
 /**
  * Created by volker on 10.12.2016.

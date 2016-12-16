@@ -5,14 +5,10 @@ import android.util.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
-import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.utils.HexDump;
-
-import static android.R.id.message;
 
 /**
  * Created by lgoedhart on 26/03/2016.

@@ -1,12 +1,12 @@
 package info.nightscout.android.medtronic.message;
 
-import info.nightscout.android.medtronic.MedtronicCnlSession;
-
 import java.nio.ByteBuffer;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import info.nightscout.android.medtronic.MedtronicCnlSession;
 
 /**
  * Created by lgoedhart on 26/03/2016.

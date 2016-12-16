@@ -272,6 +272,27 @@ public class PumpStatusEvent extends RealmObject {
         DOUBLE_DOWN,
         NOT_COMPUTABLE,
         RATE_OUT_OF_RANGE,
-        NOT_SET
+        NOT_SET;
+
+        public static CGM_TREND fromMessageByte(byte messageByte) {
+            switch (messageByte) {
+                case (byte) 0x60:
+                    return PumpStatusEvent.CGM_TREND.FLAT;
+                case (byte) 0xc0:
+                    return PumpStatusEvent.CGM_TREND.DOUBLE_UP;
+                case (byte) 0xa0:
+                    return PumpStatusEvent.CGM_TREND.SINGLE_UP;
+                case (byte) 0x80:
+                    return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_UP;
+                case (byte) 0x40:
+                    return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_DOWN;
+                case (byte) 0x20:
+                    return PumpStatusEvent.CGM_TREND.SINGLE_DOWN;
+                case (byte) 0x00:
+                    return PumpStatusEvent.CGM_TREND.DOUBLE_DOWN;
+                default:
+                    return PumpStatusEvent.CGM_TREND.NOT_COMPUTABLE;
+            }
+        }
     }
 }

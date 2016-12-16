@@ -235,7 +235,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     // TODO - send ACTION to MainActivity to show offset between pump and uploader.
                     pumpRecord.setPumpTimeOffset(pumpOffset);
                     pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
-                    cnlReader.getPumpStatus(pumpRecord, pumpOffset);
+                    cnlReader.updatePumpStatus(pumpRecord);
                     activePump.getPumpHistory().add(pumpRecord);
 
                     cnlReader.endEHSMSession();
@@ -270,10 +270,12 @@ public class MedtronicCnlIntentService extends IntentService {
                 Log.e(TAG, "Could not determine CNL HMAC", e);
                 sendStatus("Error connecting to Contour Next Link: Hashing error.");
             } finally {
-                //TODO : 05.11.2016 has the close to be here?
-                cnlReader.closeConnection();
-                cnlReader.endPassthroughMode();
-                cnlReader.endControlMode();
+                try {
+                    cnlReader.closeConnection();
+                    cnlReader.endPassthroughMode();
+                    cnlReader.endControlMode();
+                } catch (NoSuchAlgorithmException e) {}
+
             }
         } catch (IOException e) {
             Log.e(TAG, "Error connecting to Contour Next Link.", e);

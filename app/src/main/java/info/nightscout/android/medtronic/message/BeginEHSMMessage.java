@@ -1,6 +1,7 @@
 package info.nightscout.android.medtronic.message;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
@@ -18,8 +19,10 @@ public class BeginEHSMMessage extends MedtronicRequestMessage {
         return new byte[] { 0x00 };
     }
 
-    protected void sendMessage(UsbHidDriver mDevice) throws IOException {
-        super.sendMessage(mDevice);
-        mPumpSession.incrMedtronicSequenceNumber();
+    public void send(UsbHidDriver mDevice) throws IOException, TimeoutException {
+        sendMessage(mDevice);
+
+        // The Begin EHSM Session only has an 0x81 response
+        readMessage(mDevice);
     }
 }

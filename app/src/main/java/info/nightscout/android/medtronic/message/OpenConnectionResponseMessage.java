@@ -1,8 +1,5 @@
 package info.nightscout.android.medtronic.message;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 
 /**

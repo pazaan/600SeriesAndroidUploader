@@ -1,7 +1,5 @@
 package info.nightscout.android.medtronic.message;
 
-import info.nightscout.android.medtronic.MedtronicCnlSession;
-
 /**
  * Created by volker on 10.12.2016.
  */

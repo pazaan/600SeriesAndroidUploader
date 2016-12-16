@@ -1,9 +1,5 @@
 package info.nightscout.android.medtronic.message;
 
-import java.io.IOException;
-import java.util.Locale;
-import java.util.concurrent.TimeoutException;
-
 /**
  * Created by lgoedhart on 26/03/2016.
  */
