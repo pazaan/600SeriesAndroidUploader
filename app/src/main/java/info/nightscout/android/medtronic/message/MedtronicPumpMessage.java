@@ -10,6 +10,5 @@ public class MedtronicPumpMessage extends ContourNextLinkMessage {
 
     protected MedtronicPumpMessage(MedtronicCnlSession pumpSession, byte[] bytes) {
         super(bytes);
-
     }
 }

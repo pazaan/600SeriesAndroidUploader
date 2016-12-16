@@ -16,12 +16,12 @@ import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.message.BeginEHSMMessage;
 import info.nightscout.android.medtronic.message.ChannelNegotiateRequestMessage;
 import info.nightscout.android.medtronic.message.ChannelNegotiateResponseMessage;
-import info.nightscout.android.medtronic.message.ChecksumException;
+import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.message.CloseConnectionRequestMessage;
 import info.nightscout.android.medtronic.message.ContourNextLinkCommandMessage;
 import info.nightscout.android.medtronic.message.DeviceInfoRequestCommandMessage;
 import info.nightscout.android.medtronic.message.DeviceInfoResponseCommandMessage;
-import info.nightscout.android.medtronic.message.EncryptionException;
+import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.message.EndEHSMMessage;
 import info.nightscout.android.medtronic.message.OpenConnectionRequestMessage;
 import info.nightscout.android.medtronic.message.PumpBasalPatternRequestMessage;
@@ -34,7 +34,7 @@ import info.nightscout.android.medtronic.message.ReadInfoRequestMessage;
 import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyRequestMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyResponseMessage;
-import info.nightscout.android.medtronic.message.UnexpectedMessageException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 
 /**

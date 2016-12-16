@@ -8,6 +8,8 @@ import java.nio.ByteOrder;
 import java.util.Date;
 
 import info.nightscout.android.medtronic.MedtronicCnlSession;
+import info.nightscout.android.medtronic.exception.ChecksumException;
+import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 
 /**

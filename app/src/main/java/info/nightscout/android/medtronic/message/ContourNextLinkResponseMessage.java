@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
+import info.nightscout.android.medtronic.exception.ChecksumException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
+
 /**
  * Created by lgoedhart on 26/03/2016.
  */

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.medtronic.exception.ChecksumException;
+import info.nightscout.android.medtronic.exception.EncryptionException;
 
 /**
  * Created by lgoedhart on 26/03/2016.

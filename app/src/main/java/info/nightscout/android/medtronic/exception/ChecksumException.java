@@ -1,4 +1,4 @@
-package info.nightscout.android.medtronic.message;
+package info.nightscout.android.medtronic.exception;
 
 /**
  * Created by lgoedhart on 26/03/2016.

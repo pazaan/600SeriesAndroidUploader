@@ -7,6 +7,7 @@ import java.util.Locale;
 
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
+import info.nightscout.android.medtronic.exception.ChecksumException;
 
 /**
  * Created by lgoedhart on 26/03/2016.
