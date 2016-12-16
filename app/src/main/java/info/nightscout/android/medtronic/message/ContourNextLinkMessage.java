@@ -43,7 +43,6 @@ public class ContourNextLinkMessage {
         }
     }
 
-
     public enum CommandType {
         NO_TYPE(0x0),
         OPEN_CONNECTION(0x10),
@@ -78,12 +77,6 @@ public class ContourNextLinkMessage {
     public byte[] encode() {
         return mPayload.array();
     }
-
-    // TODO refactor
-    public void send(ContourNextLinkMessageHandler handler) throws IOException {
-        handler.sendMessage(this);
-    }
-
 
     // FIXME - get rid of this - make a Builder instead
     protected void setPayload(byte[] payload) {

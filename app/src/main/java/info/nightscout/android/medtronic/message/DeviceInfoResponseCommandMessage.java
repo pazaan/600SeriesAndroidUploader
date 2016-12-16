@@ -10,13 +10,13 @@ import info.nightscout.android.medtronic.MedtronicCnlSession;
 /**
  * Created by lgoedhart on 10/05/2016.
  */
-public class DeviceInfoResponseCommandMessage extends MedtronicResponseMessage {
+public class DeviceInfoResponseCommandMessage extends ContourNextLinkResponseMessage {
     private String serial = "";
     private final Pattern pattern = Pattern.compile(".*?\\^(\\d{4}-\\d{7})\\^.*");
 
-    protected DeviceInfoResponseCommandMessage(MedtronicCnlSession pumpSession, byte[] payload)
+    protected DeviceInfoResponseCommandMessage(byte[] payload)
             throws ChecksumException, EncryptionException, TimeoutException, UnexpectedMessageException, IOException {
-        super(pumpSession, payload);
+        super(payload);
 
         extractStickSerial(new String(payload));
     }

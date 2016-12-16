@@ -67,7 +67,7 @@ public class MedtronicCnlReader {
 
     public void requestDeviceInfo()
             throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
-        DeviceInfoResponseCommandMessage response = new DeviceInfoRequestCommandMessage(mPumpSession).send(mDevice);
+        DeviceInfoResponseCommandMessage response = new DeviceInfoRequestCommandMessage().send(mDevice);
 
         //TODO - extract more details form the device info.
         mStickSerial = response.getSerial();
