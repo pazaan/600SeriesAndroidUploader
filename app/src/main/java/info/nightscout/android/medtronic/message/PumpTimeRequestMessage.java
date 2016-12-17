@@ -17,6 +17,8 @@ public class PumpTimeRequestMessage extends MedtronicRequestMessage {
     }
 
     public PumpTimeResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException {
+        sendMessage(mDevice);
+
         // Read the 0x81
         readMessage(mDevice);
 

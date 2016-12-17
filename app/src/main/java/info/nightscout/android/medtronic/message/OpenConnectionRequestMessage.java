@@ -20,7 +20,7 @@ public class OpenConnectionRequestMessage extends ContourNextLinkBinaryRequestMe
     public OpenConnectionResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, EncryptionException, ChecksumException {
         sendMessage(mDevice);
 
-        OpenConnectionResponseMessage response = new OpenConnectionResponseMessage(mPumpSession, readMessage(mDevice));
+        OpenConnectionResponseMessage response = new OpenConnectionResponseMessage(readMessage(mDevice));
 
         // FIXME - We need to care what the response message is - wrong MAC and all that
         return response;

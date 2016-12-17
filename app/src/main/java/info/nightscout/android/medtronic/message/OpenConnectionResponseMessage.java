@@ -7,9 +7,9 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 /**
  * Created by lgoedhart on 10/05/2016.
  */
-public class OpenConnectionResponseMessage extends MedtronicResponseMessage {
-    protected OpenConnectionResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException, EncryptionException {
-        super(pumpSession, payload);
+public class OpenConnectionResponseMessage extends ContourNextLinkBinaryResponseMessage {
+    protected OpenConnectionResponseMessage(byte[] payload) throws ChecksumException, EncryptionException {
+        super(payload);
     }
 
 }

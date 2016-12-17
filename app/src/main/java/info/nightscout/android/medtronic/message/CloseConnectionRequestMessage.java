@@ -20,7 +20,7 @@ public class CloseConnectionRequestMessage extends ContourNextLinkBinaryRequestM
     public CloseConnectionResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, EncryptionException, ChecksumException {
         sendMessage(mDevice);
 
-        CloseConnectionResponseMessage response = new CloseConnectionResponseMessage(mPumpSession, readMessage(mDevice));
+        CloseConnectionResponseMessage response = new CloseConnectionResponseMessage(readMessage(mDevice));
 
         // FIXME - We need to care what the response message is - wrong MAC and all that
         return response;

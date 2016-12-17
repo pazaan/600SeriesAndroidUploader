@@ -23,6 +23,7 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage {
     }
 
     public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException {
+        sendMessage(mDevice);
 
         // Don't care what the 0x81 response message is at this stage
         Log.d(TAG, "negotiateChannel: Reading 0x81 message");

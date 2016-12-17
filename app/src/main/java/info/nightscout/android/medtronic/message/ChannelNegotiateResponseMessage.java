@@ -9,13 +9,13 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 /**
  * Created by lgoedhart on 27/03/2016.
  */
-public class ChannelNegotiateResponseMessage extends MedtronicResponseMessage {
+public class ChannelNegotiateResponseMessage extends ContourNextLinkBinaryResponseMessage {
     private static final String TAG = ChannelNegotiateResponseMessage.class.getSimpleName();
 
     private byte radioChannel = 0;
 
     protected ChannelNegotiateResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        super(pumpSession, payload);
+        super(payload);
 
         byte[] responseBytes = this.encode();
 
