@@ -17,10 +17,10 @@ public class MedtronicSendMessageRequestMessage  extends MedtronicRequestMessage
 
     public enum SendMessageType {
         NO_TYPE(0x0),
-        BEGIN_EHSM_SESSION(0x412),
+        BEGIN_EHSM_SESSION(0x0412),
         TIME_REQUEST(0x0403),
         READ_PUMP_STATUS_REQUEST(0x0112),
-        READ_BASAL_PATTERN_REQUEST(0x0112),
+        READ_BASAL_PATTERN_REQUEST(0x0116),
         END_EHSM_SESSION(0x412);
 
         private short value;
