@@ -257,11 +257,13 @@ public class NightscoutUploadIntentService extends IntentService {
         iob.put("bolusiob", record.getActiveInsulin());
 
         JSONObject status = new JSONObject();
-        // todo put real status in here....
-        status.put("status", "normal");
-        status.put("timestamp", record.getPumpDate());
-        status.put("bolusing", record.isBolusing());
-        status.put("suspended", record.isSuspended());
+        if (record.isBolusing()) {
+            status.put("bolusing", true);
+        } else if (record.isSuspended()) {
+            status.put("suspended", true);
+        } else {
+            status.put("status", "normal");
+        }
 
         JSONObject battery = new JSONObject();
         battery.put("percent", record.getBatteryPercentage());
