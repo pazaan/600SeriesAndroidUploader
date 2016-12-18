@@ -44,7 +44,6 @@ public class ContourNextLinkMessage {
     }
 
     public enum CommandType {
-        NO_TYPE(0x0),
         OPEN_CONNECTION(0x10),
         CLOSE_CONNECTION(0x11),
         SEND_MESSAGE(0x12),
@@ -53,7 +52,9 @@ public class ContourNextLinkMessage {
         SEND_LINK_KEY(0x17),
         RECEIVE_MESSAGE(0x80),
         SEND_MESSAGE_RESPONSE(0x81),
-        REQUEST_LINK_KEY_RESPONSE(0x86);
+        REQUEST_LINK_KEY_RESPONSE(0x86),
+
+        NO_TYPE(0x0);
 
         private byte value;
 

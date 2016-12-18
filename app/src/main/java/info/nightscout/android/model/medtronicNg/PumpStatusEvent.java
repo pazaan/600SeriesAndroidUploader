@@ -82,7 +82,10 @@ public class PumpStatusEvent extends RealmObject {
     }
 
     public void setCgmTrend(CGM_TREND cgmTrend) {
-        this.cgmTrend = cgmTrend.name();
+        if (cgmTrend != null)
+            this.cgmTrend = cgmTrend.name();
+        else
+            this.cgmTrend = CGM_TREND.NOT_SET.name();
     }
 
     public void setCgmTrend(String cgmTrend) {

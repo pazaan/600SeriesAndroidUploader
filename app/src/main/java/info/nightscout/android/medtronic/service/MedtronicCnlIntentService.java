@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
+import info.nightscout.android.BuildConfig;
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MainActivity;
@@ -220,6 +221,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     cnlReader.beginEHSMSession();
 
+                    // read pump status
                     PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
 
                     String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
@@ -237,6 +239,16 @@ public class MedtronicCnlIntentService extends IntentService {
                     pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
                     cnlReader.updatePumpStatus(pumpRecord);
                     activePump.getPumpHistory().add(pumpRecord);
+
+                    // start reading other data in debug only
+                    if (BuildConfig.DEBUG) {
+                        // read basal pattern
+                        //cnlReader.getBasalPatterns();
+
+                        // Read history
+                        //cnlReader.getHistory();
+                    }
+
 
                     cnlReader.endEHSMSession();
 

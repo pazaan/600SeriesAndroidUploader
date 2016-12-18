@@ -25,12 +25,19 @@ public class MedtronicRequestMessage extends ContourNextLinkBinaryRequestMessage
     }
 
     public enum SendMessageType {
-        NO_TYPE(0x0),
         BEGIN_EHSM_SESSION(0x412),
         TIME_REQUEST(0x0403),
         READ_PUMP_STATUS_REQUEST(0x0112),
         READ_BASAL_PATTERN_REQUEST(0x0112),
-        END_EHSM_SESSION(0x412);
+        END_EHSM_SESSION(0x412),
+
+        READ_HISTORY_INFO_MESSAGE(0x030C),
+        READ_HISTORY_MESSAGE(0x0304),
+        READ_TRACE_HISTORY_MESSAGE(0x0302),
+
+        INITIATE_MULTIPACKET_TRANSFER_COMMAND(0xFF00),
+
+        NO_TYPE(0x0);
 
         private short value;
 

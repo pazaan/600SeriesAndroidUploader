@@ -30,6 +30,8 @@ import info.nightscout.android.medtronic.message.PumpStatusRequestMessage;
 import info.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
+import info.nightscout.android.medtronic.message.ReadHistoryInfoRequestMessage;
+import info.nightscout.android.medtronic.message.ReadHistoryInfoResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoRequestMessage;
 import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyRequestMessage;
@@ -152,6 +154,8 @@ public class MedtronicCnlReader {
 
             if (response.getRadioChannel() == mPumpSession.getRadioChannel()) {
                 break;
+            } else {
+                mPumpSession.setRadioChannel((byte)0);
             }
         }
 
@@ -175,7 +179,7 @@ public class MedtronicCnlReader {
         return response.getPumpTime();
     }
 
-    public PumpStatusEvent updatePumpStatus(PumpStatusEvent pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException {
+    public PumpStatusEvent updatePumpStatus(PumpStatusEvent pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin updatePumpStatus");
 
         // FIXME - throw if not in EHSM mode (add a state machine)
@@ -194,6 +198,16 @@ public class MedtronicCnlReader {
         PumpBasalPatternResponseMessage response = new PumpBasalPatternRequestMessage(mPumpSession).send(mDevice);
 
         Log.d(TAG, "Finished getBasalPatterns");
+    }
+
+
+    public void getHistory() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin getHistory");
+        // FIXME - throw if not in EHSM mode (add a state machine)
+
+        ReadHistoryInfoResponseMessage response = new ReadHistoryInfoRequestMessage(mPumpSession).send(mDevice);
+
+        Log.d(TAG, "Finished getHistory");
     }
 
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException {

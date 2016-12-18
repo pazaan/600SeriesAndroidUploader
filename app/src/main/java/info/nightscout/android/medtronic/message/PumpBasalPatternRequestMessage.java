@@ -20,9 +20,6 @@ public class PumpBasalPatternRequestMessage extends MedtronicSendMessageRequestM
         sendMessage(mDevice);
 
         // Read the 0x81
-        readMessage(mDevice);
-
-        // Read the 0x80
         PumpBasalPatternResponseMessage response = new PumpBasalPatternResponseMessage(mPumpSession, readMessage(mDevice));
 
         return response;

@@ -1,16 +1,21 @@
 package info.nightscout.android.medtronic.message;
 
+import android.util.Log;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by lgoedhart on 27/03/2016.
  */
 public class PumpBasalPatternResponseMessage extends MedtronicSendMessageResponseMessage {
+    private static final String TAG = PumpBasalPatternResponseMessage.class.getSimpleName();
+
     protected PumpBasalPatternResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
         super(pumpSession, payload);
 
@@ -24,10 +29,12 @@ public class PumpBasalPatternResponseMessage extends MedtronicSendMessageRespons
         }
         */
 
-        // FIXME - this needs to go into PumpBasalPatternResponseMessage
-        ByteBuffer basalRatesBuffer = ByteBuffer.allocate(96);
+        ByteBuffer basalRatesBuffer = ByteBuffer.allocate(payload.length);
         basalRatesBuffer.order(ByteOrder.BIG_ENDIAN);
-        basalRatesBuffer.put(this.encode(), 0x39, 96);
+        basalRatesBuffer.put(this.encode());
+
+        String responseString = HexDump.dumpHexString(basalRatesBuffer.array());
+        Log.d(TAG, "PumpStatus: " + responseString);
 
     }
 

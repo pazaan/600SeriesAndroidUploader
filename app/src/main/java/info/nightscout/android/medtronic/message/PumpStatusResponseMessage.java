@@ -6,10 +6,12 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Date;
+import java.util.Locale;
 
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 
 /**
@@ -45,17 +47,16 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private long rtc;
     private long offset;
 
-    protected PumpStatusResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
+    protected PumpStatusResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
         if (this.encode().length < (57 + 96)) {
             // Invalid message. Don't try and parse it
             // TODO - deal with this more elegantly
             Log.e(TAG, "Invalid message received for updatePumpStatus");
-            return;
+            throw new UnexpectedMessageException("Invalid message received for updatePumpStatus");
         }
 
-        // FIXME - this needs to go into PumpStatusResponseMessage
         ByteBuffer statusBuffer = ByteBuffer.allocate(96);
         statusBuffer.order(ByteOrder.BIG_ENDIAN);
         statusBuffer.put(this.encode(), 0x39, 96);
