@@ -13,7 +13,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 /**
  * Created by lgoedhart on 27/03/2016.
  */
-public class PumpTimeResponseMessage extends MedtronicResponseMessage {
+public class PumpTimeResponseMessage extends MedtronicSendMessageResponseMessage {
     private static final String TAG = PumpTimeResponseMessage.class.getSimpleName();
 
     private Date pumpTime;

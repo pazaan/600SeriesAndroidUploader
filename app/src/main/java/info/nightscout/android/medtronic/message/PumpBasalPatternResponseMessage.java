@@ -10,7 +10,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 /**
  * Created by lgoedhart on 27/03/2016.
  */
-public class PumpBasalPatternResponseMessage extends MedtronicResponseMessage {
+public class PumpBasalPatternResponseMessage extends MedtronicSendMessageResponseMessage {
     protected PumpBasalPatternResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
         super(pumpSession, payload);
 

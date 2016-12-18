@@ -17,16 +17,11 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
  * Created by lgoedhart on 26/03/2016.
  */
 public class MedtronicRequestMessage extends ContourNextLinkBinaryRequestMessage {
-    static int ENVELOPE_SIZE = 11;
-    static int ENCRYPTED_ENVELOPE_SIZE = 3;
+    static int ENVELOPE_SIZE = 2;
     static int CRC_SIZE = 2;
 
     protected MedtronicRequestMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
         super(commandType, pumpSession, buildPayload(commandAction, payload));
-    }
-
-    protected MedtronicRequestMessage(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        this(CommandType.SEND_MESSAGE, CommandAction.PUMP_REQUEST, pumpSession, buildPayload(sendMessageType, pumpSession, payload));
     }
 
     public enum SendMessageType {
@@ -75,43 +70,6 @@ public class MedtronicRequestMessage extends ContourNextLinkBinaryRequestMessage
         return payloadBuffer.array();
     }
 
-
-    /**
-     * MedtronicSendMessage:
-     * +-----------------+------------------------------+--------------+-------------------+--------------------------------+
-     * | LE long pumpMAC | byte medtronicSequenceNumber | byte unknown | byte Payload size | byte[] Encrypted Payload bytes |
-     * +-----------------+------------------------------+--------------+-------------------+--------------------------------+
-     * <p/>
-     * MedtronicSendMessage (decrypted payload):
-     * +-------------------------+----------------------+----------------------+--------------------+
-     * | byte sendSequenceNumber | BE short sendMessageType | byte[] Payload bytes | BE short CCITT CRC |
-     * +-------------------------+----------------------+----------------------+--------------------+
-     */
-    protected static byte[] buildPayload(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException {
-        byte payloadLength = (byte) (payload == null ? 0 : payload.length);
-
-        ByteBuffer sendPayloadBuffer = ByteBuffer.allocate(ENCRYPTED_ENVELOPE_SIZE + payloadLength + CRC_SIZE);
-        sendPayloadBuffer.order(ByteOrder.BIG_ENDIAN); // I know, this is the default - just being explicit
-
-        sendPayloadBuffer.put(sendSequenceNumber(sendMessageType));
-        sendPayloadBuffer.putShort(sendMessageType.value);
-        if (payloadLength != 0) {
-            sendPayloadBuffer.put(payload);
-        }
-
-        sendPayloadBuffer.putShort((short) MessageUtils.CRC16CCITT(sendPayloadBuffer.array(), 0xffff, 0x1021, ENCRYPTED_ENVELOPE_SIZE + payloadLength));
-
-        ByteBuffer payloadBuffer = ByteBuffer.allocate( ENVELOPE_SIZE + sendPayloadBuffer.capacity() );
-        payloadBuffer.order(ByteOrder.LITTLE_ENDIAN);
-
-        payloadBuffer.putLong(pumpSession.getPumpMAC());
-        payloadBuffer.put((byte) pumpSession.getMedtronicSequenceNumber());
-        payloadBuffer.put((byte) 0x10);
-        payloadBuffer.put((byte) sendPayloadBuffer.capacity());
-        payloadBuffer.put(encrypt( pumpSession.getKey(), pumpSession.getIV(), sendPayloadBuffer.array()));
-
-        return payloadBuffer.array();
-    }
 
     // TODO - maybe move the SecretKeySpec, IvParameterSpec and Cipher construction into the PumpSession?
     protected static byte[] encrypt(byte[] key, byte[] iv, byte[] clear) throws EncryptionException {

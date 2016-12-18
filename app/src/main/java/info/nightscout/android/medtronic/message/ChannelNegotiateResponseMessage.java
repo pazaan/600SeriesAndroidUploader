@@ -2,6 +2,9 @@ package info.nightscout.android.medtronic.message;
 
 import android.util.Log;
 
+import java.io.IOException;
+import java.util.Locale;
+
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
@@ -14,7 +17,7 @@ public class ChannelNegotiateResponseMessage extends ContourNextLinkBinaryRespon
 
     private byte radioChannel = 0;
 
-    protected ChannelNegotiateResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
+    protected ChannelNegotiateResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, IOException {
         super(payload);
 
         byte[] responseBytes = this.encode();
@@ -22,6 +25,9 @@ public class ChannelNegotiateResponseMessage extends ContourNextLinkBinaryRespon
         Log.d(TAG, "negotiateChannel: Check response length");
         if (responseBytes.length > 46) {
             radioChannel = responseBytes[76];
+            if (responseBytes[76] != pumpSession.getRadioChannel()) {
+                throw new IOException(String.format(Locale.getDefault(), "Expected to get a message for channel %d. Got %d", pumpSession.getRadioChannel(), responseBytes[76]));
+            }
         } else {
             radioChannel = ((byte) 0);
         }

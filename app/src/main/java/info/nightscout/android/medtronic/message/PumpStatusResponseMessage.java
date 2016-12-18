@@ -15,7 +15,7 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 /**
  * Created by lgoedhart on 27/03/2016.
  */
-public class PumpStatusResponseMessage extends MedtronicResponseMessage {
+public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessage {
     private static final String TAG = PumpStatusResponseMessage.class.getSimpleName();
 
     // Data from the Medtronic Pump Status message

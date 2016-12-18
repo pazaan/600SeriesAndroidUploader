@@ -11,7 +11,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class PumpStatusRequestMessage extends MedtronicRequestMessage {
+public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage {
     public PumpStatusRequestMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
         super(SendMessageType.READ_PUMP_STATUS_REQUEST, pumpSession, null);
     }

@@ -152,8 +152,6 @@ public class MedtronicCnlReader {
 
             if (response.getRadioChannel() == mPumpSession.getRadioChannel()) {
                 break;
-            } else {
-                throw new IOException(String.format(Locale.getDefault(), "Expected to get a message for channel %d. Got %d", mPumpSession.getRadioChannel(), response.getRadioChannel()));
             }
         }
 
