@@ -7,7 +7,7 @@ buildscript {
 
     dependencies {
         classpath 'io.fabric.tools:gradle:1.21.6'
-        classpath 'io.realm:realm-gradle-plugin:1.1.0'
+        classpath 'io.realm:realm-gradle-plugin:1.1.1'
         classpath 'org.ajoberstar:grgit:1.5.0'
     }
 }
@@ -144,7 +144,7 @@ release {
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
-    compile('com.crashlytics.sdk.android:crashlytics:2.6.0@aar') {
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.5@aar') {
         transitive = true;
     }
     compile('com.mikepenz:materialdrawer:5.2.9@aar') {
