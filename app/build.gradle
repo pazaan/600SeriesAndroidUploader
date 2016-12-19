@@ -154,7 +154,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
     compile 'uk.co.chrisjenx:calligraphy:2.2.0'
-    compile 'com.bugfender.sdk:android:0.4.4'
+    compile 'com.bugfender.sdk:android:0.6.2'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.0-beta1'
     compile 'com.github.PhilJay:MPAndroidChart-Realm:v1.1.0@aar'
     compile 'com.android.support:support-v4:23.4.0'
