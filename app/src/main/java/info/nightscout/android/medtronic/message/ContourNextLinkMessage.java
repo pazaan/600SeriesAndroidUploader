@@ -8,12 +8,15 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.medtronic.exception.ChecksumException;
+import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class ContourNextLinkMessage {
+public abstract class ContourNextLinkMessage {
     private static final String TAG = ContourNextLinkMessage.class.getSimpleName();
 
     private static final int USB_BLOCKSIZE = 64;

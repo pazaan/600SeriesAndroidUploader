@@ -3,14 +3,16 @@ package info.nightscout.android.medtronic.message;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 /**
  * Created by volker on 18.12.2016.
  */
 
-public class MedtronicSendMessageRequestMessage  extends MedtronicRequestMessage {
+public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRequestMessage<T> {
     static int ENVELOPE_SIZE = 11;
     static int ENCRYPTED_ENVELOPE_SIZE = 3;
     static int CRC_SIZE = 2;
@@ -32,6 +34,11 @@ public class MedtronicSendMessageRequestMessage  extends MedtronicRequestMessage
 
     protected MedtronicSendMessageRequestMessage(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
         super(CommandType.SEND_MESSAGE, CommandAction.PUMP_REQUEST, pumpSession, buildPayload(sendMessageType, pumpSession, payload));
+    }
+
+    @Override
+    protected ContourNextLinkResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException, UnexpectedMessageException {
+        return null;
     }
 
     /**

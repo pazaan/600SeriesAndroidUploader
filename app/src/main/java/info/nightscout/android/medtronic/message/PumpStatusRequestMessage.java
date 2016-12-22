@@ -12,7 +12,7 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage {
+public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage<PumpStatusResponseMessage> {
     public PumpStatusRequestMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
         super(SendMessageType.READ_PUMP_STATUS_REQUEST, pumpSession, null);
     }
@@ -23,8 +23,13 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
         // Read the 0x81
         readMessage(mDevice);
 
-        PumpStatusResponseMessage response = new PumpStatusResponseMessage(mPumpSession, readMessage(mDevice));
+        PumpStatusResponseMessage response = this.getResponse(readMessage(mDevice));
 
         return response;
+    }
+
+    @Override
+    protected PumpStatusResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException, UnexpectedMessageException {
+        return new PumpStatusResponseMessage(mPumpSession, payload);
     }
 }

@@ -12,17 +12,13 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
  * Created by volker on 10.12.2016.
  */
 
-public class OpenConnectionRequestMessage extends ContourNextLinkBinaryRequestMessage {
+public class OpenConnectionRequestMessage extends ContourNextLinkBinaryRequestMessage<OpenConnectionResponseMessage> {
     public OpenConnectionRequestMessage(MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
         super(CommandType.OPEN_CONNECTION, pumpSession, payload);
     }
 
-    public OpenConnectionResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, EncryptionException, ChecksumException {
-        sendMessage(mDevice);
-
-        OpenConnectionResponseMessage response = new OpenConnectionResponseMessage(readMessage(mDevice));
-
-        // FIXME - We need to care what the response message is - wrong MAC and all that
-        return response;
+    @Override
+    protected OpenConnectionResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException {
+        return new OpenConnectionResponseMessage(payload);
     }
 }

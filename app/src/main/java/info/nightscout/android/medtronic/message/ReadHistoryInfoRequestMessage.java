@@ -12,7 +12,7 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class ReadHistoryInfoRequestMessage extends MedtronicSendMessageRequestMessage {
+public class ReadHistoryInfoRequestMessage extends MedtronicSendMessageRequestMessage<ReadHistoryInfoResponseMessage> {
     public ReadHistoryInfoRequestMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
         super(SendMessageType.READ_BASAL_PATTERN_REQUEST, pumpSession, new byte[] {
                 2,
@@ -30,12 +30,8 @@ public class ReadHistoryInfoRequestMessage extends MedtronicSendMessageRequestMe
         });
     }
 
-    public ReadHistoryInfoResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        sendMessage(mDevice);
-
-        // Read the 0x81
-        ReadHistoryInfoResponseMessage response = new ReadHistoryInfoResponseMessage(mPumpSession, readMessage(mDevice));
-
-        return response;
+    @Override
+    protected ReadHistoryInfoResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException, UnexpectedMessageException {
+        return new ReadHistoryInfoResponseMessage(mPumpSession, payload);
     }
 }

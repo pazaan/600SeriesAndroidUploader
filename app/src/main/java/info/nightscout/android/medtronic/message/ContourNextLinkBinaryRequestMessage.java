@@ -12,7 +12,7 @@ import info.nightscout.android.medtronic.exception.ChecksumException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class ContourNextLinkBinaryRequestMessage extends ContourNextLinkRequestMessage {
+public abstract class ContourNextLinkBinaryRequestMessage<T> extends ContourNextLinkRequestMessage<T> {
     private final static int ENVELOPE_SIZE = 33;
 
     //protected ByteBuffer mBayerEnvelope;

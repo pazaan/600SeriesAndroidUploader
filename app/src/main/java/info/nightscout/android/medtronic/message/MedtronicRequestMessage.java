@@ -16,7 +16,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class MedtronicRequestMessage extends ContourNextLinkBinaryRequestMessage {
+public abstract class MedtronicRequestMessage<T> extends ContourNextLinkBinaryRequestMessage<T> {
     static int ENVELOPE_SIZE = 2;
     static int CRC_SIZE = 2;
 

@@ -11,7 +11,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class BeginEHSMMessage extends MedtronicSendMessageRequestMessage {
+public class BeginEHSMMessage extends MedtronicSendMessageRequestMessage<ContourNextLinkResponseMessage> {
     public BeginEHSMMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
         super(SendMessageType.BEGIN_EHSM_SESSION, pumpSession, buildPayload());
     }
@@ -21,10 +21,11 @@ public class BeginEHSMMessage extends MedtronicSendMessageRequestMessage {
         return new byte[] { 0x00 };
     }
 
-    public void send(UsbHidDriver mDevice) throws IOException, TimeoutException {
+    public ContourNextLinkResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException {
         sendMessage(mDevice);
 
         // The Begin EHSM Session only has an 0x81 response
         readMessage(mDevice);
+        return null;
     }
 }
