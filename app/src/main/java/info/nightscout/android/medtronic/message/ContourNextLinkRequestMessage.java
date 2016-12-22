@@ -19,22 +19,21 @@ public abstract class ContourNextLinkRequestMessage<T> extends ContourNextLinkMe
     }
 
     public T send(UsbHidDriver mDevice) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
+        return send(mDevice, 0);
+    }
+
+    public T send(UsbHidDriver mDevice, int millis) throws UnexpectedMessageException, EncryptionException, TimeoutException, ChecksumException, IOException {
         sendMessage(mDevice);
+        if (millis > 0) {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+            }
+        }
 
         T response = this.getResponse(readMessage(mDevice)); //new ContourNextLinkCommandResponse();
 
         // FIXME - We need to care what the response message is - wrong MAC and all that
-        return response;
-    }
-
-    public T send(UsbHidDriver mDevice, int millis) throws UnexpectedMessageException, EncryptionException, TimeoutException, ChecksumException, IOException {
-        T response = send(mDevice);
-
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-        }
-
         return response;
     }
 

@@ -17,12 +17,22 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
         super(SendMessageType.READ_PUMP_STATUS_REQUEST, pumpSession, null);
     }
 
-    public PumpStatusResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
+    public PumpStatusResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
         sendMessage(mDevice);
-
+        if (millis > 0) {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+            }
+        }
         // Read the 0x81
         readMessage(mDevice);
-
+        if (millis > 0) {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+            }
+        }
         PumpStatusResponseMessage response = this.getResponse(readMessage(mDevice));
 
         return response;
