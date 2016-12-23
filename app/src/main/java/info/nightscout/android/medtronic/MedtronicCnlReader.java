@@ -163,7 +163,7 @@ public class MedtronicCnlReader {
         return mPumpSession.getRadioChannel();
     }
 
-    public void beginEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException {
+    public void beginEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin beginEHSMSession");
         new BeginEHSMMessage(mPumpSession).send(mDevice);
         Log.d(TAG, "Finished beginEHSMSession");
@@ -210,7 +210,7 @@ public class MedtronicCnlReader {
         Log.d(TAG, "Finished getHistory");
     }
 
-    public void endEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException {
+    public void endEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin endEHSMSession");
         new EndEHSMMessage(mPumpSession).send(mDevice);
         Log.d(TAG, "Finished endEHSMSession");
