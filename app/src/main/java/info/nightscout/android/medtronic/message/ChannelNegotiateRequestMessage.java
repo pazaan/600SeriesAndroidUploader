@@ -15,13 +15,14 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage {
+public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<ChannelNegotiateResponseMessage> {
     private static final String TAG = ChannelNegotiateRequestMessage.class.getSimpleName();
 
     public ChannelNegotiateRequestMessage(MedtronicCnlSession pumpSession) throws ChecksumException {
         super(CommandType.SEND_MESSAGE, CommandAction.CHANNEL_NEGOTIATE, pumpSession, buildPayload(pumpSession));
     }
 
+    @Override
     public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException {
         sendMessage(mDevice);
 
@@ -30,9 +31,14 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage {
         readMessage(mDevice);
         // The 0x80 message
         Log.d(TAG, "negotiateChannel: Reading 0x80 message");
-        ChannelNegotiateResponseMessage response = new ChannelNegotiateResponseMessage(mPumpSession, readMessage(mDevice));
+        ChannelNegotiateResponseMessage response = this.getResponse(readMessage(mDevice));
 
         return response;
+    }
+
+    @Override
+    protected ChannelNegotiateResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException {
+        return new ChannelNegotiateResponseMessage(mPumpSession, payload);
     }
 
     protected static byte[] buildPayload( MedtronicCnlSession pumpSession ) {

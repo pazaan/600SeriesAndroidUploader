@@ -12,15 +12,28 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
  * Created by volker on 10.12.2016.
  */
 
-public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessage {
+public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessage<DeviceInfoResponseCommandMessage> {
     public DeviceInfoRequestCommandMessage() {
         super("X".getBytes());
     }
 
-    public DeviceInfoResponseCommandMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
+    @Override
+    public DeviceInfoResponseCommandMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
         sendMessage(mDevice);
 
+        if (millis > 0) {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+            }
+        }
         byte[] response1 = readMessage(mDevice);
+        if (millis > 0) {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+            }
+        }
         byte[] response2 = readMessage(mDevice);
 
         boolean doRetry = false;
@@ -30,12 +43,12 @@ public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessa
             try {
                 if (ASCII.EOT.equals(response1[0])) {
                     // response 1 is the ASTM message
-                    response = new DeviceInfoResponseCommandMessage(response1);
+                    response = this.getResponse(response1);
                     // ugly....
                     response.checkControlMessage(response2, ASCII.ENQ);
                 } else {
                     // response 2 is the ASTM message
-                    response = new DeviceInfoResponseCommandMessage(response1);
+                    response = this.getResponse(response1);
                     // ugly, too....
                     response.checkControlMessage(response1, ASCII.ENQ);
                 }
@@ -45,5 +58,10 @@ public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessa
         } while (doRetry);
 
         return response;
+    }
+
+    @Override
+    protected DeviceInfoResponseCommandMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException, UnexpectedMessageException, TimeoutException {
+        return new DeviceInfoResponseCommandMessage(payload);
     }
 }

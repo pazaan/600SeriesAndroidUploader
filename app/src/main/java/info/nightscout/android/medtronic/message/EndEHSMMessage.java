@@ -7,11 +7,12 @@ import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class EndEHSMMessage extends MedtronicSendMessageRequestMessage {
+public class EndEHSMMessage extends EHSMMessage {
     public EndEHSMMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
         super(SendMessageType.END_EHSM_SESSION, pumpSession, buildPayload());
     }
@@ -21,10 +22,4 @@ public class EndEHSMMessage extends MedtronicSendMessageRequestMessage {
         return new byte[] { 0x01 };
     }
 
-    public void send(UsbHidDriver mDevice) throws IOException, TimeoutException {
-        sendMessage(mDevice);
-
-        // The End EHSM Session only has an 0x81 response
-        readMessage(mDevice);
-    }
 }

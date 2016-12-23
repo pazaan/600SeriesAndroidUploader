@@ -10,7 +10,7 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class ContourNextLinkResponseMessage extends ContourNextLinkMessage {
+public abstract class ContourNextLinkResponseMessage extends ContourNextLinkMessage {
 
     public ContourNextLinkResponseMessage(byte[] payload) throws ChecksumException {
         super(payload);

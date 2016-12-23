@@ -12,16 +12,13 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
  * Created by volker on 10.12.2016.
  */
 
-public class RequestLinkKeyRequestMessage extends ContourNextLinkBinaryRequestMessage {
+public class RequestLinkKeyRequestMessage extends ContourNextLinkBinaryRequestMessage<RequestLinkKeyResponseMessage> {
     public RequestLinkKeyRequestMessage(MedtronicCnlSession pumpSession) throws ChecksumException {
         super(CommandType.REQUEST_LINK_KEY, pumpSession, null);
     }
 
-    public RequestLinkKeyResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, EncryptionException, ChecksumException {
-        sendMessage(mDevice);
-
-        RequestLinkKeyResponseMessage response = new RequestLinkKeyResponseMessage(mPumpSession, readMessage(mDevice));
-
-        return response;
+    @Override
+    protected RequestLinkKeyResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException {
+        return new RequestLinkKeyResponseMessage(mPumpSession, payload);
     }
 }

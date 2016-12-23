@@ -12,16 +12,13 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
  * Created by volker on 10.12.2016.
  */
 
-public class ReadInfoRequestMessage extends ContourNextLinkBinaryRequestMessage {
+public class ReadInfoRequestMessage extends ContourNextLinkBinaryRequestMessage<ReadInfoResponseMessage> {
     public ReadInfoRequestMessage(MedtronicCnlSession pumpSession) throws ChecksumException {
         super(ContourNextLinkBinaryRequestMessage.CommandType.READ_INFO, pumpSession, null);
     }
 
-    public ReadInfoResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, EncryptionException, ChecksumException {
-        sendMessage(mDevice);
-
-        ReadInfoResponseMessage response = new ReadInfoResponseMessage(mPumpSession, readMessage(mDevice));
-
-        return response;
+    @Override
+    protected ReadInfoResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException {
+        return new ReadInfoResponseMessage(mPumpSession, payload);
     }
 }
