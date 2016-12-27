@@ -160,25 +160,6 @@ public class MedtronicCnlIntentService extends IntentService {
 
             cnlReader.getPumpSession().setStickSerial(info.getSerialNumber());
 
-            /*
-            String hmac = info.getHmac();
-            String key = info.getKey();
-
-            if (hmac == null || key == null) {
-                // Must commit the transaction before we send the Registration activation message
-                realm.commitTransaction();
-
-                sendMessage(Constants.ACTION_USB_REGISTER);
-                realm.close();
-                MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
-                // TODO - throw, don't return
-                return;
-            }
-
-            cnlReader.getPumpSession().setHMAC(MessageUtils.hexStringToByteArray(hmac));
-            cnlReader.getPumpSession().setKey(MessageUtils.hexStringToByteArray(key));
-            */
-
             cnlReader.enterControlMode();
 
             try {

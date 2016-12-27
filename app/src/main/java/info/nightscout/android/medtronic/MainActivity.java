@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .withIcon(GoogleMaterial.Icon.gmd_settings)
                 .withSelectable(false);
         final PrimaryDrawerItem itemRegisterUsb = new PrimaryDrawerItem()
-                .withName("Register Contour Next Link")
+                .withName("Registered Devices")
                 .withIcon(GoogleMaterial.Icon.gmd_usb)
                 .withSelectable(false);
         final PrimaryDrawerItem itemStopCollecting = new PrimaryDrawerItem()
@@ -272,8 +272,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private boolean hasDetectedCnl() {
         if (mRealm.where(ContourNextLinkInfo.class).count() == 0) {
             new AlertDialog.Builder(this, R.style.AppTheme)
-                    .setTitle("Contour Next Link not detected")
-                    .setMessage("To register a Contour Next Link you must first plug it in.")
+                    .setTitle("No registered Contour Next Link devices")
+                    .setMessage("To register a Contour Next Link you must first plug it in, and get a reading from the pump.")
                     .setCancelable(false)
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
@@ -292,7 +292,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlIntentService.USB_VID, MedtronicCnlIntentService.USB_PID);
 
         return !(usbManager != null && cnlDevice != null && !usbManager.hasPermission(cnlDevice));
-
     }
 
     private void waitForUsbPermission() {
