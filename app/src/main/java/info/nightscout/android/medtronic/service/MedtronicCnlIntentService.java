@@ -43,6 +43,7 @@ public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_PID = 0x6210;
     public final static long USB_WARMUP_TIME_MS = 5000L;
     public final static long POLL_PERIOD_MS = 300000L;
+    public final static long LOW_BATTERY_POLL_PERIOD_MS = 900000L;
     // Number of additional seconds to wait after the next expected CGM poll, so that we don't interfere with CGM radio comms.
     public final static long POLL_GRACE_PERIOD_MS = 30000L;
     private static final String TAG = MedtronicCnlIntentService.class.getSimpleName();

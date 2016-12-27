@@ -26,6 +26,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
+import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.format.DateUtils;
@@ -605,6 +606,34 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
             textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
 
+            ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
+
+            switch (pumpStatusData.getBatteryPercentage()) {
+                case 0:
+                    batIcon.setTitle("0%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+                    break;
+                case 25:
+                    batIcon.setTitle("25%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
+                    break;
+                case 50:
+                    batIcon.setTitle("50%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
+                    break;
+                case 75:
+                    batIcon.setTitle("75%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
+                    break;
+                case 100:
+                    batIcon.setTitle("100%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
+                    break;
+                default:
+                    batIcon.setTitle(getResources().getString(R.string.menu_name_status));
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+            }
+
             // TODO - waiting for MPAndroidCharts 3.0.0. This will fix:
             // Date support
             // Realm v1.0.0 support
@@ -655,7 +684,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
-                    + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
+                    + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS;
+
+            if (pumpStatusData.getBatteryPercentage() > 25) {
+                // poll every 5 min
+                nextPoll += MedtronicCnlIntentService.POLL_PERIOD_MS;
+            } else {
+                // if pump battery seems to be empty reduce polling to save battery (every 15 min)
+                //TODO configurable???
+                //TODO add message & document it
+                nextPoll += MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
+            }
             startCgmService(nextPoll);
 
             // Delete invalid or old records from Realm
