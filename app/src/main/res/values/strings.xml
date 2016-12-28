@@ -30,7 +30,7 @@
     <string name="preference_api_secret">API SECRET</string>
     <string name="prompt_carelink_username_password">Please enter your CareLink details.\nThey will not be stored.</string>
     <string name="close">Close</string>
-    <string name="register_contour_next_link">Register Contour Next Link</string>
+    <string name="register_contour_next_link">Registered Devices</string>
     <string name="preferences_enable_crashlytics">prefs_enable_crashlytics</string>
     <string name="preferences_enable_answers">prefs_enable_answers</string>
     <string name="preferences_enable_remote_logcat">prefs_enable_remote_logcat</string>

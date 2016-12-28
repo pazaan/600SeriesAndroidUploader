@@ -62,19 +62,8 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
  */
 public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
-    // TODO - Replace with Rx.Java
-    private GetHmacAndKey mHmacAndKeyTask = null;
-
     // UI references.
-    private EditText mUsernameView;
-    private EditText mPasswordView;
-    private View mProgressView;
-    private View mLoginFormView;
     private TextView mRegisteredStickView;
-    private MenuItem mLoginMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,25 +71,8 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
         setContentView(R.layout.activity_login);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Register USB");
+        getSupportActionBar().setTitle("Registered Devices");
 
-        // Set up the login form.
-        mUsernameView = (EditText) findViewById(R.id.username);
-
-        mPasswordView = (EditText) findViewById(R.id.password);
-        mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
-                if (id == EditorInfo.IME_ACTION_DONE) {
-                    attemptLogin();
-                    return true;
-                }
-                return false;
-            }
-        });
-
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
         mRegisteredStickView = (TextView) findViewById(R.id.registered_usb_devices);
 
         showRegisteredSticks();
@@ -108,21 +80,12 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_register_usb, menu);
-
-        mLoginMenuItem = menu.findItem(R.id.action_menu_login);
-        mLoginMenuItem.setIcon(new IconicsDrawable(this, GoogleMaterial.Icon.gmd_cloud_download).color(Color.WHITE).actionBar());
-
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_menu_login:
-                attemptLogin();
-                break;
             case android.R.id.home:
                 finish();
                 break;
@@ -135,96 +98,12 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
-    /**
-     * Attempts to sign in or register the account specified by the login form.
-     * If there are form errors (invalid username, missing fields, etc.), the
-     * errors are presented and no actual login attempt is made.
-     */
-    private void attemptLogin() {
-        if (mHmacAndKeyTask != null || !checkOnline("Please connect to the Internet", "You must be online to register your USB stick.")) {
-            return;
-        }
-
-        // Reset errors.
-        mUsernameView.setError(null);
-        mPasswordView.setError(null);
-
-        // Store values at the time of the login attempt.
-        String username = mUsernameView.getText().toString();
-        String password = mPasswordView.getText().toString();
-
-        boolean cancel = false;
-        View focusView = null;
-
-        // Check for a valid password, if the user entered one.
-        if (TextUtils.isEmpty(password)) {
-            mPasswordView.setError(getString(R.string.error_invalid_password));
-            focusView = mPasswordView;
-            cancel = true;
-        }
-
-        // Check for a valid username address.
-        if (TextUtils.isEmpty(username)) {
-            mUsernameView.setError(getString(R.string.error_field_required));
-            focusView = mUsernameView;
-            cancel = true;
-        }
-
-        if (cancel) {
-            // There was an error; don't attempt login and focus the first
-            // form field with an error.
-            focusView.requestFocus();
-        } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
-            showProgress(true);
-            mHmacAndKeyTask = new GetHmacAndKey(username, password);
-            mHmacAndKeyTask.execute((Void) null);
-        }
-    }
-
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-            mLoginFormView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
-
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-        }
-    }
-
     private void showRegisteredSticks() {
         Realm realm = Realm.getDefaultInstance();
 
         RealmResults<ContourNextLinkInfo> results = realm.where(ContourNextLinkInfo.class).findAll();
 
-        String deviceTableHtml = "<big><b>Registered Devices</b></big><br/>";
+        String deviceTableHtml = "";
 
         for (ContourNextLinkInfo info : results) {
             String longSerial = info.getSerialNumber();
@@ -234,29 +113,6 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
         }
 
         mRegisteredStickView.setText(Html.fromHtml(deviceTableHtml));
-    }
-
-    private boolean checkOnline(String title, String message) {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-
-        boolean isOnline = (netInfo != null && netInfo.isConnectedOrConnecting());
-
-        if (!isOnline) {
-            new AlertDialog.Builder(this, R.style.AppTheme)
-                    .setTitle(title)
-                    .setMessage(message)
-                    .setCancelable(false)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
-        }
-
-        return isOnline;
     }
 
     @Override
@@ -270,116 +126,5 @@ public class GetHmacAndKeyActivity extends AppCompatActivity implements LoaderCa
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-    }
-
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
-    public class GetHmacAndKey extends AsyncTask<Void, Void, Boolean> {
-
-        private final String mUsername;
-        private final String mPassword;
-
-        GetHmacAndKey(String username, String password) {
-            mUsername = username;
-            mPassword = password;
-        }
-
-        @Override
-        protected Boolean doInBackground(final Void... params) {
-            try {
-                DefaultHttpClient client = new DefaultHttpClient();
-                HttpPost loginPost = new HttpPost("https://carelink.minimed.eu/patient/j_security_check");
-                List<NameValuePair> nameValuePairs = new ArrayList<>();
-                nameValuePairs.add(new BasicNameValuePair("j_username", mUsername));
-                nameValuePairs.add(new BasicNameValuePair("j_password", mPassword));
-                nameValuePairs.add(new BasicNameValuePair("j_character_encoding", "UTF-8"));
-                loginPost.setEntity(new UrlEncodedFormEntity(nameValuePairs, "UTF-8"));
-                HttpResponse response = client.execute(loginPost);
-
-                if (response.getStatusLine().getStatusCode() == 200) {
-                    // Get the HMAC/keys for every serial we have seen
-                    Realm realm = Realm.getDefaultInstance();
-
-                    RealmResults<ContourNextLinkInfo> results = realm.where(ContourNextLinkInfo.class).findAll();
-                    for (ContourNextLinkInfo info : results) {
-                        String longSerial = info.getSerialNumber();
-
-                        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                        ObjectOutputStream hmacRequest = new ObjectOutputStream(buffer);
-                        hmacRequest.writeInt(0x1c);
-                        hmacRequest.writeObject(longSerial.replaceAll("\\d+-", ""));
-
-                        HttpPost hmacPost = new HttpPost("https://carelink.minimed.eu/patient/secure/SnapshotServer/");
-                        hmacPost.setEntity(new ByteArrayEntity(buffer.toByteArray()));
-                        hmacPost.setHeader("Content-type", "application/octet-stream");
-                        response = client.execute(hmacPost);
-
-                        ByteArrayInputStream inputBuffer = new ByteArrayInputStream(EntityUtils.toByteArray(response.getEntity()));
-                        ObjectInputStream hmacResponse = new ObjectInputStream(inputBuffer);
-                        byte[] hmacBytes = (byte[]) hmacResponse.readObject();
-                        ArrayUtils.reverse(hmacBytes);
-                        String hmac = MessageUtils.byteArrayToHexString(hmacBytes);
-
-                        buffer.reset();
-                        inputBuffer.reset();
-
-                        ObjectOutputStream keyRequest = new ObjectOutputStream(buffer);
-                        keyRequest.writeInt(0x1f);
-                        keyRequest.writeObject(longSerial);
-
-                        HttpPost keyPost = new HttpPost("https://carelink.minimed.eu/patient/secure/SnapshotServer/");
-                        keyPost.setEntity(new ByteArrayEntity(buffer.toByteArray()));
-                        keyPost.setHeader("Content-type", "application/octet-stream");
-                        response = client.execute(keyPost);
-
-                        inputBuffer = new ByteArrayInputStream(EntityUtils.toByteArray(response.getEntity()));
-                        ObjectInputStream keyResponse = new ObjectInputStream(inputBuffer);
-                        keyResponse.readInt(); // Throw away the first int. Not sure what it does
-                        String key = MessageUtils.byteArrayToHexString((byte[]) keyResponse.readObject());
-
-                        realm.beginTransaction();
-                        info.setKey(key);
-                        realm.commitTransaction();
-                    }
-
-                    return true;
-                }
-
-            } catch (ClientProtocolException e) {
-                return false;
-            } catch (IOException e) {
-                return false;
-            } catch (ClassNotFoundException e) {
-                return false;
-            }
-
-            return false;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            mHmacAndKeyTask = null;
-
-            if (success) {
-                showRegisteredSticks();
-                mLoginMenuItem.setVisible(false);
-                mLoginFormView.setVisibility(View.GONE);
-                mProgressView.setVisibility(View.GONE);
-                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(mLoginFormView.getWindowToken(), 0);
-            } else {
-                showProgress(false);
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mHmacAndKeyTask = null;
-            showProgress(false);
-        }
     }
 }
