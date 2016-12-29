@@ -50,5 +50,8 @@
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="menu_name_status">Status</string>
-    <string name="menu_name_battery_status"></string>
+    <string name="menu_name_battery_status">unknown</string>
+
+    <string name="preferences_poll_interval">poll interval</string>
+    <string name="preferences_low_battery_poll_interval">poll interval on low pump battery</string>
 </resources>

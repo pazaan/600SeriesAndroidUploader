@@ -18,6 +18,20 @@
             android:switchTextOff="1"
             android:switchTextOn="2"
             android:title="Decimals"/>
+        <ListPreference
+            android:key="pollInterval"
+            android:defaultValue="300000"
+            android:title="@string/preferences_poll_interval"
+            android:summary="%s"
+            android:entries="@array/poll_interval"
+            android:entryValues="@array/poll_interval_millis"/>
+        <ListPreference
+            android:key="lowBatPollInterval"
+            android:defaultValue="900000"
+            android:title="@string/preferences_low_battery_poll_interval"
+            android:summary="%s"
+            android:entries="@array/poll_interval"
+            android:entryValues="@array/poll_interval_millis"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="Sharing">
         <CheckBoxPreference

@@ -90,6 +90,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Realm mRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
+    public static long pollInterval = 0;
+    public static long lowBatteryPollInterval = 0;
 
     public static void setActivePumpMac(long pumpMac) {
         activePumpMac = pumpMac;
@@ -416,6 +418,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         } else if (key.equals("mmolxl")) {
             refreshDisplay();
+        } else if (key.equals("pollInterval")) {
+            String test = sharedPreferences.getString("pollInterval", "5 min");
+        } else if (key.equals("lowBatPollInterval")) {
+            MainActivity.lowBatteryPollInterval = sharedPreferences.getLong("lowBatPollInterval", MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS);
         }
     }
 
@@ -687,12 +693,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             if (pumpStatusData.getBatteryPercentage() > 25) {
                 // poll every 5 min
-                nextPoll += MedtronicCnlIntentService.POLL_PERIOD_MS;
+                nextPoll += MainActivity.pollInterval;
             } else {
                 // if pump battery seems to be empty reduce polling to save battery (every 15 min)
                 //TODO configurable???
                 //TODO add message & document it
-                nextPoll += MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
+                nextPoll += MainActivity.lowBatteryPollInterval;
             }
             startCgmService(nextPoll);
 
@@ -718,7 +724,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             // TODO - handle isOffline in NightscoutUploadIntentService?
             uploadCgmData();
-
 
             refreshDisplay();
         }
