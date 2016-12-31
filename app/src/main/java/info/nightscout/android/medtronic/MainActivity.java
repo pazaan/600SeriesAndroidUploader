@@ -114,6 +114,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             stopCgmService();
         }
 
+        //set poll intervals
+        MainActivity.pollInterval = Long.parseLong(prefs.getString("pollInterval", Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
+        MainActivity.lowBatteryPollInterval = Long.parseLong(prefs.getString("lowBatPollInterval", Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+
         // Disable battery optimization to avoid missing values on 6.0+
         // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
 
@@ -419,9 +423,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         } else if (key.equals("mmolxl")) {
             refreshDisplay();
         } else if (key.equals("pollInterval")) {
-            String test = sharedPreferences.getString("pollInterval", "5 min");
+            MainActivity.pollInterval = Long.parseLong(sharedPreferences.getString("pollInterval",
+                    Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
         } else if (key.equals("lowBatPollInterval")) {
-            MainActivity.lowBatteryPollInterval = sharedPreferences.getLong("lowBatPollInterval", MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS);
+            MainActivity.lowBatteryPollInterval = Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
+                    Long.toString( MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
         }
     }
 
@@ -636,7 +642,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     break;
                 default:
                     batIcon.setTitle(getResources().getString(R.string.menu_name_status));
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
             }
 
             // TODO - waiting for MPAndroidCharts 3.0.0. This will fix:

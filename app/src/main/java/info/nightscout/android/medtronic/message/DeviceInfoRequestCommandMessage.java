@@ -48,7 +48,7 @@ public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessa
                     response.checkControlMessage(response2, ASCII.ENQ);
                 } else {
                     // response 2 is the ASTM message
-                    response = this.getResponse(response1);
+                    response = this.getResponse(response2);
                     // ugly, too....
                     response.checkControlMessage(response1, ASCII.ENQ);
                 }
