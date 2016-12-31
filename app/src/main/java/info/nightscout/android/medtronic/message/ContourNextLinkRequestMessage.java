@@ -1,6 +1,8 @@
 package info.nightscout.android.medtronic.message;
 
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -14,6 +16,8 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
  */
 
 public abstract class ContourNextLinkRequestMessage<T> extends ContourNextLinkMessage {
+    private static final String TAG = ContourNextLinkRequestMessage.class.getSimpleName();
+
     protected ContourNextLinkRequestMessage(byte[] bytes) {
         super(bytes);
     }
@@ -26,6 +30,7 @@ public abstract class ContourNextLinkRequestMessage<T> extends ContourNextLinkMe
         sendMessage(mDevice);
         if (millis > 0) {
             try {
+                Log.d(TAG, "waiting " + millis +" ms");
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
             }

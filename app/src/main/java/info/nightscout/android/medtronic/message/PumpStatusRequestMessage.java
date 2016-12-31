@@ -1,5 +1,7 @@
 package info.nightscout.android.medtronic.message;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -13,6 +15,8 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
  * Created by lgoedhart on 26/03/2016.
  */
 public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage<PumpStatusResponseMessage> {
+    private static final String TAG = PumpStatusRequestMessage.class.getSimpleName();
+
     public PumpStatusRequestMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
         super(SendMessageType.READ_PUMP_STATUS_REQUEST, pumpSession, null);
     }
@@ -21,6 +25,7 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
         sendMessage(mDevice);
         if (millis > 0) {
             try {
+                Log.d(TAG, "waiting " + millis +" ms");
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
             }
@@ -29,6 +34,7 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
         readMessage(mDevice);
         if (millis > 0) {
             try {
+                Log.d(TAG, "waiting " + millis +" ms");
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
             }
