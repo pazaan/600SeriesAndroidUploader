@@ -122,7 +122,8 @@ public class MedtronicCnlReader {
 
         this.getPumpSession().setLinkMAC(linkMAC);
         this.getPumpSession().setPumpMAC(pumpMAC);
-        Log.d(TAG, String.format("Finished requestReadInfo. linkMAC = '%d', pumpMAC = '%d", linkMAC, pumpMAC));
+        Log.d(TAG, String.format("Finished requestReadInfo. linkMAC = '%s', pumpMAC = '%s'",
+                Long.toHexString(linkMAC), Long.toHexString(pumpMAC)));
     }
 
     public void requestLinkKey() throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
