@@ -123,8 +123,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             final String packageName = getPackageName();
-            //Log.d(TAG, "Maybe ignoring battery optimization");
             final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+
             if (!pm.isIgnoringBatteryOptimizations(packageName)) {
                 Log.d(TAG, "Requesting ignore battery optimization");
                 try {

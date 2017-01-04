@@ -66,9 +66,12 @@ public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(millis, null), pendingIntent);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            // Android 5.0.0 + 5.0.1 (e.g. Galaxy S4) has a bug.
+            // Alarms are not exact. Fixed in 5.0.2 oder CM12
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, millis, pendingIntent);
-        } else
+        } else {
             alarmManager.set(AlarmManager.RTC_WAKEUP, millis, pendingIntent);
+        }
     }
 
     // restarting the alarm after MedtronicCnlIntentService.POLL_PERIOD_MS from now
