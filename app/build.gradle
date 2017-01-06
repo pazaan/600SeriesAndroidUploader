@@ -56,7 +56,7 @@ def getBugfenderApiKey() {
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.3"
-    // FIXME - replace with URLConnection. This is used in GetHmacAndKeyActivity.
+    // FIXME - replace with URLConnection. This is used in ManageCNLActivity.
     useLibrary 'org.apache.http.legacy'
 
     applicationVariants.all { variant ->

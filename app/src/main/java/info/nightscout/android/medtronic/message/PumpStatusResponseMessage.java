@@ -105,7 +105,6 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         // Active insulin
         long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
         activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
-        ;
 
         // CGM SGV
         sgv = (statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading

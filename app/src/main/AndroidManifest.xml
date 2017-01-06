@@ -63,10 +63,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".medtronic.GetHmacAndKeyActivity"
-            android:label="@string/title_activity_login"
-            android:theme="@style/SettingsTheme" />
+
+        <activity android:name=".medtronic.ManageCNLActivity"/>
 
         <activity android:name=".medtronic.StatusActivity" />
 

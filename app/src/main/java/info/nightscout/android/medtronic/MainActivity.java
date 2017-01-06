@@ -276,24 +276,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return true;
     }
 
-    private boolean hasDetectedCnl() {
-        if (mRealm.where(ContourNextLinkInfo.class).count() == 0) {
-            new AlertDialog.Builder(this, R.style.AppTheme)
-                    .setTitle("No registered Contour Next Link devices")
-                    .setMessage("To register a Contour Next Link you must first plug it in, and get a reading from the pump.")
-                    .setCancelable(false)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
-            return false;
-        }
-        return true;
-    }
-
     private boolean hasUsbPermission() {
         UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
         UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlIntentService.USB_VID, MedtronicCnlIntentService.USB_PID);
@@ -447,10 +429,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     public void openUsbRegistration() {
-        if (hasDetectedCnl()) {
-            Intent loginIntent = new Intent(this, GetHmacAndKeyActivity.class);
-            startActivity(loginIntent);
-        }
+        Intent manageCNLIntent = new Intent(this, ManageCNLActivity.class);
+        startActivity(manageCNLIntent);
     }
 
     private String renderTrendHtml(PumpStatusEvent.CGM_TREND trend) {
