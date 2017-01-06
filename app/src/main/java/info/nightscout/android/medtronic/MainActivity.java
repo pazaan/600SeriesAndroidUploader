@@ -6,11 +6,11 @@ import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
@@ -23,7 +23,6 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.view.menu.ActionMenuItemView;
@@ -39,10 +38,23 @@ import android.widget.TextView;
 import android.widget.TextView.BufferType;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.realm.implementation.RealmLineDataSet;
+import com.github.mikephil.charting.formatter.DefaultAxisValueFormatter;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.github.mikephil.charting.utils.ViewPortHandler;
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.appindexing.Thing;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -52,6 +64,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
@@ -64,11 +77,11 @@ import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import info.nightscout.android.medtronic.service.MedtronicCnlAlarmReceiver;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
-import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
+import io.realm.DynamicRealmObject;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -240,6 +253,34 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
         mChart = (LineChart) findViewById(R.id.chart);
+
+        mChart.setDescription(null);    // Hide the description
+
+        XAxis xAxis = mChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextSize(10f);
+        xAxis.setTextColor(Color.WHITE);
+        xAxis.setDrawAxisLine(true);
+        xAxis.setDrawGridLines(true);
+        xAxis.setDrawLabels(true);
+        xAxis.setValueFormatter(new IAxisValueFormatter() {
+            private DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                return mFormat.format(new Date((long) value));
+            }
+        });
+
+        // left axis
+        mChart.getAxisLeft().setDrawLabels(false);
+
+        // right axis
+        YAxis yAxis = mChart.getAxisRight();
+        yAxis.setTextSize(10f);
+        yAxis.setTextColor(Color.WHITE);
+
+        mChart.getLegend().setEnabled(false);   // Hide the legend
     }
 
     @Override
@@ -409,7 +450,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
         } else if (key.equals("lowBatPollInterval")) {
             MainActivity.lowBatteryPollInterval = Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
-                    Long.toString( MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+                    Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
         }
     }
 
@@ -470,6 +511,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         return mActivePump;
     }
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        Thing object = new Thing.Builder()
+                .setName("Main Page") // TODO: Define a title for the content shown.
+                // TODO: Make sure this auto-generated URL is correct.
+                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
+                .build();
+        return new Action.Builder(Action.TYPE_VIEW)
+                .setObject(object)
+                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
+                .build();
+    }
+
 
     private class StatusMessageReceiver extends BroadcastReceiver {
         private class StatusMessage {
@@ -566,20 +624,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             // FIXME - grab the last item from the activePump's getPumpHistory
             RealmResults<PumpStatusEvent> results =
                     mRealm.where(PumpStatusEvent.class)
+                            .greaterThan("eventDate", new Date(System.currentTimeMillis() - 1000*60*60*24))
                             .findAllSorted("eventDate", Sort.ASCENDING);
+
+            updateChart(results);
 
             if (pumpStatusData == null) {
                 return;
             }
 
-            DecimalFormat df;
-            if (prefs.getBoolean("mmolDecimals", false))
-                df = new DecimalFormat("0.00");
-            else
-                df = new DecimalFormat("0.0");
-
             String sgvString, units;
             if (prefs.getBoolean("mmolxl", false)) {
+                DecimalFormat df;
+                if (prefs.getBoolean("mmolDecimals", false))
+                    df = new DecimalFormat("0.00");
+                else
+                    df = new DecimalFormat("0.0");
+
                 float fBgValue = (float) pumpStatusData.getSgv();
                 sgvString = df.format(fBgValue / 18.016f);
                 units = "mmol/L";
@@ -598,50 +659,66 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
 
             ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
-
-            switch (pumpStatusData.getBatteryPercentage()) {
-                case 0:
-                    batIcon.setTitle("0%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
-                    break;
-                case 25:
-                    batIcon.setTitle("25%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
-                    break;
-                case 50:
-                    batIcon.setTitle("50%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
-                    break;
-                case 75:
-                    batIcon.setTitle("75%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
-                    break;
-                case 100:
-                    batIcon.setTitle("100%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
-                    break;
-                default:
-                    batIcon.setTitle(getResources().getString(R.string.menu_name_status));
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
+            if (batIcon != null) {
+                switch (pumpStatusData.getBatteryPercentage()) {
+                    case 0:
+                        batIcon.setTitle("0%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+                        break;
+                    case 25:
+                        batIcon.setTitle("25%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
+                        break;
+                    case 50:
+                        batIcon.setTitle("50%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
+                        break;
+                    case 75:
+                        batIcon.setTitle("75%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
+                        break;
+                    case 100:
+                        batIcon.setTitle("100%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
+                        break;
+                    default:
+                        batIcon.setTitle(getResources().getString(R.string.menu_name_status));
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
+                }
             }
 
-            // TODO - waiting for MPAndroidCharts 3.0.0. This will fix:
-            // Date support
-            // Realm v1.0.0 support
-            //updateChart(results);
 
             // Run myself again in 60 seconds;
             mUiRefreshHandler.postDelayed(this, 60000L);
         }
 
         private void updateChart(RealmResults<PumpStatusEvent> results) {
-            RealmLineDataSet<PumpStatusEvent> lineDataSet = new RealmLineDataSet<>(results, "eventDate", "sgv");
+            if (results.size() == 0) return;
+            PumsStatusLineDataSet lineDataSet = new PumsStatusLineDataSet(results, "eventDate", "sgv");
 
             lineDataSet.setDrawCircleHole(false);
             lineDataSet.setColor(ColorTemplate.rgb("#FF5722"));
             lineDataSet.setCircleColor(ColorTemplate.rgb("#FF5722"));
             lineDataSet.setLineWidth(1.8f);
-            lineDataSet.setCircleSize(3.6f);
+            lineDataSet.setCircleRadius(3.6f);
+            lineDataSet.setValueTextColor(Color.WHITE);
+            lineDataSet.setValueFormatter(new IValueFormatter() {
+                @Override
+                public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+                    DecimalFormat df;
+
+                    if (prefs.getBoolean("mmolxl", false)) {
+                        if (prefs.getBoolean("mmolDecimals", false))
+                            df = new DecimalFormat("0.00");
+                        else
+                            df = new DecimalFormat("0.0");
+
+                        return df.format(value / 18.016f);
+                    } else {
+                        return new DecimalFormat("0").format(value);
+                    }
+                }
+            });
 
             ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
             dataSets.add(lineDataSet);
@@ -651,6 +728,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             // set data
             mChart.setMinimumHeight(200);
             mChart.setData(lineData);
+            mChart.getXAxis().setAxisMaximum(System.currentTimeMillis());
         }
     }
 
@@ -762,4 +840,32 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
     }
+
+    private class PumsStatusLineDataSet extends RealmLineDataSet<PumpStatusEvent> {
+
+        public PumsStatusLineDataSet(RealmResults<PumpStatusEvent> result, String yValuesField) {
+            super(result, yValuesField);
+        }
+
+        public PumsStatusLineDataSet(RealmResults<PumpStatusEvent> result, String xValuesField, String yValuesField) {
+            super(result, xValuesField, yValuesField);
+        }
+
+        public Entry buildEntryFromResultObject(PumpStatusEvent realmObject, float x) {
+            DynamicRealmObject dynamicObject = new DynamicRealmObject(realmObject);
+            float xFloat, yFloat;
+
+            if (mXValuesField == null) {
+                xFloat = x;
+            } else {
+                xFloat = dynamicObject.getDate(mXValuesField).getTime();
+            }
+            yFloat = dynamicObject.getInt(mYValuesField);
+
+            return new Entry(mXValuesField == null ? x : xFloat, yFloat);
+        }
+
+    }
+
+
 }
