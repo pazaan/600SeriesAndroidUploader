@@ -1,5 +1,7 @@
 package info.nightscout.android.model.medtronicNg;
 
+import com.github.mikephil.charting.interfaces.datasets.IScatterDataSet;
+
 import java.util.Date;
 
 import io.realm.RealmObject;
@@ -9,7 +11,7 @@ import io.realm.annotations.Index;
 /**
  * Created by lgoedhart on 4/06/2016.
  */
-public class PumpStatusEvent extends RealmObject {
+public class PumpStatusEvent extends RealmObject  {
     @Index
     private Date eventDate; // The actual time of the event (assume the capture device eventDate/time is accurate)
     private Date pumpDate; // The eventDate/time on the pump at the time of the event

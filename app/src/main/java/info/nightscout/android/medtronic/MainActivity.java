@@ -33,28 +33,28 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 
-import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.charts.ScatterChart;
 import com.github.mikephil.charting.components.AxisBase;
-import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.realm.implementation.RealmLineDataSet;
-import com.github.mikephil.charting.formatter.DefaultAxisValueFormatter;
+import com.github.mikephil.charting.data.ScatterData;
+import com.github.mikephil.charting.data.ScatterDataSet;
+import com.github.mikephil.charting.data.realm.implementation.RealmScatterDataSet;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.IValueFormatter;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.IScatterDataSet;
+import com.github.mikephil.charting.listener.ChartTouchListener;
+import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -64,9 +64,9 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     SharedPreferences prefs = null;
     private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
-    private LineChart mChart;
+    private ScatterChart mChart;
     private Intent mNightscoutUploadService;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
@@ -252,9 +252,42 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .build();
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
-        mChart = (LineChart) findViewById(R.id.chart);
+        mChart = (ScatterChart) findViewById(R.id.chart);
 
         mChart.setDescription(null);    // Hide the description
+
+        mChart.setTouchEnabled(true);
+        mChart.setPinchZoom(true);
+        mChart.setHighlightPerDragEnabled(false);
+        mChart.setHighlightPerTapEnabled(false);
+        mChart.setOnChartGestureListener(new OnChartGestureListener() {
+
+            @Override
+            public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
+
+            @Override
+            public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
+
+            @Override
+            public void onChartLongPressed(MotionEvent me) {
+                mChart.fitScreen();
+            }
+
+            @Override
+            public void onChartDoubleTapped(MotionEvent me) {}
+
+            @Override
+            public void onChartSingleTapped(MotionEvent me) {}
+
+            @Override
+            public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
+
+            @Override
+            public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
+
+            @Override
+            public void onChartTranslate(MotionEvent me, float dX, float dY) {}
+        });
 
         XAxis xAxis = mChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
@@ -622,113 +655,138 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             // FIXME - grab the last item from the activePump's getPumpHistory
-            RealmResults<PumpStatusEvent> results =
-                    mRealm.where(PumpStatusEvent.class)
-                            .greaterThan("eventDate", new Date(System.currentTimeMillis() - 1000*60*60*24))
-                            .findAllSorted("eventDate", Sort.ASCENDING);
+            updateChart(mRealm.where(PumpStatusEvent.class)
+                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - 1000*60*60*24))
+                    .findAllSorted("eventDate", Sort.ASCENDING));
 
-            updateChart(results);
+            if (pumpStatusData != null) {
 
-            if (pumpStatusData == null) {
-                return;
-            }
+                String sgvString, units;
+                if (prefs.getBoolean("mmolxl", false)) {
+                    DecimalFormat df;
+                    if (prefs.getBoolean("mmolDecimals", false))
+                        df = new DecimalFormat("0.00");
+                    else
+                        df = new DecimalFormat("0.0");
 
-            String sgvString, units;
-            if (prefs.getBoolean("mmolxl", false)) {
-                DecimalFormat df;
-                if (prefs.getBoolean("mmolDecimals", false))
-                    df = new DecimalFormat("0.00");
-                else
-                    df = new DecimalFormat("0.0");
+                    float fBgValue = (float) pumpStatusData.getSgv();
+                    sgvString = df.format(fBgValue / 18.016f);
+                    units = "mmol/L";
+                    Log.d(TAG, "mmolxl true --> " + sgvString);
 
-                float fBgValue = (float) pumpStatusData.getSgv();
-                sgvString = df.format(fBgValue / 18.016f);
-                units = "mmol/L";
-                Log.d(TAG, "mmolxl true --> " + sgvString);
-
-            } else {
-                sgvString = String.valueOf(pumpStatusData.getSgv());
-                units = "mg/dL";
-                Log.d(TAG, "mmolxl false --> " + sgvString);
-            }
-
-            textViewBg.setText(sgvString);
-            textViewUnits.setText(units);
-            textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
-            textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
-            textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
-
-            ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
-            if (batIcon != null) {
-                switch (pumpStatusData.getBatteryPercentage()) {
-                    case 0:
-                        batIcon.setTitle("0%");
-                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
-                        break;
-                    case 25:
-                        batIcon.setTitle("25%");
-                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
-                        break;
-                    case 50:
-                        batIcon.setTitle("50%");
-                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
-                        break;
-                    case 75:
-                        batIcon.setTitle("75%");
-                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
-                        break;
-                    case 100:
-                        batIcon.setTitle("100%");
-                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
-                        break;
-                    default:
-                        batIcon.setTitle(getResources().getString(R.string.menu_name_status));
-                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
+                } else {
+                    sgvString = String.valueOf(pumpStatusData.getSgv());
+                    units = "mg/dL";
+                    Log.d(TAG, "mmolxl false --> " + sgvString);
                 }
-            }
 
+                textViewBg.setText(sgvString);
+                textViewUnits.setText(units);
+                textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
+                textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
+                textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
+
+                ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
+                if (batIcon != null) {
+                    switch (pumpStatusData.getBatteryPercentage()) {
+                        case 0:
+                            batIcon.setTitle("0%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+                            break;
+                        case 25:
+                            batIcon.setTitle("25%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
+                            break;
+                        case 50:
+                            batIcon.setTitle("50%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
+                            break;
+                        case 75:
+                            batIcon.setTitle("75%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
+                            break;
+                        case 100:
+                            batIcon.setTitle("100%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
+                            break;
+                        default:
+                            batIcon.setTitle(getResources().getString(R.string.menu_name_status));
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
+                    }
+                }
+
+            }
 
             // Run myself again in 60 seconds;
             mUiRefreshHandler.postDelayed(this, 60000L);
         }
 
         private void updateChart(RealmResults<PumpStatusEvent> results) {
-            if (results.size() == 0) return;
-            PumsStatusLineDataSet lineDataSet = new PumsStatusLineDataSet(results, "eventDate", "sgv");
+            int size = results.size();
+            if (size == 0) return;
 
-            lineDataSet.setDrawCircleHole(false);
-            lineDataSet.setColor(ColorTemplate.rgb("#FF5722"));
-            lineDataSet.setCircleColor(ColorTemplate.rgb("#FF5722"));
-            lineDataSet.setLineWidth(1.8f);
-            lineDataSet.setCircleRadius(3.6f);
-            lineDataSet.setValueTextColor(Color.WHITE);
-            lineDataSet.setValueFormatter(new IValueFormatter() {
-                @Override
-                public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
-                    DecimalFormat df;
+            List<Entry> entries = new ArrayList<Entry>(size);
+            int[] colors = new int[size * 2];  // getColor is called with (i/2)
 
-                    if (prefs.getBoolean("mmolxl", false)) {
-                        if (prefs.getBoolean("mmolDecimals", false))
-                            df = new DecimalFormat("0.00");
-                        else
-                            df = new DecimalFormat("0.0");
+            for (PumpStatusEvent pumpStatus: results) {
+                // turn your data into Entry objects
+                int sgv = pumpStatus.getSgv(),
+                    pos = entries.size() * 2;
 
-                        return df.format(value / 18.016f);
-                    } else {
-                        return new DecimalFormat("0").format(value);
+                entries.add(new Entry(pumpStatus.getEventDate().getTime(), pumpStatus.getSgv()));
+                if (sgv < 80)
+                    colors[pos] = colors[pos+1] = Color.RED;
+                else if (sgv <= 180)
+                    colors[pos] = colors[pos+1] = Color.GREEN;
+                else if (sgv <= 260)
+                    colors[pos] = colors[pos+1] = Color.YELLOW;
+                else
+                    colors[pos] = colors[pos+1] = Color.RED;
+            }
+
+            if (mChart.getData() == null) {
+                mChart.setMinimumHeight(200);
+
+                ScatterDataSet dataSet = new ScatterDataSet(entries, null);
+
+                dataSet.setColors(colors);
+                dataSet.setValueTextColor(Color.WHITE);
+                dataSet.setScatterShape(ScatterChart.ScatterShape.CIRCLE);
+                dataSet.setScatterShapeSize(7.2f);
+                dataSet.setValueFormatter(new IValueFormatter() {
+                    @Override
+                    public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+                        DecimalFormat df;
+
+                        if (prefs.getBoolean("mmolxl", false)) {
+                            if (prefs.getBoolean("mmolDecimals", false))
+                                df = new DecimalFormat("0.00");
+                            else
+                                df = new DecimalFormat("0.0");
+
+                            return df.format(value / 18.016f);
+                        } else {
+                            return new DecimalFormat("0").format(value);
+                        }
                     }
-                }
-            });
+                });
 
-            ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
-            dataSets.add(lineDataSet);
+                ArrayList<IScatterDataSet> dataSets = new ArrayList<IScatterDataSet>();
+                dataSets.add(dataSet);
 
-            LineData lineData = new LineData(dataSets);
+                ScatterData lineData = new ScatterData(dataSets);
+                mChart.setData(lineData);
+            } else {
+                ((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setValues(entries);
+                ((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setColors(colors);
+                //dataSet.notifyDataSetChanged();
+            }
 
-            // set data
-            mChart.setMinimumHeight(200);
-            mChart.setData(lineData);
+            //TODO: make the display timespan configurable
             mChart.getXAxis().setAxisMaximum(System.currentTimeMillis());
+            mChart.getXAxis().setAxisMinimum(mChart.getXAxis().getAxisMaximum() - 24 * 60 * 60 * 1000);
+
+            mChart.postInvalidate();
         }
     }
 
@@ -841,13 +899,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private class PumsStatusLineDataSet extends RealmLineDataSet<PumpStatusEvent> {
+    private class PumsStatusDataSet extends RealmScatterDataSet<PumpStatusEvent> {
 
-        public PumsStatusLineDataSet(RealmResults<PumpStatusEvent> result, String yValuesField) {
+        public PumsStatusDataSet(RealmResults<PumpStatusEvent> result, String yValuesField) {
             super(result, yValuesField);
         }
 
-        public PumsStatusLineDataSet(RealmResults<PumpStatusEvent> result, String xValuesField, String yValuesField) {
+        public PumsStatusDataSet(RealmResults<PumpStatusEvent> result, String xValuesField, String yValuesField) {
             super(result, xValuesField, yValuesField);
         }
 
