@@ -726,22 +726,22 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             if (size == 0) return;
 
             List<Entry> entries = new ArrayList<Entry>(size);
-            int[] colors = new int[size * 2];  // getColor is called with (i/2)
+            int[] colors = new int[size];  // getColor is called with (i/2)
 
             for (PumpStatusEvent pumpStatus: results) {
                 // turn your data into Entry objects
                 int sgv = pumpStatus.getSgv(),
-                    pos = entries.size() * 2;
+                    pos = entries.size();
 
                 entries.add(new Entry(pumpStatus.getEventDate().getTime(), pumpStatus.getSgv()));
                 if (sgv < 80)
-                    colors[pos] = colors[pos+1] = Color.RED;
+                    colors[pos] = Color.RED;
                 else if (sgv <= 180)
-                    colors[pos] = colors[pos+1] = Color.GREEN;
+                    colors[pos] = Color.GREEN;
                 else if (sgv <= 260)
-                    colors[pos] = colors[pos+1] = Color.YELLOW;
+                    colors[pos] = Color.YELLOW;
                 else
-                    colors[pos] = colors[pos+1] = Color.RED;
+                    colors[pos] = Color.RED;
             }
 
             if (mChart.getData() == null) {
@@ -749,7 +749,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                 ScatterDataSet dataSet = new ScatterDataSet(entries, null);
 
-                dataSet.setColors(colors);
+                //dataSet.setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
+                dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
                 dataSet.setValueTextColor(Color.WHITE);
                 dataSet.setScatterShape(ScatterChart.ScatterShape.CIRCLE);
                 dataSet.setScatterShapeSize(7.2f);
@@ -778,7 +779,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mChart.setData(lineData);
             } else {
                 ((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setValues(entries);
-                ((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setColors(colors);
+                //((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
                 //dataSet.notifyDataSetChanged();
             }
 
