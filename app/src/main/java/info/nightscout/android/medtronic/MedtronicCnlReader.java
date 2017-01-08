@@ -45,10 +45,6 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 public class MedtronicCnlReader {
     private static final String TAG = MedtronicCnlReader.class.getSimpleName();
 
-    private static final int USB_BLOCKSIZE = 64;
-    private static final int READ_TIMEOUT_MS = 5000;
-    private static final String BAYER_USB_HEADER = "ABC";
-
     private static final byte[] RADIO_CHANNELS = {0x14, 0x11, 0x0e, 0x17, 0x1a};
     private UsbHidDriver mDevice;
 
