@@ -200,7 +200,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
                     // reduce polling interval to half until pump is available
                     //TODO: make it configurable???
-                    MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + MainActivity.pollInterval/2L);
+                    MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + (MainActivity.pollInterval  + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS)/2L);
                 } else {
                     activePump.setLastRadioChannel(radioChannel);
                     sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
