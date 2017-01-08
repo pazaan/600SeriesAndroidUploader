@@ -36,6 +36,15 @@ public class MedtronicCnlAlarmManager {
         setAlarm(System.currentTimeMillis());
     }
 
+    /**
+     * set the alarm in the future
+     *
+     * @param inFuture number of millin in the future
+     */
+    public static void setAlarmAfterMillis(long inFuture) {
+        setAlarm(System.currentTimeMillis() + inFuture);
+    }
+
     // Setting the alarm to call onRecieve
     public static void setAlarm(long millis) {
         if (alarmManager == null || pendingIntent == null)
@@ -69,7 +78,7 @@ public class MedtronicCnlAlarmManager {
 
     // restarting the alarm after MedtronicCnlIntentService.POLL_PERIOD_MS from now
     public static void restartAlarm() {
-        setAlarm(System.currentTimeMillis() + MainActivity.pollInterval + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS);
+        setAlarmAfterMillis(MainActivity.pollInterval + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS);
     }
 
     // Cancel the alarm.

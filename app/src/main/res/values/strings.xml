@@ -52,8 +52,8 @@
     <string name="menu_name_status">Status</string>
     <string name="menu_name_battery_status">unknown</string>
 
-    <string name="preferences_poll_interval">poll interval</string>
-    <string name="preferences_low_battery_poll_interval">poll interval on low pump battery</string>
+    <string name="preferences_poll_interval">Poll interval</string>
+    <string name="preferences_low_battery_poll_interval">Poll interval on low pump battery</string>
     <string name="no_registered_contour_next_link_devices">No registered Contour Next Link devices</string>
     <string name="to_register_a_contour_next_link_you_must_first_plug_it_in_and_get_a_reading_from_the_pump">To register a Contour Next Link you must first plug it in, and get a reading from the pump.</string>
     <string name="serial_number">Serial number</string>

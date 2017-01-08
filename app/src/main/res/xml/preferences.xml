@@ -25,6 +25,14 @@
             android:summary="%s"
             android:entries="@array/poll_interval"
             android:entryValues="@array/poll_interval_millis"/>
+        <info.nightscout.android.utils.CustomSwitchPreference
+            android:disableDependentsState="false"
+            android:key="doublePollOnPumpAway"
+            android:summaryOff="Normal polling if pump is away"
+            android:summaryOn="Double polling if pump is away"
+            android:switchTextOff="off"
+            android:switchTextOn="on"
+            android:title="Polling interval if pump is away"/>
         <ListPreference
             android:key="lowBatPollInterval"
             android:defaultValue="900000"

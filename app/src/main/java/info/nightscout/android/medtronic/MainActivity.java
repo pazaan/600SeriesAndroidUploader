@@ -51,7 +51,6 @@ import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.IScatterDataSet;
 import com.github.mikephil.charting.listener.ChartTouchListener;
 import com.github.mikephil.charting.listener.OnChartGestureListener;
-import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.Thing;
@@ -92,7 +91,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private static final String TAG = MainActivity.class.getSimpleName();
 
     public static int batLevel = 0;
+    public static boolean reducePollOnPumpAway = false;
+    public static long pollInterval = MedtronicCnlIntentService.POLL_PERIOD_MS;
+    public static long lowBatteryPollInterval = MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
+
     private static long activePumpMac;
+
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
     private PumpInfo mActivePump;
@@ -104,8 +108,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Realm mRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
-    public static long pollInterval = 0;
-    public static long lowBatteryPollInterval = 0;
+
 
     public static void setActivePumpMac(long pumpMac) {
         activePumpMac = pumpMac;
@@ -128,9 +131,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             stopCgmService();
         }
 
-        //set poll intervals
+        // setup preferences
         MainActivity.pollInterval = Long.parseLong(prefs.getString("pollInterval", Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
         MainActivity.lowBatteryPollInterval = Long.parseLong(prefs.getString("lowBatPollInterval", Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+        MainActivity.reducePollOnPumpAway = prefs.getBoolean("doublePollOnPumpAway", false);
 
         // Disable battery optimization to avoid missing values on 6.0+
         // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
@@ -483,6 +487,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         } else if (key.equals("lowBatPollInterval")) {
             MainActivity.lowBatteryPollInterval = Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
                     Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+        } else if (key.equals("doublePollOnPumpAway")) {
+            MainActivity.reducePollOnPumpAway = sharedPreferences.getBoolean("doublePollOnPumpAway", false);
         }
     }
 
