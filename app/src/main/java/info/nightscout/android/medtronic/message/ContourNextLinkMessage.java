@@ -20,7 +20,7 @@ public abstract class ContourNextLinkMessage {
     private static final String TAG = ContourNextLinkMessage.class.getSimpleName();
 
     private static final int USB_BLOCKSIZE = 64;
-    private static final int READ_TIMEOUT_MS = 5000;
+    private static final int READ_TIMEOUT_MS = 10000;
     private static final String BAYER_USB_HEADER = "ABC";
 
     protected ByteBuffer mPayload;
