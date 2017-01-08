@@ -197,6 +197,10 @@ public class MedtronicCnlIntentService extends IntentService {
                 if (radioChannel == 0) {
                     sendStatus("Could not communicate with the 640g. Are you near the pump?");
                     Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
+
+                    // reduce polling interval to half until pump is available
+                    //TODO: make it configurable???
+                    MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + MainActivity.pollInterval/2L);
                 } else {
                     activePump.setLastRadioChannel(radioChannel);
                     sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));

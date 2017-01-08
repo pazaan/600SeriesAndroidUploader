@@ -75,6 +75,7 @@ import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
+import info.nightscout.android.medtronic.service.MedtronicCnlAlarmManager;
 import info.nightscout.android.medtronic.service.MedtronicCnlAlarmReceiver;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
@@ -328,7 +329,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
 
         // setup self handling alarm receiver
-        medtronicCnlAlarmReceiver.setContext(getBaseContext());
+        MedtronicCnlAlarmManager.setContext(getBaseContext());
     }
 
     @Override
@@ -403,11 +404,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             return;
         }
 
-        //clearLogText();
-
         // Cancel any existing polling.
         stopCgmService();
-        medtronicCnlAlarmReceiver.setAlarm(initialPoll);
+        MedtronicCnlAlarmManager.setAlarm(initialPoll);
     }
 
     private void uploadCgmData() {
@@ -416,7 +415,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
-        medtronicCnlAlarmReceiver.cancelAlarm();
+        MedtronicCnlAlarmManager.cancelAlarm();
     }
 
     private void showDisconnectionNotification(String title, String message) {
