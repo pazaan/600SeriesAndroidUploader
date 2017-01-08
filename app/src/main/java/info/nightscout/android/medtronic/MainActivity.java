@@ -671,12 +671,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     float fBgValue = (float) pumpStatusData.getSgv();
                     sgvString = df.format(fBgValue / 18.016f);
                     units = "mmol/L";
-                    Log.d(TAG, "mmolxl true --> " + sgvString);
+                    Log.d(TAG, sgvString + " mmol/L");
 
                 } else {
                     sgvString = String.valueOf(pumpStatusData.getSgv());
                     units = "mg/dL";
-                    Log.d(TAG, "mmolxl false --> " + sgvString);
+                    Log.d(TAG, sgvString + " mg/dL");
                 }
 
                 textViewBg.setText(sgvString);
@@ -749,7 +749,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 ScatterDataSet dataSet = new ScatterDataSet(entries, null);
 
                 //dataSet.setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
-                dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
+                dataSet.setColor(Color.LTGRAY);
                 dataSet.setValueTextColor(Color.WHITE);
                 dataSet.setScatterShape(ScatterChart.ScatterShape.CIRCLE);
                 dataSet.setScatterShapeSize(7.2f);
