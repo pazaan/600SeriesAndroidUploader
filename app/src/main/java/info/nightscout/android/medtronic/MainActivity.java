@@ -818,7 +818,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 nextPoll += MainActivity.pollInterval;
             } else {
                 // if pump battery seems to be empty reduce polling to save battery (every 15 min)
-                //TODO configurable???
                 //TODO add message & document it
                 nextPoll += MainActivity.lowBatteryPollInterval;
             }
