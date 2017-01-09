@@ -201,7 +201,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     // reduce polling interval to half until pump is available
                     //TODO: make it configurable???
                     MedtronicCnlAlarmManager.setAlarmAfterMillis(
-                            (MainActivity.pollInterval  + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS) / (MainActivity.reducePollOnPumpAway?1L:2L)
+                            (MainActivity.pollInterval  + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS) / (MainActivity.reducePollOnPumpAway?2L:1L)
                     );
                 } else {
                     activePump.setLastRadioChannel(radioChannel);
