@@ -56,15 +56,15 @@ public class MedtronicCnlAlarmManager {
             millis = now;
 
         // only accept alarm nearer than the last one
-        if (nextAlarm < millis && nextAlarm >= now) {
-            return;
-        }
+        //if (nextAlarm < millis && nextAlarm > now) {
+        //    return;
+        //}
 
         cancelAlarm();
 
         nextAlarm = millis;
 
-        Log.d(TAG, "AlarmManager set to fire   at " + new Date(millis));
+        Log.d(TAG, "Alarm set to fire at " + new Date(millis));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(millis, null), pendingIntent);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
