@@ -125,6 +125,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // TODO - this should go in the sgvDate, and eventDate should be the time of this poll.
         sgvDate = MessageUtils.decodeDateTime(rtc, offset);
+        Log.d(TAG, "original sgv date: " + sgvDate);
 
         // Predictive low suspend
         // TODO - there is more status info in this byte other than just a boolean yes/no

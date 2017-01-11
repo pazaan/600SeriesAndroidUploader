@@ -50,6 +50,8 @@ public class MedtronicCnlAlarmManager {
         if (alarmManager == null || pendingIntent == null)
             return;
 
+        Log.d(TAG, "request to set Alarm at " + new Date(millis));
+
         long now = System.currentTimeMillis();
         // don't trigger the past
         if (millis < now)
