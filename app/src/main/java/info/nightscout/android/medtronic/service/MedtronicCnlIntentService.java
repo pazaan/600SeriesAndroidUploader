@@ -197,15 +197,13 @@ public class MedtronicCnlIntentService extends IntentService {
 
                 activePump.updateLastQueryTS();
 
-
                 byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                 if (radioChannel == 0) {
                     sendStatus("Could not communicate with the 640g. Are you near the pump?");
                     Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
 
                     // reduce polling interval to half until pump is available
-                    //TODO: make it configurable???
-                    MedtronicCnlAlarmManager.setAlarmAfterMillis(
+                    MedtronicCnlAlarmManager.setAlarm(activePump.getLastQueryTS() +
                             (MainActivity.pollInterval  + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS) / (MainActivity.reducePollOnPumpAway?2L:1L)
                     );
                 } else {
