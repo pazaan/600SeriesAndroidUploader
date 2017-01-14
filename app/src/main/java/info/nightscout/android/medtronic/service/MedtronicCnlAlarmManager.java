@@ -36,10 +36,21 @@ public class MedtronicCnlAlarmManager {
         setAlarm(System.currentTimeMillis());
     }
 
+    /**
+     * set the alarm in the future
+     *
+     * @param inFuture number of millin in the future
+     */
+    public static void setAlarmAfterMillis(long inFuture) {
+        setAlarm(System.currentTimeMillis() + inFuture);
+    }
+
     // Setting the alarm to call onRecieve
     public static void setAlarm(long millis) {
         if (alarmManager == null || pendingIntent == null)
             return;
+
+        Log.d(TAG, "request to set Alarm at " + new Date(millis));
 
         long now = System.currentTimeMillis();
         // don't trigger the past
@@ -47,15 +58,15 @@ public class MedtronicCnlAlarmManager {
             millis = now;
 
         // only accept alarm nearer than the last one
-        if (nextAlarm < millis && nextAlarm >= now) {
-            return;
-        }
+        //if (nextAlarm < millis && nextAlarm > now) {
+        //    return;
+        //}
 
         cancelAlarm();
 
         nextAlarm = millis;
 
-        Log.d(TAG, "AlarmManager set to fire   at " + new Date(millis));
+        Log.d(TAG, "Alarm set to fire at " + new Date(millis));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(millis, null), pendingIntent);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -69,7 +80,7 @@ public class MedtronicCnlAlarmManager {
 
     // restarting the alarm after MedtronicCnlIntentService.POLL_PERIOD_MS from now
     public static void restartAlarm() {
-        setAlarm(System.currentTimeMillis() + MainActivity.pollInterval + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS);
+        setAlarmAfterMillis(MainActivity.pollInterval + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS);
     }
 
     // Cancel the alarm.

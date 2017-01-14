@@ -51,10 +51,7 @@ import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.IScatterDataSet;
 import com.github.mikephil.charting.listener.ChartTouchListener;
 import com.github.mikephil.charting.listener.OnChartGestureListener;
-import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.ViewPortHandler;
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.Thing;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -84,6 +81,7 @@ import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
 import io.realm.DynamicRealmObject;
 import io.realm.Realm;
+import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
 import io.realm.Sort;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
@@ -92,7 +90,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private static final String TAG = MainActivity.class.getSimpleName();
 
     public static int batLevel = 0;
+    public static boolean reducePollOnPumpAway = false;
+    public static long pollInterval = MedtronicCnlIntentService.POLL_PERIOD_MS;
+    public static long lowBatteryPollInterval = MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
+
     private static long activePumpMac;
+
+
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
     private PumpInfo mActivePump;
@@ -104,11 +108,21 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Realm mRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
-    public static long pollInterval = 0;
-    public static long lowBatteryPollInterval = 0;
 
-    public static void setActivePumpMac(long pumpMac) {
-        activePumpMac = pumpMac;
+    public static long getNextPoll(PumpStatusEvent pumpStatusData) {
+        long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
+                + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS;
+
+        if (pumpStatusData.getBatteryPercentage() > 25) {
+            // poll every 5 min
+            nextPoll += MainActivity.pollInterval;
+        } else {
+            // if pump battery seems to be empty reduce polling to save battery (every 15 min)
+            //TODO add message & document it
+            nextPoll += MainActivity.lowBatteryPollInterval;
+        }
+
+        return nextPoll;
     }
 
     @Override
@@ -128,9 +142,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             stopCgmService();
         }
 
-        //set poll intervals
+        // setup preferences
         MainActivity.pollInterval = Long.parseLong(prefs.getString("pollInterval", Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
         MainActivity.lowBatteryPollInterval = Long.parseLong(prefs.getString("lowBatPollInterval", Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+        MainActivity.reducePollOnPumpAway = prefs.getBoolean("doublePollOnPumpAway", false);
 
         // Disable battery optimization to avoid missing values on 6.0+
         // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
@@ -158,8 +173,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 statusMessageReceiver,
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                new RefreshDataReceiver(),
-                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_REFRESH_DATA));
+                new UpdatePumpReceiver(),
+                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_UPDATE_PUMP));
 
         mEnableCgmService = Eula.show(this, prefs);
 
@@ -483,6 +498,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         } else if (key.equals("lowBatPollInterval")) {
             MainActivity.lowBatteryPollInterval = Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
                     Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+        } else if (key.equals("doublePollOnPumpAway")) {
+            MainActivity.reducePollOnPumpAway = sharedPreferences.getBoolean("doublePollOnPumpAway", false);
         }
     }
 
@@ -527,9 +544,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
+    public static void setActivePumpMac(long pumpMac) {
+        activePumpMac = pumpMac;
+    }
+
     private PumpInfo getActivePump() {
         if (activePumpMac != 0L && (mActivePump == null || !mActivePump.isValid() || mActivePump.getPumpMac() != activePumpMac)) {
-            mActivePump = null;
+            if (mActivePump != null) {
+                // remove listener on old pump
+                mActivePump.removeChangeListeners();
+                mActivePump = null;
+            }
 
             PumpInfo pump = mRealm
                     .where(PumpInfo.class)
@@ -538,28 +563,51 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             if (pump != null && pump.isValid()) {
                 mActivePump = pump;
+                mActivePump.addChangeListener(new RealmChangeListener<PumpInfo>() {
+                    long lastQueryTS = 0;
+                    @Override
+                    public void onChange(PumpInfo pump) {
+                        // prevent double updating after deleting old events below
+                        if (pump.getLastQueryTS() == lastQueryTS || !pump.isValid()) {
+                            return;
+                        }
+
+                        PumpStatusEvent pumpStatusData = pump.getPumpHistory().last();;
+
+                        lastQueryTS = pump.getLastQueryTS();
+
+                        startCgmService(MainActivity.getNextPoll(pumpStatusData));
+
+                        // Delete invalid or old records from Realm
+                        // TODO - show an error message if the valid records haven't been uploaded
+                        final RealmResults<PumpStatusEvent> results =
+                                mRealm.where(PumpStatusEvent.class)
+                                        .equalTo("sgv", 0)
+                                        .or()
+                                        .lessThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
+                                        .findAll();
+
+                        if (results.size() > 0) {
+                            mRealm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(Realm realm) {
+                                    // Delete all matches
+                                    Log.d(TAG, "Deleting " + results.size() + " records from realm");
+                                    results.deleteAllFromRealm();
+                                }
+                            });
+                        }
+
+                        // TODO - handle isOffline in NightscoutUploadIntentService?
+                        uploadCgmData();
+                        refreshDisplay();
+                    }
+                });
             }
         }
 
         return mActivePump;
     }
-
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    public Action getIndexApiAction() {
-        Thing object = new Thing.Builder()
-                .setName("Main Page") // TODO: Define a title for the content shown.
-                // TODO: Make sure this auto-generated URL is correct.
-                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
-                .build();
-        return new Action.Builder(Action.TYPE_VIEW)
-                .setObject(object)
-                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
-                .build();
-    }
-
 
     private class StatusMessageReceiver extends BroadcastReceiver {
         private class StatusMessage {
@@ -650,6 +698,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             PumpInfo pump = getActivePump();
 
             if (pump != null && pump.isValid()) {
+                Log.d(TAG, "history display refresh size: " + pump.getPumpHistory().size());
+                Log.d(TAG, "history display refresh date: " + pump.getPumpHistory().last().getEventDate());
                 pumpStatusData = pump.getPumpHistory().last();
             }
 
@@ -790,7 +840,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private class RefreshDataReceiver extends BroadcastReceiver {
+    /**
+     * has to be done in MainActivity thread
+     */
+    private class UpdatePumpReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -799,55 +852,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             if (mRealm.isClosed()) {
                 return;
             }
-
-            PumpStatusEvent pumpStatusData = null;
-
-            PumpInfo pump = getActivePump();
-
-            if (pump != null && pump.isValid()) {
-                pumpStatusData = pump.getPumpHistory().last();
-            } else {
-                return;
-            }
-
-            long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
-                    + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS;
-
-            if (pumpStatusData.getBatteryPercentage() > 25) {
-                // poll every 5 min
-                nextPoll += MainActivity.pollInterval;
-            } else {
-                // if pump battery seems to be empty reduce polling to save battery (every 15 min)
-                //TODO configurable???
-                //TODO add message & document it
-                nextPoll += MainActivity.lowBatteryPollInterval;
-            }
-            startCgmService(nextPoll);
-
-            // Delete invalid or old records from Realm
-            // TODO - show an error message if the valid records haven't been uploaded
-            final RealmResults<PumpStatusEvent> results =
-                    mRealm.where(PumpStatusEvent.class)
-                            .equalTo("sgv", 0)
-                            .or()
-                            .lessThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
-                            .findAll();
-
-            if (results.size() > 0) {
-                mRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(Realm realm) {
-                        // Delete all matches
-                        Log.d(TAG, "Deleting " + results.size() + " records from realm");
-                        results.deleteAllFromRealm();
-                    }
-                });
-            }
-
-            // TODO - handle isOffline in NightscoutUploadIntentService?
-            uploadCgmData();
-
-            refreshDisplay();
+            //init local pump listener
+            getActivePump();
         }
     }
 

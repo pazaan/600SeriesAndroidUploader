@@ -38,6 +38,8 @@ import info.nightscout.android.xdrip_plus.XDripPlusUploadReceiver;
 import io.realm.Realm;
 import io.realm.RealmResults;
 
+import static info.nightscout.android.medtronic.MainActivity.setActivePumpMac;
+
 public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_VID = 0x1a79;
     public final static int USB_PID = 0x6210;
@@ -154,10 +156,11 @@ public class MedtronicCnlIntentService extends IntentService {
 
             if (info == null) {
                 // TODO - use realm.createObject()?
-                info = new ContourNextLinkInfo();
-                info.setSerialNumber(cnlReader.getStickSerial());
+                info = realm.createObject(ContourNextLinkInfo.class, cnlReader.getStickSerial());
+                //info = new ContourNextLinkInfo();
+                ///info.setSerialNumber(cnlReader.getStickSerial());
 
-                info = realm.copyToRealm(info);
+                //info = realm.copyToRealm(info);
             }
 
             cnlReader.getPumpSession().setStickSerial(info.getSerialNumber());
@@ -182,16 +185,18 @@ public class MedtronicCnlIntentService extends IntentService {
 
                 long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
                 Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xffffff));
-                MainActivity.setActivePumpMac(pumpMAC);
                 PumpInfo activePump = realm
                         .where(PumpInfo.class)
                         .equalTo("pumpMac", pumpMAC)
                         .findFirst();
 
                 if (activePump == null) {
-                    activePump = realm.createObject(PumpInfo.class);
-                    activePump.setPumpMac(pumpMAC);
+                    activePump = realm.createObject(PumpInfo.class, pumpMAC);
+                    //activePump.setPumpMac(pumpMAC);
                 }
+
+                activePump.updateLastQueryTS();
+
 
                 byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                 if (radioChannel == 0) {
@@ -200,8 +205,11 @@ public class MedtronicCnlIntentService extends IntentService {
 
                     // reduce polling interval to half until pump is available
                     //TODO: make it configurable???
-                    MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + (MainActivity.pollInterval  + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS)/2L);
+                    MedtronicCnlAlarmManager.setAlarmAfterMillis(
+                            (MainActivity.pollInterval  + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS) / (MainActivity.reducePollOnPumpAway?2L:1L)
+                    );
                 } else {
+                    setActivePumpMac(pumpMAC);
                     activePump.setLastRadioChannel(radioChannel);
                     sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
@@ -224,21 +232,9 @@ public class MedtronicCnlIntentService extends IntentService {
                     pumpRecord.setPumpTimeOffset(pumpOffset);
                     pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
                     cnlReader.updatePumpStatus(pumpRecord);
-                    activePump.getPumpHistory().add(pumpRecord);
-
-                    // start reading other data in debug only
-                    if (BuildConfig.DEBUG) {
-                        // read basal pattern
-                        //cnlReader.getBasalPatterns();
-
-                        // Read history
-                        //cnlReader.getHistory();
-                    }
-
 
                     cnlReader.endEHSMSession();
 
-                    boolean cancelTransaction = true;
                     if (pumpRecord.getSgv() != 0) {
                         // Check that the record doesn't already exist before committing
                         RealmResults<PumpStatusEvent> checkExistingRecords = activePump.getPumpHistory()
@@ -248,18 +244,17 @@ public class MedtronicCnlIntentService extends IntentService {
                                 .findAll();
 
                         // There should be the 1 record we've already added in this transaction.
-                        if (checkExistingRecords.size() <= 1) {
-                            realm.commitTransaction();
-                            cancelTransaction = false;
+                        if (checkExistingRecords.size() == 0) {
+                            activePump.getPumpHistory().add(pumpRecord);
                         }
 
-                        // Tell the Main Activity we have new data
-                        sendMessage(Constants.ACTION_REFRESH_DATA);
+                        Log.d(TAG, "history reading size: " + activePump.getPumpHistory().size());
+                        Log.d(TAG, "history reading date: " + activePump.getPumpHistory().last().getEventDate());
                     }
 
-                    if (cancelTransaction) {
-                        realm.cancelTransaction();
-                    }
+                    realm.commitTransaction();
+                    // Tell the Main Activity we have new data
+                    sendMessage(Constants.ACTION_UPDATE_PUMP);
                 }
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
@@ -306,6 +301,10 @@ public class MedtronicCnlIntentService extends IntentService {
         }
     }
 
+    private void setActivePumpMac(long pumpMAC) {
+        MainActivity.setActivePumpMac(pumpMAC);
+    }
+
     // reliable wake alarm manager wake up for all android versions
     public static void wakeUpIntent(Context context, long wakeTime, PendingIntent pendingIntent) {
         final AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -345,6 +344,7 @@ public class MedtronicCnlIntentService extends IntentService {
         public static final String ACTION_USB_PERMISSION = "info.nightscout.android.medtronic.USB_PERMISSION";
         public static final String ACTION_REFRESH_DATA = "info.nightscout.android.medtronic.service.CGM_DATA";
         public static final String ACTION_USB_REGISTER = "info.nightscout.android.medtronic.USB_REGISTER";
+        public static final String ACTION_UPDATE_PUMP = "info.nightscout.android.medtronic.UPDATE_PUMP";
 
         public static final String EXTENDED_DATA = "info.nightscout.android.medtronic.service.DATA";
     }
