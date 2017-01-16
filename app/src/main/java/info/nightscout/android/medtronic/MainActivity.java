@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
@@ -51,6 +52,9 @@ import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.IScatterDataSet;
 import com.github.mikephil.charting.listener.ChartTouchListener;
 import com.github.mikephil.charting.listener.OnChartGestureListener;
+import com.github.mikephil.charting.renderer.ScatterChartRenderer;
+import com.github.mikephil.charting.renderer.scatter.IShapeRenderer;
+import com.github.mikephil.charting.utils.Transformer;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
@@ -95,7 +99,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     public static long lowBatteryPollInterval = MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
 
     private static long activePumpMac;
-
 
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
@@ -330,6 +333,56 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         yAxis.setTextColor(Color.WHITE);
 
         mChart.getLegend().setEnabled(false);   // Hide the legend
+
+        // TODO: remove if if "coloring bug" in MPAndroidChart is fixed
+        // see: https://github.com/PhilJay/MPAndroidChart/issues/2682
+        mChart.setRenderer(new ScatterChartRenderer(mChart, mChart.getAnimator(), mChart.getViewPortHandler()) {
+
+            float[] mPixelBuffer = new float[2];
+
+            @Override
+            protected void drawDataSet(Canvas c, IScatterDataSet dataSet) {
+
+                ViewPortHandler viewPortHandler = mViewPortHandler;
+
+                Transformer trans = mChart.getTransformer(dataSet.getAxisDependency());
+
+                float phaseY = mAnimator.getPhaseY();
+
+                IShapeRenderer renderer = dataSet.getShapeRenderer();
+                if (renderer == null) {
+                    Log.i("MISSING", "There's no IShapeRenderer specified for ScatterDataSet");
+                    return;
+                }
+
+                int max = (int)(Math.min(
+                        Math.ceil((float)dataSet.getEntryCount() * mAnimator.getPhaseX()),
+                        (float)dataSet.getEntryCount()));
+
+                for (int i = 0; i < max; i++) {
+
+                    Entry e = dataSet.getEntryForIndex(i);
+
+                    mPixelBuffer[0] = e.getX();
+                    mPixelBuffer[1] = e.getY() * phaseY;
+
+                    trans.pointValuesToPixel(mPixelBuffer);
+
+                    if (!viewPortHandler.isInBoundsRight(mPixelBuffer[0]))
+                        break;
+
+                    if (!viewPortHandler.isInBoundsLeft(mPixelBuffer[0])
+                            || !viewPortHandler.isInBoundsY(mPixelBuffer[1]))
+                        continue;
+
+                    mRenderPaint.setColor(dataSet.getColor(i));
+                    renderer.renderShape(
+                            c, dataSet, mViewPortHandler,
+                            mPixelBuffer[0], mPixelBuffer[1],
+                            mRenderPaint);
+                }
+            }
+        });
     }
 
     @Override
@@ -783,6 +836,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     pos = entries.size();
 
                 entries.add(new Entry(pumpStatus.getEventDate().getTime(), pumpStatus.getSgv()));
+                //TODO: need to be configurable
                 if (sgv < 80)
                     colors[pos] = Color.RED;
                 else if (sgv <= 180)
@@ -795,11 +849,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             if (mChart.getData() == null) {
                 mChart.setMinimumHeight(200);
-
                 ScatterDataSet dataSet = new ScatterDataSet(entries, null);
 
-                //dataSet.setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
-                dataSet.setColor(Color.LTGRAY);
+                dataSet.setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
+                //dataSet.setColor(Color.LTGRAY);
                 dataSet.setValueTextColor(Color.WHITE);
                 dataSet.setScatterShape(ScatterChart.ScatterShape.CIRCLE);
                 dataSet.setScatterShapeSize(7.2f);
@@ -828,14 +881,20 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mChart.setData(lineData);
             } else {
                 ((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setValues(entries);
-                //((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
-                //dataSet.notifyDataSetChanged();
+                ((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
             }
 
             //TODO: make the display timespan configurable
-            mChart.getXAxis().setAxisMaximum(System.currentTimeMillis());
-            mChart.getXAxis().setAxisMinimum(mChart.getXAxis().getAxisMaximum() - 24 * 60 * 60 * 1000);
+            //long now = System.currentTimeMillis();
 
+            //Log.d(TAG, "Graph limits: " + (new Date(now - 24 * 60 * 60 * 1000) + " - " + (new Date(now))));
+            //mChart.setVisibleXRangeMaximum(12);
+            //mChart.setVisibleXRangeMinimum(0);
+            //mChart.getXAxis().setAxisMaximum((now + 0*60*1000));
+            //mChart.getXAxis().setAxisMinimum(now - 35 * 60 * 1000);
+
+            //mChart.moveViewToX(now - 35*60*1000); // - 24 * 60 * 60 * 1000);
+            //mChart.invalidate();
             mChart.postInvalidate();
         }
     }
