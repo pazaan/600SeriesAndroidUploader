@@ -1,19 +1,25 @@
 package info.nightscout.android.medtronic.message;
 
+import android.util.Log;
+
 import java.nio.ByteBuffer;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by lgoedhart on 26/03/2016.
  */
 public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
+    private static final String TAG = MedtronicResponseMessage.class.getSimpleName();
+
     static int ENVELOPE_SIZE = 22;
     static int ENCRYPTED_ENVELOPE_SIZE = 3;
     static int CRC_SIZE = 2;
@@ -43,6 +49,11 @@ public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
             // Should be fine provided we check the CCITT first...
             this.mPayload.position(57);
             this.mPayload.put(decryptedPayload);
+
+            if (BuildConfig.DEBUG) {
+                String outputString = HexDump.dumpHexString(this.mPayload.array());
+                Log.d(TAG, "DECRYPTED: " + outputString);
+            }
         }
     }
 

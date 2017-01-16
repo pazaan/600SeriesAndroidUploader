@@ -8,11 +8,13 @@ import java.nio.ByteOrder;
 import java.util.Date;
 import java.util.Locale;
 
+import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by lgoedhart on 27/03/2016.
@@ -61,6 +63,10 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         statusBuffer.order(ByteOrder.BIG_ENDIAN);
         statusBuffer.put(this.encode(), 0x39, 96);
 
+        if (BuildConfig.DEBUG) {
+            String outputString = HexDump.dumpHexString(statusBuffer.array());
+            Log.d(TAG, "PAYLOAD: " + outputString);
+        }
         // Status Flags
         suspended = ((statusBuffer.get(0x03) & 0x01) != 0x00);
         bolusing = ((statusBuffer.get(0x03) & 0x02) != 0x00);
@@ -108,9 +114,6 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // CGM SGV
         sgv = (statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
-
-        // SGV Date
-
         if ((sgv & 0x200) == 0x200) {
             // Sensor error. Let's reset. FIXME - solve this more elegantly later
             sgv = 0;
@@ -123,6 +126,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             cgmTrend = (PumpStatusEvent.CGM_TREND.fromMessageByte(statusBuffer.get(0x40)));
         }
 
+        // SGV Date
         // TODO - this should go in the sgvDate, and eventDate should be the time of this poll.
         sgvDate = MessageUtils.decodeDateTime(rtc, offset);
         Log.d(TAG, "original sgv date: " + sgvDate);
