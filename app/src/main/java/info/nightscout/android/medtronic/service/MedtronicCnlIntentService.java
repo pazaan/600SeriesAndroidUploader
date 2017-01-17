@@ -204,7 +204,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
                     // reduce polling interval to half until pump is available
                     MedtronicCnlAlarmManager.setAlarm(activePump.getLastQueryTS() +
-                            (MainActivity.pollInterval  + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS) / (MainActivity.reducePollOnPumpAway?2L:1L)
+                            (MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L))
                     );
                 } else {
                     setActivePumpMac(pumpMAC);
