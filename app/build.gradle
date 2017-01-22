@@ -27,7 +27,7 @@ apply plugin: 'realm-android'
 def gitVersion() {
     // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
     // above.
-    ext.repo = Grgit.open(project.file('..'))
+    ext.repo = Grgit.open()
 
     // should result in the same value as running
     // git tag -l | wc -l or git tag -l | grep -c ".*" -
@@ -36,14 +36,15 @@ def gitVersion() {
 }
 
 def gitCommitId() {
-    //def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
-    //return process.toInteger() + 1
-    //return 42
-    // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
-    // above.
-    ext.repo = Grgit.open(project.file('..'))
+    ext.repo = Grgit.open()
 
-    return ext.repo.log().first().id.substring(0, 7)
+    return ext.repo.log().first().id.substring(0, 7) //+ " " + ext.repo.branch.current.name
+}
+
+
+def gitBranch() {
+    ext.repo = Grgit.open()
+    return ext.repo.branch.current.name
 }
 
 def getBugfenderApiKey() {
@@ -66,7 +67,7 @@ android {
         applicationId "info.nightscout.android"
         minSdkVersion 14
         targetSdkVersion 23
-        versionName project.properties['version'] + "/" + gitCommitId()
+        versionName project.properties['version'] + "/" + gitCommitId() // + " (" + gitBranch()+")"
         versionCode gitVersion()
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
