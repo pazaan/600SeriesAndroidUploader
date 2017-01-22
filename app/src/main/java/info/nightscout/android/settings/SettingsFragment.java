@@ -51,8 +51,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
      */
     private void setMinBatPollIntervall(ListPreference pollIntervalPref, ListPreference lowBatPollIntervalPref) {
         final String currentValue = lowBatPollIntervalPref.getValue();
-        final int pollIntervalPos = pollIntervalPref.findIndexOfValue(pollIntervalPref.getValue()),
-                lowBatPollIntervalPos = lowBatPollIntervalPref.findIndexOfValue(currentValue),
+        final int pollIntervalPos = (pollIntervalPref.findIndexOfValue(pollIntervalPref.getValue()) >= 0?pollIntervalPref.findIndexOfValue(pollIntervalPref.getValue()):0),
                 length = pollIntervalPref.getEntries().length;
 
         CharSequence[] entries = new String[length - pollIntervalPos],
