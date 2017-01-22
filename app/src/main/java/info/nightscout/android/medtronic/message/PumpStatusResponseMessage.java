@@ -68,48 +68,47 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             Log.d(TAG, "PAYLOAD: " + outputString);
         }
         // Status Flags
-        suspended = ((statusBuffer.get(0x03) & 0x01) != 0x00);
-        bolusing = ((statusBuffer.get(0x03) & 0x02) != 0x00);
-        deliveringInsulin = ((statusBuffer.get(0x03) & 0x10) != 0x00);
-        tempBasalActive = ((statusBuffer.get(0x03) & 0x20) != 0x00);
-        cgmActive = ((statusBuffer.get(0x03) & 0x40) != 0x00);
+        suspended = (statusBuffer.get(0x03) & 0x01) != 0x00;
+        bolusing = (statusBuffer.get(0x03) & 0x02) != 0x00;
+        deliveringInsulin = (statusBuffer.get(0x03) & 0x10) != 0x00;
+        tempBasalActive = (statusBuffer.get(0x03) & 0x20) != 0x00;
+        cgmActive = (statusBuffer.get(0x03) & 0x40) != 0x00;
 
         // Active basal pattern
-        activeBasalPattern = (statusBuffer.get(0x1a));
+        activeBasalPattern = statusBuffer.get(0x1a);
 
         // Normal basal rate
         long rawNormalBasal = statusBuffer.getInt(0x1b);
-        basalRate = (new BigDecimal(rawNormalBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+        basalRate = new BigDecimal(rawNormalBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Temp basal rate
-        // TODO - need to figure this one out
-        //long rawTempBasal = statusBuffer.getShort(0x21) & 0x0000ffff;
-        //pumpRecord.setTempBasalRate(new BigDecimal(rawTempBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+        long rawTempBasal = statusBuffer.getShort(0x21) & 0x0000ffff;
+        tempBasalRate = new BigDecimal(rawTempBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Temp basal percentage
-        tempBasalPercentage = (statusBuffer.get(0x23));
+        tempBasalPercentage = statusBuffer.get(0x23);
 
         // Temp basal minutes remaining
-        tempBasalMinutesRemaining = ((short) (statusBuffer.getShort(0x24) & 0x0000ffff));
+        tempBasalMinutesRemaining = (short) (statusBuffer.getShort(0x24) & 0x0000ffff);
 
         // Units of insulin delivered as basal today
         // TODO - is this basal? Do we have a total Units delivered elsewhere?
-        basalUnitsDeliveredToday = (statusBuffer.getInt(0x26));
+        basalUnitsDeliveredToday = statusBuffer.getInt(0x26);
 
         // Pump battery percentage
-        batteryPercentage = ((statusBuffer.get(0x2a)));
+        batteryPercentage = statusBuffer.get(0x2a);
 
         // Reservoir amount
         long rawReservoirAmount = statusBuffer.getInt(0x2b);
-        reservoirAmount = (new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+        reservoirAmount = new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Amount of insulin left in pump (in minutes)
         byte insulinHours = statusBuffer.get(0x2f);
         byte insulinMinutes = statusBuffer.get(0x30);
-        minutesOfInsulinRemaining = ((short) ((insulinHours * 60) + insulinMinutes));
+        minutesOfInsulinRemaining = (short) ((insulinHours * 60) + insulinMinutes);
 
         // Active insulin
-        long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
+        long rawActiveInsulin = statusBuffer.getInt(0x31);
         activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // CGM SGV
@@ -119,11 +118,11 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             sgv = 0;
             rtc = 0;
             offset = 0;
-            cgmTrend = (PumpStatusEvent.CGM_TREND.NOT_SET);
+            cgmTrend = PumpStatusEvent.CGM_TREND.NOT_SET;
         } else {
             rtc = statusBuffer.getInt(0x37) & 0x00000000ffffffffL;
             offset = statusBuffer.getInt(0x3b);
-            cgmTrend = (PumpStatusEvent.CGM_TREND.fromMessageByte(statusBuffer.get(0x40)));
+            cgmTrend = PumpStatusEvent.CGM_TREND.fromMessageByte(statusBuffer.get(0x40));
         }
 
         // SGV Date
@@ -133,19 +132,20 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Predictive low suspend
         // TODO - there is more status info in this byte other than just a boolean yes/no
-        lowSuspendActive = (statusBuffer.get(0x3f) != 0);
+        lowSuspendActive = statusBuffer.get(0x3f) != 0;
 
         // Recent Bolus Wizard BGL
-        recentBolusWizard = (statusBuffer.get(0x48) != 0);
-        bolusWizardBGL = (statusBuffer.getShort(0x49) & 0x0000ffff); // In mg/DL
+        recentBolusWizard = statusBuffer.get(0x48) != 0;
+        bolusWizardBGL = statusBuffer.getShort(0x49) & 0x0000ffff; // In mg/DL
     }
 
     /**
      * update pumpRecord with data read from pump
      *
      * @param pumpRecord
+     * @param pumpOffset
      */
-    public void updatePumpRecord(PumpStatusEvent pumpRecord) {
+    public void updatePumpRecord(PumpStatusEvent pumpRecord, long pumpOffset) {
         // Status Flags
         pumpRecord.setSuspended(suspended);
         pumpRecord.setBolusing(bolusing);
@@ -158,6 +158,9 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Normal basal rate
         pumpRecord.setBasalRate(basalRate);
+
+        // Temp basal rate
+        pumpRecord.setTempBasalRate(tempBasalRate);
 
         // Temp basal percentage
         pumpRecord.setTempBasalPercentage(tempBasalPercentage);
@@ -185,7 +188,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // SGV Date
         pumpRecord.setCgmTrend(cgmTrend);
-        pumpRecord.setEventDate(new Date(sgvDate.getTime() - pumpRecord.getPumpTimeOffset()));
+        pumpRecord.setEventDate(new Date(sgvDate.getTime() - pumpOffset));
 
         // Predictive low suspend
         // TODO - there is more status info in this byte other than just a boolean yes/no
