@@ -57,7 +57,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.util.Arrays;
+import java.text.NumberFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Queue;
@@ -82,6 +82,7 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
     private static final String TAG = MainActivity.class.getSimpleName();
+    public static final float MMOLXLFACTOR = 18.016f;
 
     public static int batLevel = 0;
     public static boolean reducePollOnPumpAway = false;
@@ -91,6 +92,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private static long activePumpMac;
     private int chartZoom = 3;
     private boolean hasZoomedChart = false;
+
+    private NumberFormat sgvFormatter;
+    private boolean mmolxl;
+    private boolean mmolxlDecimals;
 
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
@@ -103,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Realm mRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
+
 
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
         long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
@@ -141,6 +147,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         MainActivity.pollInterval = Long.parseLong(prefs.getString("pollInterval", Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
         MainActivity.lowBatteryPollInterval = Long.parseLong(prefs.getString("lowBatPollInterval", Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
         MainActivity.reducePollOnPumpAway = prefs.getBoolean("doublePollOnPumpAway", false);
+        chartZoom = Integer.parseInt(prefs.getString("chartZoom", "3"));
+        mmolxl = prefs.getBoolean("mmolxl", false);
+        mmolxlDecimals = prefs.getBoolean("mmolDecimals", false);
+
+        if (mmolxl) {
+            if (mmolxlDecimals)
+                sgvFormatter = new DecimalFormat("0.00");
+            else
+                sgvFormatter = new DecimalFormat("0.0");
+        } else {
+            sgvFormatter = new DecimalFormat("0");
+        }
 
         // Disable battery optimization to avoid missing values on 6.0+
         // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
@@ -263,13 +281,19 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .build();
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
+
         mChart = (GraphView) findViewById(R.id.chart);
 
-        //mChart.setDescription(null);    // Hide the description
-
-        mChart.getViewport().setScalable(true);
-        mChart.getViewport().setScrollable(true);
+        // disable scrolling at the moment
+        mChart.getViewport().setScalable(false);
+        mChart.getViewport().setScrollable(false);
         mChart.getViewport().setXAxisBoundsManual(true);
+        final long now = System.currentTimeMillis(),
+                left = now - chartZoom * 60 * 60 * 1000;
+
+        mChart.getViewport().setMaxX(now);
+        mChart.getViewport().setMinX(left);
+
         mChart.getViewport().setOnXAxisBoundsChangedListener(new Viewport.OnXAxisBoundsChangedListener() {
             @Override
             public void onXAxisBoundsChanged(double minX, double maxX, Reason reason) {
@@ -281,9 +305,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                double rightX = mChart.getSeries().get(0).getHighestValueX();
-                mChart.getViewport().setMaxX(rightX);
-                mChart.getViewport().setMinX(rightX - chartZoom * 60 * 60 * 1000);
+                if (!mChart.getSeries().isEmpty() && !mChart.getSeries().get(0).isEmpty()) {
+                    double rightX = mChart.getSeries().get(0).getHighestValueX();
+                    mChart.getViewport().setMaxX(rightX);
+                    mChart.getViewport().setMinX(rightX - chartZoom * 60 * 60 * 1000);
+                }
                 hasZoomedChart = false;
                 return true;
             }
@@ -298,8 +324,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 if (isValueX) {
                     return mFormat.format(new Date((long) value));
                 } else {
-                    // show currency for y values
-                    return super.formatLabel(value, false); //nf.format(value);
+                    if (mmolxl) {
+                        return sgvFormatter.format(value / MMOLXLFACTOR);
+                    } else {
+                        return sgvFormatter.format(value);
+                    }
                 }
             }}
         );
@@ -463,7 +492,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mEnableCgmService = true;
                 startCgmService();
             }
-        } else if (key.equals("mmolxl")) {
+        } else if (key.equals("mmolxl") || key.equals("mmolDecimals")) {
+            mmolxl = sharedPreferences.getBoolean("mmolxl", false);
+            mmolxlDecimals = sharedPreferences.getBoolean("mmolDecimals", false);
+            if (mmolxl) {
+                if (mmolxlDecimals)
+                    sgvFormatter = new DecimalFormat("0.00");
+                else
+                    sgvFormatter = new DecimalFormat("0.0");
+            } else {
+                sgvFormatter = new DecimalFormat("0");
+            }
             refreshDisplay();
         } else if (key.equals("pollInterval")) {
             MainActivity.pollInterval = Long.parseLong(sharedPreferences.getString("pollInterval",
@@ -473,14 +512,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
         } else if (key.equals("doublePollOnPumpAway")) {
             MainActivity.reducePollOnPumpAway = sharedPreferences.getBoolean("doublePollOnPumpAway", false);
-        } else if (key.equals("doublePollOnPumpAway")) {
+        } else if (key.equals("chartZoom")) {
             chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
             hasZoomedChart = false;
-
-            long now = (long) mChart.getSeries().get(0).getHighestValueX(),
-                    left = now - chartZoom * 60 * 60 * 1000;
-            mChart.getViewport().setMinX(left);
-            mChart.getViewport().setMaxX(now);
+            refreshDisplay();
         }
     }
 
@@ -665,7 +700,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
             TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
-            if (prefs.getBoolean("mmolxl", false)) {
+            if (mmolxl) {
                 textViewUnits.setText(R.string.text_unit_mmolxl);
             } else {
                 textViewUnits.setText(R.string.text_unit_mgxdl);
@@ -691,27 +726,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             if (pumpStatusData != null) {
 
-                String sgvString, units;
-                if (prefs.getBoolean("mmolxl", false)) {
-                    DecimalFormat df;
-                    if (prefs.getBoolean("mmolDecimals", false))
-                        df = new DecimalFormat("0.00");
-                    else
-                        df = new DecimalFormat("0.0");
-
+                String sgvString;
+                if (mmolxl) {
                     float fBgValue = (float) pumpStatusData.getSgv();
-                    sgvString = df.format(fBgValue / 18.016f);
-                    units = "mmol/L";
+                    sgvString = sgvFormatter.format(fBgValue / MMOLXLFACTOR);
                     Log.d(TAG, sgvString + " mmol/L");
-
                 } else {
                     sgvString = String.valueOf(pumpStatusData.getSgv());
-                    units = "mg/dL";
                     Log.d(TAG, sgvString + " mg/dL");
                 }
 
                 textViewBg.setText(sgvString);
-                textViewUnits.setText(units);
                 textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
                 textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
                 textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
@@ -754,23 +779,27 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         private void updateChart(RealmResults<PumpStatusEvent> results) {
             int size = results.size();
             if (size == 0) {
+                final long now = System.currentTimeMillis(),
+                        left = now - chartZoom * 60 * 60 * 1000;
+
+                mChart.getViewport().setXAxisBoundsManual(true);
+                mChart.getViewport().setMaxX(now);
+                mChart.getViewport().setMinX(left);
+
+                mChart.getViewport().setYAxisBoundsManual(true);
+                if (mmolxl) {
+                    mChart.getViewport().setMinY(80 / MMOLXLFACTOR);
+                    mChart.getViewport().setMaxY(120 / MMOLXLFACTOR);
+                } else {
+                    mChart.getViewport().setMinY(80);
+                    mChart.getViewport().setMaxY(120);
+                }
+                mChart.postInvalidate();
                 return;
             }
 
             DataPoint[] entries = new DataPoint[size];
             final long left = System.currentTimeMillis() - chartZoom * 60 * 60 * 1000;
-
-            final DecimalFormat df;
-            final boolean mmolxl = prefs.getBoolean("mmolxl", false);
-
-            if (mmolxl) {
-                if (prefs.getBoolean("mmolDecimals", false))
-                    df = new DecimalFormat("0.00");
-                else
-                    df = new DecimalFormat("0.0");
-            } else {
-                df = new DecimalFormat("0");
-            }
 
             int pos = 0;
             for (PumpStatusEvent pumpStatus: results) {
@@ -778,7 +807,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 int sgv = pumpStatus.getSgv();
 
                 if (mmolxl) {
-                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv() / 18.016f);
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv() / MMOLXLFACTOR);
                 } else {
                     entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv());
                 }
@@ -796,6 +825,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 PointsGraphSeries sgvSerie = new PointsGraphSeries(entries);
 //                sgvSerie.setSize(3.6f);
 //                sgvSerie.setColor(Color.LTGRAY);
+
+
                 sgvSerie.setOnDataPointTapListener(new OnDataPointTapListener() {
                     DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.MEDIUM);
 
@@ -805,9 +836,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                         StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
                         if (mmolxl) {
-                            sb.append(df.format(sgv / 18.016f));
+                            sb.append(sgvFormatter.format(sgv / MMOLXLFACTOR));
                         } else {
-                            sb.append(df.format(sgv));
+                            sb.append(sgvFormatter.format(sgv));
                         }
                         Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
                     }
@@ -829,6 +860,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     }
                 });
 
+                mChart.getViewport().setYAxisBoundsManual(false);
                 mChart.addSeries(sgvSerie);
             } else {
                 if (entries.length > 0) {

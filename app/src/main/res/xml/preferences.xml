@@ -41,6 +41,15 @@
             android:entries="@array/poll_interval"
             android:entryValues="@array/poll_interval_millis"/>
     </PreferenceCategory>
+    <PreferenceCategory android:title="Display">
+    <ListPreference
+        android:key="chartZoom"
+        android:defaultValue="3"
+        android:title="@string/preferences_chart_interval"
+        android:summary="%s"
+        android:entries="@array/chart_zoom"
+        android:entryValues="@array/chart_zoom_hours"/>
+    </PreferenceCategory>
     <PreferenceCategory android:title="Sharing">
         <CheckBoxPreference
             android:disableDependentsState="false"
