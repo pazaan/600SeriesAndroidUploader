@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
@@ -34,28 +35,19 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
+import android.widget.Toast;
 
-import com.github.mikephil.charting.charts.ScatterChart;
-import com.github.mikephil.charting.components.AxisBase;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.ScatterData;
-import com.github.mikephil.charting.data.ScatterDataSet;
-import com.github.mikephil.charting.data.realm.implementation.RealmScatterDataSet;
-import com.github.mikephil.charting.formatter.IAxisValueFormatter;
-import com.github.mikephil.charting.formatter.IValueFormatter;
-import com.github.mikephil.charting.interfaces.datasets.IScatterDataSet;
-import com.github.mikephil.charting.listener.ChartTouchListener;
-import com.github.mikephil.charting.listener.OnChartGestureListener;
-import com.github.mikephil.charting.renderer.ScatterChartRenderer;
-import com.github.mikephil.charting.renderer.scatter.IShapeRenderer;
-import com.github.mikephil.charting.utils.Transformer;
-import com.github.mikephil.charting.utils.ViewPortHandler;
+import com.jjoe64.graphview.DefaultLabelFormatter;
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.Viewport;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.DataPointInterface;
+import com.jjoe64.graphview.series.OnDataPointTapListener;
+import com.jjoe64.graphview.series.PointsGraphSeries;
+import com.jjoe64.graphview.series.Series;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -65,9 +57,8 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -83,7 +74,6 @@ import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
-import io.realm.DynamicRealmObject;
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
@@ -99,12 +89,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     public static long lowBatteryPollInterval = MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
 
     private static long activePumpMac;
+    private int chartZoom = 3;
+    private boolean hasZoomedChart = false;
 
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
     private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
-    private ScatterChart mChart;
+    private GraphView mChart;
     private Intent mNightscoutUploadService;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
@@ -271,118 +263,46 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .build();
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
-        mChart = (ScatterChart) findViewById(R.id.chart);
+        mChart = (GraphView) findViewById(R.id.chart);
 
-        mChart.setDescription(null);    // Hide the description
+        //mChart.setDescription(null);    // Hide the description
 
-        mChart.setTouchEnabled(true);
-        mChart.setPinchZoom(true);
-        mChart.setHighlightPerDragEnabled(false);
-        mChart.setHighlightPerTapEnabled(false);
-        mChart.setOnChartGestureListener(new OnChartGestureListener() {
-
+        mChart.getViewport().setScalable(true);
+        mChart.getViewport().setScrollable(true);
+        mChart.getViewport().setXAxisBoundsManual(true);
+        mChart.getViewport().setOnXAxisBoundsChangedListener(new Viewport.OnXAxisBoundsChangedListener() {
             @Override
-            public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
-
-            @Override
-            public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
-
-            @Override
-            public void onChartLongPressed(MotionEvent me) {
-                mChart.fitScreen();
-            }
-
-            @Override
-            public void onChartDoubleTapped(MotionEvent me) {}
-
-            @Override
-            public void onChartSingleTapped(MotionEvent me) {}
-
-            @Override
-            public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
-
-            @Override
-            public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
-
-            @Override
-            public void onChartTranslate(MotionEvent me, float dX, float dY) {}
-        });
-
-        XAxis xAxis = mChart.getXAxis();
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setTextSize(10f);
-        xAxis.setTextColor(Color.WHITE);
-        xAxis.setDrawAxisLine(true);
-        xAxis.setDrawGridLines(true);
-        xAxis.setDrawLabels(true);
-        xAxis.setValueFormatter(new IAxisValueFormatter() {
-            private DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
-
-            @Override
-            public String getFormattedValue(float value, AxisBase axis) {
-                return mFormat.format(new Date((long) value));
+            public void onXAxisBoundsChanged(double minX, double maxX, Reason reason) {
+                double rightX = mChart.getSeries().get(0).getHighestValueX();
+                hasZoomedChart = (rightX != maxX || rightX - chartZoom * 60 * 60 * 1000 != minX);
             }
         });
 
-        // left axis
-        mChart.getAxisLeft().setDrawLabels(false);
-
-        // right axis
-        YAxis yAxis = mChart.getAxisRight();
-        yAxis.setTextSize(10f);
-        yAxis.setTextColor(Color.WHITE);
-
-        mChart.getLegend().setEnabled(false);   // Hide the legend
-
-        // TODO: remove if if "coloring bug" in MPAndroidChart is fixed
-        // see: https://github.com/PhilJay/MPAndroidChart/issues/2682
-        mChart.setRenderer(new ScatterChartRenderer(mChart, mChart.getAnimator(), mChart.getViewPortHandler()) {
-
-            float[] mPixelBuffer = new float[2];
-
+        mChart.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
-            protected void drawDataSet(Canvas c, IScatterDataSet dataSet) {
+            public boolean onLongClick(View v) {
+                double rightX = mChart.getSeries().get(0).getHighestValueX();
+                mChart.getViewport().setMaxX(rightX);
+                mChart.getViewport().setMinX(rightX - chartZoom * 60 * 60 * 1000);
+                hasZoomedChart = false;
+                return true;
+            }
+        });
+        mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
+        mChart.getGridLabelRenderer().setHumanRounding(false);
 
-                ViewPortHandler viewPortHandler = mViewPortHandler;
-
-                Transformer trans = mChart.getTransformer(dataSet.getAxisDependency());
-
-                float phaseY = mAnimator.getPhaseY();
-
-                IShapeRenderer renderer = dataSet.getShapeRenderer();
-                if (renderer == null) {
-                    Log.i("MISSING", "There's no IShapeRenderer specified for ScatterDataSet");
-                    return;
+        mChart.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
+            DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+            @Override
+            public String formatLabel(double value, boolean isValueX) {
+                if (isValueX) {
+                    return mFormat.format(new Date((long) value));
+                } else {
+                    // show currency for y values
+                    return super.formatLabel(value, false); //nf.format(value);
                 }
-
-                int max = (int)(Math.min(
-                        Math.ceil((float)dataSet.getEntryCount() * mAnimator.getPhaseX()),
-                        (float)dataSet.getEntryCount()));
-
-                for (int i = 0; i < max; i++) {
-
-                    Entry e = dataSet.getEntryForIndex(i);
-
-                    mPixelBuffer[0] = e.getX();
-                    mPixelBuffer[1] = e.getY() * phaseY;
-
-                    trans.pointValuesToPixel(mPixelBuffer);
-
-                    if (!viewPortHandler.isInBoundsRight(mPixelBuffer[0]))
-                        break;
-
-                    if (!viewPortHandler.isInBoundsLeft(mPixelBuffer[0])
-                            || !viewPortHandler.isInBoundsY(mPixelBuffer[1]))
-                        continue;
-
-                    mRenderPaint.setColor(dataSet.getColor(i));
-                    renderer.renderShape(
-                            c, dataSet, mViewPortHandler,
-                            mPixelBuffer[0], mPixelBuffer[1],
-                            mRenderPaint);
-                }
-            }
-        });
+            }}
+        );
     }
 
     @Override
@@ -553,6 +473,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
         } else if (key.equals("doublePollOnPumpAway")) {
             MainActivity.reducePollOnPumpAway = sharedPreferences.getBoolean("doublePollOnPumpAway", false);
+        } else if (key.equals("doublePollOnPumpAway")) {
+            chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
+            hasZoomedChart = false;
+
+            long now = (long) mChart.getSeries().get(0).getHighestValueX(),
+                    left = now - chartZoom * 60 * 60 * 1000;
+            mChart.getViewport().setMinX(left);
+            mChart.getViewport().setMaxX(now);
         }
     }
 
@@ -825,77 +753,95 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         private void updateChart(RealmResults<PumpStatusEvent> results) {
             int size = results.size();
-            if (size == 0) return;
-
-            List<Entry> entries = new ArrayList<Entry>(size);
-            int[] colors = new int[size];  // getColor is called with (i/2)
-
-            for (PumpStatusEvent pumpStatus: results) {
-                // turn your data into Entry objects
-                int sgv = pumpStatus.getSgv(),
-                    pos = entries.size();
-
-                entries.add(new Entry(pumpStatus.getEventDate().getTime(), pumpStatus.getSgv()));
-                //TODO: need to be configurable
-                if (sgv < 80)
-                    colors[pos] = Color.RED;
-                else if (sgv <= 180)
-                    colors[pos] = Color.GREEN;
-                else if (sgv <= 260)
-                    colors[pos] = Color.YELLOW;
-                else
-                    colors[pos] = Color.RED;
+            if (size == 0) {
+                return;
             }
 
-            if (mChart.getData() == null) {
-                mChart.setMinimumHeight(200);
-                ScatterDataSet dataSet = new ScatterDataSet(entries, null);
+            DataPoint[] entries = new DataPoint[size];
+            final long left = System.currentTimeMillis() - chartZoom * 60 * 60 * 1000;
 
-                dataSet.setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
-                //dataSet.setColor(Color.LTGRAY);
-                dataSet.setValueTextColor(Color.WHITE);
-                dataSet.setScatterShape(ScatterChart.ScatterShape.CIRCLE);
-                dataSet.setScatterShapeSize(7.2f);
-                dataSet.setValueFormatter(new IValueFormatter() {
+            final DecimalFormat df;
+            final boolean mmolxl = prefs.getBoolean("mmolxl", false);
+
+            if (mmolxl) {
+                if (prefs.getBoolean("mmolDecimals", false))
+                    df = new DecimalFormat("0.00");
+                else
+                    df = new DecimalFormat("0.0");
+            } else {
+                df = new DecimalFormat("0");
+            }
+
+            int pos = 0;
+            for (PumpStatusEvent pumpStatus: results) {
+                // turn your data into Entry objects
+                int sgv = pumpStatus.getSgv();
+
+                if (mmolxl) {
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv() / 18.016f);
+                } else {
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv());
+                }
+            }
+
+            if (mChart.getSeries().size() == 0) {
+//                long now = System.currentTimeMillis();
+//                entries = new DataPoint[1000];
+//                int j = 0;
+//                for(long i = now - 24*60*60*1000; i < now - 30*60*1000; i+= 5*60*1000) {
+//                    entries[j++] = new DataPoint(i, (float) (Math.random()*200 + 89));
+//                }
+//                entries = Arrays.copyOfRange(entries, 0, j);
+
+                PointsGraphSeries sgvSerie = new PointsGraphSeries(entries);
+//                sgvSerie.setSize(3.6f);
+//                sgvSerie.setColor(Color.LTGRAY);
+                sgvSerie.setOnDataPointTapListener(new OnDataPointTapListener() {
+                    DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.MEDIUM);
+
                     @Override
-                    public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
-                        DecimalFormat df;
+                    public void onTap(Series series, DataPointInterface dataPoint) {
+                        double sgv = dataPoint.getY();
 
-                        if (prefs.getBoolean("mmolxl", false)) {
-                            if (prefs.getBoolean("mmolDecimals", false))
-                                df = new DecimalFormat("0.00");
-                            else
-                                df = new DecimalFormat("0.0");
-
-                            return df.format(value / 18.016f);
+                        StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
+                        if (mmolxl) {
+                            sb.append(df.format(sgv / 18.016f));
                         } else {
-                            return new DecimalFormat("0").format(value);
+                            sb.append(df.format(sgv));
                         }
+                        Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });
 
-                ArrayList<IScatterDataSet> dataSets = new ArrayList<IScatterDataSet>();
-                dataSets.add(dataSet);
+                sgvSerie.setCustomShape(new PointsGraphSeries.CustomShape() {
+                    @Override
+                    public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
+                        double sgv = dataPoint.getY();
+                        if (sgv < 80)
+                            paint.setColor(Color.RED);
+                        else if (sgv <= 180)
+                            paint.setColor(Color.GREEN);
+                        else if (sgv <= 260)
+                            paint.setColor(Color.YELLOW);
+                        else
+                            paint.setColor(Color.RED);
+                        canvas.drawCircle(x, y, 3.6f, paint);
+                    }
+                });
 
-                ScatterData lineData = new ScatterData(dataSets);
-                mChart.setData(lineData);
+                mChart.addSeries(sgvSerie);
             } else {
-                ((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setValues(entries);
-                ((ScatterDataSet)mChart.getScatterData().getDataSets().get(0)).setColors(colors); // disabled tue to a bug(??) in MPAndroid Chart
+                if (entries.length > 0) {
+                    ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
+                }
             }
 
-            //TODO: make the display timespan configurable
-            //long now = System.currentTimeMillis();
-
-            //Log.d(TAG, "Graph limits: " + (new Date(now - 24 * 60 * 60 * 1000) + " - " + (new Date(now))));
-            //mChart.setVisibleXRangeMaximum(12);
-            //mChart.setVisibleXRangeMinimum(0);
-            //mChart.getXAxis().setAxisMaximum((now + 0*60*1000));
-            //mChart.getXAxis().setAxisMinimum(now - 35 * 60 * 1000);
-
-            //mChart.moveViewToX(now - 35*60*1000); // - 24 * 60 * 60 * 1000);
-            //mChart.invalidate();
-            mChart.postInvalidate();
+            // set vieport to latest SGV
+            long lastSGVTimestamp = (long) mChart.getSeries().get(0).getHighestValueX();
+            if (!hasZoomedChart) {
+                mChart.getViewport().setMaxX(lastSGVTimestamp);
+                mChart.getViewport().setMinX(lastSGVTimestamp - chartZoom * 60 * 60 * 1000);
+            }
         }
     }
 
@@ -963,32 +909,5 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
     }
-
-    private class PumsStatusDataSet extends RealmScatterDataSet<PumpStatusEvent> {
-
-        public PumsStatusDataSet(RealmResults<PumpStatusEvent> result, String yValuesField) {
-            super(result, yValuesField);
-        }
-
-        public PumsStatusDataSet(RealmResults<PumpStatusEvent> result, String xValuesField, String yValuesField) {
-            super(result, xValuesField, yValuesField);
-        }
-
-        public Entry buildEntryFromResultObject(PumpStatusEvent realmObject, float x) {
-            DynamicRealmObject dynamicObject = new DynamicRealmObject(realmObject);
-            float xFloat, yFloat;
-
-            if (mXValuesField == null) {
-                xFloat = x;
-            } else {
-                xFloat = dynamicObject.getDate(mXValuesField).getTime();
-            }
-            yFloat = dynamicObject.getInt(mYValuesField);
-
-            return new Entry(mXValuesField == null ? x : xFloat, yFloat);
-        }
-
-    }
-
 
 }
