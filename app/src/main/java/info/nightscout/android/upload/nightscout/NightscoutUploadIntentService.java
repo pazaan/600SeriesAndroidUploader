@@ -10,8 +10,6 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -44,7 +42,7 @@ public class NightscoutUploadIntentService extends IntentService {
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
     private static final int SOCKET_TIMEOUT = 60 * 1000;
     private static final int CONNECTION_TIMEOUT = 30 * 1000;
-    Context mContext;
+    private Context mContext;
     private Realm mRealm;
 
     public NightscoutUploadIntentService() {
@@ -64,6 +62,7 @@ public class NightscoutUploadIntentService extends IntentService {
 
         Log.i(TAG, "onCreate called");
         mContext = this.getBaseContext();
+
     }
 
     @Override
@@ -94,6 +93,7 @@ public class NightscoutUploadIntentService extends IntentService {
         } else {
             Log.i(TAG, "No records has to be uploaded");
         }
+        mRealm.close();
 
         NightscoutUploadReceiver.completeWakefulIntent(intent);
     }
