@@ -5,6 +5,7 @@ import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
@@ -32,6 +33,10 @@ public class ReadHistoryInfoResponseMessage extends MedtronicSendMessageResponse
             basalRatesBuffer.order(ByteOrder.BIG_ENDIAN);
             basalRatesBuffer.put(this.encode());
 
+            if (BuildConfig.DEBUG) {
+                String outputString = HexDump.dumpHexString(basalRatesBuffer.array());
+                Log.d(TAG, "PAYLOAD: " + outputString);
+            }
             String responseString = HexDump.dumpHexString(basalRatesBuffer.array());
             Log.d(TAG, "ReadHistoryInfo: " + responseString);
             Log.d(TAG, "ReadHistoryInfo-length: " + basalRatesBuffer.getLong(28));

@@ -1,7 +1,5 @@
 package info.nightscout.android.model.medtronicNg;
 
-import com.github.mikephil.charting.interfaces.datasets.IScatterDataSet;
-
 import java.util.Date;
 
 import io.realm.RealmObject;
