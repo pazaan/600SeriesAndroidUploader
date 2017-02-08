@@ -18,6 +18,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
 
+    <!-- allow to disable battery optimization -->
+    <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <application
         android:name=".UploaderApplication"
         android:allowBackup="true"
@@ -25,6 +28,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
 
         <!-- I have set screenOrientation to "portrait" to avoid the restart of AsyncTasks when you rotate the phone -->
         <activity
@@ -64,24 +68,27 @@
             android:label="@string/title_activity_login"
             android:theme="@style/SettingsTheme" />
 
+        <activity android:name=".medtronic.StatusActivity" />
+
         <service
             android:name=".upload.nightscout.NightscoutUploadIntentService"
             android:icon="@drawable/ic_launcher" />
-
+        <service
+            android:name=".xdrip_plus.XDripPlusUploadIntentService"
+            android:icon="@drawable/ic_launcher" />
         <service
             android:name=".medtronic.service.MedtronicCnlIntentService"
             android:icon="@drawable/ic_launcher" />
 
-        <activity android:name=".medtronic.StatusActivity" />
-
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver" />
         <receiver android:name=".upload.nightscout.NightscoutUploadReceiver" />
+        <receiver android:name=".xdrip_plus.XDripPlusUploadReceiver" />
 
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"></receiver>
         <meta-data
             android:name="io.fabric.ApiKey"
-            android:value="FABRIC_API_KEY_VALUE" />
+            android:value="aa26e770bd4f7480eed7cabb63a84363ecd12009" />
     </application>
 
 </manifest>

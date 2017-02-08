@@ -9,7 +9,6 @@ import io.realm.annotations.PrimaryKey;
 public class ContourNextLinkInfo extends RealmObject {
     @PrimaryKey
     private String serialNumber;
-    private String hmac;
     private String key;
 
     public String getSerialNumber() {
@@ -18,14 +17,6 @@ public class ContourNextLinkInfo extends RealmObject {
 
     public void setSerialNumber(String serialNumber) {
         this.serialNumber = serialNumber;
-    }
-
-    public String getHmac() {
-        return hmac;
-    }
-
-    public void setHmac(String hmac) {
-        this.hmac = hmac;
     }
 
     public String getKey() {

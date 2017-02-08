@@ -10,6 +10,8 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -31,7 +33,6 @@ import java.util.regex.Pattern;
 
 import info.nightscout.android.R;
 import info.nightscout.android.medtronic.MainActivity;
-import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
 import io.realm.Realm;
@@ -170,21 +171,21 @@ public class NightscoutUploadIntentService extends IntentService {
                 addMbgEntry(entriesBody, record);
             }
 
-            uploadToNightscout(new URL(baseURL + "/entries"), secret, entriesBody);
+            boolean isUploaded = uploadToNightscout(new URL(baseURL + "/entries"), secret, entriesBody);
 
-            for(int i = 0; i < devicestatusBody.length(); i++) {
-                uploadToNightscout(new URL(baseURL + "/devicestatus"), secret, devicestatusBody.getJSONObject(i));
+            for(int i = 0; isUploaded && i < devicestatusBody.length(); i++) {
+                isUploaded &= uploadToNightscout(new URL(baseURL + "/devicestatus"), secret, devicestatusBody.getJSONObject(i));
             }
 
-            // Yay! We uploaded. Tell Realm
-            // FIXME - check the upload succeeded!
-            mRealm.beginTransaction();
-
-            for (PumpStatusEvent updateRecord : records) {
-                updateRecord.setUploaded(true);
+            if (isUploaded) {
+                // Yay! We uploaded. Tell Realm
+                // FIXME - check the upload succeeded!
+                mRealm.beginTransaction();
+                for (PumpStatusEvent updateRecord : records) {
+                    updateRecord.setUploaded(true);
+                }
+                mRealm.commitTransaction();
             }
-
-            mRealm.commitTransaction();
 
         } catch (Exception e) {
             Log.e(TAG, "Unable to post data", e);
@@ -237,6 +238,7 @@ public class NightscoutUploadIntentService extends IntentService {
             httpclient.execute(post, responseHandler);
         } catch (Exception e) {
             Log.w(TAG, "Unable to post data to: '" + post.getURI().toString() + "'", e);
+            return false;
         }
 
         return true;
@@ -256,11 +258,22 @@ public class NightscoutUploadIntentService extends IntentService {
         iob.put("timestamp", record.getPumpDate());
         iob.put("bolusiob", record.getActiveInsulin());
 
+        JSONObject status = new JSONObject();
+        if (record.isBolusing()) {
+            status.put("bolusing", true);
+        } else if (record.isSuspended()) {
+            status.put("suspended", true);
+        } else {
+            status.put("status", "normal");
+        }
+
         JSONObject battery = new JSONObject();
         battery.put("percent", record.getBatteryPercentage());
 
         pumpInfo.put("iob", iob);
         pumpInfo.put("battery", battery);
+        pumpInfo.put("status", status);
+
         json.put("pump", pumpInfo);
         String jsonString = json.toString();
         Log.i(TAG, "Device Status JSON: " + jsonString);

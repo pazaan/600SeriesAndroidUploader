@@ -3,6 +3,7 @@ package info.nightscout.android.medtronic;
 import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -12,11 +13,14 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.net.Uri;
 import android.os.BatteryManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
@@ -107,6 +111,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             stopCgmService();
         }
 
+        // Disable battery optimization to avoid missing values on 6.0+
+        // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            final String packageName = getPackageName();
+            //Log.d(TAG, "Maybe ignoring battery optimization");
+            final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                Log.d(TAG, "Requesting ignore battery optimization");
+                try {
+                    // ignoring battery optimizations required for constant connection
+                    // to peripheral device - eg CGM transmitter.
+                    final Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(Uri.parse("package:" + packageName));
+                    startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    Log.d(TAG, "Device does not appear to support battery optimization whitelisting!");
+                }
+            }
+        }
+
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 statusMessageReceiver,
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE));
@@ -149,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .withIcon(GoogleMaterial.Icon.gmd_settings)
                 .withSelectable(false);
         final PrimaryDrawerItem itemRegisterUsb = new PrimaryDrawerItem()
-                .withName("Register Contour Next Link")
+                .withName("Registered Devices")
                 .withIcon(GoogleMaterial.Icon.gmd_usb)
                 .withSelectable(false);
         final PrimaryDrawerItem itemStopCollecting = new PrimaryDrawerItem()
@@ -246,8 +272,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private boolean hasDetectedCnl() {
         if (mRealm.where(ContourNextLinkInfo.class).count() == 0) {
             new AlertDialog.Builder(this, R.style.AppTheme)
-                    .setTitle("Contour Next Link not detected")
-                    .setMessage("To register a Contour Next Link you must first plug it in.")
+                    .setTitle("No registered Contour Next Link devices")
+                    .setMessage("To register a Contour Next Link you must first plug it in, and get a reading from the pump.")
                     .setCancelable(false)
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
@@ -266,7 +292,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlIntentService.USB_VID, MedtronicCnlIntentService.USB_PID);
 
         return !(usbManager != null && cnlDevice != null && !usbManager.hasPermission(cnlDevice));
-
     }
 
     private void waitForUsbPermission() {
@@ -305,7 +330,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startCgmService() {
-        startCgmService(System.currentTimeMillis());
+        startCgmService(System.currentTimeMillis() + 1000);
     }
 
     private void startCgmService(long initialPoll) {
@@ -524,8 +549,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
-            Log.d(TAG, "NOW " + new Date(System.currentTimeMillis()).toString());
-
             // UI elements - TODO do these need to be members?
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
@@ -630,11 +653,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 return;
             }
 
-            long nextPoll = pumpStatusData.getEventDate().getTime() + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
+            long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
+                    + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
             startCgmService(nextPoll);
-            Log.d(TAG, "Local time " + new Date());
-            Log.d(TAG, "Last event was " + new Date(pumpStatusData.getEventDate().getTime()));
-            Log.d(TAG, "Next Poll at " + new Date(nextPoll).toString());
 
             // Delete invalid or old records from Realm
             // TODO - show an error message if the valid records haven't been uploaded
