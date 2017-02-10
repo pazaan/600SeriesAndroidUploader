@@ -286,7 +286,7 @@ public class MedtronicCnlIntentService extends IntentService {
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
     }
-
+    
     // reliable wake alarm manager wake up for all android versions
     public static void wakeUpIntent(Context context, long wakeTime, PendingIntent pendingIntent) {
         final AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);

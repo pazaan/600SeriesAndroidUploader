@@ -31,8 +31,6 @@
     <string name="error_class_not_found_exception">Application code error.</string>
     <string name="error_http_response">Server responded with error. Could be username or password problem.</string>
     <string name="error_field_required">This field is required</string>
-    <string name="preference_nightscout_url">Nightscout URL</string>
-    <string name="preference_api_secret">API SECRET</string>
     <string name="prompt_carelink_username_password">Please enter your CareLink details.\nThey will not be stored.</string>
     <string name="close">Close</string>
     <string name="register_contour_next_link">Registered Devices</string>
@@ -55,4 +53,6 @@
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="menu_name_status">Status</string>
+    <string name="preference_api_secret">YOUR.API.SECRET</string>
+    <string name="preference_nightscout_url">YOUR.NIGHTSCOUT.URL</string>
 </resources>

@@ -2,15 +2,41 @@ package info.nightscout.android.model.medtronicNg;
 
 import java.util.Date;
 
-import io.realm.RealmObject;
-import io.realm.annotations.Ignore;
-import io.realm.annotations.Index;
+// Pump Data without Realm
+// So that we can unit test the upload code in a modular fashion,
+// without the Realm and Android Context dependencies.
 
-/**
- * Created by lgoedhart on 4/06/2016.
- */
-public class PumpStatusEvent extends RealmObject {
-    @Index
+public class StatusEvent {
+
+    public StatusEvent(PumpStatusEvent pumpStatusEvent) {
+        eventDate = pumpStatusEvent.getEventDate();
+        pumpDate = pumpStatusEvent.getPumpDate();
+        deviceName = pumpStatusEvent.getDeviceName();
+        suspended = pumpStatusEvent.isSuspended();
+        bolusing = pumpStatusEvent.isBolusing();
+        deliveringInsulin = pumpStatusEvent.isDeliveringInsulin();
+        tempBasalActive = pumpStatusEvent.isTempBasalActive();
+        cgmActive = pumpStatusEvent.isCgmActive();
+        activeBasalPattern = pumpStatusEvent.getActiveBasalPattern();
+        basalRate = pumpStatusEvent.getBasalRate();
+        tempBasalRate = pumpStatusEvent.getTempBasalRate();
+        tempBasalPercentage = pumpStatusEvent.getTempBasalPercentage();
+        tempBasalMinutesRemaining = pumpStatusEvent.getTempBasalMinutesRemaining();
+        basalUnitsDeliveredToday = pumpStatusEvent.getBasalUnitsDeliveredToday();
+        batteryPercentage = pumpStatusEvent.getBatteryPercentage();
+        reservoirAmount = pumpStatusEvent.getReservoirAmount();
+        minutesOfInsulinRemaining = pumpStatusEvent.getMinutesOfInsulinRemaining();
+        activeInsulin = pumpStatusEvent.getActiveInsulin();
+        sgv = pumpStatusEvent.getSgv();
+        sgvDate = pumpStatusEvent.getSgvDate();
+        lowSuspendActive = pumpStatusEvent.isLowSuspendActive();
+        cgmTrend = pumpStatusEvent.getCgmTrendString();
+    }
+
+    public StatusEvent() {
+    }
+
+
     private Date eventDate; // The actual time of the event (assume the capture device eventDate/time is accurate)
     private Date pumpDate; // The eventDate/time on the pump at the time of the event
     private String deviceName;
@@ -39,10 +65,8 @@ public class PumpStatusEvent extends RealmObject {
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int bolusWizardBGL; // in mg/dL. 0 means no recent bolus wizard reading.
 
-    @Ignore
     private long pumpTimeOffset; // millis the pump is ahead
 
-    @Index
     private boolean uploaded = false;
 
     public Date getEventDate() {
@@ -79,10 +103,6 @@ public class PumpStatusEvent extends RealmObject {
 
     public CGM_TREND getCgmTrend() {
         return CGM_TREND.valueOf(cgmTrend);
-    }
-
-    public String getCgmTrendString() {
-        return cgmTrend;
     }
 
     public void setCgmTrend(CGM_TREND cgmTrend) {
@@ -266,16 +286,16 @@ public class PumpStatusEvent extends RealmObject {
     }
 
     public enum CGM_TREND {
-        NONE,
-        DOUBLE_UP,
-        SINGLE_UP,
-        FOURTY_FIVE_UP,
-        FLAT,
-        FOURTY_FIVE_DOWN,
-        SINGLE_DOWN,
-        DOUBLE_DOWN,
-        NOT_COMPUTABLE,
-        RATE_OUT_OF_RANGE,
-        NOT_SET
+            NONE,
+            DOUBLE_UP,
+            SINGLE_UP,
+            FOURTY_FIVE_UP,
+            FLAT,
+            FOURTY_FIVE_DOWN,
+            SINGLE_DOWN,
+            DOUBLE_DOWN,
+            NOT_COMPUTABLE,
+            RATE_OUT_OF_RANGE,
+            NOT_SET
     }
 }
