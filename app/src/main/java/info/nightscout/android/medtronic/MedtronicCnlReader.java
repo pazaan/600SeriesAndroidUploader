@@ -51,6 +51,8 @@ public class MedtronicCnlReader {
     private MedtronicCnlSession mPumpSession = new MedtronicCnlSession();
     private String mStickSerial = null;
 
+    private static final int TIMEOUT_MS = 0; //500  note: using a read "pause" has no effect on outcome and likely redundant due to clearMessage intercepting unread messages
+
     public MedtronicCnlReader(UsbHidDriver device) {
         mDevice = device;
     }
@@ -78,9 +80,9 @@ public class MedtronicCnlReader {
             doRetry = false;
             try {
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.NAK)
-                        .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
+                        .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.ENQ)
-                        .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                        .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
             } catch (UnexpectedMessageException e2) {
                 try {
                     new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice);
@@ -95,11 +97,11 @@ public class MedtronicCnlReader {
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin enterPasshtroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("1|")
-                .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished enterPasshtroughMode");
     }
 
@@ -224,18 +226,18 @@ public class MedtronicCnlReader {
     public void endPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endPassthroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("0|")
-                .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished endPassthroughMode");
     }
 
     public void endControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endControlMode");
         new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
-                .send(mDevice, 500).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
+                .send(mDevice, TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
         Log.d(TAG, "Finished endControlMode");
     }
 }
