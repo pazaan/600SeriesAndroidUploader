@@ -213,7 +213,8 @@ public class MedtronicCnlIntentService extends IntentService {
                 } else {
                     setActivePumpMac(pumpMAC);
                     activePump.setLastRadioChannel(radioChannel);
-                    sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
+                    //sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
+                    sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     cnlReader.beginEHSMSession();
 

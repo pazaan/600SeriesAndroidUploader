@@ -150,9 +150,11 @@ public class MedtronicCnlReader {
             ChannelNegotiateResponseMessage response = new ChannelNegotiateRequestMessage(mPumpSession).send(mDevice);
 
             if (response.getRadioChannel() == mPumpSession.getRadioChannel()) {
+                mPumpSession.setRadioRSSI(response.getRadioRSSI());
                 break;
             } else {
                 mPumpSession.setRadioChannel((byte)0);
+                mPumpSession.setRadioRSSI((byte)0);
             }
         }
 
