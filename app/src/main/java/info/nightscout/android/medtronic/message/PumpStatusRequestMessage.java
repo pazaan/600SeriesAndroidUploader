@@ -22,6 +22,10 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
     }
 
     public PumpStatusResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
+
+        // clear unexpected incoming messages
+        clearMessage(mDevice);
+
         sendMessage(mDevice);
         if (millis > 0) {
             try {
@@ -31,7 +35,7 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
             }
         }
         // Read the 0x81
-        readMessage(mDevice);
+        readMessage_0x81(mDevice);
         if (millis > 0) {
             try {
                 Log.d(TAG, "waiting " + millis +" ms");

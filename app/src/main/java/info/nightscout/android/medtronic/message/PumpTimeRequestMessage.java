@@ -19,6 +19,10 @@ public class PumpTimeRequestMessage extends MedtronicSendMessageRequestMessage<P
 
     @Override
     public PumpTimeResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
+
+        // clear unexpected incoming messages
+        clearMessage(mDevice);
+
         sendMessage(mDevice);
         if (millis > 0) {
             try {
@@ -27,7 +31,7 @@ public class PumpTimeRequestMessage extends MedtronicSendMessageRequestMessage<P
             }
         }
         // Read the 0x81
-        readMessage(mDevice);
+        readMessage_0x81(mDevice);
         if (millis > 0) {
             try {
                 Thread.sleep(millis);
