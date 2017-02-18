@@ -663,7 +663,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
 
-        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(10);
+        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(400);
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -671,7 +671,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             Log.i(TAG, "Message Receiver: " + message);
 
             synchronized (messages) {
-                while (messages.size() > 8) {
+                while (messages.size() > 398) {
                     messages.poll();
                 }
                 messages.add(new StatusMessage(message));
