@@ -98,6 +98,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     public static boolean mmolxl;
     private boolean mmolxlDecimals;
 
+    public static byte radioChannelInuse = 0;
+    public static long timeLastEHSM = 0;
+    public static long timeLastGoodSGV = 0;
+    public static short pumpBattery = 0;
+    public static int countUnavailableSGV = 0;
+
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
     private PumpInfo mActivePump;
@@ -595,7 +601,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                         lastQueryTS = pump.getLastQueryTS();
 
-                        startCgmService(MainActivity.getNextPoll(pumpStatusData));
+// >>>>> note: prototype smart poll handling added to cnl intent
+//                        startCgmService(MainActivity.getNextPoll(pumpStatusData));
 
                         // Delete invalid or old records from Realm
                         // TODO - show an error message if the valid records haven't been uploaded

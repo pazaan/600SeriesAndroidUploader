@@ -103,6 +103,25 @@ public class MedtronicCnlIntentService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         Log.d(TAG, "onHandleIntent called");
 
+        long timePollStarted = System.currentTimeMillis();
+        long timePollExpected = timePollStarted;
+        if (MainActivity.timeLastGoodSGV != 0) {
+            timePollExpected = MainActivity.timeLastGoodSGV + POLL_PERIOD_MS + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((timePollStarted - 1000L - (MainActivity.timeLastGoodSGV + POLL_GRACE_PERIOD_MS)) / POLL_PERIOD_MS));
+        }
+
+        // avoid polling when too close to sensor-pump comms
+        if (((timePollExpected - timePollStarted) > 5000L) && ((timePollExpected - timePollStarted) < (POLL_GRACE_PERIOD_MS + 45000L))) {
+            sendStatus("Please wait: Poll due in " + ((timePollExpected - timePollStarted) / 1000L) + " seconds");
+            MedtronicCnlAlarmManager.setAlarm(timePollExpected);
+            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+            return;
+        }
+
+        long pollInterval = MainActivity.pollInterval;
+        if ((MainActivity.pumpBattery > 0) && (MainActivity.pumpBattery <= 25)) {
+            pollInterval = MainActivity.lowBatteryPollInterval;
+        }
+
         if (!hasUsbHostFeature()) {
             sendStatus("It appears that this device doesn't support USB OTG.");
             Log.e(TAG, "Device does not support USB OTG");
@@ -201,21 +220,30 @@ public class MedtronicCnlIntentService extends IntentService {
 
                 activePump.updateLastQueryTS();
 
-                byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
+                byte radioChannelInuse = MainActivity.radioChannelInuse;  //note: holding here as last channel not always stored due to potential uncommitted transaction
+                byte radioChannel = cnlReader.negotiateChannel(radioChannelInuse);
+                MainActivity.radioChannelInuse = radioChannel;
+
+                //byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                 if (radioChannel == 0) {
                     sendStatus("Could not communicate with the 640g. Are you near the pump?");
                     Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
-
-                    // reduce polling interval to half until pump is available
-                    MedtronicCnlAlarmManager.setAlarm(activePump.getLastQueryTS() +
-                            (MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L))
-                    );
+                    pollInterval = MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L); // reduce polling interval to half until pump is available
+                } else if ((radioChannel != radioChannelInuse) && (radioChannelInuse != 0) && ((timePollStarted - MainActivity.timeLastEHSM) < (POLL_PERIOD_MS * 3L))) {
+                    // avoid EHSM comms when channel change detected as this reduces any further channel changes and allows pump/sensor to resync
+                    sendStatus(String.format(Locale.getDefault(), "Channel changed to %d", (int) radioChannel));
+                    sendStatus("SGV: unavailable from pump");
+                    Log.d(TAG, String.format("Channel changed to %d SGV: unavailable from pump", (int) radioChannel));
+                    MainActivity.countUnavailableSGV++; //poll clash detection
+                    pollInterval = POLL_PERIOD_MS; // SGV should be available after default poll period
                 } else {
                     setActivePumpMac(pumpMAC);
                     activePump.setLastRadioChannel(radioChannel);
                     //sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
+
+                    MainActivity.timeLastEHSM = timePollStarted;
                     cnlReader.beginEHSMSession();
 
                     // read pump status
@@ -252,10 +280,20 @@ public class MedtronicCnlIntentService extends IntentService {
                         }
                         sendStatus("SGV: " + sgvString + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
 
+                        // Check if pump sent old event when new expected and schedule a re-poll
+                        if (((pumpRecord.getEventDate().getTime() - MainActivity.timeLastGoodSGV) < 5000L) && ((timePollExpected - timePollStarted) < 5000L)) {
+                            pollInterval = 90000L; // polling interval set to 90 seconds
+                            sendStatus("Pump sent old SGV event, re-polling...");
+                        }
+
+                        MainActivity.timeLastGoodSGV =  pumpRecord.getEventDate().getTime(); // track last good sgv event time
+                        MainActivity.pumpBattery =  pumpRecord.getBatteryPercentage(); // track pump battery
+                        MainActivity.countUnavailableSGV = 0; // reset unavailable sgv count
+
                         // Check that the record doesn't already exist before committing
                         RealmResults<PumpStatusEvent> checkExistingRecords = activePump.getPumpHistory()
                                 .where()
-                                .equalTo("eventDate", pumpRecord.getEventDate())
+                                .equalTo("eventDate", pumpRecord.getEventDate())    // >>>>>>> check as event date may not = exact pump event date due to it being stored with offset added this could lead to dup events due to slight variability in time offset
                                 .equalTo("sgv", pumpRecord.getSgv())
                                 .findAll();
 
@@ -266,6 +304,9 @@ public class MedtronicCnlIntentService extends IntentService {
 
                         Log.d(TAG, "history reading size: " + activePump.getPumpHistory().size());
                         Log.d(TAG, "history reading date: " + activePump.getPumpHistory().last().getEventDate());
+                    } else {
+                        sendStatus("SGV: unavailable from pump");
+                        MainActivity.countUnavailableSGV ++; // poll clash detection
                     }
 
                     realm.commitTransaction();
@@ -309,10 +350,35 @@ public class MedtronicCnlIntentService extends IntentService {
                 }
                 realm.close();
             }
-
             // TODO - set status if offline or Nightscout not reachable
             sendToXDrip();
             uploadToNightscout();
+
+            // smart polling and pump-sensor poll clash detection
+            long lastActualPollTime = timePollStarted;
+            if (MainActivity.timeLastGoodSGV > 0) {
+                lastActualPollTime = MainActivity.timeLastGoodSGV + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((System.currentTimeMillis() - (MainActivity.timeLastGoodSGV + POLL_GRACE_PERIOD_MS)) / POLL_PERIOD_MS));
+            }
+            long nextActualPollTime = lastActualPollTime + POLL_PERIOD_MS;
+            long nextRequestedPollTime = lastActualPollTime + pollInterval;
+            if ((nextRequestedPollTime - System.currentTimeMillis()) < 10000L) {
+                nextRequestedPollTime = nextActualPollTime;
+            }
+            // unavailable SGV from pump can be from a channel change due to radio noise
+            // extended unavailable SGV may be due to clash with the current polling time
+            // while we wait for a good SGV event, polling is auto adjusted by offsetting the next poll based on miss count
+            if (MainActivity.countUnavailableSGV > 0) {
+                if (MainActivity.timeLastGoodSGV == 0) {
+                    nextRequestedPollTime += POLL_PERIOD_MS / 5L; // if there is a uploader/sensor poll clash on startup then this will push the next attempt out by 60 seconds
+                }
+                else if (MainActivity.countUnavailableSGV > 2) {
+                    sendStatus("Warning: No SGV available from pump for " + MainActivity.countUnavailableSGV + " attempts");
+                    nextRequestedPollTime += ((long) ((MainActivity.countUnavailableSGV - 2) % 5)) * (POLL_PERIOD_MS / 10L); // adjust poll time in 1/10 steps to avoid potential poll clash (max adjustment at 5/10)
+                }
+            }
+            MedtronicCnlAlarmManager.setAlarm(nextRequestedPollTime);
+            sendStatus("Next poll due at: " + df.format(nextRequestedPollTime));
+
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
     }
@@ -336,7 +402,7 @@ public class MedtronicCnlIntentService extends IntentService {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (prefs.getBoolean(getString(R.string.preference_enable_xdrip_plus), false)) {
             final Intent receiverIntent = new Intent(this, XDripPlusUploadReceiver.class);
-            final long timestamp = System.currentTimeMillis() + 500L;
+            final long timestamp = System.currentTimeMillis() + 1000L; //500L;
             final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
             Log.d(TAG, "Scheduling xDrip+ send");
             wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
@@ -345,7 +411,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
     private void uploadToNightscout() {
         Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
-        final long timestamp = System.currentTimeMillis() + 1000L;
+        final long timestamp = System.currentTimeMillis() + 2000L; //1000L;
         final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
         wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
     }
