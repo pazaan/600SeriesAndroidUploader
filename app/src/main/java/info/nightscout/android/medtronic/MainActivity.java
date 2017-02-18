@@ -618,7 +618,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         }
 
                         // TODO - handle isOffline in NightscoutUploadIntentService?
-                        uploadCgmData();
+
+ // >>>>> check this out as it's uploading before cnl comms finishes and may cause occasional channel changes due to wifi noise - cnl intent handles ns upload trigger after all comms finish
+ //                       uploadCgmData();
+
                         refreshDisplay();
                     }
                 });
