@@ -8,9 +8,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
-import info.nightscout.android.medtronic.exception.ChecksumException;
-import info.nightscout.android.medtronic.exception.EncryptionException;
-import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
+import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.utils.HexDump;
 
 /**
@@ -154,6 +152,7 @@ public abstract class ContourNextLinkMessage {
             if (responseBytes[18] != (byte) 0x81) {
                 doRetry = true;
                 Log.d(TAG, "readMessage0x81: did not get 0x81 response, got " + responseBytes[18]);
+                MainActivity.dbgCNL_not0x81++;
             } else {
                 doRetry = false;
                 responseSize = responseBytes.length;
@@ -186,6 +185,7 @@ public abstract class ContourNextLinkMessage {
 
         if (bytesClear > 0) {
             Log.d(TAG, "clearMessage: message stream cleared bytes: " + bytesClear);
+            MainActivity.dbgCNL_clearMessage++;
         }
 
         return bytesClear;

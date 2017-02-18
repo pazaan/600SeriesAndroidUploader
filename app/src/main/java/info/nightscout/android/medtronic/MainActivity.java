@@ -104,6 +104,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     public static short pumpBattery = 0;
     public static int countUnavailableSGV = 0;
 
+    // temporary debug stats for CNL connections
+    public static int dbgCNL_enterControlMode = 0;
+    public static int dbgCNL_enterPassthroughMode = 0;
+    public static int dbgCNL_openConnection = 0;
+    public static int dbgCNL_beginEHSMSession = 0;
+    public static int dbgCNL_clearMessage = 0;
+    public static int dbgCNL_not0x81 = 0;
+
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
     private PumpInfo mActivePump;

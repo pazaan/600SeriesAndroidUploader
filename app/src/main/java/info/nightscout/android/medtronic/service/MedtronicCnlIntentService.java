@@ -189,10 +189,14 @@ public class MedtronicCnlIntentService extends IntentService {
             cnlReader.getPumpSession().setStickSerial(info.getSerialNumber());
 
             cnlReader.enterControlMode();
+            MainActivity.dbgCNL_enterControlMode += 1;
 
             try {
                 cnlReader.enterPassthroughMode();
+                MainActivity.dbgCNL_enterPassthroughMode += 1;
                 cnlReader.openConnection();
+                MainActivity.dbgCNL_openConnection += 1;
+
                 cnlReader.requestReadInfo();
 
                 String key = info.getKey();
@@ -245,6 +249,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
                     MainActivity.timeLastEHSM = timePollStarted;
                     cnlReader.beginEHSMSession();
+                    MainActivity.dbgCNL_beginEHSMSession += 1;
 
                     // read pump status
                     PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
@@ -265,6 +270,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     cnlReader.updatePumpStatus(pumpRecord);
 
                     cnlReader.endEHSMSession();
+                    MainActivity.dbgCNL_beginEHSMSession -= 1;
 
                     if (pumpRecord.getSgv() != 0) {
 
@@ -322,8 +328,11 @@ public class MedtronicCnlIntentService extends IntentService {
             } finally {
                 try {
                     cnlReader.closeConnection();
+                    MainActivity.dbgCNL_openConnection -= 1;
                     cnlReader.endPassthroughMode();
+                    MainActivity.dbgCNL_enterPassthroughMode -= 1;
                     cnlReader.endControlMode();
+                    MainActivity.dbgCNL_enterControlMode -= 1;
                 } catch (NoSuchAlgorithmException e) {}
 
             }
@@ -378,6 +387,11 @@ public class MedtronicCnlIntentService extends IntentService {
             }
             MedtronicCnlAlarmManager.setAlarm(nextRequestedPollTime);
             sendStatus("Next poll due at: " + df.format(nextRequestedPollTime));
+
+            // temporary debug stats for CNL connections
+            if ((MainActivity.dbgCNL_enterControlMode + MainActivity.dbgCNL_enterPassthroughMode + MainActivity.dbgCNL_openConnection + MainActivity.dbgCNL_beginEHSMSession + MainActivity.dbgCNL_clearMessage + MainActivity.dbgCNL_not0x81) > 0) {
+                sendStatus("CM: " + MainActivity.dbgCNL_enterControlMode + " PT: " + MainActivity.dbgCNL_enterPassthroughMode + " OC: " + MainActivity.dbgCNL_openConnection + " EH: " + MainActivity.dbgCNL_beginEHSMSession + " U: " + MainActivity.dbgCNL_clearMessage + " X: " + MainActivity.dbgCNL_not0x81);
+            }
 
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
