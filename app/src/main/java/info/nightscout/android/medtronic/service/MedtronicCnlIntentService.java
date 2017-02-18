@@ -20,6 +20,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 import info.nightscout.android.BuildConfig;
 import info.nightscout.android.R;
@@ -138,14 +140,16 @@ public class MedtronicCnlIntentService extends IntentService {
             return;
         }
 
+        DateFormat df = new SimpleDateFormat("HH:mm:ss");
+
         MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
 
         Realm realm = Realm.getDefaultInstance();
         realm.beginTransaction();
 
         try {
-            sendStatus("Connecting to the Contour Next Link...");
-            Log.d(TAG, "Connecting to the Contour Next Link.");
+            sendStatus("Connecting to Contour Next Link");
+            Log.d(TAG, "Connecting to Contour Next Link");
             cnlReader.requestDeviceInfo();
 
             // Is the device already configured?
@@ -234,6 +238,19 @@ public class MedtronicCnlIntentService extends IntentService {
                     cnlReader.endEHSMSession();
 
                     if (pumpRecord.getSgv() != 0) {
+
+                        String sgvString;
+                        if (MainActivity.mmolxl) {
+                            sgvString = MainActivity.sgvFormatter.format((float) pumpRecord.getSgv() / MainActivity.MMOLXLFACTOR);
+                        } else {
+                            sgvString = String.valueOf(pumpRecord.getSgv());
+                        }
+                        String offsetSign = "";
+                        if (pumpOffset > 0) {
+                            offsetSign = "+";
+                        }
+                        sendStatus("SGV: " + sgvString + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
+
                         // Check that the record doesn't already exist before committing
                         RealmResults<PumpStatusEvent> checkExistingRecords = activePump.getPumpHistory()
                                 .where()

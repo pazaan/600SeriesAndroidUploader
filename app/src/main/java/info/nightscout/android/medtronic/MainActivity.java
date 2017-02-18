@@ -94,8 +94,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private int chartZoom = 3;
     private boolean hasZoomedChart = false;
 
-    private NumberFormat sgvFormatter;
-    private boolean mmolxl;
+    public static NumberFormat sgvFormatter;
+    public static boolean mmolxl;
     private boolean mmolxlDecimals;
 
     boolean mEnableCgmService = true;
