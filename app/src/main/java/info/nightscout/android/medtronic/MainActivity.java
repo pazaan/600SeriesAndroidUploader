@@ -58,6 +58,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Queue;
@@ -318,17 +319,19 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getGridLabelRenderer().setHumanRounding(false);
 
         mChart.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
-            DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+//            DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+            DateFormat mFormat = new SimpleDateFormat("HH:mm");  // 24 hour format forced to fix label overlap
+
             @Override
             public String formatLabel(double value, boolean isValueX) {
                 if (isValueX) {
                     return mFormat.format(new Date((long) value));
                 } else {
-                    if (mmolxl) {
-                        return sgvFormatter.format(value / MMOLXLFACTOR);
-                    } else {
+//                    if (mmolxl) {
+//                        return sgvFormatter.format(value / MMOLXLFACTOR);
+//                    } else {
                         return sgvFormatter.format(value);
-                    }
+//                    }
                 }
             }}
         );
@@ -777,6 +780,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         private void updateChart(RealmResults<PumpStatusEvent> results) {
+
+            mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
+
             int size = results.size();
             if (size == 0) {
                 final long now = System.currentTimeMillis(),
@@ -807,9 +813,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 int sgv = pumpStatus.getSgv();
 
                 if (mmolxl) {
-                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv() / MMOLXLFACTOR);
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv() / MMOLXLFACTOR);
                 } else {
-                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv());
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv());
                 }
             }
 
@@ -835,11 +841,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         double sgv = dataPoint.getY();
 
                         StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
-                        if (mmolxl) {
-                            sb.append(sgvFormatter.format(sgv / MMOLXLFACTOR));
-                        } else {
+//                        if (mmolxl) {
+//                            sb.append(sgvFormatter.format(sgv / MMOLXLFACTOR));
+//                        } else {
                             sb.append(sgvFormatter.format(sgv));
-                        }
+//                        }
                         Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -848,11 +854,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     @Override
                     public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                         double sgv = dataPoint.getY();
-                        if (sgv < 80)
+                        if (sgv < (mmolxl?4.5:80))
                             paint.setColor(Color.RED);
-                        else if (sgv <= 180)
+                        else if (sgv <= (mmolxl?10:180))
                             paint.setColor(Color.GREEN);
-                        else if (sgv <= 260)
+                        else if (sgv <= (mmolxl?14:260))
                             paint.setColor(Color.YELLOW);
                         else
                             paint.setColor(Color.RED);
