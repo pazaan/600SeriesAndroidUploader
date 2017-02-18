@@ -319,9 +319,19 @@ public class MedtronicCnlIntentService extends IntentService {
                     // Tell the Main Activity we have new data
                     sendMessage(Constants.ACTION_UPDATE_PUMP);
                 }
+
+                // TODO - consider handling comms during EHSM errors separately as these tend to be CNL<-->PUMP lost/bad/noisy communication errors rather then Uploader<-->CNL errors
             } catch (UnexpectedMessageException e) {
+                // unexpected messages during CNL-->Pump comms are usually a lost/dropped connection
+                // CNL 0x81 message response for lost/dropped connection: 0x55 "u" pump response "55 0D 00 04 00 00 00 00 03 00 01 ..." note: EHSM is auto closed by CNL
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
+                pollInterval = MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L);
+            } catch (TimeoutException e) {
+                // timeout during CNL-->Pump comms are usually a lost/dropped connection
+                Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
+                sendStatus("Timeout communicating with the Contour Next Link.");
+                pollInterval = MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L);
             } catch (NoSuchAlgorithmException e) {
                 Log.e(TAG, "Could not determine CNL HMAC", e);
                 sendStatus("Error connecting to Contour Next Link: Hashing error.");
