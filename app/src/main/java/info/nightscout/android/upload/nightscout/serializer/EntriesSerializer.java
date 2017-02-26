@@ -8,12 +8,42 @@ import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
 
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import info.nightscout.android.model.medtronicNg.StatusEvent;
 
 /**
  * Created by lgoedhart on 26/06/2016.
  */
 public class EntriesSerializer implements JsonSerializer<PumpStatusEvent> {
     public static String getDirectionString(PumpStatusEvent.CGM_TREND trend) {
+        switch( trend ) {
+            case NONE:
+                return "NONE";
+            case DOUBLE_UP:
+                return "DoubleUp";
+            case SINGLE_UP:
+                return "SingleUp";
+            case FOURTY_FIVE_UP:
+                return "FortyFiveUp";
+            case FLAT:
+                return "Flat";
+            case FOURTY_FIVE_DOWN:
+                return "FortyFiveDown";
+            case SINGLE_DOWN:
+                return "SingleDown";
+            case DOUBLE_DOWN:
+                return "DoubleDown";
+            case NOT_COMPUTABLE:
+                return "NOT COMPUTABLE";
+            case RATE_OUT_OF_RANGE:
+                return "RATE OUT OF RANGE";
+            case NOT_SET:
+                return "NONE";
+            default:
+                return "NOT COMPUTABLE"; // TODO - should this be something else?
+        }
+    }
+
+    public static String getDirectionStringStatus(StatusEvent.CGM_TREND trend) {
         switch( trend ) {
             case NONE:
                 return "NONE";
