@@ -28,7 +28,7 @@ apply plugin: 'realm-android'
 def gitVersion() {
     // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
     // above.
-    ext.repo = Grgit.open(project.file('..'))
+    ext.repo = Grgit.open()
 
     // should result in the same value as running
     // git tag -l | wc -l or git tag -l | grep -c ".*" -
@@ -37,14 +37,15 @@ def gitVersion() {
 }
 
 def gitCommitId() {
-    //def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
-    //return process.toInteger() + 1
-    //return 42
-    // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
-    // above.
-    ext.repo = Grgit.open(project.file('..'))
+    ext.repo = Grgit.open()
 
-    return ext.repo.log().first().id.substring(0, 7)
+    return ext.repo.log().first().id.substring(0, 7) //+ " " + ext.repo.branch.current.name
+}
+
+
+def gitBranch() {
+    ext.repo = Grgit.open()
+    return ext.repo.branch.current.name
 }
 
 def getBugfenderApiKey() {
@@ -56,7 +57,7 @@ def getBugfenderApiKey() {
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.3"
-    // FIXME - replace with URLConnection. This is used in GetHmacAndKeyActivity.
+    // FIXME - replace with URLConnection. This is used in ManageCNLActivity.
     useLibrary 'org.apache.http.legacy'
 
     applicationVariants.all { variant ->
@@ -67,7 +68,7 @@ android {
         applicationId "info.nightscout.android"
         minSdkVersion 14
         targetSdkVersion 23
-        versionName project.properties['version'] + "/" + gitCommitId()
+        versionName project.properties['version'] + "/" + gitCommitId() // + " (" + gitBranch()+")"
         versionCode gitVersion()
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
@@ -155,14 +156,15 @@ dependencies {
     compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
     compile 'uk.co.chrisjenx:calligraphy:2.2.0'
     compile 'com.bugfender.sdk:android:0.6.2'
-    compile 'com.github.PhilJay:MPAndroidChart:v3.0.0-beta1'
-    compile 'com.github.PhilJay:MPAndroidChart-Realm:v1.1.0@aar'
+    compile 'com.jjoe64:graphview:4.2.1'
     compile 'com.android.support:support-v4:23.4.0'
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
     compile 'com.squareup.okhttp3:okhttp:3.3.1'
     compile 'com.squareup.okhttp3:logging-interceptor:3.3.1'
+    compile 'com.google.android.gms:play-services-appindexing:8.4.0'
+
     testCompile 'junit:junit:4.12'
     testCompile 'org.powermock:powermock:1.6.5'
     testCompile 'org.powermock:powermock-module-junit4:1.6.5'

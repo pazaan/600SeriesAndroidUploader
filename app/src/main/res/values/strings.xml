@@ -16,10 +16,9 @@
         <item>Info</item>
         <item>Debug</item>
     </string-array>
-    <string name="title_activity_login">CareLink login</string>
+    <string name="title_activity_manage_cnl">Manage your Contour Next Link devices</string>
 
     <!-- Strings related to login -->
-    <string name="server_hostname">https://carelink.minimed.eu</string>
     <string name="prompt_username">CareLink Username</string>
     <string name="prompt_password">Password</string>
     <string name="action_sign_in">Retrieve keys for USB</string>
@@ -53,6 +52,15 @@
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="menu_name_status">Status</string>
+    <string name="menu_name_battery_status">unknown</string>
     <string name="preference_api_secret">YOUR.API.SECRET</string>
     <string name="preference_nightscout_url">YOUR.NIGHTSCOUT.URL</string>
+
+    <string name="preferences_poll_interval">Poll interval</string>
+    <string name="preferences_low_battery_poll_interval">Poll interval on low pump battery</string>
+    <string name="no_registered_contour_next_link_devices">No registered Contour Next Link devices</string>
+    <string name="to_register_a_contour_next_link_you_must_first_plug_it_in_and_get_a_reading_from_the_pump">To register a Contour Next Link you must first plug it in, and get a reading from the pump.</string>
+    <string name="serial_number">Serial number</string>
+    <string name="preferences_chart_interval">Chart Zoom</string>
+
 </resources>

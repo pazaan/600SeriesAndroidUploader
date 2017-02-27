@@ -87,7 +87,6 @@ public class NightScoutUpload {
             glucoseEntry.setDateString(record.getEventDate().toString());
 
             glucoseEntries.add(glucoseEntry);
-            glucoseEndpoints.sendEntries(glucoseEntries).execute();
 
             BolusEntry  bolusEntry = new BolusEntry();
 
@@ -98,9 +97,13 @@ public class NightScoutUpload {
             bolusEntry.setMbg(record.getBolusWizardBGL());
 
             bolusEntries.add(bolusEntry);
-            bolusEndpoints.sendEntries(bolusEntries).execute();
 
         }
+
+        glucoseEndpoints.sendEntries(glucoseEntries).execute();
+        bolusEndpoints.sendEntries(bolusEntries).execute();
+
+
 
          return true;
     }

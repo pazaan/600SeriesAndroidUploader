@@ -9,10 +9,9 @@ import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.medtronic.MainActivity;
@@ -25,7 +24,7 @@ public class NightscoutUploadIntentService extends IntentService {
 
     private static final String TAG = NightscoutUploadIntentService.class.getSimpleName();
 
-    Context mContext;
+    private Context mContext;
     private Realm mRealm;
     private NightScoutUpload mNightScoutUpload;
 
@@ -46,7 +45,9 @@ public class NightscoutUploadIntentService extends IntentService {
 
         Log.i(TAG, "onCreate called");
         mContext = this.getBaseContext();
+
         mNightScoutUpload = new NightScoutUpload();
+
     }
 
     @Override
@@ -88,6 +89,7 @@ public class NightscoutUploadIntentService extends IntentService {
         } else {
             Log.i(TAG, "No records has to be uploaded");
         }
+        mRealm.close();
 
         NightscoutUploadReceiver.completeWakefulIntent(intent);
     }

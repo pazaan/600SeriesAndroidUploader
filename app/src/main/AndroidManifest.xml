@@ -63,10 +63,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".medtronic.GetHmacAndKeyActivity"
-            android:label="@string/title_activity_login"
-            android:theme="@style/SettingsTheme" />
+
+        <activity android:name=".medtronic.ManageCNLActivity"/>
 
         <activity android:name=".medtronic.StatusActivity" />
 
@@ -82,13 +80,17 @@
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver" />
         <receiver android:name=".upload.nightscout.NightscoutUploadReceiver" />
-        <receiver android:name=".xdrip_plus.XDripPlusUploadReceiver" />
+        <receiver android:name=".xdrip_plus.XDripPlusUploadReceiver" /><!-- ATTENTION: This was auto-generated to add Google Play services to your project for
+     App Indexing.  See https://g.co/AppIndexing/AndroidStudio for more information. -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
 
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"></receiver>
         <meta-data
             android:name="io.fabric.ApiKey"
-            android:value="YOUR_FABRIC_KEY" />
+            android:value="aa26e770bd4f7480eed7cabb63a84363ecd12009" />
     </application>
 
 </manifest>

@@ -21,14 +21,15 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
+import info.nightscout.android.BuildConfig;
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.medtronic.MedtronicCnlReader;
-import info.nightscout.android.medtronic.message.ChecksumException;
-import info.nightscout.android.medtronic.message.EncryptionException;
+import info.nightscout.android.medtronic.exception.ChecksumException;
+import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.message.MessageUtils;
-import info.nightscout.android.medtronic.message.UnexpectedMessageException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -37,11 +38,14 @@ import info.nightscout.android.xdrip_plus.XDripPlusUploadReceiver;
 import io.realm.Realm;
 import io.realm.RealmResults;
 
+import static info.nightscout.android.medtronic.MainActivity.setActivePumpMac;
+
 public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_VID = 0x1a79;
     public final static int USB_PID = 0x6210;
     public final static long USB_WARMUP_TIME_MS = 5000L;
     public final static long POLL_PERIOD_MS = 300000L;
+    public final static long LOW_BATTERY_POLL_PERIOD_MS = 900000L;
     // Number of additional seconds to wait after the next expected CGM poll, so that we don't interfere with CGM radio comms.
     public final static long POLL_GRACE_PERIOD_MS = 30000L;
     private static final String TAG = MedtronicCnlIntentService.class.getSimpleName();
@@ -152,10 +156,11 @@ public class MedtronicCnlIntentService extends IntentService {
 
             if (info == null) {
                 // TODO - use realm.createObject()?
-                info = new ContourNextLinkInfo();
-                info.setSerialNumber(cnlReader.getStickSerial());
+                info = realm.createObject(ContourNextLinkInfo.class, cnlReader.getStickSerial());
+                //info = new ContourNextLinkInfo();
+                ///info.setSerialNumber(cnlReader.getStickSerial());
 
-                info = realm.copyToRealm(info);
+                //info = realm.copyToRealm(info);
             }
 
             cnlReader.getPumpSession().setStickSerial(info.getSerialNumber());
@@ -180,27 +185,35 @@ public class MedtronicCnlIntentService extends IntentService {
 
                 long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
                 Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xffffff));
-                MainActivity.setActivePumpMac(pumpMAC);
                 PumpInfo activePump = realm
                         .where(PumpInfo.class)
                         .equalTo("pumpMac", pumpMAC)
                         .findFirst();
 
                 if (activePump == null) {
-                    activePump = realm.createObject(PumpInfo.class);
-                    activePump.setPumpMac(pumpMAC);
+                    activePump = realm.createObject(PumpInfo.class, pumpMAC);
+                    //activePump.setPumpMac(pumpMAC);
                 }
+
+                activePump.updateLastQueryTS();
 
                 byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                 if (radioChannel == 0) {
                     sendStatus("Could not communicate with the 640g. Are you near the pump?");
                     Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
+
+                    // reduce polling interval to half until pump is available
+                    MedtronicCnlAlarmManager.setAlarm(activePump.getLastQueryTS() +
+                            (MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L))
+                    );
                 } else {
+                    setActivePumpMac(pumpMAC);
                     activePump.setLastRadioChannel(radioChannel);
                     sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     cnlReader.beginEHSMSession();
 
+                    // read pump status
                     PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
 
                     String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
@@ -216,12 +229,10 @@ public class MedtronicCnlIntentService extends IntentService {
                     // TODO - send ACTION to MainActivity to show offset between pump and uploader.
                     pumpRecord.setPumpTimeOffset(pumpOffset);
                     pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
-                    cnlReader.getPumpStatus(pumpRecord, pumpOffset);
-                    activePump.getPumpHistory().add(pumpRecord);
+                    cnlReader.updatePumpStatus(pumpRecord);
 
                     cnlReader.endEHSMSession();
 
-                    boolean cancelTransaction = true;
                     if (pumpRecord.getSgv() != 0) {
                         // Check that the record doesn't already exist before committing
                         RealmResults<PumpStatusEvent> checkExistingRecords = activePump.getPumpHistory()
@@ -231,18 +242,17 @@ public class MedtronicCnlIntentService extends IntentService {
                                 .findAll();
 
                         // There should be the 1 record we've already added in this transaction.
-                        if (checkExistingRecords.size() <= 1) {
-                            realm.commitTransaction();
-                            cancelTransaction = false;
+                        if (checkExistingRecords.size() == 0) {
+                            activePump.getPumpHistory().add(pumpRecord);
                         }
 
-                        // Tell the Main Activity we have new data
-                        sendMessage(Constants.ACTION_REFRESH_DATA);
+                        Log.d(TAG, "history reading size: " + activePump.getPumpHistory().size());
+                        Log.d(TAG, "history reading date: " + activePump.getPumpHistory().last().getEventDate());
                     }
 
-                    if (cancelTransaction) {
-                        realm.cancelTransaction();
-                    }
+                    realm.commitTransaction();
+                    // Tell the Main Activity we have new data
+                    sendMessage(Constants.ACTION_UPDATE_PUMP);
                 }
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
@@ -251,10 +261,12 @@ public class MedtronicCnlIntentService extends IntentService {
                 Log.e(TAG, "Could not determine CNL HMAC", e);
                 sendStatus("Error connecting to Contour Next Link: Hashing error.");
             } finally {
-                //TODO : 05.11.2016 has the close to be here?
-                cnlReader.closeConnection();
-                cnlReader.endPassthroughMode();
-                cnlReader.endControlMode();
+                try {
+                    cnlReader.closeConnection();
+                    cnlReader.endPassthroughMode();
+                    cnlReader.endControlMode();
+                } catch (NoSuchAlgorithmException e) {}
+
             }
         } catch (IOException e) {
             Log.e(TAG, "Error connecting to Contour Next Link.", e);
@@ -286,7 +298,11 @@ public class MedtronicCnlIntentService extends IntentService {
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
     }
-    
+
+    private void setActivePumpMac(long pumpMAC) {
+        MainActivity.setActivePumpMac(pumpMAC);
+    }
+
     // reliable wake alarm manager wake up for all android versions
     public static void wakeUpIntent(Context context, long wakeTime, PendingIntent pendingIntent) {
         final AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -326,6 +342,7 @@ public class MedtronicCnlIntentService extends IntentService {
         public static final String ACTION_USB_PERMISSION = "info.nightscout.android.medtronic.USB_PERMISSION";
         public static final String ACTION_REFRESH_DATA = "info.nightscout.android.medtronic.service.CGM_DATA";
         public static final String ACTION_USB_REGISTER = "info.nightscout.android.medtronic.USB_REGISTER";
+        public static final String ACTION_UPDATE_PUMP = "info.nightscout.android.medtronic.UPDATE_PUMP";
 
         public static final String EXTENDED_DATA = "info.nightscout.android.medtronic.service.DATA";
     }
