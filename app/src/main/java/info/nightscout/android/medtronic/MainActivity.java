@@ -283,7 +283,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             stopCgmService();
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
-                            startCgmService();
+                            // It was triggered by user so start reading of data now and not based on last poll.
+                            startCgmService(0);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
                         }
