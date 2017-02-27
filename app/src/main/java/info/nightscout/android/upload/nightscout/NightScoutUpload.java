@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import info.nightscout.android.model.medtronicNg.StatusEvent;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
 
 import android.support.annotation.NonNull;
@@ -39,7 +39,7 @@ public class NightScoutUpload {
     public Boolean doRESTUpload(String url,
                                 String secret,
                                 int uploaderBatteryLevel,
-                                List<StatusEvent> records) {
+                                List<PumpStatusEvent> records) {
         Boolean success = false;
         try {
             success = isUploaded(records, url, secret, uploaderBatteryLevel);
@@ -50,7 +50,7 @@ public class NightScoutUpload {
     }
 
 
-    private boolean isUploaded(List<StatusEvent> records,
+    private boolean isUploaded(List<PumpStatusEvent> records,
                                  String baseURL,
                                  String secret,
                                  int uploaderBatteryLevel) throws Exception {
@@ -69,13 +69,13 @@ public class NightScoutUpload {
 
     private boolean uploadEvents(GlucoseEndpoints glucoseEndpoints,
                                  BolusEndpoints bolusEndpoints,
-                                 List<StatusEvent> records ) throws Exception {
+                                 List<PumpStatusEvent> records ) throws Exception {
 
 
         List<GlucoseEntry> glucoseEntries = new ArrayList<>();
         List<BolusEntry> bolusEntries = new ArrayList<>();
 
-        for (StatusEvent record : records) {
+        for (PumpStatusEvent record : records) {
 
             GlucoseEntry  glucoseEntry = new GlucoseEntry();
 
@@ -110,11 +110,11 @@ public class NightScoutUpload {
 
     private boolean uploadDeviceStatus(DeviceEndpoints deviceEndpoints,
                                        int uploaderBatteryLevel,
-                                       List<StatusEvent> records) throws Exception {
+                                       List<PumpStatusEvent> records) throws Exception {
 
 
         List<DeviceStatus> deviceEntries = new ArrayList<>();
-        for (StatusEvent record : records) {
+        for (PumpStatusEvent record : records) {
 
             Iob iob = new Iob(record.getPumpDate(), record.getActiveInsulin());
             Battery battery = new Battery(record.getBatteryPercentage());

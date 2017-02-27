@@ -8,7 +8,6 @@ import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
 
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.model.medtronicNg.StatusEvent;
 
 /**
  * Created by lgoedhart on 26/06/2016.
@@ -43,7 +42,7 @@ public class EntriesSerializer implements JsonSerializer<PumpStatusEvent> {
         }
     }
 
-    public static String getDirectionStringStatus(StatusEvent.CGM_TREND trend) {
+    public static String getDirectionStringStatus(PumpStatusEvent.CGM_TREND trend) {
         switch( trend ) {
             case NONE:
                 return "NONE";
