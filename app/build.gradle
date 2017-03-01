@@ -155,7 +155,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
     compile 'uk.co.chrisjenx:calligraphy:2.2.0'
-    compile 'com.bugfender.sdk:android:0.6.2'
+    compile 'com.bugfender.sdk:android:0.7.2'
     compile 'com.jjoe64:graphview:4.2.1'
     compile 'com.android.support:support-v4:23.4.0'
     compile 'com.google.code.gson:gson:2.7'
