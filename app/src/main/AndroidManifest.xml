@@ -89,9 +89,7 @@
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"></receiver>
 
-                <meta-data
-                    android:name="io.fabric.ApiKey"
-                    android:value="aa26e770bd4f7480eed7cabb63a84363ecd12009" />
+
 
     </application>
 
