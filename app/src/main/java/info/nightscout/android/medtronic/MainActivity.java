@@ -114,19 +114,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
 
-    public static String strFormatSGV(float sgvValue) {
-        if (mmolxl) {
-            NumberFormat sgvFormatter;
-            if (mmolxlDecimals)
-                sgvFormatter = new DecimalFormat("0.00");
-            else
-                sgvFormatter = new DecimalFormat("0.0");
-            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
-        } else {
-            return String.valueOf(sgvValue);
-        }
-    }
-
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
         long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
                 + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS;
@@ -141,6 +128,20 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         return nextPoll;
+    }
+
+    public static String strFormatSGV(float sgvValue) {
+        if (mmolxl) {
+            NumberFormat sgvFormatter;
+            if (mmolxlDecimals) {
+                sgvFormatter = new DecimalFormat("0.00");
+            } else {
+                sgvFormatter = new DecimalFormat("0.0");
+            }
+            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
+        } else {
+            return String.valueOf(sgvValue);
+        }
     }
 
     @Override
