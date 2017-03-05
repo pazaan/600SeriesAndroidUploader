@@ -42,6 +42,35 @@ public class EntriesSerializer implements JsonSerializer<PumpStatusEvent> {
         }
     }
 
+    public static String getDirectionStringStatus(PumpStatusEvent.CGM_TREND trend) {
+        switch( trend ) {
+            case NONE:
+                return "NONE";
+            case DOUBLE_UP:
+                return "DoubleUp";
+            case SINGLE_UP:
+                return "SingleUp";
+            case FOURTY_FIVE_UP:
+                return "FortyFiveUp";
+            case FLAT:
+                return "Flat";
+            case FOURTY_FIVE_DOWN:
+                return "FortyFiveDown";
+            case SINGLE_DOWN:
+                return "SingleDown";
+            case DOUBLE_DOWN:
+                return "DoubleDown";
+            case NOT_COMPUTABLE:
+                return "NOT COMPUTABLE";
+            case RATE_OUT_OF_RANGE:
+                return "RATE OUT OF RANGE";
+            case NOT_SET:
+                return "NONE";
+            default:
+                return "NOT COMPUTABLE"; // TODO - should this be something else?
+        }
+    }
+
     @Override
     public JsonElement serialize(PumpStatusEvent src, Type typeOfSrc, JsonSerializationContext context) {
         final JsonObject jsonObject = new JsonObject();
