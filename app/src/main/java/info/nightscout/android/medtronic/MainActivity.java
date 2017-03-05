@@ -94,23 +94,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private int chartZoom = 3;
     private boolean hasZoomedChart = false;
 
-    public static NumberFormat sgvFormatter;
-    public static boolean mmolxl;
-    private boolean mmolxlDecimals;
+    private NumberFormat sgvFormatter;
+    private static boolean mmolxl;
+    private static boolean mmolxlDecimals;
 
-    public static byte radioChannelInuse = 0;
-    public static long timeLastEHSM = 0;
     public static long timeLastGoodSGV = 0;
     public static short pumpBattery = 0;
     public static int countUnavailableSGV = 0;
-
-    // temporary debug stats for CNL connections
-    public static int dbgCNL_enterControlMode = 0;
-    public static int dbgCNL_enterPassthroughMode = 0;
-    public static int dbgCNL_openConnection = 0;
-    public static int dbgCNL_beginEHSMSession = 0;
-    public static int dbgCNL_clearMessage = 0;
-    public static int dbgCNL_not0x81 = 0;
 
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
@@ -124,6 +114,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
 
+    public static String strFormatSGV(float sgvValue) {
+        if (mmolxl) {
+            NumberFormat sgvFormatter;
+            if (mmolxlDecimals)
+                sgvFormatter = new DecimalFormat("0.00");
+            else
+                sgvFormatter = new DecimalFormat("0.0");
+            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
+        } else {
+            return String.valueOf(sgvValue);
+        }
+    }
 
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
         long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
@@ -333,7 +335,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getGridLabelRenderer().setHumanRounding(false);
 
         mChart.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
-//            DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
             DateFormat mFormat = new SimpleDateFormat("HH:mm");  // 24 hour format forced to fix label overlap
 
             @Override
@@ -341,11 +342,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 if (isValueX) {
                     return mFormat.format(new Date((long) value));
                 } else {
-//                    if (mmolxl) {
-//                        return sgvFormatter.format(value / MMOLXLFACTOR);
-//                    } else {
                         return sgvFormatter.format(value);
-//                    }
                 }
             }}
         );
@@ -859,11 +856,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         double sgv = dataPoint.getY();
 
                         StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
-//                        if (mmolxl) {
-//                            sb.append(sgvFormatter.format(sgv / MMOLXLFACTOR));
-//                        } else {
-                            sb.append(sgvFormatter.format(sgv));
-//                        }
+                        sb.append(sgvFormatter.format(sgv));
                         Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });

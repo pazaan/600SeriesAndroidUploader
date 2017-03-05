@@ -29,7 +29,6 @@ public class PumpTimeResponseMessage extends MedtronicSendMessageResponseMessage
             // TODO - deal with this more elegantly
             Log.e(TAG, "Invalid message received for getPumpTime");
             throw new UnexpectedMessageException("Invalid message received for getPumpTime");
-//            pumpTime = new Date();
         } else {
             ByteBuffer dateBuffer = ByteBuffer.allocate(8);
             dateBuffer.order(ByteOrder.BIG_ENDIAN);

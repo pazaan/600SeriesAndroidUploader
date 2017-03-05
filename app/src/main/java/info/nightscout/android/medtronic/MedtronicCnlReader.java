@@ -171,7 +171,17 @@ public class MedtronicCnlReader {
 
     public Date getPumpTime() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getPumpTime");
-        // FIXME - throw if not in EHSM mode (add a state machine)
+
+        // CNL<-->PUMP comms can have occasional short lived noise causing errors, retrying once catches this
+        try {
+            PumpTimeResponseMessage response = new PumpTimeRequestMessage(mPumpSession).send(mDevice);
+            Log.d(TAG, "Finished getPumpTime with date " + response.getPumpTime());
+            return response.getPumpTime();
+        } catch (UnexpectedMessageException e) {
+            Log.e(TAG, "Unexpected Message", e);
+        } catch (TimeoutException e) {
+            Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
+        }
 
         PumpTimeResponseMessage response = new PumpTimeRequestMessage(mPumpSession).send(mDevice);
 
@@ -182,7 +192,18 @@ public class MedtronicCnlReader {
     public PumpStatusEvent updatePumpStatus(PumpStatusEvent pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin updatePumpStatus");
 
-        // FIXME - throw if not in EHSM mode (add a state machine)
+        // CNL<-->PUMP comms can have occasional short lived noise causing errors, retrying once catches this
+        try {
+            PumpStatusResponseMessage response = new PumpStatusRequestMessage(mPumpSession).send(mDevice);
+            response.updatePumpRecord(pumpRecord);
+            Log.d(TAG, "Finished updatePumpStatus");
+            return pumpRecord;
+        } catch (UnexpectedMessageException e) {
+            Log.e(TAG, "Unexpected Message", e);
+        } catch (TimeoutException e) {
+            Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
+        }
+
         PumpStatusResponseMessage response = new PumpStatusRequestMessage(mPumpSession).send(mDevice);
         response.updatePumpRecord(pumpRecord);
 

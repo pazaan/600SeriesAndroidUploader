@@ -189,13 +189,10 @@ public class MedtronicCnlIntentService extends IntentService {
             cnlReader.getPumpSession().setStickSerial(info.getSerialNumber());
 
             cnlReader.enterControlMode();
-            MainActivity.dbgCNL_enterControlMode += 1;
 
             try {
                 cnlReader.enterPassthroughMode();
-                MainActivity.dbgCNL_enterPassthroughMode += 1;
                 cnlReader.openConnection();
-                MainActivity.dbgCNL_openConnection += 1;
 
                 cnlReader.requestReadInfo();
 
@@ -224,32 +221,16 @@ public class MedtronicCnlIntentService extends IntentService {
 
                 activePump.updateLastQueryTS();
 
-                byte radioChannelInuse = MainActivity.radioChannelInuse;  //note: holding here as last channel not always stored due to potential uncommitted transaction
-                byte radioChannel = cnlReader.negotiateChannel(radioChannelInuse);
-                MainActivity.radioChannelInuse = radioChannel;
-
-                //byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
+                byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                 if (radioChannel == 0) {
                     sendStatus("Could not communicate with the 640g. Are you near the pump?");
                     Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
                     pollInterval = MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L); // reduce polling interval to half until pump is available
-                } else if ((radioChannel != radioChannelInuse) && (radioChannelInuse != 0) && ((timePollStarted - MainActivity.timeLastEHSM) < (POLL_PERIOD_MS * 3L))) {
-                    // avoid EHSM comms when channel change detected as this reduces any further channel changes and allows pump/sensor to resync
-                    sendStatus(String.format(Locale.getDefault(), "Channel changed to %d", (int) radioChannel));
-                    sendStatus("SGV: unavailable from pump");
-                    Log.d(TAG, String.format("Channel changed to %d SGV: unavailable from pump", (int) radioChannel));
-                    MainActivity.countUnavailableSGV++; //poll clash detection
-                    pollInterval = POLL_PERIOD_MS; // SGV should be available after default poll period
                 } else {
                     setActivePumpMac(pumpMAC);
                     activePump.setLastRadioChannel(radioChannel);
-                    //sendStatus(String.format(Locale.getDefault(), "Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
-
-                    MainActivity.timeLastEHSM = timePollStarted;
-                    cnlReader.beginEHSMSession();
-                    MainActivity.dbgCNL_beginEHSMSession += 1;
 
                     // read pump status
                     PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
@@ -269,22 +250,13 @@ public class MedtronicCnlIntentService extends IntentService {
                     pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
                     cnlReader.updatePumpStatus(pumpRecord);
 
-                    cnlReader.endEHSMSession();
-                    MainActivity.dbgCNL_beginEHSMSession -= 1;
-
                     if (pumpRecord.getSgv() != 0) {
 
-                        String sgvString;
-                        if (MainActivity.mmolxl) {
-                            sgvString = MainActivity.sgvFormatter.format((float) pumpRecord.getSgv() / MainActivity.MMOLXLFACTOR);
-                        } else {
-                            sgvString = String.valueOf(pumpRecord.getSgv());
-                        }
                         String offsetSign = "";
                         if (pumpOffset > 0) {
                             offsetSign = "+";
                         }
-                        sendStatus("SGV: " + sgvString + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
+                        sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
 
                         // Check if pump sent old event when new expected and schedule a re-poll
                         if (((pumpRecord.getEventDate().getTime() - MainActivity.timeLastGoodSGV) < 5000L) && ((timePollExpected - timePollStarted) < 5000L)) {
@@ -320,15 +292,11 @@ public class MedtronicCnlIntentService extends IntentService {
                     sendMessage(Constants.ACTION_UPDATE_PUMP);
                 }
 
-                // TODO - consider handling comms during EHSM errors separately as these tend to be CNL<-->PUMP lost/bad/noisy communication errors rather then Uploader<-->CNL errors
             } catch (UnexpectedMessageException e) {
-                // unexpected messages during CNL-->Pump comms are usually a lost/dropped connection
-                // CNL 0x81 message response for lost/dropped connection: 0x55 "u" pump response "55 0D 00 04 00 00 00 00 03 00 01 ..." note: EHSM is auto closed by CNL
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
                 pollInterval = MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L);
             } catch (TimeoutException e) {
-                // timeout during CNL-->Pump comms are usually a lost/dropped connection
                 Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
                 sendStatus("Timeout communicating with the Contour Next Link.");
                 pollInterval = MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L);
@@ -338,11 +306,8 @@ public class MedtronicCnlIntentService extends IntentService {
             } finally {
                 try {
                     cnlReader.closeConnection();
-                    MainActivity.dbgCNL_openConnection -= 1;
                     cnlReader.endPassthroughMode();
-                    MainActivity.dbgCNL_enterPassthroughMode -= 1;
                     cnlReader.endControlMode();
-                    MainActivity.dbgCNL_enterControlMode -= 1;
                 } catch (NoSuchAlgorithmException e) {}
 
             }
@@ -383,7 +348,6 @@ public class MedtronicCnlIntentService extends IntentService {
             if ((nextRequestedPollTime - System.currentTimeMillis()) < 10000L) {
                 nextRequestedPollTime = nextActualPollTime;
             }
-            // unavailable SGV from pump can be from a channel change due to radio noise
             // extended unavailable SGV may be due to clash with the current polling time
             // while we wait for a good SGV event, polling is auto adjusted by offsetting the next poll based on miss count
             if (MainActivity.countUnavailableSGV > 0) {
@@ -397,11 +361,6 @@ public class MedtronicCnlIntentService extends IntentService {
             }
             MedtronicCnlAlarmManager.setAlarm(nextRequestedPollTime);
             sendStatus("Next poll due at: " + df.format(nextRequestedPollTime));
-
-            // temporary debug stats for CNL connections
-            if ((MainActivity.dbgCNL_enterControlMode + MainActivity.dbgCNL_enterPassthroughMode + MainActivity.dbgCNL_openConnection + MainActivity.dbgCNL_beginEHSMSession + MainActivity.dbgCNL_clearMessage + MainActivity.dbgCNL_not0x81) > 0) {
-                sendStatus("CM: " + MainActivity.dbgCNL_enterControlMode + " PT: " + MainActivity.dbgCNL_enterPassthroughMode + " OC: " + MainActivity.dbgCNL_openConnection + " EH: " + MainActivity.dbgCNL_beginEHSMSession + " U: " + MainActivity.dbgCNL_clearMessage + " X: " + MainActivity.dbgCNL_not0x81);
-            }
 
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
@@ -426,7 +385,7 @@ public class MedtronicCnlIntentService extends IntentService {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (prefs.getBoolean(getString(R.string.preference_enable_xdrip_plus), false)) {
             final Intent receiverIntent = new Intent(this, XDripPlusUploadReceiver.class);
-            final long timestamp = System.currentTimeMillis() + 1000L; //500L;
+            final long timestamp = System.currentTimeMillis() + 500L;
             final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
             Log.d(TAG, "Scheduling xDrip+ send");
             wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
@@ -435,7 +394,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
     private void uploadToNightscout() {
         Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
-        final long timestamp = System.currentTimeMillis() + 2000L; //1000L;
+        final long timestamp = System.currentTimeMillis() + 1000L;
         final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
         wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
     }
