@@ -109,18 +109,31 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
 
-
+    /**
+     * calculate the next poll timestamp based on last svg event
+     *
+     * @param pumpStatusData
+     * @return timestamp
+     */
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
-        long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
-                + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS;
+        long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset(),
+            now = System.currentTimeMillis();
 
-        if (pumpStatusData.getBatteryPercentage() > 25) {
-            // poll every 5 min
-            nextPoll += MainActivity.pollInterval;
+        // align to next poll slot
+        if (nextPoll + 2 * 60 * 60 * 1000 < now) { // last event more than 2h old -> could be a calibration
+            nextPoll = System.currentTimeMillis() + 1000;
         } else {
-            // if pump battery seems to be empty reduce polling to save battery (every 15 min)
-            //TODO add message & document it
-            nextPoll += MainActivity.lowBatteryPollInterval;
+            // align to poll interval
+            nextPoll += (((now - nextPoll) / MainActivity.pollInterval)) * MainActivity.pollInterval
+                    + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS;
+            if (pumpStatusData.getBatteryPercentage() > 25) {
+                // poll every 5 min
+                nextPoll += MainActivity.pollInterval;
+            } else {
+                // if pump battery seems to be empty reduce polling to save battery (every 15 min)
+                //TODO add message & document it
+                nextPoll += MainActivity.lowBatteryPollInterval;
+            }
         }
 
         return nextPoll;
@@ -270,7 +283,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             stopCgmService();
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
-                            startCgmService();
+                            // It was triggered by user so start reading of data now and not based on last poll.
+                            startCgmService(0);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
                         }
@@ -411,7 +425,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startCgmService() {
-        startCgmService(System.currentTimeMillis() + 1000);
+        startCgmServiceDelayed(0);
+    }
+
+    private void startCgmServiceDelayed(long delay) {
+        RealmResults<PumpStatusEvent> results = mRealm.where(PumpStatusEvent.class)
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        if (results.size() > 0) {
+            startCgmService(getNextPoll(results.first()) + delay);
+        } else {
+            startCgmService(System.currentTimeMillis() + (delay==0?1000:delay));
+        }
     }
 
     private void startCgmService(long initialPoll) {
@@ -912,7 +937,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                 if (hasUsbPermission()) {
                     // Give the USB a little time to warm up first
-                    startCgmService(System.currentTimeMillis() + MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
+                    startCgmServiceDelayed(MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
                 } else {
                     Log.d(TAG, "No permission for USB. Waiting.");
                     waitForUsbPermission();
