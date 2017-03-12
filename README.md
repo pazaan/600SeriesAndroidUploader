@@ -25,7 +25,13 @@ This is an Android app to upload data from a MiniMed 640G insulin pump to a Nigh
        android:value="YOUR-FABRIC-KEY" />
    ```
 
-   (**take care not to commit this change**)
+   (**Please take care not to commit this change.
+      If you're considering sharing your changes, or are using a non-private
+      Github repository, you should remove this change in
+      `app/src/AndroidManifest.xml` and copy the value as `apiKey` property
+      to file `app/fabric.properties` instead. See
+      https://docs.fabric.io/android/fabric/settings/working-in-teams.html#android-projects
+      for more information.**)
  - Create a [BugFender](https://app.bugfender.com) account, create `app/bugfender.properties` and populate with
 
    ```
