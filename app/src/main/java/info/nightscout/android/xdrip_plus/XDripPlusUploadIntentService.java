@@ -70,6 +70,7 @@ public class XDripPlusUploadIntentService extends IntentService {
             List<PumpStatusEvent> records = all_records.subList(0, 1);
             doXDripUpload(records);
         }
+        mRealm.close();
         XDripPlusUploadReceiver.completeWakefulIntent(intent);
     }
 
