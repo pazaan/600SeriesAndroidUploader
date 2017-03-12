@@ -2,11 +2,16 @@ package info.nightscout.android.medtronic;
 
 import android.util.Log;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
@@ -25,22 +30,24 @@ import info.nightscout.android.medtronic.message.EncryptionException;
 import info.nightscout.android.medtronic.message.EndEHSMMessage;
 import info.nightscout.android.medtronic.message.MedtronicMessage;
 import info.nightscout.android.medtronic.message.MessageUtils;
+import info.nightscout.android.medtronic.message.PumpBasalPatternRequestMessage;
+import info.nightscout.android.medtronic.message.PumpBasalPatternResponseMessage;
 import info.nightscout.android.medtronic.message.PumpStatusRequestMessage;
 import info.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
+import info.nightscout.android.medtronic.message.RequestLinkKeyResponseMessage;
 import info.nightscout.android.medtronic.message.UnexpectedMessageException;
-import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
-import info.nightscout.android.model.CgmStatusEvent;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by lgoedhart on 24/03/2016.
  */
-public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
+public class MedtronicCnlReader implements ContourNextLinkMessageHandler {
 
-    private static final String TAG = MedtronicCnlIntentService.class.getSimpleName();
+    private static final String TAG = MedtronicCnlReader.class.getSimpleName();
 
     private static final int USB_BLOCKSIZE = 64;
     private static final int READ_TIMEOUT_MS = 5000;
@@ -49,19 +56,40 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
     private static final byte[] RADIO_CHANNELS = {0x14, 0x11, 0x0e, 0x17, 0x1a};
     private UsbHidDriver mDevice;
 
-    private MedtronicCNLSession mPumpSession = new MedtronicCNLSession();
+    private MedtronicCnlSession mPumpSession = new MedtronicCnlSession();
 
     private String mStickSerial = null;
 
-    public MedtronicCNLReader(UsbHidDriver device) {
+    public MedtronicCnlReader(UsbHidDriver device) {
         mDevice = device;
+    }
+
+    private static PumpStatusEvent.CGM_TREND fromMessageByte(byte messageByte) {
+        switch (messageByte) {
+            case (byte) 0x60:
+                return PumpStatusEvent.CGM_TREND.FLAT;
+            case (byte) 0xc0:
+                return PumpStatusEvent.CGM_TREND.DOUBLE_UP;
+            case (byte) 0xa0:
+                return PumpStatusEvent.CGM_TREND.SINGLE_UP;
+            case (byte) 0x80:
+                return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_UP;
+            case (byte) 0x40:
+                return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_DOWN;
+            case (byte) 0x20:
+                return PumpStatusEvent.CGM_TREND.SINGLE_DOWN;
+            case (byte) 0x00:
+                return PumpStatusEvent.CGM_TREND.DOUBLE_DOWN;
+            default:
+                return PumpStatusEvent.CGM_TREND.NOT_COMPUTABLE;
+        }
     }
 
     public String getStickSerial() {
         return mStickSerial;
     }
 
-    public MedtronicCNLSession getPumpSession() {
+    public MedtronicCnlSession getPumpSession() {
         return mPumpSession;
     }
 
@@ -70,28 +98,28 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
 
         byte[] responseBuffer = new byte[USB_BLOCKSIZE];
         int bytesRead;
-        int messageSize;
+        int messageSize = 0;
 
         do {
             bytesRead = mDevice.read(responseBuffer, READ_TIMEOUT_MS);
 
-            if (bytesRead == 0) {
+            if (bytesRead == -1) {
                 throw new TimeoutException("Timeout waiting for response from pump");
+            } else if (bytesRead > 0) {
+                // Validate the header
+                ByteBuffer header = ByteBuffer.allocate(3);
+                header.put(responseBuffer, 0, 3);
+                String headerString = new String(header.array());
+                if (!headerString.equals(BAYER_USB_HEADER)) {
+                    throw new IOException("Unexpected header received");
+                }
+                messageSize = responseBuffer[3];
+                responseMessage.write(responseBuffer, 4, messageSize);
+            } else {
+                Log.w(TAG, "readMessage: got a zero-sized response.");
             }
+        } while (bytesRead > 0 && messageSize == 60);
 
-            // Validate the header
-            ByteBuffer header = ByteBuffer.allocate(3);
-            header.put(responseBuffer, 0, 3);
-            String headerString = new String(header.array());
-            if (!headerString.equals(BAYER_USB_HEADER)) {
-                throw new IOException("Unexpected header received");
-            }
-            messageSize = responseBuffer[3];
-            responseMessage.write(responseBuffer, 4, messageSize);
-        } while (bytesRead > 0 && (messageSize + 4) == bytesRead);
-        // TODO - how to deal with messages that finish on the boundary?
-
-        // FIXME - remove debugging
         String responseString = HexDump.dumpHexString(responseMessage.toByteArray());
         Log.d(TAG, "READ: " + responseString);
 
@@ -182,27 +210,6 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         }
     }
 
-    private static CgmStatusEvent.TREND fromMessageByte(byte messageByte) {
-        switch( messageByte ) {
-            case (byte) 0x60:
-                return CgmStatusEvent.TREND.FLAT;
-            case (byte) 0xc0:
-                return CgmStatusEvent.TREND.DOUBLE_UP;
-            case (byte) 0xa0:
-                return CgmStatusEvent.TREND.SINGLE_UP;
-            case (byte) 0x80:
-                return CgmStatusEvent.TREND.FOURTY_FIVE_UP;
-            case (byte) 0x40:
-                return CgmStatusEvent.TREND.FOURTY_FIVE_DOWN;
-            case (byte) 0x20:
-                return CgmStatusEvent.TREND.SINGLE_DOWN;
-            case (byte) 0x00:
-                return CgmStatusEvent.TREND.DOUBLE_DOWN;
-            default:
-                return CgmStatusEvent.TREND.NOT_COMPUTABLE;
-        }
-    }
-
     public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException {
         boolean doRetry = false;
 
@@ -223,21 +230,26 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
     }
 
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin enterPasshtroughMode");
         new ContourNextLinkCommandMessage("W|").send(this);
         checkControlMessage(readMessage(), ASCII.ACK.value);
         new ContourNextLinkCommandMessage("Q|").send(this);
         checkControlMessage(readMessage(), ASCII.ACK.value);
         new ContourNextLinkCommandMessage("1|").send(this);
         checkControlMessage(readMessage(), ASCII.ACK.value);
+        Log.d(TAG, "Finished enterPasshtroughMode");
     }
 
-    public void openConnection() throws IOException, TimeoutException {
+    public void openConnection() throws IOException, TimeoutException, NoSuchAlgorithmException {
+        Log.d(TAG, "Begin openConnection");
         new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.OPEN_CONNECTION, mPumpSession, mPumpSession.getHMAC()).send(this);
         // FIXME - We need to care what the response message is - wrong MAC and all that
         readMessage();
+        Log.d(TAG, "Finished openConnection");
     }
 
     public void requestReadInfo() throws IOException, TimeoutException, EncryptionException, ChecksumException {
+        Log.d(TAG, "Begin requestReadInfo");
         new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.READ_INFO, mPumpSession, null).send(this);
 
         ContourNextLinkMessage response = ReadInfoResponseMessage.fromBytes(mPumpSession, readMessage());
@@ -251,19 +263,54 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
 
         this.getPumpSession().setLinkMAC(linkMAC);
         this.getPumpSession().setPumpMAC(pumpMAC);
+        Log.d(TAG, String.format("Finished requestReadInfo. linkMAC = '%d', pumpMAC = '%d", linkMAC, pumpMAC));
     }
 
-    public byte negotiateChannel() throws IOException, ChecksumException, TimeoutException {
-        for (byte channel : RADIO_CHANNELS) {
+    public void requestLinkKey() throws IOException, TimeoutException, EncryptionException, ChecksumException {
+        Log.d(TAG, "Begin requestLinkKey");
+        new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.REQUEST_LINK_KEY, mPumpSession, null).send(this);
+
+        ContourNextLinkMessage response = RequestLinkKeyResponseMessage.fromBytes(mPumpSession, readMessage());
+
+        // FIXME - this needs to go into RequestLinkKeyResponseMessage
+        ByteBuffer infoBuffer = ByteBuffer.allocate(55);
+        infoBuffer.order(ByteOrder.BIG_ENDIAN);
+        infoBuffer.put(response.encode(), 0x21, 55);
+
+        byte[] packedLinkKey = infoBuffer.array();
+
+        this.getPumpSession().setPackedLinkKey(packedLinkKey);
+
+        Log.d(TAG, String.format("Finished requestLinkKey. linkKey = '%s'", this.getPumpSession().getKey()));
+    }
+
+    public byte negotiateChannel(byte lastRadioChannel) throws IOException, ChecksumException, TimeoutException {
+        ArrayList<Byte> radioChannels = new ArrayList<>(Arrays.asList(ArrayUtils.toObject(RADIO_CHANNELS)));
+
+        if (lastRadioChannel != 0x00) {
+            // If we know the last channel that was used, shuffle the negotiation order
+            Byte lastChannel = radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
+
+            if (lastChannel != null) {
+                radioChannels.add(0, lastChannel);
+            }
+        }
+
+        Log.d(TAG, "Begin negotiateChannel");
+        for (byte channel : radioChannels) {
+            Log.d(TAG, String.format("negotiateChannel: trying channel '%d'...", channel));
             mPumpSession.setRadioChannel(channel);
             new ChannelNegotiateMessage(mPumpSession).send(this);
 
             // Don't care what the 0x81 response message is at this stage
+            Log.d(TAG, "negotiateChannel: Reading 0x81 message");
             readMessage();
             // The 0x80 message
+            Log.d(TAG, "negotiateChannel: Reading 0x80 message");
             ContourNextLinkMessage response = ContourNextLinkBinaryMessage.fromBytes(readMessage());
             byte[] responseBytes = response.encode();
 
+            Log.d(TAG, "negotiateChannel: Check response length");
             if (responseBytes.length > 46) {
                 // Looks promising, let's check the last byte of the payload to make sure
                 if (responseBytes[76] == mPumpSession.getRadioChannel()) {
@@ -276,18 +323,21 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
             }
         }
 
+        Log.d(TAG, String.format("Finished negotiateChannel with channel '%d'", mPumpSession.getRadioChannel()));
         return mPumpSession.getRadioChannel();
     }
 
     public void beginEHSMSession() throws EncryptionException, IOException, TimeoutException {
+        Log.d(TAG, "Begin beginEHSMSession");
         new BeginEHSMMessage(mPumpSession).send(this);
         // The Begin EHSM Session only has an 0x81 response
         readMessage();
+        Log.d(TAG, "Finished beginEHSMSession");
     }
 
     public Date getPumpTime() throws EncryptionException, IOException, ChecksumException, TimeoutException {
+        Log.d(TAG, "Begin getPumpTime");
         // FIXME - throw if not in EHSM mode (add a state machine)
-        Date timeAtCapture = new Date();
 
         new PumpTimeRequestMessage(mPumpSession).send(this);
         // Read the 0x81
@@ -296,8 +346,10 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         // Read the 0x80
         ContourNextLinkMessage response = PumpTimeResponseMessage.fromBytes(mPumpSession, readMessage());
 
-        if (response.encode().length < 57) {
+        if (response.encode().length < (61 + 8)) {
             // Invalid message. Return an invalid date.
+            // TODO - deal with this more elegantly
+            Log.e(TAG, "Invalid message received for getPumpTime");
             return new Date();
         }
 
@@ -308,10 +360,12 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         long rtc = dateBuffer.getInt(0) & 0x00000000ffffffffL;
         long offset = dateBuffer.getInt(4);
 
+        Log.d(TAG, "Finished getPumpTime with date " + MessageUtils.decodeDateTime(rtc, offset));
         return MessageUtils.decodeDateTime(rtc, offset);
     }
 
-    public void getPumpStatus(CgmStatusEvent cgmRecord, long pumpTimeOffset) throws IOException, EncryptionException, ChecksumException, TimeoutException {
+    public void getPumpStatus(PumpStatusEvent pumpRecord, long pumpTimeOffset) throws IOException, EncryptionException, ChecksumException, TimeoutException {
+        Log.d(TAG, "Begin getPumpStatus");
         // FIXME - throw if not in EHSM mode (add a state machine)
 
         new PumpStatusRequestMessage(mPumpSession).send(this);
@@ -321,8 +375,10 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         // Read the 0x80
         ContourNextLinkMessage response = PumpStatusResponseMessage.fromBytes(mPumpSession, readMessage());
 
-        if (response.encode().length < 57) {
+        if (response.encode().length < (57 + 96)) {
             // Invalid message. Don't try and parse it
+            // TODO - deal with this more elegantly
+            Log.e(TAG, "Invalid message received for getPumpStatus");
             return;
         }
 
@@ -331,55 +387,143 @@ public class MedtronicCNLReader implements ContourNextLinkMessageHandler {
         statusBuffer.order(ByteOrder.BIG_ENDIAN);
         statusBuffer.put(response.encode(), 0x39, 96);
 
-        // Read the data into the record
+        // Status Flags
+        pumpRecord.setSuspended((statusBuffer.get(0x03) & 0x01) != 0x00);
+        pumpRecord.setBolusing((statusBuffer.get(0x03) & 0x02) != 0x00);
+        pumpRecord.setDeliveringInsulin((statusBuffer.get(0x03) & 0x10) != 0x00);
+        pumpRecord.setTempBasalActive((statusBuffer.get(0x03) & 0x20) != 0x00);
+        pumpRecord.setCgmActive((statusBuffer.get(0x03) & 0x40) != 0x00);
+
+        // Active basal pattern
+        pumpRecord.setActiveBasalPattern(statusBuffer.get(0x1a));
+
+        // Normal basal rate
+        long rawNormalBasal = statusBuffer.getInt(0x1b);
+        pumpRecord.setBasalRate(new BigDecimal(rawNormalBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+
+        // Temp basal rate
+        // TODO - need to figure this one out
+        //long rawTempBasal = statusBuffer.getShort(0x21) & 0x0000ffff;
+        //pumpRecord.setTempBasalRate(new BigDecimal(rawTempBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+
+        // Temp basal percentage
+        pumpRecord.setTempBasalPercentage(statusBuffer.get(0x23));
+
+        // Temp basal minutes remaining
+        pumpRecord.setTempBasalMinutesRemaining((short) (statusBuffer.getShort(0x24) & 0x0000ffff));
+
+        // Units of insulin delivered as basal today
+        // TODO - is this basal? Do we have a total Units delivered elsewhere?
+        pumpRecord.setBasalUnitsDeliveredToday(statusBuffer.getInt(0x26));
+
+        // Pump battery percentage
+        pumpRecord.setBatteryPercentage((statusBuffer.get(0x2a)));
+
+        // Reservoir amount
+        long rawReservoirAmount = statusBuffer.getInt(0x2b);
+        pumpRecord.setReservoirAmount(new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+
+        // Amount of insulin left in pump (in minutes)
+        byte insulinHours = statusBuffer.get(0x2f);
+        byte insulinMinutes = statusBuffer.get(0x30);
+        pumpRecord.setMinutesOfInsulinRemaining((short) ((insulinHours * 60) + insulinMinutes));
+
+        // Active insulin
         long rawActiveInsulin = statusBuffer.getShort(0x33) & 0x0000ffff;
-        MainActivity.pumpStatusRecord.activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP);
-        cgmRecord.setSgv(statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
+        pumpRecord.setActiveInsulin(new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue());
+
+        // CGM SGV
+        pumpRecord.setSgv(statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
+
+        // SGV Date
         long rtc;
         long offset;
-        if ((cgmRecord.getSgv() & 0x200) == 0x200) {
+        if ((pumpRecord.getSgv() & 0x200) == 0x200) {
             // Sensor error. Let's reset. FIXME - solve this more elegantly later
-            cgmRecord.setSgv(0);
+            pumpRecord.setSgv(0);
             rtc = 0;
             offset = 0;
-            cgmRecord.setTrend(CgmStatusEvent.TREND.NOT_SET);
+            pumpRecord.setCgmTrend(PumpStatusEvent.CGM_TREND.NOT_SET);
         } else {
             rtc = statusBuffer.getInt(0x37) & 0x00000000ffffffffL;
             offset = statusBuffer.getInt(0x3b);
-            cgmRecord.setTrend(fromMessageByte(statusBuffer.get(0x40)));
+            pumpRecord.setCgmTrend(fromMessageByte(statusBuffer.get(0x40)));
         }
-        cgmRecord.setEventDate(new Date(MessageUtils.decodeDateTime(rtc, offset).getTime() - pumpTimeOffset));
-        MainActivity.pumpStatusRecord.recentBolusWizard = statusBuffer.get(0x48) != 0;
-        MainActivity.pumpStatusRecord.bolusWizardBGL = statusBuffer.getShort(0x49); // In mg/DL
-        long rawReservoirAmount = statusBuffer.getInt(0x2b);
-        MainActivity.pumpStatusRecord.reservoirAmount = new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP);
-        MainActivity.pumpStatusRecord.batteryPercentage = (statusBuffer.get(0x2a));
+        // TODO - this should go in the sgvDate, and eventDate should be the time of this poll.
+        pumpRecord.setEventDate(new Date(MessageUtils.decodeDateTime(rtc, offset).getTime() - pumpTimeOffset));
+
+        // Predictive low suspend
+        // TODO - there is more status info in this byte other than just a boolean yes/no
+        pumpRecord.setLowSuspendActive(statusBuffer.get(0x3f) != 0);
+
+        // Recent Bolus Wizard BGL
+        pumpRecord.setRecentBolusWizard(statusBuffer.get(0x48) != 0);
+        pumpRecord.setBolusWizardBGL(statusBuffer.getShort(0x49) & 0x0000ffff); // In mg/DL
+
+        Log.d(TAG, "Finished getPumpStatus");
+    }
+
+    public void getBasalPatterns() throws EncryptionException, IOException, ChecksumException, TimeoutException {
+        Log.d(TAG, "Begin getBasalPatterns");
+        // FIXME - throw if not in EHSM mode (add a state machine)
+
+        new PumpBasalPatternRequestMessage(mPumpSession).send(this);
+        // Read the 0x81
+        readMessage();
+
+        // Read the 0x80
+        ContourNextLinkMessage response = PumpBasalPatternResponseMessage.fromBytes(mPumpSession, readMessage());
+
+        // TODO - determine message validity
+        /*
+        if (response.encode().length < (61 + 8)) {
+            // Invalid message.
+            // TODO - deal with this more elegantly
+            Log.e(TAG, "Invalid message received for getBasalPatterns");
+            return;
+        }
+        */
+
+        // FIXME - this needs to go into PumpBasalPatternResponseMessage
+        ByteBuffer basalRatesBuffer = ByteBuffer.allocate(96);
+        basalRatesBuffer.order(ByteOrder.BIG_ENDIAN);
+        basalRatesBuffer.put(response.encode(), 0x39, 96);
+
+        Log.d(TAG, "Finished getBasalPatterns");
     }
 
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException {
+        Log.d(TAG, "Begin endEHSMSession");
         new EndEHSMMessage(mPumpSession).send(this);
         // The End EHSM Session only has an 0x81 response
         readMessage();
+        Log.d(TAG, "Finished endEHSMSession");
     }
 
     public void closeConnection() throws IOException, TimeoutException {
+        Log.d(TAG, "Begin closeConnection");
         new ContourNextLinkBinaryMessage(ContourNextLinkBinaryMessage.CommandType.CLOSE_CONNECTION, mPumpSession, null).send(this);
         // FIXME - We need to care what the response message is - wrong MAC and all that
         readMessage();
+        Log.d(TAG, "Finished closeConnection");
     }
 
     public void endPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin endPassthroughMode");
         new ContourNextLinkCommandMessage("W|").send(this);
         checkControlMessage(readMessage(), ASCII.ACK.value);
         new ContourNextLinkCommandMessage("Q|").send(this);
         checkControlMessage(readMessage(), ASCII.ACK.value);
         new ContourNextLinkCommandMessage("0|").send(this);
         checkControlMessage(readMessage(), ASCII.ACK.value);
+        Log.d(TAG, "Finished endPassthroughMode");
     }
 
     public void endControlMode() throws IOException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin endControlMode");
         new ContourNextLinkCommandMessage(ASCII.EOT.value).send(this);
         checkControlMessage(readMessage(), ASCII.ENQ.value);
+        Log.d(TAG, "Finished endControlMode");
     }
 
     public enum ASCII {

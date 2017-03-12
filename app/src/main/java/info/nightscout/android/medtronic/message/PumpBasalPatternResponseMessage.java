@@ -5,8 +5,8 @@ import info.nightscout.android.medtronic.MedtronicCnlSession;
 /**
  * Created by lgoedhart on 27/03/2016.
  */
-public class PumpStatusResponseMessage extends MedtronicReceiveMessage {
-    protected PumpStatusResponseMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) {
+public class PumpBasalPatternResponseMessage extends MedtronicReceiveMessage {
+    protected PumpBasalPatternResponseMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) {
         super(commandType, commandAction, pumpSession, payload);
     }
 

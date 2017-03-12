@@ -32,7 +32,7 @@ public class UploaderApplication extends Application {
             Fabric.with(this, new Crashlytics());
         }
         if (prefs.getBoolean(getString(R.string.preferences_enable_answers), true)) {
-            Fabric.with(this, new Answers());
+            Fabric.with(this, new Answers(), new Crashlytics());
         }
 
         if (prefs.getBoolean(getString(R.string.preferences_enable_remote_logcat), false)) {
@@ -41,7 +41,10 @@ public class UploaderApplication extends Application {
             Bugfender.setDeviceString("NightscoutURL", prefs.getString(getString(R.string.preference_nightscout_url), "Not set"));
         }
 
-        RealmConfiguration realmConfiguration = new RealmConfiguration.Builder(this).build();
+        RealmConfiguration realmConfiguration = new RealmConfiguration.Builder(this)
+                .deleteRealmIfMigrationNeeded()
+                .build();
+
         Realm.setDefaultConfiguration(realmConfiguration);
     }
 }

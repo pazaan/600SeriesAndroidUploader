@@ -10,6 +10,8 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -18,8 +20,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
+import java.net.URL;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -28,7 +33,7 @@ import java.util.regex.Pattern;
 
 import info.nightscout.android.R;
 import info.nightscout.android.medtronic.MainActivity;
-import info.nightscout.android.model.CgmStatusEvent;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -66,28 +71,34 @@ public class NightscoutUploadIntentService extends IntentService {
         Log.d(TAG, "onHandleIntent called");
         mRealm = Realm.getDefaultInstance();
 
-        RealmResults<CgmStatusEvent> records = mRealm
-                .where(CgmStatusEvent.class)
+        RealmResults<PumpStatusEvent> records = mRealm
+                .where(PumpStatusEvent.class)
                 .equalTo("uploaded", false)
                 .notEqualTo("sgv", 0)
                 .findAll();
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+        if (records.size() > 0) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 
-        Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
-        try {
-            if (enableRESTUpload) {
-                long start = System.currentTimeMillis();
-                Log.i(TAG, String.format("Starting upload of %s record using a REST API", records.size()));
-                doRESTUpload(prefs, records);
-                Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.size(), System.currentTimeMillis() - start));
+            Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
+            try {
+                if (enableRESTUpload) {
+                    long start = System.currentTimeMillis();
+                    Log.i(TAG, String.format("Starting upload of %s record using a REST API", records.size()));
+                    doRESTUpload(prefs, records);
+                    Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.size(), System.currentTimeMillis() - start));
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "ERROR uploading data!!!!!", e);
             }
-        } catch (Exception e) {
-            Log.e(TAG, "ERROR uploading data!!!!!", e);
+        } else {
+            Log.i(TAG, "No records has to be uploaded");
         }
+
+        NightscoutUploadReceiver.completeWakefulIntent(intent);
     }
 
-    private void doRESTUpload(SharedPreferences prefs, RealmResults<CgmStatusEvent> records) {
+    private void doRESTUpload(SharedPreferences prefs, RealmResults<PumpStatusEvent> records) {
         String apiScheme = "https://";
         String apiUrl = "";
         String apiSecret = prefs.getString(mContext.getString(R.string.preference_api_secret), "YOURAPISECRET");
@@ -125,7 +136,7 @@ public class NightscoutUploadIntentService extends IntentService {
         }
     }
 
-    private void doRESTUploadTo(String baseURI, RealmResults<CgmStatusEvent> records) {
+    private void doRESTUploadTo(String baseURI, RealmResults<PumpStatusEvent> records) {
         try {
             String baseURL;
             String secret = null;
@@ -151,128 +162,151 @@ public class NightscoutUploadIntentService extends IntentService {
                 throw new Exception(String.format("Unexpected baseURI: %s, uriParts.length: %s", baseURI, uriParts.length));
             }
 
-            HttpParams params = new BasicHttpParams();
-            HttpConnectionParams.setSoTimeout(params, SOCKET_TIMEOUT);
-            HttpConnectionParams.setConnectionTimeout(params, CONNECTION_TIMEOUT);
+            JSONArray devicestatusBody = new JSONArray();
+            JSONArray entriesBody = new JSONArray();
 
-            DefaultHttpClient httpclient = new DefaultHttpClient(params);
+            for (PumpStatusEvent record : records) {
+                addDeviceStatus(devicestatusBody, record);
+                addSgvEntry(entriesBody, record);
+                addMbgEntry(entriesBody, record);
+            }
 
-            postDeviceStatus(baseURL, httpclient);
+            boolean isUploaded = uploadToNightscout(new URL(baseURL + "/entries"), secret, entriesBody);
 
-            for (CgmStatusEvent record : records) {
-                String postURL = baseURL + "entries";
+            for(int i = 0; isUploaded && i < devicestatusBody.length(); i++) {
+                isUploaded &= uploadToNightscout(new URL(baseURL + "/devicestatus"), secret, devicestatusBody.getJSONObject(i));
+            }
 
-                Log.i(TAG, "postURL: " + postURL);
-
-                HttpPost post = new HttpPost(postURL);
-
-                if (secret == null || secret.isEmpty()) {
-                    throw new Exception("Starting with API v1, a pass phase is required");
-                } else {
-                    MessageDigest digest = MessageDigest.getInstance("SHA-1");
-                    byte[] bytes = secret.getBytes("UTF-8");
-                    digest.update(bytes, 0, bytes.length);
-                    bytes = digest.digest();
-                    StringBuilder sb = new StringBuilder(bytes.length * 2);
-                    for (byte b : bytes) {
-                        sb.append(String.format("%02x", b & 0xff));
-                    }
-                    String token = sb.toString();
-                    post.setHeader("api-secret", token);
-                }
-
-                JSONObject json = new JSONObject();
-
-                try {
-                    // FIXME - Change this to bulk uploads
-                    populateV1APIEntry(json, record);
-                } catch (Exception e) {
-                    Log.w(TAG, "Unable to populate entry", e);
-                    continue;
-                }
-
-                String jsonString = json.toString();
-
-                Log.i(TAG, "Upload JSON: " + jsonString);
-
-                try {
-                    StringEntity se = new StringEntity(jsonString);
-                    post.setEntity(se);
-                    post.setHeader("Accept", "application/json");
-                    post.setHeader("Content-type", "application/json");
-
-                    ResponseHandler responseHandler = new BasicResponseHandler();
-                    httpclient.execute(post, responseHandler);
-                } catch (Exception e) {
-                    Log.w(TAG, "Unable to post data to: '" + post.getURI().toString() + "'", e);
-                }
-
+            if (isUploaded) {
                 // Yay! We uploaded. Tell Realm
+                // FIXME - check the upload succeeded!
                 mRealm.beginTransaction();
-                // TODO - does realm have auto incrementing keys?
-                // Turns out not yet (https://github.com/realm/realm-java/issues/469),
-                // but in the meantime, use this: https://gist.github.com/carloseduardosx/a7bd88d7337660cd10a2c5dcc580ebd0
-                RealmResults<CgmStatusEvent> updateRecordResults = mRealm
-                        .where(CgmStatusEvent.class)
-                        .equalTo("eventDate", record.getEventDate())
-                        .equalTo("deviceName", record.getDeviceName())
-                        .equalTo("sgv", record.getSgv())
-                        .findAll();
-                // FIXME - We shouldn't need this after we remove insertion of duplicates
-                for (CgmStatusEvent updateRecord : updateRecordResults) {
+                for (PumpStatusEvent updateRecord : records) {
                     updateRecord.setUploaded(true);
                 }
                 mRealm.commitTransaction();
             }
+
         } catch (Exception e) {
             Log.e(TAG, "Unable to post data", e);
         }
     }
 
-    private void postDeviceStatus(String baseURL, DefaultHttpClient httpclient) throws Exception {
-        String devicestatusURL = baseURL + "devicestatus";
-        Log.i(TAG, "devicestatusURL: " + devicestatusURL);
+    private boolean uploadToNightscout(URL endpoint, String secret, JSONObject httpBody) throws Exception {
+        return uploadToNightscout(endpoint, secret, httpBody.toString());
+    }
 
+    private boolean uploadToNightscout(URL endpoint, String secret, JSONArray httpBody) throws Exception {
+        return uploadToNightscout(endpoint, secret, httpBody.toString());
+    }
+
+    private boolean uploadToNightscout(URL endpoint, String secret, String httpBody) throws Exception {
+        Log.i(TAG, "postURL: " + endpoint.toString());
+
+        HttpPost post = new HttpPost(endpoint.toString());
+
+        if (secret == null || secret.isEmpty()) {
+            throw new Exception("Starting with API v1, a pass phase is required");
+        } else {
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            byte[] bytes = secret.getBytes("UTF-8");
+            digest.update(bytes, 0, bytes.length);
+            bytes = digest.digest();
+            StringBuilder sb = new StringBuilder(bytes.length * 2);
+            for (byte b : bytes) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            String token = sb.toString();
+            post.setHeader("api-secret", token);
+        }
+
+        HttpParams params = new BasicHttpParams();
+        HttpConnectionParams.setSoTimeout(params, SOCKET_TIMEOUT);
+        HttpConnectionParams.setConnectionTimeout(params, CONNECTION_TIMEOUT);
+
+        DefaultHttpClient httpclient = new DefaultHttpClient(params);
+
+        Log.i(TAG, "Upload JSON: " + httpBody);
+
+        try {
+            StringEntity se = new StringEntity(httpBody);
+            post.setEntity(se);
+            post.setHeader("Accept", "application/json");
+            post.setHeader("Content-type", "application/json");
+
+            ResponseHandler responseHandler = new BasicResponseHandler();
+            httpclient.execute(post, responseHandler);
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to post data to: '" + post.getURI().toString() + "'", e);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void addDeviceStatus(JSONArray devicestatusArray, PumpStatusEvent record) throws Exception {
         JSONObject json = new JSONObject();
         json.put("uploaderBattery", MainActivity.batLevel);
-        json.put("device", MainActivity.pumpStatusRecord.getDeviceName());
+        json.put("device", record.getDeviceName());
+        json.put("created_at", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
 
         JSONObject pumpInfo = new JSONObject();
-        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(MainActivity.pumpStatusRecord.pumpDate));
-        pumpInfo.put("reservoir", MainActivity.pumpStatusRecord.reservoirAmount);
+        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
+        pumpInfo.put("reservoir", new BigDecimal(record.getReservoirAmount()).setScale(3, BigDecimal.ROUND_HALF_UP));
 
         JSONObject iob = new JSONObject();
-        iob.put("timestamp", MainActivity.pumpStatusRecord.pumpDate);
-        iob.put("bolusiob", MainActivity.pumpStatusRecord.activeInsulin);
+        iob.put("timestamp", record.getPumpDate());
+        iob.put("bolusiob", record.getActiveInsulin());
+
+        JSONObject status = new JSONObject();
+        if (record.isBolusing()) {
+            status.put("bolusing", true);
+        } else if (record.isSuspended()) {
+            status.put("suspended", true);
+        } else {
+            status.put("status", "normal");
+        }
 
         JSONObject battery = new JSONObject();
-        battery.put("percent", MainActivity.pumpStatusRecord.batteryPercentage);
+        battery.put("percent", record.getBatteryPercentage());
 
         pumpInfo.put("iob", iob);
         pumpInfo.put("battery", battery);
+        pumpInfo.put("status", status);
+
         json.put("pump", pumpInfo);
         String jsonString = json.toString();
         Log.i(TAG, "Device Status JSON: " + jsonString);
 
-        HttpPost post = new HttpPost(devicestatusURL);
-        StringEntity se = new StringEntity(jsonString);
-        post.setEntity(se);
-        post.setHeader("Accept", "application/json");
-        post.setHeader("Content-type", "application/json");
-
-        ResponseHandler responseHandler = new BasicResponseHandler();
-        httpclient.execute(post, responseHandler);
+        devicestatusArray.put(json);
     }
 
-    private void populateV1APIEntry(JSONObject json, CgmStatusEvent pumpRecord) throws Exception {
+    private void addSgvEntry(JSONArray entriesArray, PumpStatusEvent pumpRecord) throws Exception {
+        JSONObject json = new JSONObject();
         // TODO replace with Retrofit/EntriesSerializer
         json.put("sgv", pumpRecord.getSgv());
-        json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getTrend()));
+        json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
         json.put("device", pumpRecord.getDeviceName());
         json.put("type", "sgv");
         json.put("date", pumpRecord.getEventDate().getTime());
         json.put("dateString", pumpRecord.getEventDate());
 
+        entriesArray.put(json);
+    }
+
+    private void addMbgEntry(JSONArray entriesArray, PumpStatusEvent pumpRecord) throws Exception {
+        if (pumpRecord.hasRecentBolusWizard()) {
+            JSONObject json = new JSONObject();
+
+            // TODO replace with Retrofit/EntriesSerializer
+            json.put("type", "mbg");
+            json.put("mbg", pumpRecord.getBolusWizardBGL());
+            json.put("device", pumpRecord.getDeviceName());
+            json.put("date", pumpRecord.getEventDate().getTime());
+            json.put("dateString", pumpRecord.getEventDate());
+
+            entriesArray.put(json);
+        }
     }
 
     private boolean isOnline() {

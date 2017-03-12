@@ -7,13 +7,13 @@ import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
 
-import info.nightscout.android.model.CgmStatusEvent;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 
 /**
  * Created by lgoedhart on 26/06/2016.
  */
-public class EntriesSerializer implements JsonSerializer<CgmStatusEvent> {
-    public static String getDirectionString(CgmStatusEvent.TREND trend) {
+public class EntriesSerializer implements JsonSerializer<PumpStatusEvent> {
+    public static String getDirectionString(PumpStatusEvent.CGM_TREND trend) {
         switch( trend ) {
             case NONE:
                 return "NONE";
@@ -43,10 +43,10 @@ public class EntriesSerializer implements JsonSerializer<CgmStatusEvent> {
     }
 
     @Override
-    public JsonElement serialize(CgmStatusEvent src, Type typeOfSrc, JsonSerializationContext context) {
+    public JsonElement serialize(PumpStatusEvent src, Type typeOfSrc, JsonSerializationContext context) {
         final JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("sgv", src.getSgv());
-        jsonObject.addProperty("direction", getDirectionString(src.getTrend()));
+        jsonObject.addProperty("direction", getDirectionString(src.getCgmTrend()));
         jsonObject.addProperty("device", src.getDeviceName());
         jsonObject.addProperty("type", "sgv");
         jsonObject.addProperty("date", src.getEventDate().getTime());

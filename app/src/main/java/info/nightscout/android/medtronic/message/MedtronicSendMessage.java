@@ -1,6 +1,6 @@
 package info.nightscout.android.medtronic.message;
 
-import info.nightscout.android.medtronic.MedtronicCNLSession;
+import info.nightscout.android.medtronic.MedtronicCnlSession;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -18,6 +18,7 @@ public class MedtronicSendMessage extends MedtronicMessage {
         BEGIN_EHSM_SESSION(0x412),
         TIME_REQUEST(0x0403),
         READ_PUMP_STATUS_REQUEST(0x0112),
+        READ_BASAL_PATTERN_REQUEST(0x0112),
         END_EHSM_SESSION(0x412);
 
         private short value;
@@ -27,7 +28,7 @@ public class MedtronicSendMessage extends MedtronicMessage {
         }
     }
 
-    protected MedtronicSendMessage(SendMessageType sendMessageType, MedtronicCNLSession pumpSession, byte[] payload) throws EncryptionException {
+    protected MedtronicSendMessage(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException {
         super(CommandType.SEND_MESSAGE, CommandAction.PUMP_REQUEST, pumpSession, buildPayload(sendMessageType, pumpSession, payload));
     }
 
@@ -42,7 +43,7 @@ public class MedtronicSendMessage extends MedtronicMessage {
      * | byte sendSequenceNumber | BE short sendMessageType | byte[] Payload bytes | BE short CCITT CRC |
      * +-------------------------+----------------------+----------------------+--------------------+
      */
-    protected static byte[] buildPayload(SendMessageType sendMessageType, MedtronicCNLSession pumpSession, byte[] payload) throws EncryptionException {
+    protected static byte[] buildPayload(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException {
         byte payloadLength = (byte) (payload == null ? 0 : payload.length);
 
         ByteBuffer sendPayloadBuffer = ByteBuffer.allocate(ENCRYPTED_ENVELOPE_SIZE + payloadLength + CRC_SIZE);

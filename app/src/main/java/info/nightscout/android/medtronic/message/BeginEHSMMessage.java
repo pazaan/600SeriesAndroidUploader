@@ -1,12 +1,12 @@
 package info.nightscout.android.medtronic.message;
 
-import info.nightscout.android.medtronic.MedtronicCNLSession;
+import info.nightscout.android.medtronic.MedtronicCnlSession;
 
 /**
  * Created by lgoedhart on 26/03/2016.
  */
 public class BeginEHSMMessage extends MedtronicSendMessage {
-    public BeginEHSMMessage(MedtronicCNLSession pumpSession) throws EncryptionException {
+    public BeginEHSMMessage(MedtronicCnlSession pumpSession) throws EncryptionException {
         super(SendMessageType.BEGIN_EHSM_SESSION, pumpSession, buildPayload());
     }
 
