@@ -119,11 +119,10 @@
 
     </LinearLayout>
 
-    <com.github.mikephil.charting.charts.ScatterChart
-        android:id="@+id/chart"
+    <com.jjoe64.graphview.GraphView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="visible" />
+        android:layout_height="100dip"
+        android:id="@+id/chart" />
 
     <ScrollView
         android:id="@+id/scrollView"

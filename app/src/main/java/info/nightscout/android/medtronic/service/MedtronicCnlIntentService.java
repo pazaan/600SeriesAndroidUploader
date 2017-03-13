@@ -21,15 +21,14 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
-import info.nightscout.android.BuildConfig;
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.medtronic.MedtronicCnlReader;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
-import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
+import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -37,8 +36,6 @@ import info.nightscout.android.upload.nightscout.NightscoutUploadReceiver;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadReceiver;
 import io.realm.Realm;
 import io.realm.RealmResults;
-
-import static info.nightscout.android.medtronic.MainActivity.setActivePumpMac;
 
 public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_VID = 0x1a79;
@@ -155,12 +152,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     .findFirst();
 
             if (info == null) {
-                // TODO - use realm.createObject()?
                 info = realm.createObject(ContourNextLinkInfo.class, cnlReader.getStickSerial());
-                //info = new ContourNextLinkInfo();
-                ///info.setSerialNumber(cnlReader.getStickSerial());
-
-                //info = realm.copyToRealm(info);
             }
 
             cnlReader.getPumpSession().setStickSerial(info.getSerialNumber());
@@ -204,7 +196,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
                     // reduce polling interval to half until pump is available
                     MedtronicCnlAlarmManager.setAlarm(activePump.getLastQueryTS() +
-                            (MainActivity.pollInterval  + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS) / (MainActivity.reducePollOnPumpAway?2L:1L)
+                            (MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L))
                     );
                 } else {
                     setActivePumpMac(pumpMAC);
