@@ -16,7 +16,7 @@ public class PumpInfo extends RealmObject {
     private byte lastRadioChannel;
     private long lastQueryTS = 0;
     private RealmList<ContourNextLinkInfo> associatedCnls;
-    private RealmList<PumpStatusEvent> pumpHistory;
+    private RealmList<PumpStatusEvent> pumpHistory = new RealmList<>();
 
     public long getPumpMac() {
         return pumpMac;

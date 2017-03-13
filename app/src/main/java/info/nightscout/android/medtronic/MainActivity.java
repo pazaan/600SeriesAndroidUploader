@@ -629,12 +629,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             return;
                         }
 
-                        PumpStatusEvent pumpStatusData = pump.getPumpHistory().last();;
-
                         lastQueryTS = pump.getLastQueryTS();
-
-// >>>>> note: prototype smart poll handling added to cnl intent
-//                        startCgmService(MainActivity.getNextPoll(pumpStatusData));
 
                         // Delete invalid or old records from Realm
                         // TODO - show an error message if the valid records haven't been uploaded
@@ -657,10 +652,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         }
 
                         // TODO - handle isOffline in NightscoutUploadIntentService?
-
- // >>>>> check this out as it's uploading before cnl comms finishes and may cause occasional channel changes due to wifi noise - cnl intent handles ns upload trigger after all comms finish
- //                       uploadCgmData();
-
                         refreshDisplay();
                     }
                 });
@@ -758,7 +749,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             PumpInfo pump = getActivePump();
 
-            if (pump != null && pump.isValid()) {
+            if (pump != null && pump.isValid() && pump.getPumpHistory().size() > 0) {
                 Log.d(TAG, "history display refresh size: " + pump.getPumpHistory().size());
                 Log.d(TAG, "history display refresh date: " + pump.getPumpHistory().last().getEventDate());
                 pumpStatusData = pump.getPumpHistory().last();

@@ -143,9 +143,8 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
      * update pumpRecord with data read from pump
      *
      * @param pumpRecord
-     * @param pumpOffset
      */
-    public void updatePumpRecord(PumpStatusEvent pumpRecord, long pumpOffset) {
+    public void updatePumpRecord(PumpStatusEvent pumpRecord) {
         // Status Flags
         pumpRecord.setSuspended(suspended);
         pumpRecord.setBolusing(bolusing);
@@ -188,7 +187,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // SGV Date
         pumpRecord.setCgmTrend(cgmTrend);
-        pumpRecord.setEventDate(new Date(sgvDate.getTime() - pumpOffset));
+        pumpRecord.setEventDate(new Date(sgvDate.getTime() - pumpRecord.getPumpTimeOffset()));
 
         // Predictive low suspend
         // TODO - there is more status info in this byte other than just a boolean yes/no
