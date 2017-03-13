@@ -58,6 +58,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Queue;
@@ -94,8 +95,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private boolean hasZoomedChart = false;
 
     private NumberFormat sgvFormatter;
-    private boolean mmolxl;
-    private boolean mmolxlDecimals;
+    private static boolean mmolxl;
+    private static boolean mmolxlDecimals;
+
+    public static long timeLastGoodSGV = 0;
+    public static short pumpBattery = 0;
+    public static int countUnavailableSGV = 0;
 
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
@@ -137,6 +142,20 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         return nextPoll;
+    }
+
+    public static String strFormatSGV(float sgvValue) {
+        if (mmolxl) {
+            NumberFormat sgvFormatter;
+            if (mmolxlDecimals) {
+                sgvFormatter = new DecimalFormat("0.00");
+            } else {
+                sgvFormatter = new DecimalFormat("0.0");
+            }
+            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
+        } else {
+            return String.valueOf(sgvValue);
+        }
     }
 
     @Override
@@ -332,17 +351,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getGridLabelRenderer().setHumanRounding(false);
 
         mChart.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
-            DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+            DateFormat mFormat = new SimpleDateFormat("HH:mm");  // 24 hour format forced to fix label overlap
+
             @Override
             public String formatLabel(double value, boolean isValueX) {
                 if (isValueX) {
                     return mFormat.format(new Date((long) value));
                 } else {
-                    if (mmolxl) {
-                        return sgvFormatter.format(value / MMOLXLFACTOR);
-                    } else {
                         return sgvFormatter.format(value);
-                    }
                 }
             }}
         );
@@ -617,7 +633,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                         lastQueryTS = pump.getLastQueryTS();
 
-                        startCgmService(MainActivity.getNextPoll(pumpStatusData));
+// >>>>> note: prototype smart poll handling added to cnl intent
+//                        startCgmService(MainActivity.getNextPoll(pumpStatusData));
 
                         // Delete invalid or old records from Realm
                         // TODO - show an error message if the valid records haven't been uploaded
@@ -640,7 +657,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         }
 
                         // TODO - handle isOffline in NightscoutUploadIntentService?
-                        uploadCgmData();
+
+ // >>>>> check this out as it's uploading before cnl comms finishes and may cause occasional channel changes due to wifi noise - cnl intent handles ns upload trigger after all comms finish
+ //                       uploadCgmData();
+
                         refreshDisplay();
                     }
                 });
@@ -685,7 +705,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
 
-        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(10);
+        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(400);
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -693,7 +713,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             Log.i(TAG, "Message Receiver: " + message);
 
             synchronized (messages) {
-                while (messages.size() > 8) {
+                while (messages.size() > 398) {
                     messages.poll();
                 }
                 messages.add(new StatusMessage(message));
@@ -802,6 +822,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         private void updateChart(RealmResults<PumpStatusEvent> results) {
+
+            mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
+
             int size = results.size();
             if (size == 0) {
                 final long now = System.currentTimeMillis(),
@@ -832,9 +855,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 int sgv = pumpStatus.getSgv();
 
                 if (mmolxl) {
-                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv() / MMOLXLFACTOR);
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv() / MMOLXLFACTOR);
                 } else {
-                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), pumpStatus.getSgv());
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv());
                 }
             }
 
@@ -860,11 +883,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         double sgv = dataPoint.getY();
 
                         StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
-                        if (mmolxl) {
-                            sb.append(sgvFormatter.format(sgv / MMOLXLFACTOR));
-                        } else {
-                            sb.append(sgvFormatter.format(sgv));
-                        }
+                        sb.append(sgvFormatter.format(sgv));
                         Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -873,11 +892,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     @Override
                     public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                         double sgv = dataPoint.getY();
-                        if (sgv < 80)
+                        if (sgv < (mmolxl?4.5:80))
                             paint.setColor(Color.RED);
-                        else if (sgv <= 180)
+                        else if (sgv <= (mmolxl?10:180))
                             paint.setColor(Color.GREEN);
-                        else if (sgv <= 260)
+                        else if (sgv <= (mmolxl?14:260))
                             paint.setColor(Color.YELLOW);
                         else
                             paint.setColor(Color.RED);

@@ -20,6 +20,10 @@ public class EHSMMessage extends  MedtronicSendMessageRequestMessage<ContourNext
 
     @Override
     public ContourNextLinkResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, UnexpectedMessageException {
+
+        // clear unexpected incoming messages
+        clearMessage(mDevice);
+
         sendMessage(mDevice);
         if (millis > 0) {
             try {
@@ -27,11 +31,17 @@ public class EHSMMessage extends  MedtronicSendMessageRequestMessage<ContourNext
             } catch (InterruptedException e) {
             }
         }
+
         // The End EHSM Session only has an 0x81 response
+        if (readMessage_0x81(mDevice) != 48) {
+            throw new UnexpectedMessageException("length of EHSMMessage response does not match");
+        }
+/*
         readMessage(mDevice);
         if (this.encode().length != 54) {
             throw new UnexpectedMessageException("length of EHSMMessage response does not match");
         }
+*/
         return null;
     }
 }

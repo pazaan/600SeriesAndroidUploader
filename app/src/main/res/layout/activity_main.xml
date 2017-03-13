@@ -128,18 +128,21 @@
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="fill_parent">
+        android:gravity="bottom"
 
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+            android:gravity="bottom"
 
             <TextView
                 android:id="@+id/textview_log"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10sp"
-                android:maxLines="20"
+                android:maxLines="800"
+                android:gravity="bottom"
                 android:text="" />
         </LinearLayout>
     </ScrollView>
