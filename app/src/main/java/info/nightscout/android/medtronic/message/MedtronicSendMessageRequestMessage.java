@@ -48,9 +48,9 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
      * +-----------------+------------------------------+--------------+-------------------+--------------------------------+
      * <p/>
      * MedtronicSendMessage (decrypted payload):
-     * +-------------------------+----------------------+----------------------+--------------------+
+     * +-------------------------+--------------------------+----------------------+--------------------+
      * | byte sendSequenceNumber | BE short sendMessageType | byte[] Payload bytes | BE short CCITT CRC |
-     * +-------------------------+----------------------+----------------------+--------------------+
+     * +-------------------------+--------------------------+----------------------+--------------------+
      */
     protected static byte[] buildPayload(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException {
         byte payloadLength = (byte) (payload == null ? 0 : payload.length);
@@ -78,6 +78,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         return payloadBuffer.array();
     }
 
+    // TODO - This should be dynamically incremented in the Session object
     protected static byte sendSequenceNumber(SendMessageType sendMessageType) {
         switch (sendMessageType) {
             case BEGIN_EHSM_SESSION:

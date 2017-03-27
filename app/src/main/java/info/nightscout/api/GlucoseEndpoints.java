@@ -1,16 +1,10 @@
 package info.nightscout.api;
 
-
-
-import java.lang.reflect.Array;
-import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
-import retrofit2.http.GET;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
 
@@ -20,8 +14,8 @@ public interface GlucoseEndpoints {
 
         String type;
         String dateString;
-        float date;
-        float sgv;
+        long date;
+        int sgv;
         String direction;
         String device;
 
@@ -41,19 +35,19 @@ public interface GlucoseEndpoints {
             this.dateString = dateString;
         }
 
-        public float getDate() {
+        public long getDate() {
             return date;
         }
 
-        public void setDate(float date) {
+        public void setDate(long date) {
             this.date = date;
         }
 
-        public float getSgv() {
+        public int getSgv() {
             return sgv;
         }
 
-        public void setSgv(float sgv) {
+        public void setSgv(int sgv) {
             this.sgv = sgv;
         }
 

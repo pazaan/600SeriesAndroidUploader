@@ -59,9 +59,10 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             throw new UnexpectedMessageException("Invalid message received for updatePumpStatus");
         }
 
-        ByteBuffer statusBuffer = ByteBuffer.allocate(96);
+        byte bufferSize = (byte) (this.encode()[0x38] - 2); // TODO - getting the size should be part of the superclass.
+        ByteBuffer statusBuffer = ByteBuffer.allocate(bufferSize);
         statusBuffer.order(ByteOrder.BIG_ENDIAN);
-        statusBuffer.put(this.encode(), 0x39, 96);
+        statusBuffer.put(this.encode(), 0x39, bufferSize);
 
         if (BuildConfig.DEBUG) {
             String outputString = HexDump.dumpHexString(statusBuffer.array());
@@ -184,6 +185,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // CGM SGV
         pumpRecord.setSgv(sgv);
+        pumpRecord.setSgvDate(new Date(sgvDate.getTime() - pumpRecord.getPumpTimeOffset()));
 
         // SGV Date
         pumpRecord.setCgmTrend(cgmTrend);

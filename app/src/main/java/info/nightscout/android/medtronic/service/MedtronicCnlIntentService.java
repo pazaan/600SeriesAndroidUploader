@@ -208,7 +208,6 @@ public class MedtronicCnlIntentService extends IntentService {
 
                 if (activePump == null) {
                     activePump = realm.createObject(PumpInfo.class, pumpMAC);
-                    //activePump.setPumpMac(pumpMAC);
                 }
 
                 activePump.updateLastQueryTS();

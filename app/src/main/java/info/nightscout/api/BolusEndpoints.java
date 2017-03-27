@@ -1,7 +1,5 @@
 package info.nightscout.api;
 
-import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 
 import okhttp3.ResponseBody;
@@ -15,8 +13,8 @@ public interface BolusEndpoints {
     class BolusEntry {
         String type;
         String dateString;
-        float date;
-        float mbg;
+        long date;
+        int mbg;
         String device;
 
         public BolusEntry() {  }
@@ -37,19 +35,19 @@ public interface BolusEndpoints {
             this.dateString = dateString;
         }
 
-        public float getDate() {
+        public long getDate() {
             return date;
         }
 
-        public void setDate(float date) {
+        public void setDate(long date) {
             this.date = date;
         }
 
-        public float getMbg() {
+        public int getMbg() {
             return mbg;
         }
 
-        public void setMbg(float mbg) {
+        public void setMbg(int mbg) {
             this.mbg = mbg;
         }
 

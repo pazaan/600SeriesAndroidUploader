@@ -17,11 +17,11 @@ public abstract class ContourNextLinkResponseMessage extends ContourNextLinkMess
     }
 
 
-    public void checkControlMessage(ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
+    public void checkControlMessage(ASCII controlCharacter) throws UnexpectedMessageException {
         checkControlMessage(mPayload.array(), controlCharacter);
     }
 
-    public void checkControlMessage(byte[] msg, ASCII controlCharacter) throws IOException, TimeoutException, UnexpectedMessageException {
+    public void checkControlMessage(byte[] msg, ASCII controlCharacter) throws UnexpectedMessageException {
         if (msg.length != 1 || !controlCharacter.equals(msg[0])) {
             throw new UnexpectedMessageException(String.format(Locale.getDefault(), "Expected to get control character '%d' Got '%d'.",
                     (int) controlCharacter.getValue(), (int) msg[0]));

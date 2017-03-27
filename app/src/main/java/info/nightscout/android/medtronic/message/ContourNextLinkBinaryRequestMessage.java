@@ -15,8 +15,6 @@ import info.nightscout.android.medtronic.exception.ChecksumException;
 public abstract class ContourNextLinkBinaryRequestMessage<T> extends ContourNextLinkRequestMessage<T> {
     private final static int ENVELOPE_SIZE = 33;
 
-    //protected ByteBuffer mBayerEnvelope;
-    //protected ByteBuffer mBayerPayload;
     protected CommandType mCommandType = CommandType.NO_TYPE;
     protected MedtronicCnlSession mPumpSession;
 
@@ -27,6 +25,8 @@ public abstract class ContourNextLinkBinaryRequestMessage<T> extends ContourNext
         this.mCommandType = commandType;
 
         // Validate checksum
+        // FIXME - this is not needed. Because we're setting the checksum in buildPayload, we know it's
+        // going to be okay. However, this check does need to be done when reading a message.
         byte messageChecksum = this.mPayload.get(32);
         byte calculatedChecksum = (byte) (MessageUtils.oneByteSum(this.mPayload.array()) - messageChecksum);
 

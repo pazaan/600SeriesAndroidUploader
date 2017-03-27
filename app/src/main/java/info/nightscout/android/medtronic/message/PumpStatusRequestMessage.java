@@ -21,8 +21,8 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
         super(SendMessageType.READ_PUMP_STATUS_REQUEST, pumpSession, null);
     }
 
+    // TODO - this needs refactoring
     public PumpStatusResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-
         sendMessage(mDevice);
         if (millis > 0) {
             try {

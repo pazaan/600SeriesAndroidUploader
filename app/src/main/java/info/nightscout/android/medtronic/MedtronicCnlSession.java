@@ -11,7 +11,6 @@ import java.security.NoSuchAlgorithmException;
 public class MedtronicCnlSession {
     private static final String HMAC_PADDING = "A4BD6CED9A42602564F413123";
 
-    private byte[] HMAC;
     private byte[] key;
 
     private String stickSerial;
@@ -24,10 +23,6 @@ public class MedtronicCnlSession {
 
     private int bayerSequenceNumber = 1;
     private int medtronicSequenceNumber = 1;
-
-    /*public byte[] getHMAC() {
-        return HMAC;
-    }*/
 
     public byte[] getHMAC() throws NoSuchAlgorithmException {
         String shortSerial = this.stickSerial.replaceAll("\\d+-", "");
@@ -104,10 +99,6 @@ public class MedtronicCnlSession {
 
     public void setRadioRSSI(byte radioRSSI) {
         this.radioRSSI = radioRSSI;
-    }
-
-    public void setHMAC(byte[] hmac) {
-        this.HMAC = hmac;
     }
 
     public void setKey(byte[] key) {
