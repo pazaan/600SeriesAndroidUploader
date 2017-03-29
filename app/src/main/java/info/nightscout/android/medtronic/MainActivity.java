@@ -449,14 +449,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startCgmServiceDelayed(long delay) {
-        RealmResults<PumpStatusEvent> results = mRealm.where(PumpStatusEvent.class)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-
-        if (results.size() > 0) {
-            startCgmService(getNextPoll(results.first()) + delay);
-        } else {
-            startCgmService(System.currentTimeMillis() + (delay==0?1000:delay));
+        if (!mRealm.isClosed()) {
+            RealmResults<PumpStatusEvent> results = mRealm.where(PumpStatusEvent.class)
+                    .findAllSorted("eventDate", Sort.DESCENDING);
+            if (results.size() > 0) {
+                startCgmService(getNextPoll(results.first()) + delay);
+                return;
+            }
         }
+        startCgmService(System.currentTimeMillis() + (delay == 0 ? 1000 : delay));
     }
 
     private void startCgmService(long initialPoll) {
