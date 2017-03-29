@@ -27,6 +27,9 @@ import info.nightscout.api.DeviceEndpoints.Battery;
 import info.nightscout.api.DeviceEndpoints.PumpStatus;
 import info.nightscout.api.DeviceEndpoints.PumpInfo;
 import info.nightscout.api.DeviceEndpoints.DeviceStatus;
+import okhttp3.ResponseBody;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
 class NightScoutUpload {
 
@@ -59,7 +62,7 @@ class NightScoutUpload {
         UploadApi uploadApi = new UploadApi(baseURL, formToken(secret));
 
         boolean eventsUploaded = uploadEvents(uploadApi.getGlucoseEndpoints(),
-                uploadApi.getBolusApi(),
+                uploadApi.getBolusEndpoints(),
                 records);
 
         boolean deviceStatusUploaded = uploadDeviceStatus(uploadApi.getDeviceEndpoints(),
@@ -103,15 +106,16 @@ class NightScoutUpload {
 
         }
 
+        boolean uploaded = true;
         if (glucoseEntries.size() > 0) {
-            glucoseEndpoints.sendEntries(glucoseEntries).execute();
+            Response<ResponseBody> result = glucoseEndpoints.sendEntries(glucoseEntries).execute();
+            uploaded = uploaded && result.isSuccessful();
         }
         if (bolusEntries.size() > 0) {
-            bolusEndpoints.sendEntries(bolusEntries).execute();
+            Response<ResponseBody> result = bolusEndpoints.sendEntries(bolusEntries).execute();
+            uploaded = uploaded && result.isSuccessful();
         }
-
-
-        return true;
+        return uploaded;
     }
 
     private boolean uploadDeviceStatus(DeviceEndpoints deviceEndpoints,
@@ -152,11 +156,13 @@ class NightScoutUpload {
             deviceEntries.add(deviceStatus);
         }
 
+        boolean uploaded = true;
         for (DeviceStatus status : deviceEntries) {
-            deviceEndpoints.sendDeviceStatus(status).execute();
+            Response<ResponseBody> result = deviceEndpoints.sendDeviceStatus(status).execute();
+            uploaded = uploaded && result.isSuccessful();
         }
 
-        return true;
+        return uploaded;
     }
 
     @NonNull
