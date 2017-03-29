@@ -40,11 +40,13 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
             } catch (InterruptedException e) {
             }
         }
-        PumpStatusResponseMessage response = this.getResponse(readMessage(mDevice));
+        // Read the 0x80
+        byte[] payload = readMessage(mDevice);
 
         // clear unexpected incoming messages
         clearMessage(mDevice);
 
+        PumpStatusResponseMessage response = this.getResponse(payload);
         return response;
     }
 

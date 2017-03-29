@@ -252,8 +252,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
                         // Check if pump sent old event when new expected and schedule a re-poll
                         if (((pumpRecord.getEventDate().getTime() - MainActivity.timeLastGoodSGV) < 5000L) && ((timePollExpected - timePollStarted) < 5000L)) {
-                            pollInterval = 90000L; // polling interval set to 90 seconds
-                            sendStatus("Pump sent old SGV event, re-polling...");
+                            sendStatus("Pump sent old SGV event");
                         }
 
                         MainActivity.timeLastGoodSGV =  pumpRecord.getEventDate().getTime(); // track last good sgv event time
@@ -287,11 +286,11 @@ public class MedtronicCnlIntentService extends IntentService {
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
-                pollInterval = MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L);
+                pollInterval = 60000L; // retry once during this poll period
             } catch (TimeoutException e) {
                 Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
                 sendStatus("Timeout communicating with the Contour Next Link.");
-                pollInterval = MainActivity.pollInterval / (MainActivity.reducePollOnPumpAway?2L:1L);
+                pollInterval = 60000L; // retry once during this poll period
             } catch (NoSuchAlgorithmException e) {
                 Log.e(TAG, "Could not determine CNL HMAC", e);
                 sendStatus("Error connecting to Contour Next Link: Hashing error.");
