@@ -327,6 +327,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getViewport().setMaxX(now);
         mChart.getViewport().setMinX(left);
 
+// due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setOnXAxisBoundsChangedListener is n/a in this version
+/*
         mChart.getViewport().setOnXAxisBoundsChangedListener(new Viewport.OnXAxisBoundsChangedListener() {
             @Override
             public void onXAxisBoundsChanged(double minX, double maxX, Reason reason) {
@@ -334,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 hasZoomedChart = (rightX != maxX || rightX - chartZoom * 60 * 60 * 1000 != minX);
             }
         });
-
+*/
         mChart.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -348,7 +350,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         });
         mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
-        mChart.getGridLabelRenderer().setHumanRounding(false);
+
+// due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setHumanRounding is n/a in this version
+//        mChart.getGridLabelRenderer().setHumanRounding(false);
 
         mChart.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
             DateFormat mFormat = new SimpleDateFormat("HH:mm");  // 24 hour format forced to fix label overlap
@@ -835,13 +839,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mChart.getViewport().setMinX(left);
 
                 mChart.getViewport().setYAxisBoundsManual(true);
-                if (mmolxl) {
-                    mChart.getViewport().setMinY(80 / MMOLXLFACTOR);
-                    mChart.getViewport().setMaxY(120 / MMOLXLFACTOR);
-                } else {
-                    mChart.getViewport().setMinY(80);
-                    mChart.getViewport().setMaxY(120);
-                }
+                mChart.getViewport().setMinY(80 / (mmolxl ? MMOLXLFACTOR : 1));
+                mChart.getViewport().setMaxY(120 / (mmolxl ? MMOLXLFACTOR : 1));
                 mChart.postInvalidate();
                 return;
             }
