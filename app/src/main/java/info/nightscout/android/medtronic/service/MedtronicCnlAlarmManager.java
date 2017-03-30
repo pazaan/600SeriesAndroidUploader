@@ -11,6 +11,7 @@ import android.util.Log;
 import java.util.Date;
 
 import info.nightscout.android.medtronic.MainActivity;
+import info.nightscout.android.utils.ConfigurationStore;
 
 /**
  * Created by lgoedhart on 14/07/2016.
@@ -81,7 +82,7 @@ public class MedtronicCnlAlarmManager {
     // restarting the alarm after MedtronicCnlIntentService.POLL_PERIOD_MS from now
     public static void restartAlarm() {
         //setAlarmAfterMillis(MainActivity.pollInterval + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS);
-        setAlarmAfterMillis(MainActivity.pollInterval); // grace already accounted for when using current intent time to set default restart
+        setAlarmAfterMillis(ConfigurationStore.getInstance().getPollInterval()); // grace already accounted for when using current intent time to set default restart
     }
 
     // Cancel the alarm.
