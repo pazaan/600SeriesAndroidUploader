@@ -31,11 +31,13 @@
 
 
         <!-- I have set screenOrientation to "portrait" to avoid the restart of AsyncTasks when you rotate the phone -->
+        <!-- configChanges="uiMode" added to avoid restart of AsyncTasks when phone is plugged into charger/dock (for phones that can do usb otg & charging simultaneously -->
         <activity
             android:name=".medtronic.MainActivity"
             android:icon="@drawable/ic_launcher"
             android:label="@string/app_name"
             android:launchMode="singleTask"
+            android:configChanges="uiMode"
             android:screenOrientation="portrait">
 
             <intent-filter android:icon="@drawable/ic_launcher">
@@ -63,10 +65,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".medtronic.GetHmacAndKeyActivity"
-            android:label="@string/title_activity_login"
-            android:theme="@style/SettingsTheme" />
+
+        <activity android:name=".medtronic.ManageCNLActivity"/>
 
         <activity android:name=".medtronic.StatusActivity" />
 
@@ -83,6 +83,11 @@
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver" />
         <receiver android:name=".upload.nightscout.NightscoutUploadReceiver" />
         <receiver android:name=".xdrip_plus.XDripPlusUploadReceiver" />
+
+
+        <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"></receiver>
+
+
 
     </application>
 

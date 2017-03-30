@@ -25,11 +25,50 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         for (int i = 0; i < getPreferenceScreen().getPreferenceCount(); i++) {
             initSummary(getPreferenceScreen().getPreference(i));
         }
+
+        setMinBatPollIntervall((ListPreference) findPreference("pollInterval"), (ListPreference) findPreference("lowBatPollInterval"));
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        updatePrefSummary(findPreference(key));
+        Preference pref = findPreference(key);
+
+
+        if ("pollInterval".equals(key)) {
+            setMinBatPollIntervall((ListPreference) pref, (ListPreference) findPreference("lowBatPollInterval"));
+        }
+        updatePrefSummary(pref);
+    }
+
+    //
+
+    /**
+     * set lowBatPollInterval to normal poll interval at least
+     * and adapt the selectable values
+     *
+     * @param pollIntervalPref
+     * @param lowBatPollIntervalPref
+     */
+    private void setMinBatPollIntervall(ListPreference pollIntervalPref, ListPreference lowBatPollIntervalPref) {
+        final String currentValue = lowBatPollIntervalPref.getValue();
+        final int pollIntervalPos = (pollIntervalPref.findIndexOfValue(pollIntervalPref.getValue()) >= 0?pollIntervalPref.findIndexOfValue(pollIntervalPref.getValue()):0),
+                length = pollIntervalPref.getEntries().length;
+
+        CharSequence[] entries = new String[length - pollIntervalPos],
+                entryValues = new String[length - pollIntervalPos];
+
+        // generate temp Entries and EntryValues
+        for(int i = pollIntervalPos; i < length; i++) {
+            entries[i - pollIntervalPos] = pollIntervalPref.getEntries()[i];
+            entryValues[i - pollIntervalPos] = pollIntervalPref.getEntryValues()[i];
+        }
+        lowBatPollIntervalPref.setEntries(entries);
+        lowBatPollIntervalPref.setEntryValues(entryValues);
+
+        // and set the correct one
+        if (lowBatPollIntervalPref.findIndexOfValue(currentValue) == -1) {
+            lowBatPollIntervalPref.setValueIndex(0);
+        }
     }
 
     @Override

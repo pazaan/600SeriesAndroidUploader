@@ -11,7 +11,6 @@ import java.security.NoSuchAlgorithmException;
 public class MedtronicCnlSession {
     private static final String HMAC_PADDING = "A4BD6CED9A42602564F413123";
 
-    private byte[] HMAC;
     private byte[] key;
 
     private String stickSerial;
@@ -20,12 +19,10 @@ public class MedtronicCnlSession {
     private long pumpMAC;
 
     private byte radioChannel;
+    private byte radioRSSI;
+
     private int bayerSequenceNumber = 1;
     private int medtronicSequenceNumber = 1;
-
-    /*public byte[] getHMAC() {
-        return HMAC;
-    }*/
 
     public byte[] getHMAC() throws NoSuchAlgorithmException {
         String shortSerial = this.stickSerial.replaceAll("\\d+-", "");
@@ -80,6 +77,14 @@ public class MedtronicCnlSession {
         return radioChannel;
     }
 
+    public byte getRadioRSSI() {
+        return radioRSSI;
+    }
+
+    public int getRadioRSSIpercentage() {
+        return (((int) radioRSSI & 0x00FF) * 100) / 0xA8;
+    }
+
     public void incrBayerSequenceNumber() {
         bayerSequenceNumber++;
     }
@@ -92,32 +97,12 @@ public class MedtronicCnlSession {
         this.radioChannel = radioChannel;
     }
 
-    public void setHMAC(byte[] hmac) {
-        this.HMAC = hmac;
+    public void setRadioRSSI(byte radioRSSI) {
+        this.radioRSSI = radioRSSI;
     }
 
     public void setKey(byte[] key) {
         this.key = key;
-    }
-
-    public void setPackedLinkKey(byte[] packedLinkKey) {
-        this.key = new byte[16];
-
-        int pos = this.stickSerial.charAt(this.stickSerial.length() - 1) & 7;
-
-        for (int i = 0; i < this.key.length; i++) {
-            if ((packedLinkKey[pos + 1] & 1) == 1) {
-                this.key[i] = (byte) ~packedLinkKey[pos];
-            } else {
-                this.key[i] = packedLinkKey[pos];
-            }
-
-            if (((packedLinkKey[pos + 1] >> 1) & 1) == 0) {
-                pos += 3;
-            } else {
-                pos += 2;
-            }
-        }
     }
 
     public String getStickSerial() {

@@ -6,11 +6,13 @@ import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.net.Uri;
@@ -23,9 +25,9 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
+import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.format.DateUtils;
@@ -36,12 +38,16 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
+import android.widget.Toast;
 
-import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.realm.implementation.RealmLineDataSet;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
-import com.github.mikephil.charting.utils.ColorTemplate;
+import com.jjoe64.graphview.DefaultLabelFormatter;
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.Viewport;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.DataPointInterface;
+import com.jjoe64.graphview.series.OnDataPointTapListener;
+import com.jjoe64.graphview.series.PointsGraphSeries;
+import com.jjoe64.graphview.series.Series;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -51,7 +57,8 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Queue;
@@ -61,28 +68,45 @@ import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
+import info.nightscout.android.medtronic.service.MedtronicCnlAlarmManager;
 import info.nightscout.android.medtronic.service.MedtronicCnlAlarmReceiver;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
-import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
 import io.realm.Realm;
+import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
 import io.realm.Sort;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
     private static final String TAG = MainActivity.class.getSimpleName();
+    public static final float MMOLXLFACTOR = 18.016f;
 
     public static int batLevel = 0;
+    public static boolean reducePollOnPumpAway = false;
+    public static long pollInterval = MedtronicCnlIntentService.POLL_PERIOD_MS;
+    public static long lowBatteryPollInterval = MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
+
     private static long activePumpMac;
+    private int chartZoom = 3;
+    private boolean hasZoomedChart = false;
+
+    private NumberFormat sgvFormatter;
+    private static boolean mmolxl;
+    private static boolean mmolxlDecimals;
+
+    public static long timeLastGoodSGV = 0;
+    public static short pumpBattery = 0;
+    public static int countUnavailableSGV = 0;
+
     boolean mEnableCgmService = true;
     SharedPreferences prefs = null;
     private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
-    private LineChart mChart;
+    private GraphView mChart;
     private Intent mNightscoutUploadService;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
@@ -90,8 +114,48 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
 
-    public static void setActivePumpMac(long pumpMac) {
-        activePumpMac = pumpMac;
+    /**
+     * calculate the next poll timestamp based on last svg event
+     *
+     * @param pumpStatusData
+     * @return timestamp
+     */
+    public static long getNextPoll(PumpStatusEvent pumpStatusData) {
+        long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset(),
+            now = System.currentTimeMillis();
+
+        // align to next poll slot
+        if (nextPoll + 2 * 60 * 60 * 1000 < now) { // last event more than 2h old -> could be a calibration
+            nextPoll = System.currentTimeMillis() + 1000;
+        } else {
+            // align to poll interval
+            nextPoll += (((now - nextPoll) / MainActivity.pollInterval)) * MainActivity.pollInterval
+                    + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS;
+            if (pumpStatusData.getBatteryPercentage() > 25) {
+                // poll every 5 min
+                nextPoll += MainActivity.pollInterval;
+            } else {
+                // if pump battery seems to be empty reduce polling to save battery (every 15 min)
+                //TODO add message & document it
+                nextPoll += MainActivity.lowBatteryPollInterval;
+            }
+        }
+
+        return nextPoll;
+    }
+
+    public static String strFormatSGV(float sgvValue) {
+        if (mmolxl) {
+            NumberFormat sgvFormatter;
+            if (mmolxlDecimals) {
+                sgvFormatter = new DecimalFormat("0.00");
+            } else {
+                sgvFormatter = new DecimalFormat("0.0");
+            }
+            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
+        } else {
+            return String.valueOf(sgvValue);
+        }
     }
 
     @Override
@@ -111,13 +175,30 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             stopCgmService();
         }
 
+        // setup preferences
+        MainActivity.pollInterval = Long.parseLong(prefs.getString("pollInterval", Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
+        MainActivity.lowBatteryPollInterval = Long.parseLong(prefs.getString("lowBatPollInterval", Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+        MainActivity.reducePollOnPumpAway = prefs.getBoolean("doublePollOnPumpAway", false);
+        chartZoom = Integer.parseInt(prefs.getString("chartZoom", "3"));
+        mmolxl = prefs.getBoolean("mmolxl", false);
+        mmolxlDecimals = prefs.getBoolean("mmolDecimals", false);
+
+        if (mmolxl) {
+            if (mmolxlDecimals)
+                sgvFormatter = new DecimalFormat("0.00");
+            else
+                sgvFormatter = new DecimalFormat("0.0");
+        } else {
+            sgvFormatter = new DecimalFormat("0");
+        }
+
         // Disable battery optimization to avoid missing values on 6.0+
         // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             final String packageName = getPackageName();
-            //Log.d(TAG, "Maybe ignoring battery optimization");
             final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+
             if (!pm.isIgnoringBatteryOptimizations(packageName)) {
                 Log.d(TAG, "Requesting ignore battery optimization");
                 try {
@@ -137,8 +218,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 statusMessageReceiver,
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                new RefreshDataReceiver(),
-                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_REFRESH_DATA));
+                new UpdatePumpReceiver(),
+                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_UPDATE_PUMP));
 
         mEnableCgmService = Eula.show(this, prefs);
 
@@ -221,7 +302,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             stopCgmService();
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
-                            startCgmService();
+                            // It was triggered by user so start reading of data now and not based on last poll.
+                            startCgmService(0);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
                         }
@@ -232,7 +314,54 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .build();
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
-        mChart = (LineChart) findViewById(R.id.chart);
+
+        mChart = (GraphView) findViewById(R.id.chart);
+
+        // disable scrolling at the moment
+        mChart.getViewport().setScalable(false);
+        mChart.getViewport().setScrollable(false);
+        mChart.getViewport().setXAxisBoundsManual(true);
+        final long now = System.currentTimeMillis(),
+                left = now - chartZoom * 60 * 60 * 1000;
+
+        mChart.getViewport().setMaxX(now);
+        mChart.getViewport().setMinX(left);
+
+        mChart.getViewport().setOnXAxisBoundsChangedListener(new Viewport.OnXAxisBoundsChangedListener() {
+            @Override
+            public void onXAxisBoundsChanged(double minX, double maxX, Reason reason) {
+                double rightX = mChart.getSeries().get(0).getHighestValueX();
+                hasZoomedChart = (rightX != maxX || rightX - chartZoom * 60 * 60 * 1000 != minX);
+            }
+        });
+
+        mChart.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if (!mChart.getSeries().isEmpty() && !mChart.getSeries().get(0).isEmpty()) {
+                    double rightX = mChart.getSeries().get(0).getHighestValueX();
+                    mChart.getViewport().setMaxX(rightX);
+                    mChart.getViewport().setMinX(rightX - chartZoom * 60 * 60 * 1000);
+                }
+                hasZoomedChart = false;
+                return true;
+            }
+        });
+        mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
+        mChart.getGridLabelRenderer().setHumanRounding(false);
+
+        mChart.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
+            DateFormat mFormat = new SimpleDateFormat("HH:mm");  // 24 hour format forced to fix label overlap
+
+            @Override
+            public String formatLabel(double value, boolean isValueX) {
+                if (isValueX) {
+                    return mFormat.format(new Date((long) value));
+                } else {
+                        return sgvFormatter.format(value);
+                }
+            }}
+        );
     }
 
     @Override
@@ -247,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
 
         // setup self handling alarm receiver
-        medtronicCnlAlarmReceiver.setContext(getBaseContext());
+        MedtronicCnlAlarmManager.setContext(getBaseContext());
     }
 
     @Override
@@ -265,24 +394,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 Intent intent = new Intent(this, StatusActivity.class);
                 startActivity(intent);
                 break;
-        }
-        return true;
-    }
-
-    private boolean hasDetectedCnl() {
-        if (mRealm.where(ContourNextLinkInfo.class).count() == 0) {
-            new AlertDialog.Builder(this, R.style.AppTheme)
-                    .setTitle("No registered Contour Next Link devices")
-                    .setMessage("To register a Contour Next Link you must first plug it in, and get a reading from the pump.")
-                    .setCancelable(false)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
-            return false;
         }
         return true;
     }
@@ -330,7 +441,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startCgmService() {
-        startCgmService(System.currentTimeMillis() + 1000);
+        startCgmServiceDelayed(0);
+    }
+
+    private void startCgmServiceDelayed(long delay) {
+        RealmResults<PumpStatusEvent> results = mRealm.where(PumpStatusEvent.class)
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        if (results.size() > 0) {
+            startCgmService(getNextPoll(results.first()) + delay);
+        } else {
+            startCgmService(System.currentTimeMillis() + (delay==0?1000:delay));
+        }
     }
 
     private void startCgmService(long initialPoll) {
@@ -340,11 +462,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             return;
         }
 
-        //clearLogText();
-
         // Cancel any existing polling.
         stopCgmService();
-        medtronicCnlAlarmReceiver.setAlarm(initialPoll);
+        MedtronicCnlAlarmManager.setAlarm(initialPoll);
     }
 
     private void uploadCgmData() {
@@ -353,7 +473,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
-        medtronicCnlAlarmReceiver.cancelAlarm();
+        MedtronicCnlAlarmManager.cancelAlarm();
     }
 
     private void showDisconnectionNotification(String title, String message) {
@@ -413,7 +533,29 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mEnableCgmService = true;
                 startCgmService();
             }
-        } else if (key.equals("mmolxl")) {
+        } else if (key.equals("mmolxl") || key.equals("mmolDecimals")) {
+            mmolxl = sharedPreferences.getBoolean("mmolxl", false);
+            mmolxlDecimals = sharedPreferences.getBoolean("mmolDecimals", false);
+            if (mmolxl) {
+                if (mmolxlDecimals)
+                    sgvFormatter = new DecimalFormat("0.00");
+                else
+                    sgvFormatter = new DecimalFormat("0.0");
+            } else {
+                sgvFormatter = new DecimalFormat("0");
+            }
+            refreshDisplay();
+        } else if (key.equals("pollInterval")) {
+            MainActivity.pollInterval = Long.parseLong(sharedPreferences.getString("pollInterval",
+                    Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
+        } else if (key.equals("lowBatPollInterval")) {
+            MainActivity.lowBatteryPollInterval = Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
+                    Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+        } else if (key.equals("doublePollOnPumpAway")) {
+            MainActivity.reducePollOnPumpAway = sharedPreferences.getBoolean("doublePollOnPumpAway", false);
+        } else if (key.equals("chartZoom")) {
+            chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
+            hasZoomedChart = false;
             refreshDisplay();
         }
     }
@@ -434,10 +576,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     public void openUsbRegistration() {
-        if (hasDetectedCnl()) {
-            Intent loginIntent = new Intent(this, GetHmacAndKeyActivity.class);
-            startActivity(loginIntent);
-        }
+        Intent manageCNLIntent = new Intent(this, ManageCNLActivity.class);
+        startActivity(manageCNLIntent);
     }
 
     private String renderTrendHtml(PumpStatusEvent.CGM_TREND trend) {
@@ -461,9 +601,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
+    public static void setActivePumpMac(long pumpMac) {
+        activePumpMac = pumpMac;
+    }
+
     private PumpInfo getActivePump() {
         if (activePumpMac != 0L && (mActivePump == null || !mActivePump.isValid() || mActivePump.getPumpMac() != activePumpMac)) {
-            mActivePump = null;
+            if (mActivePump != null) {
+                // remove listener on old pump
+                mActivePump.removeChangeListeners();
+                mActivePump = null;
+            }
 
             PumpInfo pump = mRealm
                     .where(PumpInfo.class)
@@ -472,6 +620,41 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             if (pump != null && pump.isValid()) {
                 mActivePump = pump;
+                mActivePump.addChangeListener(new RealmChangeListener<PumpInfo>() {
+                    long lastQueryTS = 0;
+                    @Override
+                    public void onChange(PumpInfo pump) {
+                        // prevent double updating after deleting old events below
+                        if (pump.getLastQueryTS() == lastQueryTS || !pump.isValid()) {
+                            return;
+                        }
+
+                        lastQueryTS = pump.getLastQueryTS();
+
+                        // Delete invalid or old records from Realm
+                        // TODO - show an error message if the valid records haven't been uploaded
+                        final RealmResults<PumpStatusEvent> results =
+                                mRealm.where(PumpStatusEvent.class)
+                                        .equalTo("sgv", 0)
+                                        .or()
+                                        .lessThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
+                                        .findAll();
+
+                        if (results.size() > 0) {
+                            mRealm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(Realm realm) {
+                                    // Delete all matches
+                                    Log.d(TAG, "Deleting " + results.size() + " records from realm");
+                                    results.deleteAllFromRealm();
+                                }
+                            });
+                        }
+
+                        // TODO - handle isOffline in NightscoutUploadIntentService?
+                        refreshDisplay();
+                    }
+                });
             }
         }
 
@@ -513,7 +696,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
 
-        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(10);
+        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(400);
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -521,7 +704,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             Log.i(TAG, "Message Receiver: " + message);
 
             synchronized (messages) {
-                while (messages.size() > 8) {
+                while (messages.size() > 398) {
                     messages.poll();
                 }
                 messages.add(new StatusMessage(message));
@@ -553,7 +736,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
             TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
-            if (prefs.getBoolean("mmolxl", false)) {
+            if (mmolxl) {
                 textViewUnits.setText(R.string.text_unit_mmolxl);
             } else {
                 textViewUnits.setText(R.string.text_unit_mgxdl);
@@ -566,74 +749,171 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             PumpInfo pump = getActivePump();
 
-            if (pump != null && pump.isValid()) {
+            if (pump != null && pump.isValid() && pump.getPumpHistory().size() > 0) {
                 pumpStatusData = pump.getPumpHistory().last();
             }
 
             // FIXME - grab the last item from the activePump's getPumpHistory
-            RealmResults<PumpStatusEvent> results =
-                    mRealm.where(PumpStatusEvent.class)
-                            .findAllSorted("eventDate", Sort.ASCENDING);
+            updateChart(mRealm.where(PumpStatusEvent.class)
+                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - 1000*60*60*24))
+                    .findAllSorted("eventDate", Sort.ASCENDING));
 
-            if (pumpStatusData == null) {
-                return;
+            if (pumpStatusData != null) {
+
+                String sgvString;
+                if (mmolxl) {
+                    float fBgValue = (float) pumpStatusData.getSgv();
+                    sgvString = sgvFormatter.format(fBgValue / MMOLXLFACTOR);
+                    Log.d(TAG, sgvString + " mmol/L");
+                } else {
+                    sgvString = String.valueOf(pumpStatusData.getSgv());
+                    Log.d(TAG, sgvString + " mg/dL");
+                }
+
+                textViewBg.setText(sgvString);
+                textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
+                textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
+                textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
+
+                ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
+                if (batIcon != null) {
+                    switch (pumpStatusData.getBatteryPercentage()) {
+                        case 0:
+                            batIcon.setTitle("0%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+                            break;
+                        case 25:
+                            batIcon.setTitle("25%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
+                            break;
+                        case 50:
+                            batIcon.setTitle("50%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
+                            break;
+                        case 75:
+                            batIcon.setTitle("75%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
+                            break;
+                        case 100:
+                            batIcon.setTitle("100%");
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
+                            break;
+                        default:
+                            batIcon.setTitle(getResources().getString(R.string.menu_name_status));
+                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
+                    }
+                }
+
             }
-
-            DecimalFormat df;
-            if (prefs.getBoolean("mmolDecimals", false))
-                df = new DecimalFormat("0.00");
-            else
-                df = new DecimalFormat("0.0");
-
-            String sgvString, units;
-            if (prefs.getBoolean("mmolxl", false)) {
-                float fBgValue = (float) pumpStatusData.getSgv();
-                sgvString = df.format(fBgValue / 18.016f);
-                units = "mmol/L";
-                Log.d(TAG, "mmolxl true --> " + sgvString);
-
-            } else {
-                sgvString = String.valueOf(pumpStatusData.getSgv());
-                units = "mg/dL";
-                Log.d(TAG, "mmolxl false --> " + sgvString);
-            }
-
-            textViewBg.setText(sgvString);
-            textViewUnits.setText(units);
-            textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
-            textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
-            textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
-
-            // TODO - waiting for MPAndroidCharts 3.0.0. This will fix:
-            // Date support
-            // Realm v1.0.0 support
-            //updateChart(results);
 
             // Run myself again in 60 seconds;
             mUiRefreshHandler.postDelayed(this, 60000L);
         }
 
         private void updateChart(RealmResults<PumpStatusEvent> results) {
-            RealmLineDataSet<PumpStatusEvent> lineDataSet = new RealmLineDataSet<>(results, "eventDate", "sgv");
 
-            lineDataSet.setDrawCircleHole(false);
-            lineDataSet.setColor(ColorTemplate.rgb("#FF5722"));
-            lineDataSet.setCircleColor(ColorTemplate.rgb("#FF5722"));
-            lineDataSet.setLineWidth(1.8f);
-            lineDataSet.setCircleSize(3.6f);
+            mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
 
-            ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
-            dataSets.add(lineDataSet);
+            int size = results.size();
+            if (size == 0) {
+                final long now = System.currentTimeMillis(),
+                        left = now - chartZoom * 60 * 60 * 1000;
 
-            LineData lineData = new LineData(dataSets);
+                mChart.getViewport().setXAxisBoundsManual(true);
+                mChart.getViewport().setMaxX(now);
+                mChart.getViewport().setMinX(left);
 
-            // set data
-            mChart.setMinimumHeight(200);
-            mChart.setData(lineData);
+                mChart.getViewport().setYAxisBoundsManual(true);
+                if (mmolxl) {
+                    mChart.getViewport().setMinY(80 / MMOLXLFACTOR);
+                    mChart.getViewport().setMaxY(120 / MMOLXLFACTOR);
+                } else {
+                    mChart.getViewport().setMinY(80);
+                    mChart.getViewport().setMaxY(120);
+                }
+                mChart.postInvalidate();
+                return;
+            }
+
+            DataPoint[] entries = new DataPoint[size];
+            final long left = System.currentTimeMillis() - chartZoom * 60 * 60 * 1000;
+
+            int pos = 0;
+            for (PumpStatusEvent pumpStatus: results) {
+                // turn your data into Entry objects
+                int sgv = pumpStatus.getSgv();
+
+                if (mmolxl) {
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv() / MMOLXLFACTOR);
+                } else {
+                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv());
+                }
+            }
+
+            if (mChart.getSeries().size() == 0) {
+//                long now = System.currentTimeMillis();
+//                entries = new DataPoint[1000];
+//                int j = 0;
+//                for(long i = now - 24*60*60*1000; i < now - 30*60*1000; i+= 5*60*1000) {
+//                    entries[j++] = new DataPoint(i, (float) (Math.random()*200 + 89));
+//                }
+//                entries = Arrays.copyOfRange(entries, 0, j);
+
+                PointsGraphSeries sgvSerie = new PointsGraphSeries(entries);
+//                sgvSerie.setSize(3.6f);
+//                sgvSerie.setColor(Color.LTGRAY);
+
+
+                sgvSerie.setOnDataPointTapListener(new OnDataPointTapListener() {
+                    DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.MEDIUM);
+
+                    @Override
+                    public void onTap(Series series, DataPointInterface dataPoint) {
+                        double sgv = dataPoint.getY();
+
+                        StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
+                        sb.append(sgvFormatter.format(sgv));
+                        Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                sgvSerie.setCustomShape(new PointsGraphSeries.CustomShape() {
+                    @Override
+                    public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
+                        double sgv = dataPoint.getY();
+                        if (sgv < (mmolxl?4.5:80))
+                            paint.setColor(Color.RED);
+                        else if (sgv <= (mmolxl?10:180))
+                            paint.setColor(Color.GREEN);
+                        else if (sgv <= (mmolxl?14:260))
+                            paint.setColor(Color.YELLOW);
+                        else
+                            paint.setColor(Color.RED);
+                        canvas.drawCircle(x, y, 3.6f, paint);
+                    }
+                });
+
+                mChart.getViewport().setYAxisBoundsManual(false);
+                mChart.addSeries(sgvSerie);
+            } else {
+                if (entries.length > 0) {
+                    ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
+                }
+            }
+
+            // set vieport to latest SGV
+            long lastSGVTimestamp = (long) mChart.getSeries().get(0).getHighestValueX();
+            if (!hasZoomedChart) {
+                mChart.getViewport().setMaxX(lastSGVTimestamp);
+                mChart.getViewport().setMinX(lastSGVTimestamp - chartZoom * 60 * 60 * 1000);
+            }
         }
     }
 
-    private class RefreshDataReceiver extends BroadcastReceiver {
+    /**
+     * has to be done in MainActivity thread
+     */
+    private class UpdatePumpReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -642,46 +922,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             if (mRealm.isClosed()) {
                 return;
             }
-
-            PumpStatusEvent pumpStatusData = null;
-
-            PumpInfo pump = getActivePump();
-
-            if (pump != null && pump.isValid()) {
-                pumpStatusData = pump.getPumpHistory().last();
-            } else {
-                return;
-            }
-
-            long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset()
-                    + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
-            startCgmService(nextPoll);
-
-            // Delete invalid or old records from Realm
-            // TODO - show an error message if the valid records haven't been uploaded
-            final RealmResults<PumpStatusEvent> results =
-                    mRealm.where(PumpStatusEvent.class)
-                            .equalTo("sgv", 0)
-                            .or()
-                            .lessThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
-                            .findAll();
-
-            if (results.size() > 0) {
-                mRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(Realm realm) {
-                        // Delete all matches
-                        Log.d(TAG, "Deleting " + results.size() + " records from realm");
-                        results.deleteAllFromRealm();
-                    }
-                });
-            }
-
-            // TODO - handle isOffline in NightscoutUploadIntentService?
-            uploadCgmData();
-
-
-            refreshDisplay();
+            //init local pump listener
+            getActivePump();
         }
     }
 
@@ -703,7 +945,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                 if (hasUsbPermission()) {
                     // Give the USB a little time to warm up first
-                    startCgmService(System.currentTimeMillis() + MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
+                    startCgmServiceDelayed(MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
                 } else {
                     Log.d(TAG, "No permission for USB. Waiting.");
                     waitForUsbPermission();
@@ -732,4 +974,5 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
     }
+
 }

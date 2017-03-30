@@ -70,6 +70,7 @@ public class XDripPlusUploadIntentService extends IntentService {
             List<PumpStatusEvent> records = all_records.subList(0, 1);
             doXDripUpload(records);
         }
+        mRealm.close();
         XDripPlusUploadReceiver.completeWakefulIntent(intent);
     }
 
@@ -85,10 +86,12 @@ public class XDripPlusUploadIntentService extends IntentService {
                 addMbgEntry(entriesBody, record);
             }
 
-            if (entriesBody.length() > 0) sendBundle(mContext, "add", "entries", entriesBody);
-            if (devicestatusBody.length() > 0)
+            if (entriesBody.length() > 0) {
+                sendBundle(mContext, "add", "entries", entriesBody);
+            }
+            if (devicestatusBody.length() > 0) {
                 sendBundle(mContext, "add", "devicestatus", devicestatusBody);
-
+            }
         } catch (Exception e) {
             Log.e(TAG, "Unable to send bundle: " + e);
         }
@@ -104,8 +107,10 @@ public class XDripPlusUploadIntentService extends IntentService {
         context.sendBroadcast(intent);
         List<ResolveInfo> receivers = context.getPackageManager().queryBroadcastReceivers(intent, 0);
         if (receivers.size() < 1) {
-            Log.e(TAG, "No receivers");
-        } else Log.e(TAG, receivers.size() + " receivers");
+            Log.w(TAG, "No xDrip receivers found. ");
+        } else {
+            Log.d(TAG, receivers.size() + " xDrip receivers");
+        }
     }
 
 

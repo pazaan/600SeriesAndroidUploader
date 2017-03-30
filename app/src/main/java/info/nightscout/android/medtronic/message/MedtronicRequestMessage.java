@@ -1,7 +1,6 @@
 package info.nightscout.android.medtronic.message;
 
-import info.nightscout.android.medtronic.MedtronicCnlSession;
-
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -9,27 +8,19 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.medtronic.MedtronicCnlSession;
+import info.nightscout.android.medtronic.exception.ChecksumException;
+import info.nightscout.android.medtronic.exception.EncryptionException;
+
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class MedtronicMessage extends ContourNextLinkBinaryMessage {
+public abstract class MedtronicRequestMessage<T> extends ContourNextLinkBinaryRequestMessage<T> {
     static int ENVELOPE_SIZE = 2;
     static int CRC_SIZE = 2;
 
-    public enum CommandAction {
-        NO_TYPE(0x0),
-        CHANNEL_NEGOTIATE(0x03),
-        PUMP_REQUEST(0x05),
-        PUMP_RESPONSE(0x55);
-
-        private byte value;
-
-        CommandAction(int commandAction) {
-            value = (byte) commandAction;
-        }
-    }
-
-    protected MedtronicMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) {
+    protected MedtronicRequestMessage(CommandType commandType, CommandAction commandAction, MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
         super(commandType, pumpSession, buildPayload(commandAction, payload));
     }
 
@@ -45,7 +36,7 @@ public class MedtronicMessage extends ContourNextLinkBinaryMessage {
         ByteBuffer payloadBuffer = ByteBuffer.allocate(ENVELOPE_SIZE + payloadLength + CRC_SIZE);
         payloadBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-        payloadBuffer.put(commandAction.value);
+        payloadBuffer.put(commandAction.getValue());
         payloadBuffer.put((byte) (ENVELOPE_SIZE + payloadLength));
         if (payloadLength != 0) {
             payloadBuffer.put(payload != null ? payload : new byte[0]);
@@ -56,12 +47,6 @@ public class MedtronicMessage extends ContourNextLinkBinaryMessage {
         return payloadBuffer.array();
     }
 
-    public static ContourNextLinkMessage fromBytes(byte[] bytes) throws ChecksumException {
-        ContourNextLinkMessage message = ContourNextLinkBinaryMessage.fromBytes(bytes);
-
-        // TODO - Validate the CCITT
-        return message;
-    }
 
     // TODO - maybe move the SecretKeySpec, IvParameterSpec and Cipher construction into the PumpSession?
     protected static byte[] encrypt(byte[] key, byte[] iv, byte[] clear) throws EncryptionException {
@@ -79,18 +64,8 @@ public class MedtronicMessage extends ContourNextLinkBinaryMessage {
         return encrypted;
     }
 
-    protected static byte[] decrypt(byte[] key, byte[] iv, byte[] encrypted) throws EncryptionException {
-        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        byte[] decrypted;
-
-        try {
-            Cipher cipher = Cipher.getInstance("AES/CFB/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivSpec);
-            decrypted = cipher.doFinal(encrypted);
-        } catch (Exception e ) {
-            throw new EncryptionException( "Could not decrypt Medtronic Message" );
-        }
-        return decrypted;
+    protected void sendMessage(UsbHidDriver mDevice) throws IOException {
+        super.sendMessage(mDevice);
+        mPumpSession.incrMedtronicSequenceNumber();
     }
 }
