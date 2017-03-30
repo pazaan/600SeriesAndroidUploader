@@ -1,9 +1,12 @@
 package info.nightscout.android.utils;
 
 
+import com.bugfender.sdk.a.a.k.a;
+
 import java.util.Date;
 
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import io.realm.Realm;
 
 /**
  * Created by volker on 30.03.2017.
@@ -27,7 +30,8 @@ public class DataStore {
             PumpStatusEvent dummyStatus = new PumpStatusEvent();
             dummyStatus.setEventDate(new Date(0));
 
-            instance.setLastPumpStatus(dummyStatus);
+            // bypass setter to avoid dealing with a real Realm object
+            instance.lastPumpStatus = dummyStatus;
         }
 
         return instance;
@@ -38,7 +42,7 @@ public class DataStore {
     }
 
     public void setLastPumpStatus(PumpStatusEvent lastPumpStatus) {
-        this.lastPumpStatus = lastPumpStatus;
+        this.lastPumpStatus = Realm.getDefaultInstance().copyFromRealm(lastPumpStatus);
     }
 
     public int getUplooaderBatteryLevel() {

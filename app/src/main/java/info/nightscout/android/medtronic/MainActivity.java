@@ -745,19 +745,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             // Get the most recently written CGM record for the active pump.
             PumpStatusEvent pumpStatusData = null;
 
-            PumpInfo pump = getActivePump();
+            // ignoring activePump atm
+            //PumpInfo pump = getActivePump();
 
-            if (pump != null && pump.isValid() && pump.getPumpHistory().size() > 0) {
-                pumpStatusData = pump.getPumpHistory().last();
+            if (dataStore.getLastPumpStatus().getEventDate().getTime() > 0) {
+                pumpStatusData = dataStore.getLastPumpStatus();
             }
 
-            // FIXME - grab the last item from the activePump's getPumpHistory
             updateChart(mRealm.where(PumpStatusEvent.class)
                     .greaterThan("eventDate", new Date(System.currentTimeMillis() - 1000*60*60*24))
                     .findAllSorted("eventDate", Sort.ASCENDING));
 
             if (pumpStatusData != null) {
-
                 String sgvString;
                 if (configurationStore.isMmolxl()) {
                     float fBgValue = (float) pumpStatusData.getSgv();
