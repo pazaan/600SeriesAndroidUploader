@@ -259,14 +259,14 @@ public class MedtronicCnlIntentService extends IntentService {
                         }
                         sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
 
-                        // Check if pump sent old event when new expected and schedule a re-poll
+                        // Check if pump sent old event when new expected
                         if (((pumpRecord.getEventDate().getTime() - dataStore.getLastPumpStatus().getEventDate().getTime()) < 5000L) && ((timePollExpected - timePollStarted) < 5000L)) {
-                            pollInterval = 90000L; // polling interval set to 90 seconds
-                            sendStatus("Pump sent old SGV event, re-polling...");
+                            sendStatus("Pump sent old SGV event");
                         }
 
                         //MainActivity.timeLastGoodSGV =  pumpRecord.getEventDate().getTime(); // track last good sgv event time
                         //MainActivity.pumpBattery =  pumpRecord.getBatteryPercentage(); // track pump battery
+                        timeLastGoodSGV = pumpRecord.getEventDate().getTime();
                         dataStore.clearUnavailableSGVCount(); // reset unavailable sgv count
 
                         // Check that the record doesn't already exist before committing
@@ -295,11 +295,11 @@ public class MedtronicCnlIntentService extends IntentService {
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
-                pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway()?2L:1L);
+                pollInterval = 60000L; // retry once during this poll period
             } catch (TimeoutException e) {
                 Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
                 sendStatus("Timeout communicating with the Contour Next Link.");
-                pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway()?2L:1L);
+                pollInterval = 60000L; // retry once during this poll period
             } catch (NoSuchAlgorithmException e) {
                 Log.e(TAG, "Could not determine CNL HMAC", e);
                 sendStatus("Error connecting to Contour Next Link: Hashing error.");

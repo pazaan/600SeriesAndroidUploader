@@ -7,6 +7,7 @@ import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
 /**
  * Created by volker on 10.12.2016.
@@ -15,6 +16,24 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 public class CloseConnectionRequestMessage extends ContourNextLinkBinaryRequestMessage<CloseConnectionResponseMessage> {
     public CloseConnectionRequestMessage(MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
         super(CommandType.CLOSE_CONNECTION, pumpSession, payload);
+    }
+
+    @Override
+    public CloseConnectionResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
+
+        // clear unexpected incoming messages
+        clearMessage(mDevice);
+
+        sendMessage(mDevice);
+        if (millis > 0) {
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+            }
+        }
+
+        CloseConnectionResponseMessage response = this.getResponse(readMessage(mDevice));
+        return response;
     }
 
     @Override
