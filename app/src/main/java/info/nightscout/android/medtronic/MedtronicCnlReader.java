@@ -173,6 +173,7 @@ public class MedtronicCnlReader {
         Log.d(TAG, "Begin getPumpTime");
 
         PumpTimeResponseMessage response = new PumpTimeRequestMessage(mPumpSession).send(mDevice);
+
         Log.d(TAG, "Finished getPumpTime with date " + response.getPumpTime());
         return response.getPumpTime();
     }
@@ -182,6 +183,7 @@ public class MedtronicCnlReader {
 
         PumpStatusResponseMessage response = new PumpStatusRequestMessage(mPumpSession).send(mDevice);
         response.updatePumpRecord(pumpRecord);
+
         Log.d(TAG, "Finished updatePumpStatus");
         return pumpRecord;
     }
