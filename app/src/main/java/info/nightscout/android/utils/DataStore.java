@@ -42,7 +42,10 @@ public class DataStore {
     }
 
     public void setLastPumpStatus(PumpStatusEvent lastPumpStatus) {
-        this.lastPumpStatus = Realm.getDefaultInstance().copyFromRealm(lastPumpStatus);
+        Realm realm = Realm.getDefaultInstance();
+
+        this.lastPumpStatus = realm.copyFromRealm(lastPumpStatus);
+        if (!realm.isClosed()) realm.close();
     }
 
     public int getUplooaderBatteryLevel() {
