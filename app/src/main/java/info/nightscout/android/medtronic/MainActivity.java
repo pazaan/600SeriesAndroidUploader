@@ -75,6 +75,8 @@ import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
+import info.nightscout.android.utils.ConfigurationStore;
+import info.nightscout.android.utils.DataStore;
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
@@ -85,25 +87,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private static final String TAG = MainActivity.class.getSimpleName();
     public static final float MMOLXLFACTOR = 18.016f;
 
-    public static int batLevel = 0;
-    public static boolean reducePollOnPumpAway = false;
-    public static long pollInterval = MedtronicCnlIntentService.POLL_PERIOD_MS;
-    public static long lowBatteryPollInterval = MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
+    private DataStore dataStore = DataStore.getInstance();
+    private ConfigurationStore configurationStore = ConfigurationStore.getInstance();
 
-    private static long activePumpMac;
     private int chartZoom = 3;
     private boolean hasZoomedChart = false;
-
     private NumberFormat sgvFormatter;
-    private static boolean mmolxl;
-    private static boolean mmolxlDecimals;
 
-    public static long timeLastGoodSGV = 0;
-    public static short pumpBattery = 0;
-    public static int countUnavailableSGV = 0;
-
-    boolean mEnableCgmService = true;
-    SharedPreferences prefs = null;
+    private boolean mEnableCgmService = true;
+    private SharedPreferences prefs = null;
     private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
     private GraphView mChart;
@@ -122,22 +114,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
      */
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
         long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset(),
-            now = System.currentTimeMillis();
+            now = System.currentTimeMillis(),
+            pollInterval = ConfigurationStore.getInstance().getPollInterval();
 
         // align to next poll slot
         if (nextPoll + 2 * 60 * 60 * 1000 < now) { // last event more than 2h old -> could be a calibration
             nextPoll = System.currentTimeMillis() + 1000;
         } else {
             // align to poll interval
-            nextPoll += (((now - nextPoll) / MainActivity.pollInterval)) * MainActivity.pollInterval
+            nextPoll += (((now - nextPoll) / pollInterval)) * pollInterval
                     + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS;
             if (pumpStatusData.getBatteryPercentage() > 25) {
                 // poll every 5 min
-                nextPoll += MainActivity.pollInterval;
+                nextPoll += pollInterval;
             } else {
                 // if pump battery seems to be empty reduce polling to save battery (every 15 min)
                 //TODO add message & document it
-                nextPoll += MainActivity.lowBatteryPollInterval;
+                nextPoll += ConfigurationStore.getInstance().getLowBatteryPollInterval();
             }
         }
 
@@ -145,9 +138,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     public static String strFormatSGV(float sgvValue) {
-        if (mmolxl) {
+        ConfigurationStore configurationStore = ConfigurationStore.getInstance();
+        if (configurationStore.isMmolxl()) {
             NumberFormat sgvFormatter;
-            if (mmolxlDecimals) {
+            if (configurationStore.isMmolxlDecimals()) {
                 sgvFormatter = new DecimalFormat("0.00");
             } else {
                 sgvFormatter = new DecimalFormat("0.0");
@@ -164,6 +158,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         super.onCreate(savedInstanceState);
 
         mRealm = Realm.getDefaultInstance();
+
+        RealmResults<PumpStatusEvent> data = mRealm.where(PumpStatusEvent.class)
+                .findAllSorted("eventDate", Sort.DESCENDING);
+        if (data.size() > 0)
+            dataStore.setLastPumpStatus(data.first());
+
         mNightscoutUploadService = new Intent(this, NightscoutUploadIntentService.class);
 
         setContentView(R.layout.activity_main);
@@ -176,15 +176,16 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         // setup preferences
-        MainActivity.pollInterval = Long.parseLong(prefs.getString("pollInterval", Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
-        MainActivity.lowBatteryPollInterval = Long.parseLong(prefs.getString("lowBatPollInterval", Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
-        MainActivity.reducePollOnPumpAway = prefs.getBoolean("doublePollOnPumpAway", false);
-        chartZoom = Integer.parseInt(prefs.getString("chartZoom", "3"));
-        mmolxl = prefs.getBoolean("mmolxl", false);
-        mmolxlDecimals = prefs.getBoolean("mmolDecimals", false);
+        configurationStore.setPollInterval(Long.parseLong(prefs.getString("pollInterval", Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS))));
+        configurationStore.setLowBatteryPollInterval(Long.parseLong(prefs.getString("lowBatPollInterval", Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS))));
+        configurationStore.setReducePollOnPumpAway(prefs.getBoolean("doublePollOnPumpAway", false));
 
-        if (mmolxl) {
-            if (mmolxlDecimals)
+        chartZoom = Integer.parseInt(prefs.getString("chartZoom", "3"));
+        configurationStore.setMmolxl(prefs.getBoolean("mmolxl", false));
+        configurationStore.setMmolxlDecimals(prefs.getBoolean("mmolDecimals", false));
+
+        if (configurationStore.isMmolxl()) {
+            if (configurationStore.isMmolxlDecimals())
                 sgvFormatter = new DecimalFormat("0.00");
             else
                 sgvFormatter = new DecimalFormat("0.0");
@@ -534,10 +535,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 startCgmService();
             }
         } else if (key.equals("mmolxl") || key.equals("mmolDecimals")) {
-            mmolxl = sharedPreferences.getBoolean("mmolxl", false);
-            mmolxlDecimals = sharedPreferences.getBoolean("mmolDecimals", false);
-            if (mmolxl) {
-                if (mmolxlDecimals)
+            configurationStore.setMmolxl(sharedPreferences.getBoolean("mmolxl", false));
+            configurationStore.setMmolxlDecimals(sharedPreferences.getBoolean("mmolDecimals", false));
+            if (configurationStore.isMmolxl()) {
+                if (configurationStore.isMmolxlDecimals())
                     sgvFormatter = new DecimalFormat("0.00");
                 else
                     sgvFormatter = new DecimalFormat("0.0");
@@ -546,13 +547,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
             refreshDisplay();
         } else if (key.equals("pollInterval")) {
-            MainActivity.pollInterval = Long.parseLong(sharedPreferences.getString("pollInterval",
-                    Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS)));
+            configurationStore.setPollInterval(Long.parseLong(sharedPreferences.getString("pollInterval",
+                    Long.toString(MedtronicCnlIntentService.POLL_PERIOD_MS))));
         } else if (key.equals("lowBatPollInterval")) {
-            MainActivity.lowBatteryPollInterval = Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
-                    Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS)));
+            configurationStore.setLowBatteryPollInterval(Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
+                    Long.toString(MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS))));
         } else if (key.equals("doublePollOnPumpAway")) {
-            MainActivity.reducePollOnPumpAway = sharedPreferences.getBoolean("doublePollOnPumpAway", false);
+            configurationStore.setReducePollOnPumpAway(sharedPreferences.getBoolean("doublePollOnPumpAway", false));
         } else if (key.equals("chartZoom")) {
             chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
             hasZoomedChart = false;
@@ -601,11 +602,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    public static void setActivePumpMac(long pumpMac) {
-        activePumpMac = pumpMac;
-    }
-
     private PumpInfo getActivePump() {
+        long activePumpMac = dataStore.getActivePumpMac();
         if (activePumpMac != 0L && (mActivePump == null || !mActivePump.isValid() || mActivePump.getPumpMac() != activePumpMac)) {
             if (mActivePump != null) {
                 // remove listener on old pump
@@ -615,7 +613,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             PumpInfo pump = mRealm
                     .where(PumpInfo.class)
-                    .equalTo("pumpMac", MainActivity.activePumpMac)
+                    .equalTo("pumpMac", activePumpMac)
                     .findFirst();
 
             if (pump != null && pump.isValid()) {
@@ -736,7 +734,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
             TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
-            if (mmolxl) {
+            if (configurationStore.isMmolxl()) {
                 textViewUnits.setText(R.string.text_unit_mmolxl);
             } else {
                 textViewUnits.setText(R.string.text_unit_mgxdl);
@@ -761,7 +759,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             if (pumpStatusData != null) {
 
                 String sgvString;
-                if (mmolxl) {
+                if (configurationStore.isMmolxl()) {
                     float fBgValue = (float) pumpStatusData.getSgv();
                     sgvString = sgvFormatter.format(fBgValue / MMOLXLFACTOR);
                     Log.d(TAG, sgvString + " mmol/L");
@@ -824,7 +822,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mChart.getViewport().setMinX(left);
 
                 mChart.getViewport().setYAxisBoundsManual(true);
-                if (mmolxl) {
+                if (configurationStore.isMmolxl()) {
                     mChart.getViewport().setMinY(80 / MMOLXLFACTOR);
                     mChart.getViewport().setMaxY(120 / MMOLXLFACTOR);
                 } else {
@@ -843,7 +841,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 // turn your data into Entry objects
                 int sgv = pumpStatus.getSgv();
 
-                if (mmolxl) {
+                if (configurationStore.isMmolxl()) {
                     entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv() / MMOLXLFACTOR);
                 } else {
                     entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv());
@@ -881,6 +879,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     @Override
                     public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                         double sgv = dataPoint.getY();
+                        boolean mmolxl = configurationStore.isMmolxl();
                         if (sgv < (mmolxl?4.5:80))
                             paint.setColor(Color.RED);
                         else if (sgv <= (mmolxl?10:180))
@@ -970,7 +969,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             if (arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_LOW)
                     || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)
                     || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_OKAY)) {
-                batLevel = arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
+                dataStore.setUplooaderBatteryLevel(arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
             }
         }
     }
