@@ -198,8 +198,10 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Recent Bolus Wizard BGL
         pumpRecord.setRecentBolusWizard(recentBolusWizard);
-        if (recentBolusWizard && activeInsulin > DataStore.getInstance().getLastPumpStatus().getActiveInsulin()) {  // there is a BolusWizard usage & the IOB increaseed
+        if (/*recentBolusWizard && */activeInsulin > DataStore.getInstance().getLastPumpStatus().getActiveInsulin()) {  // there is a BolusWizard usage & the IOB increaseed
             pumpRecord.setBolusWizardBGL(bolusWizardBGL); // In mg/DL
+        } else {
+            pumpRecord.setBolusWizardBGL(0); // In mg/DL
         }
     }
 }
