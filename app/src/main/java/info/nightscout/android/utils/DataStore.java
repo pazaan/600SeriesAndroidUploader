@@ -45,7 +45,7 @@ public class DataStore {
     }
 
     public void setLastPumpStatus(PumpStatusEvent lastPumpStatus) {
-        this.lastPumpStatus = mRealm.copyFromRealm(lastPumpStatus);;
+        this.lastPumpStatus = mRealm.copyFromRealm(lastPumpStatus);
     }
 
     public int getUplooaderBatteryLevel() {
