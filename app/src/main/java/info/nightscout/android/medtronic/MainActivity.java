@@ -90,10 +90,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private DataStore dataStore = DataStore.getInstance();
     private ConfigurationStore configurationStore = ConfigurationStore.getInstance();
 
-//    private static long activePumpMac;
-//    private static boolean mmolxl;
-//    private static boolean mmolxlDecimals;
-
     private int chartZoom = 3;
     private boolean hasZoomedChart = false;
     private NumberFormat sgvFormatter;
