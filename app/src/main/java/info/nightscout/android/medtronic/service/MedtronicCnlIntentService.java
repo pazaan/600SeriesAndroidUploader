@@ -111,7 +111,6 @@ public class MedtronicCnlIntentService extends IntentService {
 
         short pumpBatteryLevel = dataStore.getLastPumpStatus().getBatteryPercentage();
 
-
         if (timeLastGoodSGV != 0) {
             timePollExpected = timeLastGoodSGV + POLL_PERIOD_MS + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((timePollStarted - 1000L - (timeLastGoodSGV + POLL_GRACE_PERIOD_MS)) / POLL_PERIOD_MS));
         }
