@@ -14,16 +14,13 @@ import io.realm.Realm;
 
 public class DataStore {
     private static DataStore instance;
-    private final Realm mRealm;
 
     private PumpStatusEvent lastPumpStatus;
     private int uplooaderBatteryLevel = 0;
     private int unavailableSGVCount = 0;
     private long activePumpMac = 0;
 
-    private DataStore() {
-        mRealm = Realm.getDefaultInstance();
-    }
+    private DataStore() {}
 
     public static DataStore getInstance() {
         if (DataStore.instance == null) {
@@ -45,7 +42,7 @@ public class DataStore {
     }
 
     public void setLastPumpStatus(PumpStatusEvent lastPumpStatus) {
-        this.lastPumpStatus = mRealm.copyFromRealm(lastPumpStatus);
+        this.lastPumpStatus = Realm.getDefaultInstance().copyFromRealm(lastPumpStatus);
     }
 
     public int getUplooaderBatteryLevel() {
