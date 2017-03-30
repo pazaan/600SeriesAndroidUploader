@@ -228,7 +228,8 @@ public class MedtronicCnlIntentService extends IntentService {
                     Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
                     pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway()?2L:1L); // reduce polling interval to half until pump is available
                 } else {
-                    setActivePumpMac(pumpMAC);
+                    dataStore.setActivePumpMac(pumpMAC);
+
                     activePump.setLastRadioChannel(radioChannel);
                     sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
@@ -363,10 +364,6 @@ public class MedtronicCnlIntentService extends IntentService {
 
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
-    }
-
-    private void setActivePumpMac(long pumpMAC) {
-        MainActivity.setActivePumpMac(pumpMAC);
     }
 
     // reliable wake alarm manager wake up for all android versions

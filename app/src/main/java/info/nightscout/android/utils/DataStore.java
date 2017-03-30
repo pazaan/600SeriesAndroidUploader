@@ -15,6 +15,7 @@ public class DataStore {
     private PumpStatusEvent lastPumpStatus;
     private int uplooaderBatteryLevel = 0;
     private int unavailableSGVCount = 0;
+    private long activePumpMac = 0;
 
     private DataStore() {}
 
@@ -61,5 +62,13 @@ public class DataStore {
     }
     public void setUnavailableSGVCount(int unavailableSGVCount) {
         this.unavailableSGVCount = unavailableSGVCount;
+    }
+
+    public long getActivePumpMac() {
+        return activePumpMac;
+    }
+
+    public void setActivePumpMac(long activePumpMac) {
+        this.activePumpMac = activePumpMac;
     }
 }

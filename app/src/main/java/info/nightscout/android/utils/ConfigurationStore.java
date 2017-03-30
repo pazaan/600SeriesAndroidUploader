@@ -14,6 +14,8 @@ public class ConfigurationStore {
     private boolean reducePollOnPumpAway = false;
     private long pollInterval = MedtronicCnlIntentService.POLL_PERIOD_MS;
     private long lowBatteryPollInterval = MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
+    private boolean mmolxl;
+    private boolean mmolxlDecimals;
 
     public static ConfigurationStore getInstance() {
         if (ConfigurationStore.instance == null) {
@@ -47,4 +49,19 @@ public class ConfigurationStore {
         this.lowBatteryPollInterval = lowBatteryPollInterval;
     }
 
+    public boolean isMmolxl() {
+        return mmolxl;
+    }
+
+    public void setMmolxl(boolean mmolxl) {
+        this.mmolxl = mmolxl;
+    }
+
+    public boolean isMmolxlDecimals() {
+        return mmolxlDecimals;
+    }
+
+    public void setMmolxlDecimals(boolean mmolxlDecimals) {
+        this.mmolxlDecimals = mmolxlDecimals;
+    }
 }
