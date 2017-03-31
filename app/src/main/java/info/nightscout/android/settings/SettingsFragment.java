@@ -167,9 +167,6 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
                                         .append("://").append(uri.getHost());
                                 if (uri.getPort() > -1)
                                     url.append(":").append(uri.getPort());
-                                url.append(uri.getPath());
-                                if (uri.getQuery() != null)
-                                    url.append("?").append(uri.getQuery());
 
                                 EditTextPreference editPref = (EditTextPreference) findPreference(getString(R.string.preference_nightscout_url));
                                 editPref.setText(url.toString());
