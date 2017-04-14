@@ -47,6 +47,7 @@ This is an Android app to upload data from a MiniMed 600 Series insulin pump to 
 * Project initiated by [@pazaan](https://github.com/pazaan)
 
 <br/>
+
 #### Disclaimer And Warning
 
 + All information, thought, and code described here is intended for informational and educational purposes only. Nightscout currently makes no attempt at HIPAA privacy compliance. Use Nightscout at your own risk, and do not use the information or code to make medical decisions.
