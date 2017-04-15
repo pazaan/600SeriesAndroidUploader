@@ -16,9 +16,9 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
-import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
+import info.nightscout.android.utils.DataStore;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -116,7 +116,7 @@ public class XDripPlusUploadIntentService extends IntentService {
 
     private void addDeviceStatus(JSONArray devicestatusArray, PumpStatusEvent record) throws Exception {
         JSONObject json = new JSONObject();
-        json.put("uploaderBattery", MainActivity.batLevel);
+        json.put("uploaderBattery", DataStore.getInstance().getUplooaderBatteryLevel());
         json.put("device", record.getDeviceName());
         json.put("created_at", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
 

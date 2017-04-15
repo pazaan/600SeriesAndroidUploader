@@ -14,6 +14,7 @@ import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import info.nightscout.android.utils.DataStore;
 import info.nightscout.android.utils.HexDump;
 
 /**
@@ -197,6 +198,10 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Recent Bolus Wizard BGL
         pumpRecord.setRecentBolusWizard(recentBolusWizard);
-        pumpRecord.setBolusWizardBGL(bolusWizardBGL); // In mg/DL
+        if (/*recentBolusWizard && */activeInsulin > DataStore.getInstance().getLastPumpStatus().getActiveInsulin()) {  // there is a BolusWizard usage & the IOB increaseed
+            pumpRecord.setBolusWizardBGL(bolusWizardBGL); // In mg/DL
+        } else {
+            pumpRecord.setBolusWizardBGL(0); // In mg/DL
+        }
     }
 }

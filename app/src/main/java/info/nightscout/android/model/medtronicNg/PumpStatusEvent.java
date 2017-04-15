@@ -302,4 +302,37 @@ public class PumpStatusEvent extends RealmObject  {
             }
         }
     }
+    
+    @Override
+    public String toString() {
+        return "PumpStatusEvent{" +
+                "eventDate=" + eventDate +
+                ", pumpDate=" + pumpDate +
+                ", deviceName='" + deviceName + '\'' +
+                ", suspended=" + suspended +
+                ", bolusing=" + bolusing +
+                ", deliveringInsulin=" + deliveringInsulin +
+                ", tempBasalActive=" + tempBasalActive +
+                ", cgmActive=" + cgmActive +
+                ", activeBasalPattern=" + activeBasalPattern +
+                ", basalRate=" + basalRate +
+                ", tempBasalRate=" + tempBasalRate +
+                ", tempBasalPercentage=" + tempBasalPercentage +
+                ", tempBasalMinutesRemaining=" + tempBasalMinutesRemaining +
+                ", basalUnitsDeliveredToday=" + basalUnitsDeliveredToday +
+                ", batteryPercentage=" + batteryPercentage +
+                ", reservoirAmount=" + reservoirAmount +
+                ", minutesOfInsulinRemaining=" + minutesOfInsulinRemaining +
+                ", activeInsulin=" + activeInsulin +
+                ", sgv=" + sgv +
+                ", sgvDate=" + sgvDate +
+                ", lowSuspendActive=" + lowSuspendActive +
+                ", cgmTrend='" + cgmTrend + '\'' +
+                ", recentBolusWizard=" + recentBolusWizard +
+                ", bolusWizardBGL=" + bolusWizardBGL +
+                ", pumpTimeOffset=" + pumpTimeOffset +
+                ", uploaded=" + uploaded +
+                '}';
+    }
+
 }
