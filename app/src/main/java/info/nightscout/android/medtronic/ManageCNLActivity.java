@@ -66,9 +66,9 @@ public class ManageCNLActivity extends AppCompatActivity {
 
         //handle listview and assign adapter
         ListView lView = (ListView) findViewById(R.id.cnl_list);
-        lView.setAdapter(adapter);
         lView.addHeaderView(getLayoutInflater().inflate(R.layout.manage_cnl_listview_header, null));
         lView.setEmptyView(findViewById(R.id.manage_cnl_listview_empty)); //getLayoutInflater().inflate(R.layout.manage_cnl_listview_empty, null));
+        lView.setAdapter(adapter);
     }
 
     @Override

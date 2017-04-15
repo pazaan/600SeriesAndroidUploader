@@ -84,11 +84,6 @@
         <receiver android:name=".upload.nightscout.NightscoutUploadReceiver" />
         <receiver android:name=".xdrip_plus.XDripPlusUploadReceiver" />
 
-
-        <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"></receiver>
-
-
-
     </application>
 
 </manifest>

@@ -2,17 +2,18 @@ import org.ajoberstar.grgit.Grgit
 
 buildscript {
     repositories {
+        jcenter()
         maven { url 'https://maven.fabric.io/public' }
     }
 
     dependencies {
         classpath 'io.fabric.tools:gradle:1.21.6'
-        classpath 'io.realm:realm-gradle-plugin:2.3.1'
+        classpath 'io.realm:realm-gradle-plugin:3.1.2'
         classpath 'org.ajoberstar:grgit:1.5.0'
     }
 }
 plugins {
-    id 'net.researchgate.release' version '2.3.4'
+    id 'net.researchgate.release' version '2.4.0'
 }
 
 apply plugin: 'com.android.application'
@@ -48,15 +49,15 @@ def gitBranch() {
     return ext.repo.branch.current.name
 }
 
-def getBugfenderApiKey() {
+static def getBugfenderApiKey() {
     Properties properties = new Properties()
     properties.load(new FileInputStream("app/bugfender.properties"))
     return "\"" + properties.getProperty("apiKey", "") + "\""
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    compileSdkVersion 25
+    buildToolsVersion '25.0.2'
     // FIXME - replace with URLConnection. This is used in ManageCNLActivity.
     useLibrary 'org.apache.http.legacy'
 
@@ -67,7 +68,7 @@ android {
     defaultConfig {
         applicationId "info.nightscout.android"
         minSdkVersion 14
-        targetSdkVersion 23
+        targetSdkVersion 25
         versionName project.properties['version'] + "/" + gitCommitId() // + " (" + gitBranch()+")"
         versionCode gitVersion()
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
@@ -116,7 +117,7 @@ task signRelease << {
 
 task zipalignRelease << {
     def command = [
-            '/Users/lennart/Library/Android/sdk/build-tools/23.0.3/zipalign',
+            '/Users/lennart/Library/Android/sdk/build-tools/25.0.2/zipalign',
             '-v',
             '4',
             'app/build/outputs/apk/app-release-unsigned.apk',
@@ -145,26 +146,24 @@ release {
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
+
+    compile 'com.android.support:support-v13:25.3.1'
+    compile 'com.android.support:design:25.3.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
+    compile 'uk.co.chrisjenx:calligraphy:2.2.0'
+    compile 'com.bugfender.sdk:android:0.7.2'
+    compile 'com.jjoe64:graphview:4.2.1'
+    compile 'com.google.code.gson:gson:2.7'
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+    compile 'com.squareup.okhttp3:okhttp:3.3.1'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.3.1'
     compile('com.crashlytics.sdk.android:crashlytics:2.6.7@aar') {
         transitive = true;
     }
     compile('com.mikepenz:materialdrawer:5.2.9@aar') {
         transitive = true
     }
-    compile 'com.android.support:appcompat-v7:23.4.0'
-    compile 'org.apache.commons:commons-lang3:3.4'
-    compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
-    compile 'uk.co.chrisjenx:calligraphy:2.2.0'
-    compile 'com.bugfender.sdk:android:0.7.2'
-    compile 'com.jjoe64:graphview:4.2.1'
-    compile 'com.android.support:support-v4:23.4.0'
-    compile 'com.google.code.gson:gson:2.7'
-    compile 'com.squareup.retrofit2:retrofit:2.1.0'
-    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
-    compile 'com.squareup.okhttp3:okhttp:3.3.1'
-    compile 'com.squareup.okhttp3:logging-interceptor:3.3.1'
-    compile 'com.google.android.gms:play-services-appindexing:8.4.0'
-
-
-
 }
