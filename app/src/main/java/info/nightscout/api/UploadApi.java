@@ -51,7 +51,7 @@ public class UploadApi {
                 Request request = requestBuilder.build();
                 return chain.proceed(request);
             }
-        };
+        }
 
         OkHttpClient.Builder okHttpClient = new OkHttpClient().newBuilder()
                 .connectTimeout(30, TimeUnit.SECONDS)
