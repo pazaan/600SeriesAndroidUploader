@@ -223,8 +223,8 @@ public class MedtronicCnlIntentService extends IntentService {
 
                 byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                 if (radioChannel == 0) {
-                    sendStatus("Could not communicate with the 640g. Are you near the pump?");
-                    Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
+                    sendStatus("Could not communicate with the pump. Is it nearby?");
+                    Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
                     pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway()?2L:1L); // reduce polling interval to half until pump is available
                 } else {
                     dataStore.setActivePumpMac(pumpMAC);
@@ -236,7 +236,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     // read pump status
                     PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
 
-                    String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
+                    String deviceName = String.format("medtronic-600://%s", cnlReader.getStickSerial());
                     activePump.setDeviceName(deviceName);
 
                     // TODO - this should not be necessary. We should reverse lookup the device name from PumpInfo

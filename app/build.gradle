@@ -121,7 +121,7 @@ task zipalignRelease << {
             '-v',
             '4',
             'app/build/outputs/apk/app-release-unsigned.apk',
-            'app/build/outputs/apk/640g-android-uploader.apk'
+            'app/build/outputs/apk/600-series-uploader.apk'
     ]
 
     def proc = new ProcessBuilder(command)
