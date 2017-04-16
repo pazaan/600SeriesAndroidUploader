@@ -10,15 +10,9 @@ import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
-import android.support.annotation.Nullable;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
@@ -27,7 +21,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import info.nightscout.android.R;
-import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 
 public class SettingsFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
     private static final String TAG = SettingsFragment.class.getSimpleName();
@@ -151,7 +144,8 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
                 Log.d(TAG, "scanResult returns: " + scanResult.toString());
 
                 JsonParser json = new JsonParser();
-                JsonElement jsonElement = json.parse(scanResult.getContents());
+                String resultContents = scanResult.getContents() == null ? "" : scanResult.getContents();
+                JsonElement jsonElement = json.parse(resultContents);
                 if (jsonElement != null && jsonElement.isJsonObject()) {
                     jsonElement = (jsonElement.getAsJsonObject()).get("rest");
                     if (jsonElement != null && jsonElement.isJsonObject()) {
@@ -163,7 +157,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
                             try {
                                 URL uri = new URL(endpoint);
 
-                                StringBuffer url = new StringBuffer(uri.getProtocol())
+                                StringBuilder url = new StringBuilder(uri.getProtocol())
                                         .append("://").append(uri.getHost());
                                 if (uri.getPort() > -1)
                                     url.append(":").append(uri.getPort());

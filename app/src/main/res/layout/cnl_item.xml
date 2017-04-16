@@ -10,6 +10,7 @@
         android:layout_centerVertical="true"
         android:layout_alignParentLeft="true"
         android:paddingLeft="8dp"
+        android:paddingRight="8dp"
         android:textSize="18sp"
         android:textStyle="bold" />
 

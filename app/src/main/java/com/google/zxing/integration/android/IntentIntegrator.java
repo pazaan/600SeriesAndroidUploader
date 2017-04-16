@@ -147,7 +147,7 @@ public class IntentIntegrator {
   private String buttonYes;
   private String buttonNo;
   private List<String> targetApplications;
-  private final Map<String,Object> moreExtras = new HashMap<String,Object>(3);
+  private final Map<String,Object> moreExtras = new HashMap<>(3);
 
   /**
    * @param activity {@link Activity} invoking the integration
@@ -320,7 +320,7 @@ public class IntentIntegrator {
     }
     intentScan.setPackage(targetAppPackage);
     intentScan.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    intentScan.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+    intentScan.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
     attachMoreExtras(intentScan);
     startActivityForResult(intentScan, REQUEST_CODE);
     return null;
@@ -466,7 +466,7 @@ public class IntentIntegrator {
     }
     intent.setPackage(targetAppPackage);
     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
     attachMoreExtras(intent);
     if (fragment == null) {
       activity.startActivity(intent);

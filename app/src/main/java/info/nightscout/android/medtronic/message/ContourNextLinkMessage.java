@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
-import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.utils.HexDump;
 
 /**

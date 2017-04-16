@@ -33,7 +33,6 @@ public class XDripPlusUploadIntentService extends IntentService {
     private static final String TAG = XDripPlusUploadIntentService.class.getSimpleName();
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
     Context mContext;
-    private Realm mRealm;
 
     public XDripPlusUploadIntentService() {
         super(XDripPlusUploadIntentService.class.getName());
@@ -58,7 +57,7 @@ public class XDripPlusUploadIntentService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.d(TAG, "onHandleIntent called");
-        mRealm = Realm.getDefaultInstance();
+        Realm mRealm = Realm.getDefaultInstance();
 
         RealmResults<PumpStatusEvent> all_records = mRealm
                 .where(PumpStatusEvent.class)
@@ -116,7 +115,7 @@ public class XDripPlusUploadIntentService extends IntentService {
 
     private void addDeviceStatus(JSONArray devicestatusArray, PumpStatusEvent record) throws Exception {
         JSONObject json = new JSONObject();
-        json.put("uploaderBattery", DataStore.getInstance().getUplooaderBatteryLevel());
+        json.put("uploaderBattery", DataStore.getInstance().getUploaderBatteryLevel());
         json.put("device", record.getDeviceName());
         json.put("created_at", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
 

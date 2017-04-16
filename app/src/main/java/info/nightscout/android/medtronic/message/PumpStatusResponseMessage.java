@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Date;
-import java.util.Locale;
 
 import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
@@ -46,9 +45,6 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int bolusWizardBGL; // in mg/dL. 0 means no recent bolus wizard reading.
-
-    private long rtc;
-    private long offset;
 
     protected PumpStatusResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
@@ -115,6 +111,8 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // CGM SGV
         sgv = (statusBuffer.getShort(0x35) & 0x0000ffff); // In mg/DL. 0 means no CGM reading
+        long rtc;
+        long offset;
         if ((sgv & 0x200) == 0x200) {
             // Sensor error. Let's reset. FIXME - solve this more elegantly later
             sgv = 0;
@@ -128,7 +126,6 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         }
 
         // SGV Date
-        // TODO - this should go in the sgvDate, and eventDate should be the time of this poll.
         sgvDate = MessageUtils.decodeDateTime(rtc, offset);
         Log.d(TAG, "original sgv date: " + sgvDate);
 
@@ -184,13 +181,10 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         // Active insulin
         pumpRecord.setActiveInsulin(activeInsulin);
 
-        // CGM SGV
+        // CGM SGV data
         pumpRecord.setSgv(sgv);
         pumpRecord.setSgvDate(new Date(sgvDate.getTime() - pumpRecord.getPumpTimeOffset()));
-
-        // SGV Date
         pumpRecord.setCgmTrend(cgmTrend);
-        pumpRecord.setEventDate(new Date(sgvDate.getTime() - pumpRecord.getPumpTimeOffset()));
 
         // Predictive low suspend
         // TODO - there is more status info in this byte other than just a boolean yes/no
@@ -198,7 +192,8 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Recent Bolus Wizard BGL
         pumpRecord.setRecentBolusWizard(recentBolusWizard);
-        if (/*recentBolusWizard && */activeInsulin > DataStore.getInstance().getLastPumpStatus().getActiveInsulin()) {  // there is a BolusWizard usage & the IOB increaseed
+        // there is a BolusWizard usage & the IOB increased
+        if (activeInsulin > DataStore.getInstance().getLastPumpStatus().getActiveInsulin()) {
             pumpRecord.setBolusWizardBGL(bolusWizardBGL); // In mg/DL
         } else {
             pumpRecord.setBolusWizardBGL(0); // In mg/DL

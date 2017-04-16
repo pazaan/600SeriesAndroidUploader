@@ -1,10 +1,8 @@
 package info.nightscout.android.medtronic;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
@@ -57,7 +55,7 @@ public class ManageCNLActivity extends AppCompatActivity {
         mRealm = Realm.getDefaultInstance();
 
         //generate list
-        ArrayList<ContourNextLinkInfo> list = new ArrayList<ContourNextLinkInfo>();
+        ArrayList<ContourNextLinkInfo> list = new ArrayList<>();
 
         list.addAll(mRealm.where(ContourNextLinkInfo.class).findAll());
 
@@ -123,7 +121,7 @@ public class ManageCNLActivity extends AppCompatActivity {
             View view = convertView;
             if (view == null) {
                 LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                view = inflater.inflate(R.layout.cnl_item, null);
+                view = inflater.inflate(R.layout.cnl_item, parent, false);
             }
 
             //Handle TextView and display string from your list

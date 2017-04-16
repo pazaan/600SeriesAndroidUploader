@@ -114,8 +114,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
      */
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
         long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset(),
-            now = System.currentTimeMillis(),
-            pollInterval = ConfigurationStore.getInstance().getPollInterval();
+                now = System.currentTimeMillis(),
+                pollInterval = ConfigurationStore.getInstance().getPollInterval();
 
         // align to next poll slot
         if (nextPoll + 2 * 60 * 60 * 1000 < now) { // last event more than 2h old -> could be a calibration
@@ -262,15 +262,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .withSelectable(false);
         final PrimaryDrawerItem itemStopCollecting = new PrimaryDrawerItem()
                 .withName("Stop collecting data")
-                .withIcon(GoogleMaterial.Icon.gmd_stop)
+                .withIcon(GoogleMaterial.Icon.gmd_power_settings_new)
                 .withSelectable(false);
         final PrimaryDrawerItem itemGetNow = new PrimaryDrawerItem()
                 .withName("Read data now")
-                .withIcon(GoogleMaterial.Icon.gmd_play_arrow)
+                .withIcon(GoogleMaterial.Icon.gmd_refresh)
+                .withSelectable(false);
+        final PrimaryDrawerItem itemUpdateProfile = new PrimaryDrawerItem()
+                .withName("Update Profile")
+                .withIcon(GoogleMaterial.Icon.gmd_insert_chart)
                 .withSelectable(false);
         final PrimaryDrawerItem itemClearLog = new PrimaryDrawerItem()
                 .withName("Clear Log")
                 .withIcon(GoogleMaterial.Icon.gmd_clear_all)
+                .withSelectable(false);
+        final PrimaryDrawerItem itemCheckForUpdate = new PrimaryDrawerItem()
+                .withName("Check For Update")
+                .withIcon(GoogleMaterial.Icon.gmd_update)
                 .withSelectable(false);
 
         new DrawerBuilder()
@@ -286,10 +294,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .withSelectedItem(-1)
                 .addDrawerItems(
                         itemSettings,
+                        itemUpdateProfile,
                         itemRegisterUsb,
-                        itemStopCollecting,
+                        itemCheckForUpdate,
+                        itemClearLog,
                         itemGetNow,
-                        itemClearLog
+                        itemStopCollecting
                 )
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
@@ -307,6 +317,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             startCgmService(0);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
+                        } else if (drawerItem.equals(itemCheckForUpdate)) {
+                            checkForUpdate(1);
                         }
 
                         return false;
@@ -351,18 +363,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
         mChart.getGridLabelRenderer().setHumanRounding(false);
 
-        mChart.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
-            DateFormat mFormat = new SimpleDateFormat("HH:mm");  // 24 hour format forced to fix label overlap
+        mChart.getGridLabelRenderer().setLabelFormatter(
+                new DefaultLabelFormatter() {
+                    DateFormat mFormat = new SimpleDateFormat("HH:mm", Locale.US);  // 24 hour format forced to fix label overlap
 
-            @Override
-            public String formatLabel(double value, boolean isValueX) {
-                if (isValueX) {
-                    return mFormat.format(new Date((long) value));
-                } else {
-                        return sgvFormatter.format(value);
+                    @Override
+                    public String formatLabel(double value, boolean isValueX) {
+                        if (isValueX) {
+                            return mFormat.format(new Date((long) value));
+                        } else {
+                            return sgvFormatter.format(value);
+                        }
+                    }
                 }
-            }}
         );
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        checkForUpdate(5);
     }
 
     @Override
@@ -430,7 +450,19 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void clearLogText() {
         statusMessageReceiver.clearMessages();
-        //mTextViewLog.setText("", BufferType.EDITABLE);
+    }
+
+    private void checkForUpdate(int checkEvery) {
+        /*
+        new AppUpdater(this)
+                .setUpdateFrom(UpdateFrom.JSON)
+                .setUpdateXML("https://raw.githubusercontent.com/javiersantos/AppUpdater/master/app/update-changelog.json")
+//                .setUpdateXML("https://raw.githubusercontent.com/javiersantos/AppUpdater/master/app/update.json")
+                .setDisplay(Display.DIALOG)
+                .showEvery(checkEvery)
+                .showAppUpdated(true)
+                .start();
+          */
     }
 
     private void startDisplayRefreshLoop() {
@@ -452,7 +484,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (results.size() > 0) {
             startCgmService(getNextPoll(results.first()) + delay);
         } else {
-            startCgmService(System.currentTimeMillis() + (delay==0?1000:delay));
+            startCgmService(System.currentTimeMillis() + (delay == 0 ? 1000 : delay));
         }
     }
 
@@ -466,10 +498,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         // Cancel any existing polling.
         stopCgmService();
         MedtronicCnlAlarmManager.setAlarm(initialPoll);
-    }
-
-    private void uploadCgmData() {
-        startService(mNightscoutUploadService);
     }
 
     private void stopCgmService() {
@@ -607,7 +635,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (activePumpMac != 0L && (mActivePump == null || !mActivePump.isValid() || mActivePump.getPumpMac() != activePumpMac)) {
             if (mActivePump != null) {
                 // remove listener on old pump
-                mActivePump.removeChangeListeners();
+                mActivePump.removeAllChangeListeners();
                 mActivePump = null;
             }
 
@@ -620,6 +648,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mActivePump = pump;
                 mActivePump.addChangeListener(new RealmChangeListener<PumpInfo>() {
                     long lastQueryTS = 0;
+
                     @Override
                     public void onChange(PumpInfo pump) {
                         // prevent double updating after deleting old events below
@@ -664,28 +693,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             private long timestamp;
             private String message;
 
-            public StatusMessage(String message) {
+            StatusMessage(String message) {
                 this(System.currentTimeMillis(), message);
             }
 
-            public StatusMessage(long timestamp, String message) {
+            StatusMessage(long timestamp, String message) {
                 this.timestamp = timestamp;
-                this.message = message;
-            }
-
-            public long getTimestamp() {
-                return timestamp;
-            }
-
-            public void setTimestamp(long timestamp) {
-                this.timestamp = timestamp;
-            }
-
-            public String getMessage() {
-                return message;
-            }
-
-            public void setMessage(String message) {
                 this.message = message;
             }
 
@@ -694,7 +707,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
 
-        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(400);
+        private final Queue<StatusMessage> messages = new ArrayBlockingQueue<>(400);
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -730,7 +743,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
-            // UI elements - TODO do these need to be members?
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
             TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
@@ -753,7 +765,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             updateChart(mRealm.where(PumpStatusEvent.class)
-                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - 1000*60*60*24))
+                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - 1000 * 60 * 60 * 24))
                     .findAllSorted("eventDate", Sort.ASCENDING));
 
             if (pumpStatusData != null) {
@@ -769,6 +781,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                 textViewBg.setText(sgvString);
                 textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
+
                 textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
                 textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
 
@@ -833,13 +846,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             DataPoint[] entries = new DataPoint[size];
-            final long left = System.currentTimeMillis() - chartZoom * 60 * 60 * 1000;
 
             int pos = 0;
-            for (PumpStatusEvent pumpStatus: results) {
+            for (PumpStatusEvent pumpStatus : results) {
                 // turn your data into Entry objects
-                int sgv = pumpStatus.getSgv();
-
                 if (configurationStore.isMmolxl()) {
                     entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv() / MMOLXLFACTOR);
                 } else {
@@ -879,11 +889,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                         double sgv = dataPoint.getY();
                         boolean mmolxl = configurationStore.isMmolxl();
-                        if (sgv < (mmolxl?4.5:80))
+                        if (sgv < (mmolxl ? 4.5 : 80))
                             paint.setColor(Color.RED);
-                        else if (sgv <= (mmolxl?10:180))
+                        else if (sgv <= (mmolxl ? 10 : 180))
                             paint.setColor(Color.GREEN);
-                        else if (sgv <= (mmolxl?14:260))
+                        else if (sgv <= (mmolxl ? 14 : 260))
                             paint.setColor(Color.YELLOW);
                         else
                             paint.setColor(Color.RED);
@@ -899,7 +909,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             }
 
-            // set vieport to latest SGV
+            // set viewport to latest SGV
             long lastSGVTimestamp = (long) mChart.getSeries().get(0).getHighestValueX();
             if (!hasZoomedChart) {
                 mChart.getViewport().setMaxX(lastSGVTimestamp);
@@ -968,7 +978,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             if (arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_LOW)
                     || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)
                     || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_OKAY)) {
-                dataStore.setUplooaderBatteryLevel(arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
+                dataStore.setUploaderBatteryLevel(arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
             }
         }
     }

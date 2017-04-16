@@ -29,7 +29,6 @@ import info.nightscout.api.DeviceEndpoints.PumpInfo;
 import info.nightscout.api.DeviceEndpoints.DeviceStatus;
 import okhttp3.ResponseBody;
 import retrofit2.Response;
-import retrofit2.Retrofit;
 
 class NightScoutUpload {
 
