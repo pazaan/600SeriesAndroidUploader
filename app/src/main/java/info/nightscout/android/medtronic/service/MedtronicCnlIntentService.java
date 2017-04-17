@@ -138,7 +138,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
         UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
         if (cnlStick == null) {
-            sendStatus("USB connection error. Is the Bayer Contour Next Link plugged in?");
+            sendStatus("USB connection error. Is the Contour Next Link plugged in?");
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
 
             // TODO - set status if offline or Nightscout not reachable
