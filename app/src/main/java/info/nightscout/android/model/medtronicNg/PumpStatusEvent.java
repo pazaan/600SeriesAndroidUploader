@@ -1,7 +1,10 @@
 package info.nightscout.android.model.medtronicNg;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Date;
 
+import info.nightscout.android.utils.ConfigurationStore;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
@@ -81,7 +84,7 @@ public class PumpStatusEvent extends RealmObject {
     }
 
     public CGM_TREND getCgmTrend() {
-        if (cgmTrend == null) {
+        if (cgmTrend == null || !this.isCgmActive()) {
             return CGM_TREND.NOT_SET;
         } else {
             return CGM_TREND.valueOf(cgmTrend);
@@ -341,5 +344,4 @@ public class PumpStatusEvent extends RealmObject {
             }
         }
     }
-
 }

@@ -52,10 +52,11 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
                 android:layout_weight="1"
+                android:maxLines="1"
                 android:text="-"
+                android:textAlignment="center"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:textSize="70sp"
-                android:maxLines="1" />
+                android:textSize="70sp" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -70,10 +71,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center|top"
+                    android:maxLines="1"
                     android:text="-"
                     android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:textSize="40sp"
-                    android:maxLines="1" />
+                    android:textSize="40sp" />
 
                 <TextView
                     android:id="@+id/textview_units"
