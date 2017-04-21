@@ -21,14 +21,15 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 
+import info.nightscout.android.BuildConfig;
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.medtronic.MedtronicCnlReader;
-import info.nightscout.android.medtronic.message.ChecksumException;
-import info.nightscout.android.medtronic.message.EncryptionException;
+import info.nightscout.android.medtronic.exception.ChecksumException;
+import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.message.MessageUtils;
-import info.nightscout.android.medtronic.message.UnexpectedMessageException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -201,6 +202,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
                     cnlReader.beginEHSMSession();
 
+                    // read pump status
                     PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
 
                     String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
@@ -216,8 +218,18 @@ public class MedtronicCnlIntentService extends IntentService {
                     // TODO - send ACTION to MainActivity to show offset between pump and uploader.
                     pumpRecord.setPumpTimeOffset(pumpOffset);
                     pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
-                    cnlReader.getPumpStatus(pumpRecord, pumpOffset);
+                    cnlReader.updatePumpStatus(pumpRecord);
                     activePump.getPumpHistory().add(pumpRecord);
+
+                    // start reading other data in debug only
+                    if (BuildConfig.DEBUG) {
+                        // read basal pattern
+                        //cnlReader.getBasalPatterns();
+
+                        // Read history
+                        //cnlReader.getHistory();
+                    }
+
 
                     cnlReader.endEHSMSession();
 
@@ -251,10 +263,12 @@ public class MedtronicCnlIntentService extends IntentService {
                 Log.e(TAG, "Could not determine CNL HMAC", e);
                 sendStatus("Error connecting to Contour Next Link: Hashing error.");
             } finally {
-                //TODO : 05.11.2016 has the close to be here?
-                cnlReader.closeConnection();
-                cnlReader.endPassthroughMode();
-                cnlReader.endControlMode();
+                try {
+                    cnlReader.closeConnection();
+                    cnlReader.endPassthroughMode();
+                    cnlReader.endControlMode();
+                } catch (NoSuchAlgorithmException e) {}
+
             }
         } catch (IOException e) {
             Log.e(TAG, "Error connecting to Contour Next Link.", e);

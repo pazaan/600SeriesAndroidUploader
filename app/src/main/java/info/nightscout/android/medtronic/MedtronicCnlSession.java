@@ -100,26 +100,6 @@ public class MedtronicCnlSession {
         this.key = key;
     }
 
-    public void setPackedLinkKey(byte[] packedLinkKey) {
-        this.key = new byte[16];
-
-        int pos = this.stickSerial.charAt(this.stickSerial.length() - 1) & 7;
-
-        for (int i = 0; i < this.key.length; i++) {
-            if ((packedLinkKey[pos + 1] & 1) == 1) {
-                this.key[i] = (byte) ~packedLinkKey[pos];
-            } else {
-                this.key[i] = packedLinkKey[pos];
-            }
-
-            if (((packedLinkKey[pos + 1] >> 1) & 1) == 0) {
-                pos += 3;
-            } else {
-                pos += 2;
-            }
-        }
-    }
-
     public String getStickSerial() {
         return stickSerial;
     }
