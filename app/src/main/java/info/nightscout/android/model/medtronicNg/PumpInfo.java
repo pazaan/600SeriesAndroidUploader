@@ -2,6 +2,8 @@ package info.nightscout.android.model.medtronicNg;
 
 import io.realm.RealmList;
 import io.realm.RealmObject;
+import io.realm.Sort;
+import io.realm.annotations.Ignore;
 import io.realm.annotations.PrimaryKey;
 
 /**
@@ -12,6 +14,7 @@ public class PumpInfo extends RealmObject {
     private long pumpMac;
     private String deviceName;
     private byte lastRadioChannel;
+    private long lastQueryTS = 0;
     private RealmList<ContourNextLinkInfo> associatedCnls;
     private RealmList<PumpStatusEvent> pumpHistory;
 
@@ -19,7 +22,7 @@ public class PumpInfo extends RealmObject {
         return pumpMac;
     }
 
-    public void setPumpMac(long pumpMac) {
+    private void setPumpMac(long pumpMac) {
         this.pumpMac = pumpMac;
     }
 
@@ -57,5 +60,13 @@ public class PumpInfo extends RealmObject {
 
     public long getPumpSerial() {
         return pumpMac & 0xffffff;
+    }
+
+    public long getLastQueryTS() {
+        return lastQueryTS;
+    }
+
+    public void updateLastQueryTS() {
+        lastQueryTS = System.currentTimeMillis();
     }
 }

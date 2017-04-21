@@ -1,12 +1,18 @@
 package info.nightscout.android.medtronic.message;
 
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
+import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
+import info.nightscout.android.medtronic.exception.ChecksumException;
+import info.nightscout.android.medtronic.exception.EncryptionException;
 
 /**
  * Created by lgoedhart on 26/03/2016.
  */
-public class BeginEHSMMessage extends MedtronicSendMessage {
-    public BeginEHSMMessage(MedtronicCnlSession pumpSession) throws EncryptionException {
+public class BeginEHSMMessage extends EHSMMessage {
+    public BeginEHSMMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
         super(SendMessageType.BEGIN_EHSM_SESSION, pumpSession, buildPayload());
     }
 

@@ -9,7 +9,7 @@ import io.realm.annotations.Index;
 /**
  * Created by lgoedhart on 4/06/2016.
  */
-public class PumpStatusEvent extends RealmObject {
+public class PumpStatusEvent extends RealmObject  {
     @Index
     private Date eventDate; // The actual time of the event (assume the capture device eventDate/time is accurate)
     private Date pumpDate; // The eventDate/time on the pump at the time of the event
@@ -82,7 +82,10 @@ public class PumpStatusEvent extends RealmObject {
     }
 
     public void setCgmTrend(CGM_TREND cgmTrend) {
-        this.cgmTrend = cgmTrend.name();
+        if (cgmTrend != null)
+            this.cgmTrend = cgmTrend.name();
+        else
+            this.cgmTrend = CGM_TREND.NOT_SET.name();
     }
 
     public void setCgmTrend(String cgmTrend) {
@@ -272,6 +275,27 @@ public class PumpStatusEvent extends RealmObject {
         DOUBLE_DOWN,
         NOT_COMPUTABLE,
         RATE_OUT_OF_RANGE,
-        NOT_SET
+        NOT_SET;
+
+        public static CGM_TREND fromMessageByte(byte messageByte) {
+            switch (messageByte) {
+                case (byte) 0x60:
+                    return PumpStatusEvent.CGM_TREND.FLAT;
+                case (byte) 0xc0:
+                    return PumpStatusEvent.CGM_TREND.DOUBLE_UP;
+                case (byte) 0xa0:
+                    return PumpStatusEvent.CGM_TREND.SINGLE_UP;
+                case (byte) 0x80:
+                    return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_UP;
+                case (byte) 0x40:
+                    return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_DOWN;
+                case (byte) 0x20:
+                    return PumpStatusEvent.CGM_TREND.SINGLE_DOWN;
+                case (byte) 0x00:
+                    return PumpStatusEvent.CGM_TREND.DOUBLE_DOWN;
+                default:
+                    return PumpStatusEvent.CGM_TREND.NOT_COMPUTABLE;
+            }
+        }
     }
 }
