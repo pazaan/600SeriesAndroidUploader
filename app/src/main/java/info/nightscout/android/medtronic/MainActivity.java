@@ -486,11 +486,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mBuilder.setContentIntent(resultPendingIntent);
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        // notifyId allows you to update the notification later on.
         mNotificationManager.notify(USB_DISCONNECT_NOFICATION_ID, mBuilder.build());
     }
 
-    private void clearUsbDisconnectedNotification() {
+    private void clearDisconnectionNotification() {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(MainActivity.USB_DISCONNECT_NOFICATION_ID);
     }
@@ -939,7 +938,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 Log.d(TAG, "USB plugged in");
                 if (mEnableCgmService) {
-                    clearUsbDisconnectedNotification();
+                    clearDisconnectionNotification();
                 }
 
                 if (hasUsbPermission()) {
