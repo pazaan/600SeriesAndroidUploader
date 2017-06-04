@@ -20,6 +20,8 @@ public class MedtronicCnlSession {
     private long pumpMAC;
 
     private byte radioChannel;
+    private byte radioRSSI;
+
     private int bayerSequenceNumber = 1;
     private int medtronicSequenceNumber = 1;
 
@@ -80,6 +82,14 @@ public class MedtronicCnlSession {
         return radioChannel;
     }
 
+    public byte getRadioRSSI() {
+        return radioRSSI;
+    }
+
+    public int getRadioRSSIpercentage() {
+        return (((int) radioRSSI & 0x00FF) * 100) / 0xA8;
+    }
+
     public void incrBayerSequenceNumber() {
         bayerSequenceNumber++;
     }
@@ -90,6 +100,10 @@ public class MedtronicCnlSession {
 
     public void setRadioChannel(byte radioChannel) {
         this.radioChannel = radioChannel;
+    }
+
+    public void setRadioRSSI(byte radioRSSI) {
+        this.radioRSSI = radioRSSI;
     }
 
     public void setHMAC(byte[] hmac) {

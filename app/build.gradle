@@ -144,7 +144,7 @@ release {
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
-    compile('com.crashlytics.sdk.android:crashlytics:2.6.5@aar') {
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.6@aar') {
         transitive = true;
     }
     compile('com.mikepenz:materialdrawer:5.2.9@aar') {
@@ -155,7 +155,7 @@ dependencies {
     compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
     compile 'uk.co.chrisjenx:calligraphy:2.2.0'
     compile 'com.bugfender.sdk:android:0.6.2'
-    compile 'com.jjoe64:graphview:4.2.1'
+    compile 'com.jjoe64:graphview:4.0.1'
     compile 'com.android.support:support-v4:23.4.0'
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
