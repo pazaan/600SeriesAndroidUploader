@@ -945,6 +945,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private class UsbReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            // TODO move this somewhere else ... wherever it belongs
+            // realm might be closed ... sometimes occurs when USB is disconnected and replugged ...
+            if (mRealm.isClosed()) mRealm = Realm.getDefaultInstance();
             String action = intent.getAction();
             if (MedtronicCnlIntentService.Constants.ACTION_USB_PERMISSION.equals(action)) {
                 boolean permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
