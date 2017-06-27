@@ -311,10 +311,8 @@ public class MedtronicCnlIntentService extends IntentService {
                     }
                     realm.close();
                 }
-                // TODO - set status if offline or Nightscout not reachable
-                sendToXDrip();
-                uploadToNightscout();
 
+                uploadPollResults();
                 scheduleNextPoll(timePollStarted, timeLastGoodSGV, pollInterval, df);
             }
         } finally {
@@ -384,6 +382,12 @@ public class MedtronicCnlIntentService extends IntentService {
             alarm.setExact(AlarmManager.RTC_WAKEUP, wakeTime, pendingIntent);
         } else
             alarm.set(AlarmManager.RTC_WAKEUP, wakeTime, pendingIntent);
+    }
+
+    private void uploadPollResults() {
+        // TODO - set status if offline or Nightscout not reachable
+        sendToXDrip();
+        uploadToNightscout();
     }
 
     private void sendToXDrip() {
