@@ -128,30 +128,7 @@ public class MedtronicCnlIntentService extends IntentService {
                 pollInterval = configurationStore.getLowBatteryPollInterval();
             }
 
-            if (!hasUsbHostFeature()) {
-                sendStatus("It appears that this device doesn't support USB OTG.");
-                Log.e(TAG, "Device does not support USB OTG");
-                // TODO - throw, don't return
-                return;
-            }
-
-            UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
-            if (cnlStick == null) {
-                sendStatus("USB connection error. Is the Contour Next Link plugged in?");
-                Log.w(TAG, "USB connection error. Is the CNL plugged in?");
-
-                // TODO - set status if offline or Nightscout not reachable
-                uploadToNightscout();
-                // TODO - throw, don't return
-                return;
-            }
-
-            if (!mUsbManager.hasPermission(UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID))) {
-                sendMessage(Constants.ACTION_NO_USB_PERMISSION);
-                // TODO - throw, don't return
-                return;
-            }
-            mHidDevice = UsbHidDriver.acquire(mUsbManager, cnlStick);
+            if (!acquireUsbDevice()) return;
 
             try {
                 mHidDevice.open();
@@ -364,6 +341,34 @@ public class MedtronicCnlIntentService extends IntentService {
         } finally {
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
+    }
+
+    private boolean acquireUsbDevice() {
+        if (!hasUsbHostFeature()) {
+            sendStatus("It appears that this device doesn't support USB OTG.");
+            Log.e(TAG, "Device does not support USB OTG");
+            // TODO - throw, don't return
+            return false;
+        }
+
+        UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
+        if (cnlStick == null) {
+            sendStatus("USB connection error. Is the Contour Next Link plugged in?");
+            Log.w(TAG, "USB connection error. Is the CNL plugged in?");
+
+            // TODO - set status if offline or Nightscout not reachable
+            uploadToNightscout();
+            // TODO - throw, don't return
+            return false;
+        }
+
+        if (!mUsbManager.hasPermission(UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID))) {
+            sendMessage(Constants.ACTION_NO_USB_PERMISSION);
+            // TODO - throw, don't return
+            return false;
+        }
+        mHidDevice = UsbHidDriver.acquire(mUsbManager, cnlStick);
+        return true;
     }
 
     // reliable wake alarm manager wake up for all android versions
