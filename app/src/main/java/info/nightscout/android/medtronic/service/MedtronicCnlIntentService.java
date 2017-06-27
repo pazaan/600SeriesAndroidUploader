@@ -108,7 +108,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
             long timePollStarted = System.currentTimeMillis(),
                     timePollExpected = timePollStarted,
-                    timeLastGoodSGV = dataStore.getLastPumpStatus().getEventDate().getTime();
+                    timeLastGoodSGV = dataStore.getLastPumpStatus().getSgvDate().getTime();
 
             short pumpBatteryLevel = dataStore.getLastPumpStatus().getBatteryPercentage();
 
