@@ -315,32 +315,36 @@ public class MedtronicCnlIntentService extends IntentService {
                 sendToXDrip();
                 uploadToNightscout();
 
-                // smart polling and pump-sensor poll clash detection
-                long lastActualPollTime = timePollStarted;
-                if (timeLastGoodSGV > 0) {
-                    lastActualPollTime = timeLastGoodSGV + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((System.currentTimeMillis() - (timeLastGoodSGV + POLL_GRACE_PERIOD_MS)) / POLL_PERIOD_MS));
-                }
-                long nextActualPollTime = lastActualPollTime + POLL_PERIOD_MS;
-                long nextRequestedPollTime = lastActualPollTime + pollInterval;
-                if ((nextRequestedPollTime - System.currentTimeMillis()) < 10000L) {
-                    nextRequestedPollTime = nextActualPollTime;
-                }
-                // extended unavailable SGV may be due to clash with the current polling time
-                // while we wait for a good SGV event, polling is auto adjusted by offsetting the next poll based on miss count
-                if (dataStore.getUnavailableSGVCount() > 0) {
-                    if (timeLastGoodSGV == 0) {
-                        nextRequestedPollTime += POLL_PERIOD_MS / 5L; // if there is a uploader/sensor poll clash on startup then this will push the next attempt out by 60 seconds
-                    } else if (dataStore.getUnavailableSGVCount() > 2) {
-                        sendStatus("Warning: No SGV available from pump for " + dataStore.getUnavailableSGVCount() + " attempts");
-                        nextRequestedPollTime += ((long) ((dataStore.getUnavailableSGVCount() - 2) % 5)) * (POLL_PERIOD_MS / 10L); // adjust poll time in 1/10 steps to avoid potential poll clash (max adjustment at 5/10)
-                    }
-                }
-                MedtronicCnlAlarmManager.setAlarm(nextRequestedPollTime);
-                sendStatus("Next poll due at: " + df.format(nextRequestedPollTime));
+                scheduleNextPoll(timePollStarted, timeLastGoodSGV, pollInterval, df);
             }
         } finally {
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
+    }
+
+    private void scheduleNextPoll(long timePollStarted, long timeLastGoodSGV, long pollInterval, DateFormat df) {
+        // smart polling and pump-sensor poll clash detection
+        long lastActualPollTime = timePollStarted;
+        if (timeLastGoodSGV > 0) {
+            lastActualPollTime = timeLastGoodSGV + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((System.currentTimeMillis() - (timeLastGoodSGV + POLL_GRACE_PERIOD_MS)) / POLL_PERIOD_MS));
+        }
+        long nextActualPollTime = lastActualPollTime + POLL_PERIOD_MS;
+        long nextRequestedPollTime = lastActualPollTime + pollInterval;
+        if ((nextRequestedPollTime - System.currentTimeMillis()) < 10000L) {
+            nextRequestedPollTime = nextActualPollTime;
+        }
+        // extended unavailable SGV may be due to clash with the current polling time
+        // while we wait for a good SGV event, polling is auto adjusted by offsetting the next poll based on miss count
+        if (dataStore.getUnavailableSGVCount() > 0) {
+            if (timeLastGoodSGV == 0) {
+                nextRequestedPollTime += POLL_PERIOD_MS / 5L; // if there is a uploader/sensor poll clash on startup then this will push the next attempt out by 60 seconds
+            } else if (dataStore.getUnavailableSGVCount() > 2) {
+                sendStatus("Warning: No SGV available from pump for " + dataStore.getUnavailableSGVCount() + " attempts");
+                nextRequestedPollTime += ((long) ((dataStore.getUnavailableSGVCount() - 2) % 5)) * (POLL_PERIOD_MS / 10L); // adjust poll time in 1/10 steps to avoid potential poll clash (max adjustment at 5/10)
+            }
+        }
+        MedtronicCnlAlarmManager.setAlarm(nextRequestedPollTime);
+        sendStatus("Next poll due at: " + df.format(nextRequestedPollTime));
     }
 
     private boolean acquireUsbDevice() {
