@@ -70,7 +70,6 @@ import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import info.nightscout.android.medtronic.service.MedtronicCnlAlarmManager;
-import info.nightscout.android.medtronic.service.MedtronicCnlAlarmReceiver;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -93,7 +92,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private int chartZoom = 3;
     private boolean hasZoomedChart = false;
-    private NumberFormat sgvFormatter;
 
     private boolean mEnableCgmService = true;
     private SharedPreferences prefs = null;
@@ -104,7 +102,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
-    private MedtronicCnlAlarmReceiver medtronicCnlAlarmReceiver = new MedtronicCnlAlarmReceiver();
 
     /**
      * calculate the next poll timestamp based on last svg event
@@ -167,15 +164,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         chartZoom = Integer.parseInt(prefs.getString("chartZoom", "3"));
         configurationStore.setMmolxl(prefs.getBoolean("mmolxl", false));
         configurationStore.setMmolxlDecimals(prefs.getBoolean("mmolDecimals", false));
-
-        if (configurationStore.isMmolxl()) {
-            if (configurationStore.isMmolxlDecimals())
-                sgvFormatter = new DecimalFormat("0.00");
-            else
-                sgvFormatter = new DecimalFormat("0.0");
-        } else {
-            sgvFormatter = new DecimalFormat("0");
-        }
 
         // Disable battery optimization to avoid missing values on 6.0+
         // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
@@ -560,14 +548,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         } else if (key.equals("mmolxl") || key.equals("mmolDecimals")) {
             configurationStore.setMmolxl(sharedPreferences.getBoolean("mmolxl", false));
             configurationStore.setMmolxlDecimals(sharedPreferences.getBoolean("mmolDecimals", false));
-            if (configurationStore.isMmolxl()) {
-                if (configurationStore.isMmolxlDecimals())
-                    sgvFormatter = new DecimalFormat("0.00");
-                else
-                    sgvFormatter = new DecimalFormat("0.0");
-            } else {
-                sgvFormatter = new DecimalFormat("0");
-            }
             refreshDisplay();
         } else if (key.equals("pollInterval")) {
             configurationStore.setPollInterval(Long.parseLong(sharedPreferences.getString("pollInterval",

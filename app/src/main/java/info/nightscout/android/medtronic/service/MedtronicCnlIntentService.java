@@ -39,7 +39,6 @@ import info.nightscout.android.utils.ConfigurationStore;
 import info.nightscout.android.utils.DataStore;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadReceiver;
 import io.realm.Realm;
-import io.realm.RealmResults;
 
 public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_VID = 0x1a79;
