@@ -56,6 +56,8 @@ public class MedtronicCnlIntentService extends IntentService {
     private UsbManager mUsbManager;
     private DataStore dataStore = DataStore.getInstance();
     private ConfigurationStore configurationStore = ConfigurationStore.getInstance();
+    private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
+
 
     public MedtronicCnlIntentService() {
         super(MedtronicCnlIntentService.class.getName());
@@ -127,17 +129,9 @@ public class MedtronicCnlIntentService extends IntentService {
                 pollInterval = configurationStore.getLowBatteryPollInterval();
             }
 
-            if (!acquireUsbDevice()) return;
-
-            try {
-                mHidDevice.open();
-            } catch (Exception e) {
-                Log.e(TAG, "Unable to open serial device", e);
-                // TODO - throw, don't return
+            // TODO - throw, don't return
+            if (!openUsbDevice())
                 return;
-            }
-
-            DateFormat df = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
             MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
 
@@ -228,7 +222,7 @@ public class MedtronicCnlIntentService extends IntentService {
                         if (pumpOffset > 0) {
                             offsetSign = "+";
                         }
-                        sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + df.format(pumpRecord.getSgvDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
+                        sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + dateFormatter.format(pumpRecord.getSgvDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
 
                         // Check if pump sent old event when new expected
                         if (pumpRecord != null &&
@@ -312,14 +306,14 @@ public class MedtronicCnlIntentService extends IntentService {
                 }
 
                 uploadPollResults();
-                scheduleNextPoll(timePollStarted, timeLastGoodSGV, pollInterval, df);
+                scheduleNextPoll(timePollStarted, timeLastGoodSGV, pollInterval);
             }
         } finally {
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
     }
 
-    private void scheduleNextPoll(long timePollStarted, long timeLastGoodSGV, long pollInterval, DateFormat df) {
+    private void scheduleNextPoll(long timePollStarted, long timeLastGoodSGV, long pollInterval) {
         // smart polling and pump-sensor poll clash detection
         long lastActualPollTime = timePollStarted;
         if (timeLastGoodSGV > 0) {
@@ -341,14 +335,16 @@ public class MedtronicCnlIntentService extends IntentService {
             }
         }
         MedtronicCnlAlarmManager.setAlarm(nextRequestedPollTime);
-        sendStatus("Next poll due at: " + df.format(nextRequestedPollTime));
+        sendStatus("Next poll due at: " + dateFormatter.format(nextRequestedPollTime));
     }
 
-    private boolean acquireUsbDevice() {
+    /**
+     * @return if device acquisition was successful
+     */
+    private boolean openUsbDevice() {
         if (!hasUsbHostFeature()) {
             sendStatus("It appears that this device doesn't support USB OTG.");
             Log.e(TAG, "Device does not support USB OTG");
-            // TODO - throw, don't return
             return false;
         }
 
@@ -356,19 +352,23 @@ public class MedtronicCnlIntentService extends IntentService {
         if (cnlStick == null) {
             sendStatus("USB connection error. Is the Contour Next Link plugged in?");
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
-
-            // TODO - set status if offline or Nightscout not reachable
-            uploadToNightscout();
-            // TODO - throw, don't return
             return false;
         }
 
         if (!mUsbManager.hasPermission(UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID))) {
             sendMessage(Constants.ACTION_NO_USB_PERMISSION);
-            // TODO - throw, don't return
             return false;
         }
         mHidDevice = UsbHidDriver.acquire(mUsbManager, cnlStick);
+
+        try {
+            mHidDevice.open();
+        } catch (Exception e) {
+            sendStatus("Unable to open USB device");
+            Log.e(TAG, "Unable to open serial device", e);
+            return false;
+        }
+
         return true;
     }
 
@@ -384,7 +384,6 @@ public class MedtronicCnlIntentService extends IntentService {
     }
 
     private void uploadPollResults() {
-        // TODO - set status if offline or Nightscout not reachable
         sendToXDrip();
         uploadToNightscout();
     }
@@ -401,6 +400,7 @@ public class MedtronicCnlIntentService extends IntentService {
     }
 
     private void uploadToNightscout() {
+        // TODO - set status if offline or Nightscout not reachable
         Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
         final long timestamp = System.currentTimeMillis() + 1000L;
         final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
