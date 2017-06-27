@@ -112,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
      * @param pumpStatusData
      * @return timestamp
      */
+    // TODO remove code duplication; this method and MdtCnlIntentService.scheduleNextPoll
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
         long nextPoll = pumpStatusData.getSgvDate().getTime() + pumpStatusData.getPumpTimeOffset(),
                 now = System.currentTimeMillis(),

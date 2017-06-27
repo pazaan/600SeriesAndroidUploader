@@ -229,7 +229,7 @@ public class MedtronicCnlIntentService extends IntentService {
                         if (pumpOffset > 0) {
                             offsetSign = "+";
                         }
-                        sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
+                        sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + df.format(pumpRecord.getSgvDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
 
                         // Check if pump sent old event when new expected
                         if (pumpRecord != null &&
