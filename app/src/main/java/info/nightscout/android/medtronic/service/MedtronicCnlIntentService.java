@@ -106,15 +106,26 @@ public class MedtronicCnlIntentService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         Log.d(TAG, "onHandleIntent called");
         try {
+            // TODO use of ConfigurationStore is confusinng if pollInterval uses the CS, which
+            // uses the POLL_PERIOD_MS, while the latter constant is also used directly.
 
-            long timePollStarted = System.currentTimeMillis(),
-                    timePollExpected = timePollStarted,
-                    timeLastGoodSGV = dataStore.getLastPumpStatus().getSgvDate().getTime();
+            // Note that the variable pollInterval refers to the poll we'd like to make to the pump,
+            // based on settings and battery level, while POLL_PERIOD_MS is used to calculate
+            // when the pump is going to poll data from the transmitter again.
+            // Thus POLL_PERIOD_MS is important to calculate times we'd be clashing with transmitter
+            // to pump transmissions, which are then checked against the time the uploader would
+            // like to poll, which is calculated using the pollInterval variable.
+            // TODO find better variable names to make this distinction clearer and/or if possible
+            // do more method extraction refactorings to make this method easier to grasp
 
-            short pumpBatteryLevel = dataStore.getLastPumpStatus().getBatteryPercentage();
+            final long timePollStarted = System.currentTimeMillis();
+            final long timeLastGoodSGV = dataStore.getLastPumpStatus().getSgvDate().getTime();
 
+            final long timePollExpected;
             if (timeLastGoodSGV != 0) {
                 timePollExpected = timeLastGoodSGV + POLL_PERIOD_MS + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((timePollStarted - 1000L - (timeLastGoodSGV + POLL_GRACE_PERIOD_MS)) / POLL_PERIOD_MS));
+            } else {
+                timePollExpected = timePollStarted;
             }
 
             // avoid polling when too close to sensor-pump comms
@@ -124,6 +135,7 @@ public class MedtronicCnlIntentService extends IntentService {
                 return;
             }
 
+            final short pumpBatteryLevel = dataStore.getLastPumpStatus().getBatteryPercentage();
             long pollInterval = configurationStore.getPollInterval();
             if ((pumpBatteryLevel > 0) && (pumpBatteryLevel <= 25)) {
                 pollInterval = configurationStore.getLowBatteryPollInterval();
