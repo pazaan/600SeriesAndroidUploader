@@ -85,6 +85,7 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
     private static final String TAG = MainActivity.class.getSimpleName();
+    public static final int USB_DISCONNECT_NOFICATION_ID = 1;
     public static final float MMOLXLFACTOR = 18.016f;
 
     private DataStore dataStore = DataStore.getInstance();
@@ -496,8 +497,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void showDisconnectionNotification(String title, String message) {
-        int notifyId = 1;
-
         NotificationCompat.Builder mBuilder =
                 (NotificationCompat.Builder) new NotificationCompat.Builder(this)
                         .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -522,8 +521,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mBuilder.setContentIntent(resultPendingIntent);
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        // notifyId allows you to update the notification later on.
-        mNotificationManager.notify(notifyId, mBuilder.build());
+        mNotificationManager.notify(USB_DISCONNECT_NOFICATION_ID, mBuilder.build());
+    }
+
+    private void clearDisconnectionNotification() {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel(MainActivity.USB_DISCONNECT_NOFICATION_ID);
     }
 
     @Override
@@ -952,6 +955,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 Log.d(TAG, "USB plugged in");
+                if (mEnableCgmService) {
+                    clearDisconnectionNotification();
+                }
 
                 if (hasUsbPermission()) {
                     // Give the USB a little time to warm up first
