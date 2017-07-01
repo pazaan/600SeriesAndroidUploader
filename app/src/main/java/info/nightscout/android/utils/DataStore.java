@@ -1,8 +1,6 @@
 package info.nightscout.android.utils;
 
 
-import com.bugfender.sdk.a.a.k.a;
-
 import java.util.Date;
 
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -16,7 +14,7 @@ public class DataStore {
     private static DataStore instance;
 
     private PumpStatusEvent lastPumpStatus;
-    private int uplooaderBatteryLevel = 0;
+    private int uploaderBatteryLevel = 0;
     private int unavailableSGVCount = 0;
     private long activePumpMac = 0;
 
@@ -28,7 +26,6 @@ public class DataStore {
 
             // set some initial dummy values
             PumpStatusEvent dummyStatus = new PumpStatusEvent();
-            dummyStatus.setEventDate(new Date(0));
 
             // bypass setter to avoid dealing with a real Realm object
             instance.lastPumpStatus = dummyStatus;
@@ -48,12 +45,12 @@ public class DataStore {
         if (!realm.isClosed()) realm.close();
     }
 
-    public int getUplooaderBatteryLevel() {
-        return uplooaderBatteryLevel;
+    public int getUploaderBatteryLevel() {
+        return uploaderBatteryLevel;
     }
 
-    public void setUplooaderBatteryLevel(int uplooaderBatteryLevel) {
-        this.uplooaderBatteryLevel = uplooaderBatteryLevel;
+    public void setUploaderBatteryLevel(int uploaderBatteryLevel) {
+        this.uploaderBatteryLevel = uploaderBatteryLevel;
     }
 
     public int getUnavailableSGVCount() {

@@ -31,9 +31,8 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
         readMessage(mDevice);
         // The 0x80 message
         Log.d(TAG, "negotiateChannel: Reading 0x80 message");
-        ChannelNegotiateResponseMessage response = this.getResponse(readMessage(mDevice));
 
-        return response;
+        return this.getResponse(readMessage(mDevice));
     }
 
     @Override

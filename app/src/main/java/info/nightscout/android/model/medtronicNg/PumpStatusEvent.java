@@ -1,7 +1,10 @@
 package info.nightscout.android.model.medtronicNg;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Date;
 
+import info.nightscout.android.utils.ConfigurationStore;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
@@ -9,7 +12,7 @@ import io.realm.annotations.Index;
 /**
  * Created by lgoedhart on 4/06/2016.
  */
-public class PumpStatusEvent extends RealmObject  {
+public class PumpStatusEvent extends RealmObject {
     @Index
     private Date eventDate; // The actual time of the event (assume the capture device eventDate/time is accurate)
     private Date pumpDate; // The eventDate/time on the pump at the time of the event
@@ -45,13 +48,16 @@ public class PumpStatusEvent extends RealmObject  {
     @Index
     private boolean uploaded = false;
 
+    public PumpStatusEvent() {
+        // The the eventDate to now.
+        this.eventDate = new Date();
+    }
+
     public Date getEventDate() {
         return eventDate;
     }
 
-    public void setEventDate(Date eventDate) {
-        this.eventDate = eventDate;
-    }
+    // No EventDate setter. The eventDate is set at the time that the PumpStatusEvent is created.
 
     public Date getPumpDate() {
         return pumpDate;
@@ -78,7 +84,15 @@ public class PumpStatusEvent extends RealmObject  {
     }
 
     public CGM_TREND getCgmTrend() {
-        return CGM_TREND.valueOf(cgmTrend);
+        if (cgmTrend == null || !this.isCgmActive()) {
+            return CGM_TREND.NOT_SET;
+        } else {
+            return CGM_TREND.valueOf(cgmTrend);
+        }
+    }
+
+    public void setCgmTrend(String cgmTrend) {
+        this.cgmTrend = cgmTrend;
     }
 
     public String getCgmTrendString() {
@@ -90,10 +104,6 @@ public class PumpStatusEvent extends RealmObject  {
             this.cgmTrend = cgmTrend.name();
         else
             this.cgmTrend = CGM_TREND.NOT_SET.name();
-    }
-
-    public void setCgmTrend(String cgmTrend) {
-        this.cgmTrend = cgmTrend;
     }
 
     public float getActiveInsulin() {
@@ -266,6 +276,38 @@ public class PumpStatusEvent extends RealmObject  {
 
     public void setPumpTimeOffset(long pumpTimeOffset) {
         this.pumpTimeOffset = pumpTimeOffset;
+    }
+
+    @Override
+    public String toString() {
+        return "PumpStatusEvent{" +
+                "eventDate=" + eventDate +
+                ", pumpDate=" + pumpDate +
+                ", deviceName='" + deviceName + '\'' +
+                ", suspended=" + suspended +
+                ", bolusing=" + bolusing +
+                ", deliveringInsulin=" + deliveringInsulin +
+                ", tempBasalActive=" + tempBasalActive +
+                ", cgmActive=" + cgmActive +
+                ", activeBasalPattern=" + activeBasalPattern +
+                ", basalRate=" + basalRate +
+                ", tempBasalRate=" + tempBasalRate +
+                ", tempBasalPercentage=" + tempBasalPercentage +
+                ", tempBasalMinutesRemaining=" + tempBasalMinutesRemaining +
+                ", basalUnitsDeliveredToday=" + basalUnitsDeliveredToday +
+                ", batteryPercentage=" + batteryPercentage +
+                ", reservoirAmount=" + reservoirAmount +
+                ", minutesOfInsulinRemaining=" + minutesOfInsulinRemaining +
+                ", activeInsulin=" + activeInsulin +
+                ", sgv=" + sgv +
+                ", sgvDate=" + sgvDate +
+                ", lowSuspendActive=" + lowSuspendActive +
+                ", cgmTrend='" + cgmTrend + '\'' +
+                ", recentBolusWizard=" + recentBolusWizard +
+                ", bolusWizardBGL=" + bolusWizardBGL +
+                ", pumpTimeOffset=" + pumpTimeOffset +
+                ", uploaded=" + uploaded +
+                '}';
     }
 
     public enum CGM_TREND {

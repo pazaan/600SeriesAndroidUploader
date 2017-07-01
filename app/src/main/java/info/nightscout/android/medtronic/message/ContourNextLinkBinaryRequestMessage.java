@@ -43,7 +43,7 @@ public abstract class ContourNextLinkBinaryRequestMessage<T> extends ContourNext
      */
     protected void sendMessage(UsbHidDriver mDevice) throws IOException {
         super.sendMessage(mDevice);
-        mPumpSession.incrBayerSequenceNumber();
+        mPumpSession.incrCnlSequenceNumber();
     }
 
     protected static byte[] buildPayload(CommandType commandType, MedtronicCnlSession pumpSession, byte[] payload) {
@@ -54,11 +54,11 @@ public abstract class ContourNextLinkBinaryRequestMessage<T> extends ContourNext
 
         payloadBuffer.put((byte) 0x51);
         payloadBuffer.put((byte) 0x3);
-        payloadBuffer.put("000000".getBytes()); // Text of PumpInfo serial, but 000000 for 640g
+        payloadBuffer.put("000000".getBytes()); // Text of PumpInfo serial, but 000000 for 600 Series pumps
         byte[] unknownBytes = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         payloadBuffer.put(unknownBytes);
         payloadBuffer.put(commandType.getValue());
-        payloadBuffer.putInt(pumpSession.getBayerSequenceNumber());
+        payloadBuffer.putInt(pumpSession.getCnlSequenceNumber());
         byte[] unknownBytes2 = {0, 0, 0, 0, 0};
         payloadBuffer.put(unknownBytes2);
         payloadBuffer.putInt(payloadLength);

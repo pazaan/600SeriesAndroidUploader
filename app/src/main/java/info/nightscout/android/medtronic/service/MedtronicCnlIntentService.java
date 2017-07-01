@@ -138,7 +138,7 @@ public class MedtronicCnlIntentService extends IntentService {
 
         UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
         if (cnlStick == null) {
-            sendStatus("USB connection error. Is the Bayer Contour Next Link plugged in?");
+            sendStatus("USB connection error. Is the Contour Next Link plugged in?");
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
 
             // TODO - set status if offline or Nightscout not reachable
@@ -165,7 +165,7 @@ public class MedtronicCnlIntentService extends IntentService {
             return;
         }
 
-        DateFormat df = new SimpleDateFormat("HH:mm:ss");
+        DateFormat df = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
         MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
 
@@ -223,9 +223,9 @@ public class MedtronicCnlIntentService extends IntentService {
 
                 byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                 if (radioChannel == 0) {
-                    sendStatus("Could not communicate with the 640g. Are you near the pump?");
-                    Log.i(TAG, "Could not communicate with the 640g. Are you near the pump?");
-                    pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway()?2L:1L); // reduce polling interval to half until pump is available
+                    sendStatus("Could not communicate with the pump. Is it nearby?");
+                    Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
+                    pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
                 } else {
                     dataStore.setActivePumpMac(pumpMAC);
 
@@ -236,7 +236,7 @@ public class MedtronicCnlIntentService extends IntentService {
                     // read pump status
                     PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
 
-                    String deviceName = String.format("medtronic-640g://%s", cnlReader.getStickSerial());
+                    String deviceName = String.format("medtronic-600://%s", cnlReader.getStickSerial());
                     activePump.setDeviceName(deviceName);
 
                     // TODO - this should not be necessary. We should reverse lookup the device name from PumpInfo
@@ -258,9 +258,14 @@ public class MedtronicCnlIntentService extends IntentService {
                         }
                         sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
 
-                        // Check if pump sent old event when new expected
-                        if (((pumpRecord.getEventDate().getTime() - dataStore.getLastPumpStatus().getEventDate().getTime()) < 5000L) && ((timePollExpected - timePollStarted) < 5000L)) {
-                            sendStatus("Pump sent old SGV event");
+                        // Check if pump sent old event when new expected and schedule a re-poll
+                        if (pumpRecord != null &&
+                                dataStore.getLastPumpStatus() != null &&
+                                dataStore.getLastPumpStatus().getPumpDate() != null &&
+                                ((pumpRecord.getPumpDate().getTime() - dataStore.getLastPumpStatus().getPumpDate().getTime()) < 5000L) &&
+                                ((timePollExpected - timePollStarted) < 5000L)) {
+                            pollInterval = 90000L; // polling interval set to 90 seconds
+                            sendStatus("Pump sent old SGV event, re-polling...");
                         }
 
                         //MainActivity.timeLastGoodSGV =  pumpRecord.getEventDate().getTime(); // track last good sgv event time
@@ -294,11 +299,11 @@ public class MedtronicCnlIntentService extends IntentService {
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Unexpected Message", e);
                 sendStatus("Communication Error: " + e.getMessage());
-                pollInterval = 60000L; // retry once during this poll period
+                pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L);
             } catch (TimeoutException e) {
                 Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
                 sendStatus("Timeout communicating with the Contour Next Link.");
-                pollInterval = 60000L; // retry once during this poll period
+                pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L);
             } catch (NoSuchAlgorithmException e) {
                 Log.e(TAG, "Could not determine CNL HMAC", e);
                 sendStatus("Error connecting to Contour Next Link: Hashing error.");
@@ -307,7 +312,8 @@ public class MedtronicCnlIntentService extends IntentService {
                     cnlReader.closeConnection();
                     cnlReader.endPassthroughMode();
                     cnlReader.endControlMode();
-                } catch (NoSuchAlgorithmException e) {}
+                } catch (NoSuchAlgorithmException e) {
+                }
 
             }
         } catch (IOException e) {
@@ -352,9 +358,8 @@ public class MedtronicCnlIntentService extends IntentService {
             if (dataStore.getUnavailableSGVCount() > 0) {
                 if (timeLastGoodSGV == 0) {
                     nextRequestedPollTime += POLL_PERIOD_MS / 5L; // if there is a uploader/sensor poll clash on startup then this will push the next attempt out by 60 seconds
-                }
-                else if (dataStore.getUnavailableSGVCount() > 2) {
-                    sendStatus("Warning: No SGV available from pump for " +dataStore.getUnavailableSGVCount() + " attempts");
+                } else if (dataStore.getUnavailableSGVCount() > 2) {
+                    sendStatus("Warning: No SGV available from pump for " + dataStore.getUnavailableSGVCount() + " attempts");
                     nextRequestedPollTime += ((long) ((dataStore.getUnavailableSGVCount() - 2) % 5)) * (POLL_PERIOD_MS / 10L); // adjust poll time in 1/10 steps to avoid potential poll clash (max adjustment at 5/10)
                 }
             }
@@ -402,7 +407,6 @@ public class MedtronicCnlIntentService extends IntentService {
         public static final String ACTION_STATUS_MESSAGE = "info.nightscout.android.medtronic.service.STATUS_MESSAGE";
         public static final String ACTION_NO_USB_PERMISSION = "info.nightscout.android.medtronic.service.NO_USB_PERMISSION";
         public static final String ACTION_USB_PERMISSION = "info.nightscout.android.medtronic.USB_PERMISSION";
-        public static final String ACTION_REFRESH_DATA = "info.nightscout.android.medtronic.service.CGM_DATA";
         public static final String ACTION_USB_REGISTER = "info.nightscout.android.medtronic.USB_REGISTER";
         public static final String ACTION_UPDATE_PUMP = "info.nightscout.android.medtronic.UPDATE_PUMP";
 

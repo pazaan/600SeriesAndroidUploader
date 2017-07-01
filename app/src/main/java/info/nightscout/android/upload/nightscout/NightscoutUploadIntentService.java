@@ -21,7 +21,6 @@ public class NightscoutUploadIntentService extends IntentService {
     private static final String TAG = NightscoutUploadIntentService.class.getSimpleName();
 
     private Context mContext;
-    private Realm mRealm;
     private NightScoutUpload mNightScoutUpload;
 
     public NightscoutUploadIntentService() {
@@ -49,7 +48,7 @@ public class NightscoutUploadIntentService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.d(TAG, "onHandleIntent called");
-        mRealm = Realm.getDefaultInstance();
+        Realm mRealm = Realm.getDefaultInstance();
 
         RealmResults<PumpStatusEvent> records = mRealm
                 .where(PumpStatusEvent.class)
@@ -68,7 +67,7 @@ public class NightscoutUploadIntentService extends IntentService {
                     String urlSetting = prefs.getString(mContext.getString(R.string.preference_nightscout_url), "");
                     String secretSetting = prefs.getString(mContext.getString(R.string.preference_api_secret), "YOURAPISECRET");
                     Boolean uploadSuccess = mNightScoutUpload.doRESTUpload(urlSetting,
-                            secretSetting, DataStore.getInstance().getUplooaderBatteryLevel(), records);
+                            secretSetting, DataStore.getInstance().getUploaderBatteryLevel(), records);
                     if (uploadSuccess) {
                         mRealm.beginTransaction();
                         for (PumpStatusEvent updateRecord : records) {

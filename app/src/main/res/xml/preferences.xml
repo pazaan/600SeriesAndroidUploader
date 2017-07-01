@@ -70,6 +70,10 @@
             android:dialogTitle="Enter your Nightscout API secret"
             android:key="@string/preference_api_secret"
             android:title="API Secret"/>
+        <Preference android:title="scan NS-Autoconfig QR-Code"
+            android:key="scanButton"
+            android:dependency="@string/preference_enable_rest_upload"
+            android:summary="Click here to scan QR-Code from http://nightscout.github.io/pages/configure/ using ZXing barcode scanner."/>
         <CheckBoxPreference
             android:key="@string/preference_enable_xdrip_plus"
             android:summary="Enable local broadcast of data to xDrip+"

@@ -36,10 +36,8 @@ public abstract class ContourNextLinkRequestMessage<T> extends ContourNextLinkMe
             }
         }
 
-        T response = this.getResponse(readMessage(mDevice)); //new ContourNextLinkCommandResponse();
-
         // FIXME - We need to care what the response message is - wrong MAC and all that
-        return response;
+        return this.getResponse(readMessage(mDevice));
     }
 
     protected abstract <T> T getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException, UnexpectedMessageException, TimeoutException;

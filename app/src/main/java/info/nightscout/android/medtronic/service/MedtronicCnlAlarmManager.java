@@ -5,12 +5,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
 import java.util.Date;
 
-import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.utils.ConfigurationStore;
 
 /**

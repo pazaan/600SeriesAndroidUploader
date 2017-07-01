@@ -29,7 +29,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -40,6 +39,8 @@ import android.widget.TextView;
 import android.widget.TextView.BufferType;
 import android.widget.Toast;
 
+import com.github.javiersantos.appupdater.AppUpdater;
+import com.github.javiersantos.appupdater.enums.UpdateFrom;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.Viewport;
@@ -74,7 +75,6 @@ import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
-import info.nightscout.android.upload.nightscout.NightscoutUploadIntentService;
 import info.nightscout.android.utils.ConfigurationStore;
 import info.nightscout.android.utils.DataStore;
 import io.realm.Realm;
@@ -99,7 +99,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
     private GraphView mChart;
-    private Intent mNightscoutUploadService;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
@@ -113,9 +112,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
      * @return timestamp
      */
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
-        long nextPoll = pumpStatusData.getEventDate().getTime() + pumpStatusData.getPumpTimeOffset(),
-            now = System.currentTimeMillis(),
-            pollInterval = ConfigurationStore.getInstance().getPollInterval();
+        long nextPoll = pumpStatusData.getSgvDate().getTime() + pumpStatusData.getPumpTimeOffset(),
+                now = System.currentTimeMillis(),
+                pollInterval = ConfigurationStore.getInstance().getPollInterval();
 
         // align to next poll slot
         if (nextPoll + 2 * 60 * 60 * 1000 < now) { // last event more than 2h old -> could be a calibration
@@ -137,21 +136,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return nextPoll;
     }
 
-    public static String strFormatSGV(float sgvValue) {
-        ConfigurationStore configurationStore = ConfigurationStore.getInstance();
-        if (configurationStore.isMmolxl()) {
-            NumberFormat sgvFormatter;
-            if (configurationStore.isMmolxlDecimals()) {
-                sgvFormatter = new DecimalFormat("0.00");
-            } else {
-                sgvFormatter = new DecimalFormat("0.0");
-            }
-            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
-        } else {
-            return String.valueOf(sgvValue);
-        }
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate called");
@@ -163,8 +147,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .findAllSorted("eventDate", Sort.DESCENDING);
         if (data.size() > 0)
             dataStore.setLastPumpStatus(data.first());
-
-        mNightscoutUploadService = new Intent(this, NightscoutUploadIntentService.class);
 
         setContentView(R.layout.activity_main);
 
@@ -257,20 +239,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .withIcon(GoogleMaterial.Icon.gmd_settings)
                 .withSelectable(false);
         final PrimaryDrawerItem itemRegisterUsb = new PrimaryDrawerItem()
-                .withName("Registered Devices")
+                .withName("Registered devices")
                 .withIcon(GoogleMaterial.Icon.gmd_usb)
                 .withSelectable(false);
         final PrimaryDrawerItem itemStopCollecting = new PrimaryDrawerItem()
                 .withName("Stop collecting data")
-                .withIcon(GoogleMaterial.Icon.gmd_stop)
+                .withIcon(GoogleMaterial.Icon.gmd_power_settings_new)
                 .withSelectable(false);
         final PrimaryDrawerItem itemGetNow = new PrimaryDrawerItem()
                 .withName("Read data now")
-                .withIcon(GoogleMaterial.Icon.gmd_play_arrow)
+                .withIcon(GoogleMaterial.Icon.gmd_refresh)
+                .withSelectable(false);
+        final PrimaryDrawerItem itemUpdateProfile = new PrimaryDrawerItem()
+                .withName("Update pump profile")
+                .withIcon(GoogleMaterial.Icon.gmd_insert_chart)
                 .withSelectable(false);
         final PrimaryDrawerItem itemClearLog = new PrimaryDrawerItem()
-                .withName("Clear Log")
+                .withName("Clear log")
                 .withIcon(GoogleMaterial.Icon.gmd_clear_all)
+                .withSelectable(false);
+        final PrimaryDrawerItem itemCheckForUpdate = new PrimaryDrawerItem()
+                .withName("Check for App update")
+                .withIcon(GoogleMaterial.Icon.gmd_update)
                 .withSelectable(false);
 
         new DrawerBuilder()
@@ -286,10 +276,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .withSelectedItem(-1)
                 .addDrawerItems(
                         itemSettings,
+                        itemUpdateProfile,
                         itemRegisterUsb,
-                        itemStopCollecting,
+                        itemCheckForUpdate,
+                        itemClearLog,
                         itemGetNow,
-                        itemClearLog
+                        itemStopCollecting
                 )
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
@@ -307,6 +299,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             startCgmService(0);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
+                        } else if (drawerItem.equals(itemCheckForUpdate)) {
+                            checkForUpdateNow();
                         }
 
                         return false;
@@ -355,18 +349,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setHumanRounding is n/a in this version
 //        mChart.getGridLabelRenderer().setHumanRounding(false);
 
-        mChart.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
-            DateFormat mFormat = new SimpleDateFormat("HH:mm");  // 24 hour format forced to fix label overlap
+        mChart.getGridLabelRenderer().setLabelFormatter(
+                new DefaultLabelFormatter() {
+                    DateFormat mFormat = new SimpleDateFormat("HH:mm", Locale.US);  // 24 hour format forced to fix label overlap
 
-            @Override
-            public String formatLabel(double value, boolean isValueX) {
-                if (isValueX) {
-                    return mFormat.format(new Date((long) value));
-                } else {
-                        return sgvFormatter.format(value);
+                    @Override
+                    public String formatLabel(double value, boolean isValueX) {
+                        if (isValueX) {
+                            return mFormat.format(new Date((long) value));
+                        } else {
+                            return MainActivity.strFormatSGV(value);
+                        }
+                    }
                 }
-            }}
         );
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        checkForUpdateBackground(5);
     }
 
     @Override
@@ -434,7 +436,22 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void clearLogText() {
         statusMessageReceiver.clearMessages();
-        //mTextViewLog.setText("", BufferType.EDITABLE);
+    }
+
+    private void checkForUpdateNow() {
+        new AppUpdater(this)
+                .setUpdateFrom(UpdateFrom.JSON)
+                .setUpdateXML("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
+                .showAppUpdated(true) // Show a dialog, even if there isn't an update
+                .start();
+    }
+
+    private void checkForUpdateBackground(int checkEvery) {
+        new AppUpdater(this)
+                .setUpdateFrom(UpdateFrom.JSON)
+                .setUpdateXML("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
+                .showEvery(checkEvery) // Only check for an update every `checkEvery` invocations
+                .start();
     }
 
     private void startDisplayRefreshLoop() {
@@ -471,10 +488,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         // Cancel any existing polling.
         stopCgmService();
         MedtronicCnlAlarmManager.setAlarm(initialPoll);
-    }
-
-    private void uploadCgmData() {
-        startService(mNightscoutUploadService);
     }
 
     private void stopCgmService() {
@@ -586,33 +599,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         startActivity(manageCNLIntent);
     }
 
-    private String renderTrendHtml(PumpStatusEvent.CGM_TREND trend) {
-        switch (trend) {
-            case DOUBLE_UP:
-                return "&#x21c8;";
-            case SINGLE_UP:
-                return "&#x2191;";
-            case FOURTY_FIVE_UP:
-                return "&#x2197;";
-            case FLAT:
-                return "&#x2192;";
-            case FOURTY_FIVE_DOWN:
-                return "&#x2198;";
-            case SINGLE_DOWN:
-                return "&#x2193;";
-            case DOUBLE_DOWN:
-                return "&#x21ca;";
-            default:
-                return "&mdash;";
-        }
-    }
-
     private PumpInfo getActivePump() {
         long activePumpMac = dataStore.getActivePumpMac();
         if (activePumpMac != 0L && (mActivePump == null || !mActivePump.isValid() || mActivePump.getPumpMac() != activePumpMac)) {
             if (mActivePump != null) {
                 // remove listener on old pump
-                mActivePump.removeChangeListeners();
+                mActivePump.removeAllChangeListeners();
                 mActivePump = null;
             }
 
@@ -625,6 +617,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mActivePump = pump;
                 mActivePump.addChangeListener(new RealmChangeListener<PumpInfo>() {
                     long lastQueryTS = 0;
+
                     @Override
                     public void onChange(PumpInfo pump) {
                         // prevent double updating after deleting old events below
@@ -664,33 +657,55 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return mActivePump;
     }
 
+
+    public static String strFormatSGV(double sgvValue) {
+        ConfigurationStore configurationStore = ConfigurationStore.getInstance();
+
+        if (configurationStore.isMmolxl()) {
+            NumberFormat sgvFormatter;
+            if (configurationStore.isMmolxlDecimals()) {
+                sgvFormatter = new DecimalFormat("0.00");
+            } else {
+                sgvFormatter = new DecimalFormat("0.0");
+            }
+            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
+        } else {
+            return String.valueOf(sgvValue);
+        }
+    }
+
+    public static String renderTrendSymbol(PumpStatusEvent.CGM_TREND trend) {
+        switch (trend) {
+            case DOUBLE_UP:
+                return "\u21c8";
+            case SINGLE_UP:
+                return "\u2191";
+            case FOURTY_FIVE_UP:
+                return "\u2197";
+            case FLAT:
+                return "\u2192";
+            case FOURTY_FIVE_DOWN:
+                return "\u2198";
+            case SINGLE_DOWN:
+                return "\u2193";
+            case DOUBLE_DOWN:
+                return "\u21ca";
+            default:
+                return "\u2014";
+        }
+    }
+
     private class StatusMessageReceiver extends BroadcastReceiver {
         private class StatusMessage {
             private long timestamp;
             private String message;
 
-            public StatusMessage(String message) {
+            StatusMessage(String message) {
                 this(System.currentTimeMillis(), message);
             }
 
-            public StatusMessage(long timestamp, String message) {
+            StatusMessage(long timestamp, String message) {
                 this.timestamp = timestamp;
-                this.message = message;
-            }
-
-            public long getTimestamp() {
-                return timestamp;
-            }
-
-            public void setTimestamp(long timestamp) {
-                this.timestamp = timestamp;
-            }
-
-            public String getMessage() {
-                return message;
-            }
-
-            public void setMessage(String message) {
                 this.message = message;
             }
 
@@ -699,7 +714,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
 
-        private Queue<StatusMessage> messages = new ArrayBlockingQueue<>(400);
+        private final Queue<StatusMessage> messages = new ArrayBlockingQueue<>(400);
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -735,7 +750,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
-            // UI elements - TODO do these need to be members?
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
             TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
@@ -750,31 +764,32 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             // Get the most recently written CGM record for the active pump.
             PumpStatusEvent pumpStatusData = null;
 
-            // ignoring activePump atm
-            //PumpInfo pump = getActivePump();
-
             if (dataStore.getLastPumpStatus().getEventDate().getTime() > 0) {
                 pumpStatusData = dataStore.getLastPumpStatus();
             }
 
             updateChart(mRealm.where(PumpStatusEvent.class)
-                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - 1000*60*60*24))
-                    .findAllSorted("eventDate", Sort.ASCENDING));
+                    .greaterThan("sgvDate", new Date(System.currentTimeMillis() - 1000 * 60 * 60 * 24))
+                    .findAllSorted("sgvDate", Sort.ASCENDING));
 
             if (pumpStatusData != null) {
                 String sgvString;
-                if (configurationStore.isMmolxl()) {
-                    float fBgValue = (float) pumpStatusData.getSgv();
-                    sgvString = sgvFormatter.format(fBgValue / MMOLXLFACTOR);
-                    Log.d(TAG, sgvString + " mmol/L");
+                if (pumpStatusData.isCgmActive()) {
+                    sgvString = MainActivity.strFormatSGV(pumpStatusData.getSgv());
+                    ;
+                    if (configurationStore.isMmolxl()) {
+                        Log.d(TAG, sgvString + " mmol/L");
+                    } else {
+                        Log.d(TAG, sgvString + " mg/dL");
+                    }
                 } else {
-                    sgvString = String.valueOf(pumpStatusData.getSgv());
-                    Log.d(TAG, sgvString + " mg/dL");
+                    sgvString = "\u2014"; // &mdash;
                 }
 
                 textViewBg.setText(sgvString);
                 textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
-                textViewTrend.setText(Html.fromHtml(renderTrendHtml(pumpStatusData.getCgmTrend())));
+
+                textViewTrend.setText(MainActivity.renderTrendSymbol(pumpStatusData.getCgmTrend()));
                 textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
 
                 ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
@@ -838,18 +853,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             DataPoint[] entries = new DataPoint[size];
-            final long left = System.currentTimeMillis() - chartZoom * 60 * 60 * 1000;
 
             int pos = 0;
-            for (PumpStatusEvent pumpStatus: results) {
+            for (PumpStatusEvent pumpStatus : results) {
                 // turn your data into Entry objects
-                int sgv = pumpStatus.getSgv();
-
-                if (configurationStore.isMmolxl()) {
-                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv() / MMOLXLFACTOR);
-                } else {
-                    entries[pos++] = new DataPoint(pumpStatus.getEventDate(), (float) pumpStatus.getSgv());
-                }
+                entries[pos++] = new DataPoint(pumpStatus.getSgvDate(), (double) pumpStatus.getSgv());
             }
 
             if (mChart.getSeries().size() == 0) {
@@ -874,7 +882,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         double sgv = dataPoint.getY();
 
                         StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
-                        sb.append(sgvFormatter.format(sgv));
+                        sb.append(MainActivity.strFormatSGV(sgv));
                         Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -884,11 +892,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                         double sgv = dataPoint.getY();
                         boolean mmolxl = configurationStore.isMmolxl();
-                        if (sgv < (mmolxl?4.5:80))
+                        if (sgv < (mmolxl ? 4.5 : 80))
                             paint.setColor(Color.RED);
-                        else if (sgv <= (mmolxl?10:180))
+                        else if (sgv <= (mmolxl ? 10 : 180))
                             paint.setColor(Color.GREEN);
-                        else if (sgv <= (mmolxl?14:260))
+                        else if (sgv <= (mmolxl ? 14 : 260))
                             paint.setColor(Color.YELLOW);
                         else
                             paint.setColor(Color.RED);
@@ -904,7 +912,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             }
 
-            // set vieport to latest SGV
+            // set viewport to latest SGV
             long lastSGVTimestamp = (long) mChart.getSeries().get(0).getHighestValueX();
             if (!hasZoomedChart) {
                 mChart.getViewport().setMaxX(lastSGVTimestamp);
@@ -973,7 +981,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             if (arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_LOW)
                     || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)
                     || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_OKAY)) {
-                dataStore.setUplooaderBatteryLevel(arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
+                dataStore.setUploaderBatteryLevel(arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
             }
         }
     }

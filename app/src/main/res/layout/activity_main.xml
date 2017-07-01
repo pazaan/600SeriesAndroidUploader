@@ -52,8 +52,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
                 android:layout_weight="1"
-                android:singleLine="true"
+                android:maxLines="1"
                 android:text="-"
+                android:textAlignment="center"
                 android:textAppearance="?android:attr/textAppearanceLarge"
                 android:textSize="70sp" />
 
@@ -70,7 +71,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center|top"
-                    android:singleLine="true"
+                    android:maxLines="1"
                     android:text="-"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:textSize="40sp" />
@@ -80,9 +81,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:singleLine="true"
                     android:text="mmol/L"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:maxLines="1" />
 
             </LinearLayout>
 
@@ -128,7 +129,6 @@
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="fill_parent">
-        android:gravity="bottom"
 
         <LinearLayout
             android:orientation="vertical"

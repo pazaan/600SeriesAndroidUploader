@@ -21,7 +21,7 @@ public class MedtronicCnlSession {
     private byte radioChannel;
     private byte radioRSSI;
 
-    private int bayerSequenceNumber = 1;
+    private int cnlSequenceNumber = 1;
     private int medtronicSequenceNumber = 1;
 
     public byte[] getHMAC() throws NoSuchAlgorithmException {
@@ -65,8 +65,8 @@ public class MedtronicCnlSession {
         this.pumpMAC = pumpMAC;
     }
 
-    public int getBayerSequenceNumber() {
-        return bayerSequenceNumber;
+    public int getCnlSequenceNumber() {
+        return cnlSequenceNumber;
     }
 
     public int getMedtronicSequenceNumber() {
@@ -85,8 +85,8 @@ public class MedtronicCnlSession {
         return (((int) radioRSSI & 0x00FF) * 100) / 0xA8;
     }
 
-    public void incrBayerSequenceNumber() {
-        bayerSequenceNumber++;
+    public void incrCnlSequenceNumber() {
+        cnlSequenceNumber++;
     }
 
     public void incrMedtronicSequenceNumber() {

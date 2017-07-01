@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
-import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.utils.HexDump;
 
 /**
@@ -19,7 +18,7 @@ public abstract class ContourNextLinkMessage {
 
     private static final int USB_BLOCKSIZE = 64;
     private static final int READ_TIMEOUT_MS = 15000; //ASTM standard is 15 seconds (note was previously set at 10 seconds)
-    private static final String BAYER_USB_HEADER = "ABC";
+    private static final String USB_HEADER = "ABC";
 
     protected ByteBuffer mPayload;
 
@@ -95,7 +94,7 @@ public abstract class ContourNextLinkMessage {
         while (message.length > pos) {
             ByteBuffer outputBuffer = ByteBuffer.allocate(USB_BLOCKSIZE);
             int sendLength = (pos + 60 > message.length) ? message.length - pos : 60;
-            outputBuffer.put(BAYER_USB_HEADER.getBytes());
+            outputBuffer.put(USB_HEADER.getBytes());
             outputBuffer.put((byte) sendLength);
             outputBuffer.put(message, pos, sendLength);
 
@@ -124,7 +123,7 @@ public abstract class ContourNextLinkMessage {
                 ByteBuffer header = ByteBuffer.allocate(3);
                 header.put(responseBuffer, 0, 3);
                 String headerString = new String(header.array());
-                if (!headerString.equals(BAYER_USB_HEADER)) {
+                if (!headerString.equals(USB_HEADER)) {
                     throw new IOException("Unexpected header received");
                 }
                 messageSize = responseBuffer[3];

@@ -2,7 +2,6 @@ package info.nightscout.android.utils;
 
 
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
-import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 
 /**
  * Created by volker on 30.03.2017.
