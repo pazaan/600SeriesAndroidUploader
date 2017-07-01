@@ -251,27 +251,40 @@ public class MedtronicCnlIntentService extends IntentService {
                     pumpRecord.setPumpDate(new Date(pumpTime - pumpOffset));
                     cnlReader.updatePumpStatus(pumpRecord);
 
-                    String offsetSign = "";
-                    if (pumpOffset > 0) {
-                        offsetSign = "+";
-                    }
-                    sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
-
-                    // Check if pump sent old event when new expected and schedule a re-poll
-                    if (pumpRecord != null &&
-                            dataStore.getLastPumpStatus() != null &&
-                            dataStore.getLastPumpStatus().getPumpDate() != null &&
-                            ((pumpRecord.getPumpDate().getTime() - dataStore.getLastPumpStatus().getPumpDate().getTime()) < 5000L) &&
-                            ((timePollExpected - timePollStarted) < 5000L)) {
-                        pollInterval = 90000L; // polling interval set to 90 seconds
-                        sendStatus("Pump sent old SGV event, re-polling...");
-                    }
-
-                    activePump.getPumpHistory().add(pumpRecord);
-                    dataStore.setLastPumpStatus(pumpRecord);
-
                     if (pumpRecord.getSgv() != 0) {
+                        String offsetSign = "";
+                        if (pumpOffset > 0) {
+                            offsetSign = "+";
+                        }
+                        sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv()) + "  At: " + df.format(pumpRecord.getEventDate().getTime()) + "  Pump: " + offsetSign + (pumpOffset / 1000L) + "sec");  //note: event time is currently stored with offset
+
+                        // Check if pump sent old event when new expected
+                        if (pumpRecord != null &&
+                                dataStore.getLastPumpStatus() != null &&
+                                dataStore.getLastPumpStatus().getPumpDate() != null &&
+                                ((pumpRecord.getPumpDate().getTime() - dataStore.getLastPumpStatus().getPumpDate().getTime()) < 5000L) &&
+                                ((timePollExpected - timePollStarted) < 5000L)) {
+                            sendStatus("Pump sent old SGV event, re-polling...");
+                        }
+
+                        //MainActivity.timeLastGoodSGV =  pumpRecord.getEventDate().getTime(); // track last good sgv event time
+                        //MainActivity.pumpBattery =  pumpRecord.getBatteryPercentage(); // track pump battery
+                        timeLastGoodSGV = pumpRecord.getEventDate().getTime();
                         dataStore.clearUnavailableSGVCount(); // reset unavailable sgv count
+
+                        // Check that the record doesn't already exist before committing
+                        RealmResults<PumpStatusEvent> checkExistingRecords = activePump.getPumpHistory()
+                                .where()
+                                .equalTo("eventDate", pumpRecord.getEventDate())    // >>>>>>> check as event date may not = exact pump event date due to it being stored with offset added this could lead to dup events due to slight variability in time offset
+                                .equalTo("sgv", pumpRecord.getSgv())
+                                .findAll();
+
+                        // There should be the 1 record we've already added in this transaction.
+                        if (checkExistingRecords.size() == 0) {
+                            activePump.getPumpHistory().add(pumpRecord);
+                            dataStore.setLastPumpStatus(pumpRecord);
+                        }
+
                     } else {
                         sendStatus("SGV: unavailable from pump");
                         dataStore.incUnavailableSGVCount(); // poll clash detection
