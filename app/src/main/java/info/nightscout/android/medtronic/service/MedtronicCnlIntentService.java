@@ -39,6 +39,7 @@ import info.nightscout.android.utils.ConfigurationStore;
 import info.nightscout.android.utils.DataStore;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadReceiver;
 import io.realm.Realm;
+import io.realm.RealmResults;
 
 public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_VID = 0x1a79;
@@ -245,15 +246,12 @@ public class MedtronicCnlIntentService extends IntentService {
                             sendStatus("Pump sent old SGV event, re-polling...");
                         }
 
-                        //MainActivity.timeLastGoodSGV =  pumpRecord.getEventDate().getTime(); // track last good sgv event time
-                        //MainActivity.pumpBattery =  pumpRecord.getBatteryPercentage(); // track pump battery
-                        timeLastGoodSGV = pumpRecord.getEventDate().getTime();
                         dataStore.clearUnavailableSGVCount(); // reset unavailable sgv count
 
                         // Check that the record doesn't already exist before committing
                         RealmResults<PumpStatusEvent> checkExistingRecords = activePump.getPumpHistory()
                                 .where()
-                                .equalTo("eventDate", pumpRecord.getEventDate())    // >>>>>>> check as event date may not = exact pump event date due to it being stored with offset added this could lead to dup events due to slight variability in time offset
+                                .equalTo("sgvDate", pumpRecord.getSgvDate())
                                 .equalTo("sgv", pumpRecord.getSgv())
                                 .findAll();
 

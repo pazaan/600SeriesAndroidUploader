@@ -81,7 +81,7 @@ public class EntriesSerializer implements JsonSerializer<PumpStatusEvent> {
         jsonObject.addProperty("device", src.getDeviceName());
         jsonObject.addProperty("type", "sgv");
         jsonObject.addProperty("date", src.getSgvDate().getTime());
-        jsonObject.addProperty("dateString", String.valueOf(src.getEventDate()));
+        jsonObject.addProperty("dateString", String.valueOf(src.getSgvDate()));
 
         return jsonObject;
     }
