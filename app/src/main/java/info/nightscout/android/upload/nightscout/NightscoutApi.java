@@ -2,7 +2,6 @@ package info.nightscout.android.upload.nightscout;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
-
 /**
  * Created by lgoedhart on 26/06/2016.
  */

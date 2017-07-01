@@ -66,7 +66,6 @@ public class MessageUtils {
         // However, the time the pump *means* is Fri, 13 May 2016 21:07:48 in our own timezone
         long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
 
-        Date pumpDate = new Date((( baseTime + rtc + offset ) * 1000 ) - offsetFromUTC );
-        return pumpDate;
+        return new Date((( baseTime + rtc + offset ) * 1000 ) - offsetFromUTC );
     }
 }

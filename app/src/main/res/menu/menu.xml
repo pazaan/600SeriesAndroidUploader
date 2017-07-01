@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- battery icons by Oxygen Team http://www.oxygen-icons.org -->
+    <item
+        android:id="@+id/status_battery"
+        android:icon="@drawable/battery_unknown"
+        android:orderInCategory="99"
+        app:showAsAction="always"
+        android:title="@string/menu_name_battery_status"/>
     <item
         android:id="@+id/action_menu_status"
         android:icon="@drawable/ic_launcher"
