@@ -36,11 +36,12 @@ public class PumpTimeRequestMessage extends MedtronicSendMessageRequestMessage<P
             }
         }
         // Read the 0x80
-        PumpTimeResponseMessage response = this.getResponse(readMessage(mDevice));
+        byte[] payload = readMessage(mDevice);
 
         // Pump sends additional 0x80 message when not using EHSM, lets clear this and any unexpected incoming messages
         clearMessage(mDevice);
 
+        PumpTimeResponseMessage response = this.getResponse(payload);
         return response;
     }
 
