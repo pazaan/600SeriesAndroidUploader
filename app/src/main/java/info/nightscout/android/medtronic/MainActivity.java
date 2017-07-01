@@ -437,7 +437,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void checkForUpdateNow() {
         new AppUpdater(this)
                 .setUpdateFrom(UpdateFrom.JSON)
-                .setUpdateXML("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
+                .setUpdateJSON("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
                 .showAppUpdated(true) // Show a dialog, even if there isn't an update
                 .start();
     }
@@ -445,7 +445,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void checkForUpdateBackground(int checkEvery) {
         new AppUpdater(this)
                 .setUpdateFrom(UpdateFrom.JSON)
-                .setUpdateXML("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
+                .setUpdateJSON("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
                 .showEvery(checkEvery) // Only check for an update every `checkEvery` invocations
                 .start();
     }
@@ -771,7 +771,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 String sgvString;
                 if (pumpStatusData.isCgmActive()) {
                     sgvString = MainActivity.strFormatSGV(pumpStatusData.getSgv());
-                    ;
                     if (configurationStore.isMmolxl()) {
                         Log.d(TAG, sgvString + " mmol/L");
                     } else {
@@ -782,7 +781,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
 
                 textViewBg.setText(sgvString);
-                textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getEventDate().getTime()));
+                textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getSgvDate().getTime()));
 
                 textViewTrend.setText(MainActivity.renderTrendSymbol(pumpStatusData.getCgmTrend()));
                 textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
