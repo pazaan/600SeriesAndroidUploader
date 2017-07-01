@@ -277,7 +277,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .withSelectedItem(-1)
                 .addDrawerItems(
                         itemSettings,
-                        itemUpdateProfile,
+                        //itemUpdateProfile, // TODO - re-add when we to add Basal Profile Upload
                         itemRegisterUsb,
                         itemCheckForUpdate,
                         itemClearLog,
@@ -399,8 +399,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_menu_status:
-                Intent intent = new Intent(this, StatusActivity.class);
-                startActivity(intent);
+                // TODO - remove when we want to re-add the status menu item
+                //Intent intent = new Intent(this, StatusActivity.class);
+                //startActivity(intent);
                 break;
         }
         return true;
