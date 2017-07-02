@@ -875,11 +875,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                         double sgv = dataPoint.getY();
                         boolean mmolxl = configurationStore.isMmolxl();
-                        if (sgv < (mmolxl ? 4.5 : 80))
+                        if (sgv <  80)
                             paint.setColor(Color.RED);
-                        else if (sgv <= (mmolxl ? 10 : 180))
+                        else if (sgv <=  180)
                             paint.setColor(Color.GREEN);
-                        else if (sgv <= (mmolxl ? 14 : 260))
+                        else if (sgv <=  260)
                             paint.setColor(Color.YELLOW);
                         else
                             paint.setColor(Color.RED);
