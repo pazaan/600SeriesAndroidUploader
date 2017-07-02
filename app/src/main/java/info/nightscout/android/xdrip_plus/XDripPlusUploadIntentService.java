@@ -145,8 +145,8 @@ public class XDripPlusUploadIntentService extends IntentService {
         json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
         json.put("device", pumpRecord.getDeviceName());
         json.put("type", "sgv");
-        json.put("date", pumpRecord.getEventDate().getTime());
-        json.put("dateString", pumpRecord.getEventDate());
+        json.put("date", pumpRecord.getSgvDate().getTime());
+        json.put("dateString", pumpRecord.getSgvDate());
 
         entriesArray.put(json);
     }
