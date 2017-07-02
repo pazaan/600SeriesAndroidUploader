@@ -108,7 +108,7 @@ class NightScoutUpload {
         boolean uploaded = true;
         if (glucoseEntries.size() > 0) {
             Response<ResponseBody> result = glucoseEndpoints.sendEntries(glucoseEntries).execute();
-            uploaded = uploaded && result.isSuccessful();
+            uploaded = result.isSuccessful();
         }
         if (bolusEntries.size() > 0) {
             Response<ResponseBody> result = bolusEndpoints.sendEntries(bolusEntries).execute();

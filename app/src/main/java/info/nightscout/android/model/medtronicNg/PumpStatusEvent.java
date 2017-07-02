@@ -1,10 +1,7 @@
 package info.nightscout.android.model.medtronicNg;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.Date;
 
-import info.nightscout.android.utils.ConfigurationStore;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;

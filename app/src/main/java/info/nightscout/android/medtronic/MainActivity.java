@@ -43,7 +43,6 @@ import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.OnDataPointTapListener;
@@ -252,6 +251,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .withIcon(GoogleMaterial.Icon.gmd_update)
                 .withSelectable(false);
 
+        assert toolbar != null;
         new DrawerBuilder()
                 .withActivity(this)
                 .withAccountHeader(new AccountHeaderBuilder()

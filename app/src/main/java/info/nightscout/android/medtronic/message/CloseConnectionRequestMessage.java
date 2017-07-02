@@ -32,8 +32,7 @@ public class CloseConnectionRequestMessage extends ContourNextLinkBinaryRequestM
             }
         }
 
-        CloseConnectionResponseMessage response = this.getResponse(readMessage(mDevice));
-        return response;
+        return this.getResponse(readMessage(mDevice));
     }
 
     @Override
