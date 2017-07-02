@@ -141,6 +141,7 @@ public class MedtronicCnlReader {
 
             if (lastChannel != null) {
                 radioChannels.add(0, lastChannel);
+                radioChannels.add(5, lastChannel);  // retry last used channel again, this allows for transient noise if missed on first attempt when pump is in range
             }
         }
 
