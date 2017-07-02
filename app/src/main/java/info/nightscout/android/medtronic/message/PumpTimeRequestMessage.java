@@ -41,8 +41,7 @@ public class PumpTimeRequestMessage extends MedtronicSendMessageRequestMessage<P
         // Pump sends additional 0x80 message when not using EHSM, lets clear this and any unexpected incoming messages
         clearMessage(mDevice);
 
-        PumpTimeResponseMessage response = this.getResponse(payload);
-        return response;
+        return this.getResponse(payload);
     }
 
     @Override

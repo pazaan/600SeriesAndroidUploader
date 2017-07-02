@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="hello">---</string>
     <string name="app_name">600 Series Uploader</string>
     <string name="eula_title">Disclaimer</string>
     <string name="eula_accept">Accept</string>
@@ -16,31 +14,11 @@
         <item>Info</item>
         <item>Debug</item>
     </string-array>
-    <string name="title_activity_manage_cnl">Manage your Contour Next Link devices</string>
 
     <!-- Strings related to login -->
-    <string name="prompt_username">CareLink Username</string>
-    <string name="prompt_password">Password</string>
-    <string name="action_sign_in">Retrieve keys for USB</string>
-    <string name="action_sign_in_short">Retrieve keys</string>
-    <string name="error_invalid_password">Password is required</string>
-    <string name="error_incorrect_password">The Username or password is incorrect</string>
-    <string name="error_client_protocol_exception">Could not communicate with server.</string>
-    <string name="error_io_exception">Could not connect to server.</string>
-    <string name="error_class_not_found_exception">Application code error.</string>
-    <string name="error_http_response">Server responded with error. Could be username or password problem.</string>
-    <string name="error_field_required">This field is required</string>
-    <string name="prompt_carelink_username_password">Please enter your CareLink details.\nThey will not be stored.</string>
-    <string name="close">Close</string>
-    <string name="register_contour_next_link">Registered Devices</string>
     <string name="preferences_enable_crashlytics">prefs_enable_crashlytics</string>
     <string name="preferences_enable_answers">prefs_enable_answers</string>
     <string name="preferences_enable_remote_logcat">prefs_enable_remote_logcat</string>
-    <string name="menu_name_preferences">Preferences</string>
-    <string name="button_text_stop_uploading_data">Stop Uploading CGM Data</string>
-    <string name="button_text_clear_log">Clear Log</string>
-    <string name="button_text_get_now">Get Now</string>
-    <string name="button_text_start_uploading_data">Start Uploading CGM Data</string>
     <string name="preference_eula_accepted">IUNDERSTAND</string>
     <string name="preference_enable_rest_upload">EnableRESTUpload</string>
     <string name="preference_enable_xdrip_plus">EnablexDripPlusUpload</string>
@@ -48,9 +26,6 @@
     <string name="text_unit_mmolxl">mmol/L</string>
     <string name="text_unit_mgxdl">mg/dL</string>
 
-    <string name="title_activity_status">Uploader Status</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="menu_name_status">Status</string>
     <string name="menu_name_battery_status">unknown</string>
     <string name="preference_api_secret">YOUR.API.SECRET</string>

@@ -46,8 +46,7 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
         // clear unexpected incoming messages
         clearMessage(mDevice);
 
-        PumpStatusResponseMessage response = this.getResponse(payload);
-        return response;
+        return this.getResponse(payload);
     }
 
     @Override
