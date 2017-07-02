@@ -71,6 +71,8 @@ public class EntriesSerializer implements JsonSerializer<PumpStatusEvent> {
         }
     }
 
+    // TODO currentnly unused, see info.nightscout.android.xdrip_plus.XDripPlusUploadIntentService.addSgvEntry()
+    // TODO also, proper method name
     @Override
     public JsonElement serialize(PumpStatusEvent src, Type typeOfSrc, JsonSerializationContext context) {
         final JsonObject jsonObject = new JsonObject();
@@ -78,8 +80,8 @@ public class EntriesSerializer implements JsonSerializer<PumpStatusEvent> {
         jsonObject.addProperty("direction", getDirectionString(src.getCgmTrend()));
         jsonObject.addProperty("device", src.getDeviceName());
         jsonObject.addProperty("type", "sgv");
-        jsonObject.addProperty("date", src.getEventDate().getTime());
-        jsonObject.addProperty("dateString", String.valueOf(src.getEventDate()));
+        jsonObject.addProperty("date", src.getSgvDate().getTime());
+        jsonObject.addProperty("dateString", String.valueOf(src.getSgvDate()));
 
         return jsonObject;
     }
