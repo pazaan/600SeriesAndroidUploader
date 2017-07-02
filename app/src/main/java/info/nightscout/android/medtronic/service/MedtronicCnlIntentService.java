@@ -205,6 +205,11 @@ public class MedtronicCnlIntentService extends IntentService {
                         sendStatus("Could not communicate with the pump. Is it nearby?");
                         Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
                         pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
+                    } else if (cnlReader.getPumpSession().getRadioRSSIpercentage() < 5) {
+                        sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
+                        sendStatus("Warning: pump signal too weak. Is it nearby?");
+                        Log.i(TAG, "Warning: pump signal too weak. Is it nearby?");
+                        pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
                     } else {
                         dataStore.setActivePumpMac(pumpMAC);
 
@@ -242,7 +247,7 @@ public class MedtronicCnlIntentService extends IntentService {
                                 dataStore.getLastPumpStatus().getPumpDate() != null &&
                                 pumpRecord.getPumpDate().getTime() - dataStore.getLastPumpStatus().getPumpDate().getTime() < 5000L &&
                                 timePollExpected - timePollStarted < 5000L) {
-                            sendStatus("Pump sent old SGV event, re-polling...");
+                            sendStatus("Pump sent old SGV event");
                         }
 
                         dataStore.clearUnavailableSGVCount(); // reset unavailable sgv count
@@ -273,11 +278,11 @@ public class MedtronicCnlIntentService extends IntentService {
                 } catch (UnexpectedMessageException e) {
                     Log.e(TAG, "Unexpected Message", e);
                     sendStatus("Communication Error: " + e.getMessage());
-                    pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L);
+                    pollInterval = 60000L; // retry once during this poll period, this allows for transient radio noise
                 } catch (TimeoutException e) {
                     Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
                     sendStatus("Timeout communicating with the Contour Next Link.");
-                    pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L);
+                    pollInterval = 60000L; // retry once during this poll period, this allows for transient radio noise
                 } catch (NoSuchAlgorithmException e) {
                     Log.e(TAG, "Could not determine CNL HMAC", e);
                     sendStatus("Error connecting to Contour Next Link: Hashing error.");
