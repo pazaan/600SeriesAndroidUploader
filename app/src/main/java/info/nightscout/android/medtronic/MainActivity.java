@@ -645,8 +645,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     public static String strFormatSGV(double sgvValue) {
         ConfigurationStore configurationStore = ConfigurationStore.getInstance();
 
+        NumberFormat sgvFormatter;
         if (configurationStore.isMmolxl()) {
-            NumberFormat sgvFormatter;
             if (configurationStore.isMmolxlDecimals()) {
                 sgvFormatter = new DecimalFormat("0.00");
             } else {
@@ -654,7 +654,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
             return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
         } else {
-            return String.valueOf(sgvValue);
+            sgvFormatter = new DecimalFormat("0");
+            return sgvFormatter.format(sgvValue);
         }
     }
 
@@ -824,13 +825,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mChart.getViewport().setMinX(left);
 
                 mChart.getViewport().setYAxisBoundsManual(true);
-                if (configurationStore.isMmolxl()) {
-                    mChart.getViewport().setMinY(80 / MMOLXLFACTOR);
-                    mChart.getViewport().setMaxY(120 / MMOLXLFACTOR);
-                } else {
-                    mChart.getViewport().setMinY(80);
-                    mChart.getViewport().setMaxY(120);
-                }
+                mChart.getViewport().setMinY(80);
+                mChart.getViewport().setMaxY(120);
+
                 mChart.postInvalidate();
                 return;
             }
@@ -874,12 +871,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     @Override
                     public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                         double sgv = dataPoint.getY();
-                        boolean mmolxl = configurationStore.isMmolxl();
-                        if (sgv <  80)
+                        if (sgv < 80)
                             paint.setColor(Color.RED);
-                        else if (sgv <=  180)
+                        else if (sgv <= 180)
                             paint.setColor(Color.GREEN);
-                        else if (sgv <=  260)
+                        else if (sgv <= 260)
                             paint.setColor(Color.YELLOW);
                         else
                             paint.setColor(Color.RED);
