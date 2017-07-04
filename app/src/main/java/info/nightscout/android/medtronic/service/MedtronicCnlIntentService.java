@@ -244,8 +244,8 @@ public class MedtronicCnlIntentService extends IntentService {
 
                         // Check if pump sent old event when new expected
                         if (dataStore.getLastPumpStatus() != null &&
-                                dataStore.getLastPumpStatus().getPumpDate() != null &&
-                                pumpRecord.getPumpDate().getTime() - dataStore.getLastPumpStatus().getPumpDate().getTime() < 5000L &&
+                                dataStore.getLastPumpStatus().getSgvDate() != null &&
+                                pumpRecord.getSgvDate().getTime() - dataStore.getLastPumpStatus().getSgvDate().getTime() < 5000L &&
                                 timePollExpected - timePollStarted < 5000L) {
                             sendStatus("Pump sent old SGV event");
                         }
