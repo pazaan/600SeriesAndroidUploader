@@ -18,6 +18,37 @@
             android:switchTextOff="1"
             android:switchTextOn="2"
             android:title="Decimals"/>
+        <ListPreference
+            android:key="pollInterval"
+            android:defaultValue="300000"
+            android:title="@string/preferences_poll_interval"
+            android:summary="%s"
+            android:entries="@array/poll_interval"
+            android:entryValues="@array/poll_interval_millis"/>
+        <info.nightscout.android.utils.CustomSwitchPreference
+            android:disableDependentsState="false"
+            android:key="doublePollOnPumpAway"
+            android:summaryOff="Normal polling if pump is away"
+            android:summaryOn="Double polling if pump is away"
+            android:switchTextOff="off"
+            android:switchTextOn="on"
+            android:title="Polling interval if pump is away"/>
+        <ListPreference
+            android:key="lowBatPollInterval"
+            android:defaultValue="900000"
+            android:title="@string/preferences_low_battery_poll_interval"
+            android:summary="%s"
+            android:entries="@array/poll_interval"
+            android:entryValues="@array/poll_interval_millis"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Display">
+    <ListPreference
+        android:key="chartZoom"
+        android:defaultValue="3"
+        android:title="@string/preferences_chart_interval"
+        android:summary="%s"
+        android:entries="@array/chart_zoom"
+        android:entryValues="@array/chart_zoom_hours"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="Sharing">
         <CheckBoxPreference
@@ -39,6 +70,10 @@
             android:dialogTitle="Enter your Nightscout API secret"
             android:key="@string/preference_api_secret"
             android:title="API Secret"/>
+        <Preference android:title="scan NS-Autoconfig QR-Code"
+            android:key="scanButton"
+            android:dependency="@string/preference_enable_rest_upload"
+            android:summary="Click here to scan QR-Code from http://nightscout.github.io/pages/configure/ using ZXing barcode scanner."/>
         <CheckBoxPreference
             android:key="@string/preference_enable_xdrip_plus"
             android:summary="Enable local broadcast of data to xDrip+"

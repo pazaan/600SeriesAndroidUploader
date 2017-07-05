@@ -1,8 +1,8 @@
 package info.nightscout.android.USB;
 
-import java.io.DataOutputStream;
-
 import android.util.Log;
+
+import java.io.DataOutputStream;
 
 public class USBPower {
 

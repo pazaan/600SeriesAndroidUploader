@@ -52,8 +52,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
                 android:layout_weight="1"
-                android:singleLine="true"
+                android:maxLines="1"
                 android:text="-"
+                android:textAlignment="center"
                 android:textAppearance="?android:attr/textAppearanceLarge"
                 android:textSize="70sp" />
 
@@ -70,7 +71,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center|top"
-                    android:singleLine="true"
+                    android:maxLines="1"
                     android:text="-"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:textSize="40sp" />
@@ -80,9 +81,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:singleLine="true"
                     android:text="mmol/L"
-                    android:textAppearance="?android:attr/textAppearanceSmall" />
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:maxLines="1" />
 
             </LinearLayout>
 
@@ -119,11 +120,10 @@
 
     </LinearLayout>
 
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/chart"
+    <com.jjoe64.graphview.GraphView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="invisible" />
+        android:layout_height="100dip"
+        android:id="@+id/chart" />
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -140,7 +140,8 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10sp"
-                android:maxLines="20"
+                android:maxLines="800"
+                android:gravity="bottom"
                 android:text="" />
         </LinearLayout>
     </ScrollView>
