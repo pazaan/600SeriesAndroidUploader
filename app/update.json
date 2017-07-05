@@ -1,10 +1,10 @@
 {
-  "latestVersion": "0.4.0",
-  "latestVersionCode": "7",
+  "latestVersion": "0.5.0",
+  "latestVersionCode": "8",
   "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases",
   "releaseNotes": [
-    "- Remove dependency on CareLink login. No more CareLink login issues!",
-    "- Local broadcasting to xDrip+",
+    "- Improvements to pump polling to avoid radio interference",
+    "- Add update checking",
     "- Stability fixes"
   ]
 }
