@@ -146,6 +146,7 @@ release {
     buildTasks = ['build']
     beforeReleaseBuild.dependsOn 'clean'
     afterReleaseBuild.dependsOn 'signRelease', 'zipalignRelease'
+    versionPropertyFile = 'release.properties'
 }
 
 dependencies {
