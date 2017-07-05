@@ -5,4 +5,3 @@ local.properties
 .idea
 bugfender.properties
 /app/app.iml
-gradle.properties

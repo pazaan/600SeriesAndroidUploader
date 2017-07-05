@@ -103,7 +103,6 @@ release {
     tagTemplate = 'v${version}'
     buildTasks = ['build']
     beforeReleaseBuild.dependsOn 'clean'
-    versionPropertyFile = 'release.properties'
 }
 
 dependencies {
