@@ -74,10 +74,20 @@ android {
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
+    signingConfigs {
+        release {
+            storeFile file(RELEASE_STORE_FILE)
+            storePassword RELEASE_STORE_PASSWORD
+            keyAlias RELEASE_KEY_ALIAS
+            keyPassword RELEASE_KEY_PASSWORD
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            signingConfig signingConfigs.release
         }
     }
 
@@ -85,35 +95,6 @@ android {
         // Dag nabbit :(
         // Because of http://stackoverflow.com/questions/35492259/lint-error-on-okio
         warning 'InvalidPackage'
-    }
-}
-
-task signRelease {
-    doLast {
-        def command = [
-                'jarsigner',
-                '-verbose',
-                '-sigalg',
-                'SHA1withRSA',
-                '-digestalg',
-                'SHA1',
-                '-keystore',
-                '/Users/lennart/keystores/nightscout_android.jks',
-                'app/build/outputs/apk/app-release-unsigned.apk',
-                'nightscoutandroidkey'
-        ]
-
-        def proc = new ProcessBuilder(command)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .redirectInput(ProcessBuilder.Redirect.INHERIT)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start()
-
-        proc.waitFor()
-
-        if (0 != proc.exitValue()) {
-            throw new RuntimeException("Could not sign APK.")
-        }
     }
 }
 
@@ -145,8 +126,8 @@ release {
     tagTemplate = 'v${version}'
     buildTasks = ['build']
     beforeReleaseBuild.dependsOn 'clean'
-    afterReleaseBuild.dependsOn 'signRelease', 'zipalignRelease'
-    versionPropertyFile = 'release.properties'
+    afterReleaseBuild.dependsOn 'zipalignRelease'
+    versionPropertyFile = 'app/release.properties'
 }
 
 dependencies {
