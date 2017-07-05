@@ -1,6 +1,6 @@
 {
   "latestVersion": "0.5.0",
-  "latestVersionCode": "7",
+  "latestVersionCode": "8",
   "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases",
   "releaseNotes": [
     "- Improvements to pump polling to avoid radio interference",
