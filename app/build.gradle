@@ -86,6 +86,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             signingConfig signingConfigs.release
         }
@@ -98,35 +99,10 @@ android {
     }
 }
 
-task zipalignRelease {
-    doLast {
-        def command = [
-                '/Users/lennart/Library/Android/sdk/build-tools/25.0.2/zipalign',
-                '-v',
-                '4',
-                'app/build/outputs/apk/app-release-unsigned.apk',
-                'app/build/outputs/apk/600-series-uploader.apk'
-        ]
-
-        def proc = new ProcessBuilder(command)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .redirectInput(ProcessBuilder.Redirect.INHERIT)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start()
-
-        proc.waitFor()
-
-        if (0 != proc.exitValue()) {
-            throw new RuntimeException("Could not align APK.")
-        }
-    }
-}
-
 release {
     tagTemplate = 'v${version}'
     buildTasks = ['build']
     beforeReleaseBuild.dependsOn 'clean'
-    afterReleaseBuild.dependsOn 'zipalignRelease'
     versionPropertyFile = 'release.properties'
 }
 
