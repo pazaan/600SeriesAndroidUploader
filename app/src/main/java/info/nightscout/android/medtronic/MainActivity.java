@@ -771,7 +771,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
 
                 textViewBg.setText(sgvString);
-                textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getSgvDate().getTime()));
+                if (pumpStatusData.getSgvDate() != null) {
+                    textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getSgvDate().getTime()));
+                }
 
                 textViewTrend.setText(MainActivity.renderTrendSymbol(pumpStatusData.getCgmTrend()));
                 textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", pumpStatusData.getActiveInsulin()));
