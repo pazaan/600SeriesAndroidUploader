@@ -735,6 +735,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
+            long nextRun = 60000L;
+
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
             TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
@@ -770,6 +772,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     sgvString = "\u2014"; // &mdash;
                 }
 
+                nextRun = 60000L - (System.currentTimeMillis() - pumpStatusData.getSgvDate().getTime()) % 60000L;
                 textViewBg.setText(sgvString);
                 textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getSgvDate().getTime()));
 
@@ -807,8 +810,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             }
 
-            // Run myself again in 60 seconds;
-            mUiRefreshHandler.postDelayed(this, 60000L);
+            // Run myself again in 60 (or less) seconds;
+            mUiRefreshHandler.postDelayed(this, nextRun);
         }
 
         private void updateChart(RealmResults<PumpStatusEvent> results) {
