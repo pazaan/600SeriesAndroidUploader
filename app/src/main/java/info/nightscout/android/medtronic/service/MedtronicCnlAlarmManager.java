@@ -53,7 +53,7 @@ public class MedtronicCnlAlarmManager {
         cancelAlarm();
 
         Log.d(TAG, "Alarm set to fire at " + new Date(millis));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(millis, null), pendingIntent);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             // Android 5.0.0 + 5.0.1 (e.g. Galaxy S4) has a bug.
