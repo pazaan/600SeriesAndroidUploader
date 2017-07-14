@@ -30,7 +30,9 @@ import android.support.v7.app.NotificationCompat;
 import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -308,6 +310,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         // disable scrolling at the moment
         mChart.getViewport().setScalable(false);
         mChart.getViewport().setScrollable(false);
+        mChart.getViewport().setYAxisBoundsManual(true);
+        mChart.getViewport().setMinY(80);
+        mChart.getViewport().setMaxY(120);
         mChart.getViewport().setXAxisBoundsManual(true);
         final long now = System.currentTimeMillis(),
                 left = now - chartZoom * 60 * 60 * 1000;
@@ -800,6 +805,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             updateChart(mRealm.where(PumpStatusEvent.class)
+                    .notEqualTo("sgv", 0)
                     .greaterThan("sgvDate", new Date(System.currentTimeMillis() - 1000 * 60 * 60 * 24))
                     .findAllSorted("sgvDate", Sort.ASCENDING));
 
@@ -926,7 +932,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             paint.setColor(Color.YELLOW);
                         else
                             paint.setColor(Color.RED);
-                        canvas.drawCircle(x, y, 3.6f, paint);
+                        float dotSize = 3.0f;
+                        if (chartZoom == 3) dotSize = 2.0f;
+                        else if (chartZoom == 6) dotSize = 2.0f;
+                        else if (chartZoom == 12) dotSize = 1.65f;
+                        else if (chartZoom == 24) dotSize = 1.25f;
+                        canvas.drawCircle(x, y, dipToPixels(getApplicationContext(), dotSize), paint);
                     }
                 });
 
@@ -938,13 +949,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             }
 
+            // TODO - chart viewport needs rework as currently using a workaround to handle updating
+
             // set viewport to latest SGV
             long lastSGVTimestamp = (long) mChart.getSeries().get(0).getHighestValueX();
+
+            long min_x = (((lastSGVTimestamp + 150000 - (chartZoom * 60 * 60 * 1000)) / 60000) * 60000);
+            long max_x = lastSGVTimestamp + 90000;
+
             if (!hasZoomedChart) {
-                mChart.getViewport().setMaxX(lastSGVTimestamp);
-                mChart.getViewport().setMinX(lastSGVTimestamp - chartZoom * 60 * 60 * 1000);
+                mChart.getViewport().setMinX(min_x);
+                mChart.getViewport().setMaxX(max_x);
             }
+            if (entries.length > 0) {
+                ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
+            }
+
         }
+    }
+
+    private static float dipToPixels(Context context, float dipValue) {
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dipValue, metrics);
     }
 
     /**
