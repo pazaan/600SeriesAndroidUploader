@@ -445,7 +445,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startDisplayRefreshLoop() {
-        mUiRefreshHandler.post(mUiRefreshRunnable);
+//        mUiRefreshHandler.post(mUiRefreshRunnable);
+        mUiRefreshHandler.postDelayed(mUiRefreshRunnable, 100L);
     }
 
     private void cancelDisplayRefreshLoop() {
@@ -530,8 +531,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
         cancelDisplayRefreshLoop();
 
-        mRealm.close();
-
+        if (!mRealm.isClosed()) {
+            mRealm.close();
+        }
         if (!mEnableCgmService) {
             stopCgmService();
         }
@@ -607,6 +609,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     .findFirst();
 
             if (pump != null && pump.isValid()) {
+
+                // first change listener start can miss fresh data and not update until next poll, force a refresh now
+                RemoveOutdatedRecords();
+                refreshDisplay();
+
                 mActivePump = pump;
                 mActivePump.addChangeListener(new RealmChangeListener<PumpInfo>() {
                     long lastQueryTS = 0;
@@ -620,28 +627,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                         lastQueryTS = pump.getLastQueryTS();
 
-                        // Delete invalid or old records from Realm
-                        // TODO - show an error message if the valid records haven't been uploaded
-                        final RealmResults<PumpStatusEvent> results =
-                                mRealm.where(PumpStatusEvent.class)
-                                        .equalTo("sgv", 0)
-                                        .or()
-                                        .lessThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
-                                        .findAll();
-
-                        if (results.size() > 0) {
-                            mRealm.executeTransaction(new Realm.Transaction() {
-                                @Override
-                                public void execute(Realm realm) {
-                                    // Delete all matches
-                                    Log.d(TAG, "Deleting " + results.size() + " records from realm");
-                                    results.deleteAllFromRealm();
-                                }
-                            });
-                        }
+                        RemoveOutdatedRecords();
+                        refreshDisplay();
 
                         // TODO - handle isOffline in NightscoutUploadIntentService?
-                        refreshDisplay();
                     }
                 });
             }
@@ -650,6 +639,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return mActivePump;
     }
 
+    private void RemoveOutdatedRecords() {
+        // Delete invalid or old records from Realm
+        // TODO - show an error message if the valid records haven't been uploaded
+        final RealmResults<PumpStatusEvent> results =
+                mRealm.where(PumpStatusEvent.class)
+                        .equalTo("sgv", 0)
+                        .or()
+                        .lessThan("sgvDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
+                        .findAll();
+        if (results.size() > 0) {
+            mRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    // Delete all matches
+                    Log.d(TAG, "Deleting " + results.size() + " records from realm");
+                    results.deleteAllFromRealm();
+                }
+            });
+        }
+    }
 
     public static String strFormatSGV(double sgvValue) {
         ConfigurationStore configurationStore = ConfigurationStore.getInstance();
@@ -669,6 +678,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     public static String renderTrendSymbol(PumpStatusEvent.CGM_TREND trend) {
+        // TODO - symbols used for trend arrow may vary per device, find a more robust solution
         switch (trend) {
             case DOUBLE_UP:
                 return "\u21c8";
