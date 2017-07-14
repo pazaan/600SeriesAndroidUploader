@@ -16,6 +16,7 @@ public class DataStore {
     private PumpStatusEvent lastPumpStatus;
     private int uploaderBatteryLevel = 0;
     private int unavailableSGVCount = 0;
+    private int lastBolusWizardBGL = 0;
     private long activePumpMac = 0;
 
     private DataStore() {}
@@ -67,6 +68,14 @@ public class DataStore {
     }
     public void setUnavailableSGVCount(int unavailableSGVCount) {
         this.unavailableSGVCount = unavailableSGVCount;
+    }
+
+    public int getLastBolusWizardBGL() {
+        return lastBolusWizardBGL;
+    }
+
+    public void setLastBolusWizardBGL(int lastBolusWizardBGL) {
+        this.lastBolusWizardBGL = lastBolusWizardBGL;
     }
 
     public long getActivePumpMac() {

@@ -263,6 +263,9 @@ public class MedtronicCnlIntentService extends IntentService {
                         if (checkExistingRecords.size() == 0) {
                             activePump.getPumpHistory().add(pumpRecord);
                             dataStore.setLastPumpStatus(pumpRecord);
+                            if (pumpRecord.getBolusWizardBGL() != 0) {
+                                sendStatus("Recent finger BG: " + MainActivity.strFormatSGV(pumpRecord.getBolusWizardBGL()));
+                            }
                         }
 
                     } else {
