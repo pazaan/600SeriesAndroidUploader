@@ -588,7 +588,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (activePumpMac != 0L && (mActivePump == null || !mActivePump.isValid() || mActivePump.getPumpMac() != activePumpMac)) {
             if (mActivePump != null) {
                 // remove listener on old pump
-                mActivePump.removeAllChangeListeners();
+                mRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm sRealm) {
+                        mActivePump.removeAllChangeListeners();
+                    }
+                });
                 mActivePump = null;
             }
 
