@@ -35,6 +35,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 import android.widget.Toast;
@@ -96,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private SharedPreferences prefs = null;
     private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
+    private ScrollView mScrollView;
     private GraphView mChart;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
@@ -298,6 +300,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .build();
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
+        mScrollView = (ScrollView) findViewById(R.id.scrollView);
+        mScrollView.setSmoothScrollingEnabled(true);
 
         mChart = (GraphView) findViewById(R.id.chart);
 
@@ -524,6 +528,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume called");
+        super.onResume();
+        // Focus status log to most recent on returning to app
+        mScrollView.post(new Runnable() {
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+    }
+
+    @Override
     protected void onDestroy() {
         Log.i(TAG, "onDestroy called");
         super.onDestroy();
@@ -740,6 +756,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
+
+            // auto scroll status log
+            if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
+                mScrollView.post(new Runnable() {
+                    public void run() {
+                        mScrollView.fullScroll(View.FOCUS_DOWN);
+                    }
+                });
+            }
         }
 
         public void clearMessages() {
