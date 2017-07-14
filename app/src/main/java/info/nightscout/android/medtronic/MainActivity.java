@@ -106,6 +106,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Realm mRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
 
+    private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
+
+    protected void sendStatus(String message) {
+        Intent localIntent =
+                new Intent(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE)
+                        .putExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA, message);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+    }
+
     /**
      * calculate the next poll timestamp based on last svg event
      *
@@ -289,6 +298,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
                             // It was triggered by user so start reading of data now and not based on last poll.
+                            sendStatus("Requesting poll now...");
                             startCgmService(System.currentTimeMillis() + 1000);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
@@ -372,6 +382,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
+//        sendStatus("Nightscout 600 Series Uploader");
+//        sendStatus("Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
+//        sendStatus("Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
         startCgmService();
         startDisplayRefreshLoop();
     }
@@ -428,11 +441,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private void refreshDisplay() {
-        cancelDisplayRefreshLoop();
-        startDisplayRefreshLoop();
-    }
-
     private void clearLogText() {
         statusMessageReceiver.clearMessages();
     }
@@ -453,9 +461,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .start();
     }
 
+    private void refreshDisplay() {
+        cancelDisplayRefreshLoop();
+        mUiRefreshHandler.post(mUiRefreshRunnable);;
+    }
+    private void refreshDisplay(int delay) {
+        cancelDisplayRefreshLoop();
+        mUiRefreshHandler.postDelayed(mUiRefreshRunnable, delay);
+    }
+
     private void startDisplayRefreshLoop() {
-//        mUiRefreshHandler.post(mUiRefreshRunnable);
-        mUiRefreshHandler.postDelayed(mUiRefreshRunnable, 100L);
+        refreshDisplay(100);
     }
 
     private void cancelDisplayRefreshLoop() {
@@ -475,6 +491,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 long pollInterval = results.first().getBatteryPercentage() > 25 ? ConfigurationStore.getInstance().getPollInterval() : ConfigurationStore.getInstance().getLowBatteryPollInterval();
                 if ((nextPoll - MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS - results.first().getSgvDate().getTime()) <= pollInterval) {
                     startCgmService(nextPoll + delay);
+                    sendStatus("Next poll due at: " + dateFormatter.format(nextPoll + delay));
                     return;
                 }
             }
@@ -633,7 +650,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                 // first change listener start can miss fresh data and not update until next poll, force a refresh now
                 RemoveOutdatedRecords();
-                refreshDisplay();
+                refreshDisplay(1000);
 
                 mActivePump = pump;
                 mActivePump.addChangeListener(new RealmChangeListener<PumpInfo>() {
@@ -649,7 +666,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         lastQueryTS = pump.getLastQueryTS();
 
                         RemoveOutdatedRecords();
-                        refreshDisplay();
+                        refreshDisplay(1000);
 
                         // TODO - handle isOffline in NightscoutUploadIntentService?
                     }
