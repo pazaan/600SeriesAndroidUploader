@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
      * @return timestamp
      */
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
-        long nextPoll = pumpStatusData.getSgvDate().getTime() + pumpStatusData.getPumpTimeOffset(),
+        long nextPoll = pumpStatusData.getSgvDate().getTime(),
                 now = System.currentTimeMillis(),
                 pollInterval = ConfigurationStore.getInstance().getPollInterval();
 
@@ -285,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
                             // It was triggered by user so start reading of data now and not based on last poll.
-                            startCgmService(0);
+                            startCgmService(System.currentTimeMillis() + 1000);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
                         } else if (drawerItem.equals(itemCheckForUpdate)) {
@@ -461,8 +461,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             RealmResults<PumpStatusEvent> results = mRealm.where(PumpStatusEvent.class)
                     .findAllSorted("eventDate", Sort.DESCENDING);
             if (results.size() > 0) {
-                startCgmService(getNextPoll(results.first()) + delay);
-                return;
+                long nextPoll = getNextPoll(results.first());
+                long pollInterval = results.first().getBatteryPercentage() > 25 ? ConfigurationStore.getInstance().getPollInterval() : ConfigurationStore.getInstance().getLowBatteryPollInterval();
+                if ((nextPoll - MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS - results.first().getSgvDate().getTime()) <= pollInterval) {
+                    startCgmService(nextPoll + delay);
+                    return;
+                }
             }
         }
         startCgmService(System.currentTimeMillis() + (delay == 0 ? 1000 : delay));
