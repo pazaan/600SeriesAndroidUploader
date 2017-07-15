@@ -30,6 +30,7 @@ public class DataStore {
             // set some initial dummy values
             PumpStatusEvent dummyStatus = new PumpStatusEvent();
             dummyStatus.setSgvDate(new Date());
+            dummyStatus.setSgv(0);
 
             // bypass setter to avoid dealing with a real Realm object
             instance.lastPumpStatus = dummyStatus;

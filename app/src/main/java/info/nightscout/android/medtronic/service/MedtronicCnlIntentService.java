@@ -140,7 +140,11 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             // do more method extraction refactorings to make this method easier to grasp
 
             final long timePollStarted = System.currentTimeMillis();
-            final long timeLastGoodSGV = dataStore.getLastPumpStatus().getSgvDate().getTime();
+
+            long timeLastGoodSGV = 0;
+            if (dataStore.getLastPumpStatus().getSgv() > 0) {
+                timeLastGoodSGV = dataStore.getLastPumpStatus().getSgvDate().getTime();
+            }
 
             final long timePollExpected;
             if (timeLastGoodSGV != 0) {
