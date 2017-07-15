@@ -191,12 +191,18 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         pumpRecord.setLowSuspendActive(lowSuspendActive);
 
         // Recent Bolus Wizard BGL
-        pumpRecord.setRecentBolusWizard(recentBolusWizard);
-        // there is a BolusWizard usage & the IOB increased
-        if (activeInsulin > DataStore.getInstance().getLastPumpStatus().getActiveInsulin()) {
+        if (bolusWizardBGL > 0
+                && (DataStore.getInstance().getLastPumpStatus().getSgvDate().getTime() - System.currentTimeMillis() > 15 * 60 * 1000
+                || (DataStore.getInstance().getLastBolusWizardBGL() != bolusWizardBGL
+                && DataStore.getInstance().getLastPumpStatus().getBolusWizardBGL() != bolusWizardBGL)
+                )
+        ) {
+            pumpRecord.setRecentBolusWizard(true);
             pumpRecord.setBolusWizardBGL(bolusWizardBGL); // In mg/DL
         } else {
+            pumpRecord.setRecentBolusWizard(false);
             pumpRecord.setBolusWizardBGL(0); // In mg/DL
         }
+        DataStore.getInstance().setLastBolusWizardBGL(bolusWizardBGL);
     }
 }
