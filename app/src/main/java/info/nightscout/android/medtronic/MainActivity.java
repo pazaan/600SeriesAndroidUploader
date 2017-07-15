@@ -105,6 +105,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
+    private UsbReceiver usbReceiver = new UsbReceiver();
+    private BatteryReceiver batteryReceiver = new BatteryReceiver();
 
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
@@ -211,9 +213,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
         batteryIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         batteryIntentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
-        registerReceiver(new BatteryReceiver(), batteryIntentFilter);
+        registerReceiver(batteryReceiver, batteryIntentFilter);
 
-        UsbReceiver usbReceiver = new UsbReceiver();
         IntentFilter usbIntentFilter = new IntentFilter();
         usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
@@ -565,6 +566,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     protected void onDestroy() {
         Log.i(TAG, "onDestroy called");
         super.onDestroy();
+
+        unregisterReceiver(usbReceiver);
+        unregisterReceiver(batteryReceiver);
 
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
         cancelDisplayRefreshLoop();
