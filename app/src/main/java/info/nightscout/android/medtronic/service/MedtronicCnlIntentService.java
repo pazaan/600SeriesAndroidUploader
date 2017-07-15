@@ -160,7 +160,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             long pollInterval = configurationStore.getPollInterval();
             if ((pumpBatteryLevel > 0) && (pumpBatteryLevel <= 25)) {
                 pollInterval = configurationStore.getLowBatteryPollInterval();
-                sendStatus("Warning: pump battery low");
+                sendStatus("⚠Warning: pump battery low");
                 if (pollInterval != configurationStore.getPollInterval()) {
                     sendStatus("Poll interval: " + (pollInterval / 60000) +" minutes");
                }
@@ -230,12 +230,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                     byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                     if (radioChannel == 0) {
-                        sendStatus("Could not communicate with the pump. Is it nearby?");
+                        sendStatus("⚠Could not communicate with the pump. Is it nearby?");
                         Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
                         pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
                     } else if (cnlReader.getPumpSession().getRadioRSSIpercentage() < 5) {
                         sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
-                        sendStatus("Warning: pump signal too weak. Is it nearby?");
+                        sendStatus("⚠Warning: pump signal too weak. Is it nearby?");
                         Log.i(TAG, "Warning: pump signal too weak. Is it nearby?");
                         pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
                     } else {
@@ -271,7 +271,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                     dataStore.getLastPumpStatus().getSgvDate() != null &&
                                     pumpRecord.getSgvDate().getTime() - dataStore.getLastPumpStatus().getSgvDate().getTime() < 5000L &&
                                     timePollExpected - timePollStarted < 5000L) {
-                                sendStatus("Pump sent old SGV event");
+                                sendStatus("⚠Pump sent old SGV event");
                                 // pump may have missed sensor transmission or be delayed in posting to status message
                                 // in most cases the next scheduled poll will have latest sgv, occasionally it is available this period after a delay
                                 // if user selects double poll option we try again this period or wait until next
@@ -292,12 +292,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 activePump.getPumpHistory().add(pumpRecord);
                                 dataStore.setLastPumpStatus(pumpRecord);
                                 if (pumpRecord.getBolusWizardBGL() != 0) {
-                                    sendStatus("Recent finger BG: " + MainActivity.strFormatSGV(pumpRecord.getBolusWizardBGL()));
+                                    sendStatus("☝Recent finger BG: " + MainActivity.strFormatSGV(pumpRecord.getBolusWizardBGL()));
                                 }
                             }
 
                         } else {
-                            sendStatus("SGV: unavailable from pump");
+                            sendStatus("⚠SGV: unavailable from pump");
                             dataStore.incUnavailableSGVCount(); // poll clash detection
                         }
 
@@ -312,15 +312,15 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     dataStore.incCommsErrorCount();
                     pollInterval = 60000L; // retry once during this poll period, this allows for transient radio noise
                     Log.e(TAG, "Unexpected Message", e);
-                    sendStatus("Communication Error: " + e.getMessage());
+                    sendStatus("⚠Communication Error: " + e.getMessage());
                 } catch (TimeoutException e) {
                     dataStore.incCommsErrorCount();
                     pollInterval = 90000L; // retry once during this poll period, this allows for transient radio noise
                     Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
-                    sendStatus("Timeout communicating with the Contour Next Link.");
+                    sendStatus("⚠Timeout communicating with the Contour Next Link / Pump.");
                 } catch (NoSuchAlgorithmException e) {
                     Log.e(TAG, "Could not determine CNL HMAC", e);
-                    sendStatus("Error connecting to Contour Next Link: Hashing error.");
+                    sendStatus("⚠Error connecting to Contour Next Link: Hashing error.");
                 } finally {
                     try {
                         cnlReader.closeConnection();
@@ -333,23 +333,23 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             } catch (IOException e) {
                 dataStore.incCommsErrorCount();
                 Log.e(TAG, "Error connecting to Contour Next Link.", e);
-                sendStatus("Error connecting to Contour Next Link.");
+                sendStatus("⚠Error connecting to Contour Next Link.");
             } catch (ChecksumException e) {
                 dataStore.incCommsErrorCount();
                 Log.e(TAG, "Checksum error getting message from the Contour Next Link.", e);
-                sendStatus("Checksum error getting message from the Contour Next Link.");
+                sendStatus("⚠Checksum error getting message from the Contour Next Link.");
             } catch (EncryptionException e) {
                 dataStore.incCommsErrorCount();
                 Log.e(TAG, "Error decrypting messages from Contour Next Link.", e);
-                sendStatus("Error decrypting messages from Contour Next Link.");
+                sendStatus("⚠Error decrypting messages from Contour Next Link.");
             } catch (TimeoutException e) {
                 dataStore.incCommsErrorCount();
                 Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
-                sendStatus("Timeout communicating with the Contour Next Link.");
+                sendStatus("⚠Timeout communicating with the Contour Next Link.");
             } catch (UnexpectedMessageException e) {
                 dataStore.incCommsErrorCount();
                 Log.e(TAG, "Could not close connection.", e);
-                sendStatus("Could not close connection: " + e.getMessage());
+                sendStatus("⚠Could not close connection: " + e.getMessage());
             } finally {
                 if (!realm.isClosed()) {
                     if (realm.isInTransaction()) {
@@ -363,7 +363,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 scheduleNextPoll(timePollStarted, timeLastGoodSGV, pollInterval);
 
                 if (dataStore.getCommsErrorCount() >= ERROR_WARNING) {
-                    sendStatus("Warning: multiple comms/timeout errors detected. Try: disconnecting and reconnecting the Contour Next Link to phone / restarting phone / unpair and pair CNL with Pump.");
+                    sendStatus("⚠Warning: multiple comms/timeout errors detected. Try: disconnecting and reconnecting the Contour Next Link to phone / restarting phone / unpair and pair CNL with Pump.");
                 }
             }
         } finally {
@@ -385,7 +385,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             if (timeLastGoodSGV == 0) {
                 nextRequestedPollTime += POLL_PERIOD_MS / 5L; // if there is a uploader/sensor poll clash on startup then this will push the next attempt out by 60 seconds
             } else if (dataStore.getUnavailableSGVCount() > 2) {
-                sendStatus("Warning: No SGV available from pump for " + dataStore.getUnavailableSGVCount() + " attempts");
+                sendStatus("⚠Warning: No SGV available from pump for " + dataStore.getUnavailableSGVCount() + " attempts");
                 long offsetPollTime = ((long) ((dataStore.getUnavailableSGVCount() - 2) % 5)) * (POLL_PERIOD_MS / 10L); // adjust poll time in 1/10 steps to avoid potential poll clash (max adjustment at 5/10)
                 nextRequestedPollTime += offsetPollTime;
                 sendStatus("Adjusting poll: "  + dateFormatter.format(nextRequestedPollTime) +  " +" + (offsetPollTime / 1000) + "sec");
@@ -404,14 +404,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
      */
     private boolean openUsbDevice() {
         if (!hasUsbHostFeature()) {
-            sendStatus("It appears that this device doesn't support USB OTG.");
+            sendStatus("⚠It appears that this device doesn't support USB OTG.");
             Log.e(TAG, "Device does not support USB OTG");
             return false;
         }
 
         UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
         if (cnlStick == null) {
-            sendStatus("USB connection error. Is the Contour Next Link plugged in?");
+            sendStatus("⚠USB connection error. Is the Contour Next Link plugged in?");
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
             return false;
         }
@@ -425,7 +425,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         try {
             mHidDevice.open();
         } catch (Exception e) {
-            sendStatus("Unable to open USB device");
+            sendStatus("⚠Unable to open USB device");
             Log.e(TAG, "Unable to open serial device", e);
             return false;
         }
