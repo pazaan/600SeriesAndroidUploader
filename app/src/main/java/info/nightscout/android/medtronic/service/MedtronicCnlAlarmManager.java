@@ -66,8 +66,6 @@ public class MedtronicCnlAlarmManager {
 
     // restarting the alarm after MedtronicCnlIntentService.POLL_PERIOD_MS from now
     public static void restartAlarm() {
-//        setAlarmAfterMillis(ConfigurationStore.getInstance().getPollInterval()); // grace already accounted for when using current intent time to set default restart
-
         // Due to potential of some versions of android to mangle alarms and clash with polling times
         // the default alarm reset is set to POLL_PERIOD_MS + 60 seconds
         // It's expected to trigger between polls if alarm has not been honored with a safe margin greater then

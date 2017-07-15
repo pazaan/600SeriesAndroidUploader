@@ -383,11 +383,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-//        sendStatus("Nightscout 600 Series Uploader");
-//        sendStatus("Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
-//        sendStatus("Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
-        startCgmService();
         startDisplayRefreshLoop();
+        statusStartup();
+        startCgmService();
     }
 
     @Override
@@ -462,6 +460,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .start();
     }
 
+    private void statusStartup() {
+        sendStatus("Nightscout 600 Series Uploader");
+        sendStatus("Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
+        sendStatus("Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
+    }
+
     private void refreshDisplay() {
         cancelDisplayRefreshLoop();
         mUiRefreshHandler.post(mUiRefreshRunnable);;
@@ -472,7 +476,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void startDisplayRefreshLoop() {
-        refreshDisplay(100);
+        refreshDisplay(50);
     }
 
     private void cancelDisplayRefreshLoop() {
@@ -1032,7 +1036,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 if (mEnableCgmService) {
                     clearDisconnectionNotification();
                 }
-
+                sendStatus("⚠ USB plugged in. Contour Next Link connected.");
                 if (hasUsbPermission()) {
                     // Give the USB a little time to warm up first
                     startCgmServiceDelayed(MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
@@ -1044,6 +1048,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 Log.d(TAG, "USB unplugged");
                 if (mEnableCgmService) {
                     showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
+                    sendStatus("⚠ USB error. Contour Next Link unplugged.");
                 }
             } else if (MedtronicCnlIntentService.Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
                 Log.d(TAG, "No permission to read the USB device.");
