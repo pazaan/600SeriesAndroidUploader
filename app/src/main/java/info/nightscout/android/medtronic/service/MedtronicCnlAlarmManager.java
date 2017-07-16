@@ -53,7 +53,7 @@ public class MedtronicCnlAlarmManager {
         cancelAlarm();
 
         Log.d(TAG, "Alarm set to fire at " + new Date(millis));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(millis, null), pendingIntent);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             // Android 5.0.0 + 5.0.1 (e.g. Galaxy S4) has a bug.
@@ -66,8 +66,11 @@ public class MedtronicCnlAlarmManager {
 
     // restarting the alarm after MedtronicCnlIntentService.POLL_PERIOD_MS from now
     public static void restartAlarm() {
-        //setAlarmAfterMillis(MainActivity.pollInterval + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS);
-        setAlarmAfterMillis(ConfigurationStore.getInstance().getPollInterval()); // grace already accounted for when using current intent time to set default restart
+        // Due to potential of some versions of android to mangle alarms and clash with polling times
+        // the default alarm reset is set to POLL_PERIOD_MS + 60 seconds
+        // It's expected to trigger between polls if alarm has not been honored with a safe margin greater then
+        // the around 10 minutes that some OS versions force during sleep
+        setAlarmAfterMillis(MedtronicCnlIntentService.POLL_PERIOD_MS + 60000L); // grace already accounted for when using current intent time to set default restart
     }
 
     // Cancel the alarm.

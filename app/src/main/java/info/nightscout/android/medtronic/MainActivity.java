@@ -30,11 +30,14 @@ import android.support.v7.app.NotificationCompat;
 import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 import android.widget.Toast;
@@ -96,11 +99,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private SharedPreferences prefs = null;
     private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
+    private ScrollView mScrollView;
     private GraphView mChart;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
+    private UsbReceiver usbReceiver = new UsbReceiver();
+    private BatteryReceiver batteryReceiver = new BatteryReceiver();
+
+    private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
+
+    protected void sendStatus(String message) {
+        Intent localIntent =
+                new Intent(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE)
+                        .putExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA, message);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+    }
 
     /**
      * calculate the next poll timestamp based on last svg event
@@ -109,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
      * @return timestamp
      */
     public static long getNextPoll(PumpStatusEvent pumpStatusData) {
-        long nextPoll = pumpStatusData.getSgvDate().getTime() + pumpStatusData.getPumpTimeOffset(),
+        long nextPoll = pumpStatusData.getSgvDate().getTime(),
                 now = System.currentTimeMillis(),
                 pollInterval = ConfigurationStore.getInstance().getPollInterval();
 
@@ -198,9 +213,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
         batteryIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         batteryIntentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
-        registerReceiver(new BatteryReceiver(), batteryIntentFilter);
+        registerReceiver(batteryReceiver, batteryIntentFilter);
 
-        UsbReceiver usbReceiver = new UsbReceiver();
         IntentFilter usbIntentFilter = new IntentFilter();
         usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
@@ -285,7 +299,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
                             // It was triggered by user so start reading of data now and not based on last poll.
-                            startCgmService(0);
+                            sendStatus("Requesting poll now...");
+                            startCgmService(System.currentTimeMillis() + 1000);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
                         } else if (drawerItem.equals(itemCheckForUpdate)) {
@@ -298,12 +313,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .build();
 
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
+        mScrollView = (ScrollView) findViewById(R.id.scrollView);
+        mScrollView.setSmoothScrollingEnabled(true);
 
         mChart = (GraphView) findViewById(R.id.chart);
 
         // disable scrolling at the moment
         mChart.getViewport().setScalable(false);
         mChart.getViewport().setScrollable(false);
+        mChart.getViewport().setYAxisBoundsManual(true);
+        mChart.getViewport().setMinY(80);
+        mChart.getViewport().setMaxY(120);
         mChart.getViewport().setXAxisBoundsManual(true);
         final long now = System.currentTimeMillis(),
                 left = now - chartZoom * 60 * 60 * 1000;
@@ -363,8 +383,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        startCgmService();
         startDisplayRefreshLoop();
+        statusStartup();
+        startCgmService();
     }
 
     @Override
@@ -419,11 +440,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private void refreshDisplay() {
-        cancelDisplayRefreshLoop();
-        startDisplayRefreshLoop();
-    }
-
     private void clearLogText() {
         statusMessageReceiver.clearMessages();
     }
@@ -444,8 +460,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .start();
     }
 
+    private void statusStartup() {
+        sendStatus("Nightscout 600 Series Uploader");
+        sendStatus("Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
+        sendStatus("Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
+    }
+
+    private void refreshDisplay() {
+        cancelDisplayRefreshLoop();
+        mUiRefreshHandler.post(mUiRefreshRunnable);;
+    }
+    private void refreshDisplay(int delay) {
+        cancelDisplayRefreshLoop();
+        mUiRefreshHandler.postDelayed(mUiRefreshRunnable, delay);
+    }
+
     private void startDisplayRefreshLoop() {
-        mUiRefreshHandler.post(mUiRefreshRunnable);
+        refreshDisplay(50);
     }
 
     private void cancelDisplayRefreshLoop() {
@@ -461,8 +492,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             RealmResults<PumpStatusEvent> results = mRealm.where(PumpStatusEvent.class)
                     .findAllSorted("eventDate", Sort.DESCENDING);
             if (results.size() > 0) {
-                startCgmService(getNextPoll(results.first()) + delay);
-                return;
+                long nextPoll = getNextPoll(results.first());
+                long pollInterval = results.first().getBatteryPercentage() > 25 ? ConfigurationStore.getInstance().getPollInterval() : ConfigurationStore.getInstance().getLowBatteryPollInterval();
+                if ((nextPoll - MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS - results.first().getSgvDate().getTime()) <= pollInterval) {
+                    startCgmService(nextPoll + delay);
+                    sendStatus("Next poll due at: " + dateFormatter.format(nextPoll + delay));
+                    return;
+                }
             }
         }
         startCgmService(System.currentTimeMillis() + (delay == 0 ? 1000 : delay));
@@ -519,15 +555,31 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume called");
+        super.onResume();
+        // Focus status log to most recent on returning to app
+        mScrollView.post(new Runnable() {
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+    }
+
+    @Override
     protected void onDestroy() {
         Log.i(TAG, "onDestroy called");
         super.onDestroy();
 
+        unregisterReceiver(usbReceiver);
+        unregisterReceiver(batteryReceiver);
+
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
         cancelDisplayRefreshLoop();
 
-        mRealm.close();
-
+        if (!mRealm.isClosed()) {
+            mRealm.close();
+        }
         if (!mEnableCgmService) {
             stopCgmService();
         }
@@ -588,7 +640,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (activePumpMac != 0L && (mActivePump == null || !mActivePump.isValid() || mActivePump.getPumpMac() != activePumpMac)) {
             if (mActivePump != null) {
                 // remove listener on old pump
-                mActivePump.removeAllChangeListeners();
+                mRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm sRealm) {
+                        mActivePump.removeAllChangeListeners();
+                    }
+                });
                 mActivePump = null;
             }
 
@@ -598,6 +655,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     .findFirst();
 
             if (pump != null && pump.isValid()) {
+
+                // first change listener start can miss fresh data and not update until next poll, force a refresh now
+                RemoveOutdatedRecords();
+                refreshDisplay(1000);
+
                 mActivePump = pump;
                 mActivePump.addChangeListener(new RealmChangeListener<PumpInfo>() {
                     long lastQueryTS = 0;
@@ -611,28 +673,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                         lastQueryTS = pump.getLastQueryTS();
 
-                        // Delete invalid or old records from Realm
-                        // TODO - show an error message if the valid records haven't been uploaded
-                        final RealmResults<PumpStatusEvent> results =
-                                mRealm.where(PumpStatusEvent.class)
-                                        .equalTo("sgv", 0)
-                                        .or()
-                                        .lessThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
-                                        .findAll();
-
-                        if (results.size() > 0) {
-                            mRealm.executeTransaction(new Realm.Transaction() {
-                                @Override
-                                public void execute(Realm realm) {
-                                    // Delete all matches
-                                    Log.d(TAG, "Deleting " + results.size() + " records from realm");
-                                    results.deleteAllFromRealm();
-                                }
-                            });
-                        }
+                        RemoveOutdatedRecords();
+                        refreshDisplay(1000);
 
                         // TODO - handle isOffline in NightscoutUploadIntentService?
-                        refreshDisplay();
                     }
                 });
             }
@@ -641,6 +685,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return mActivePump;
     }
 
+    private void RemoveOutdatedRecords() {
+        // Delete invalid or old records from Realm
+        // TODO - show an error message if the valid records haven't been uploaded
+        final RealmResults<PumpStatusEvent> results =
+                mRealm.where(PumpStatusEvent.class)
+                        .equalTo("sgv", 0)
+                        .or()
+                        .lessThan("sgvDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
+                        .findAll();
+        if (results.size() > 0) {
+            mRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    // Delete all matches
+                    Log.d(TAG, "Deleting " + results.size() + " records from realm");
+                    results.deleteAllFromRealm();
+                }
+            });
+        }
+    }
 
     public static String strFormatSGV(double sgvValue) {
         ConfigurationStore configurationStore = ConfigurationStore.getInstance();
@@ -660,6 +724,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     public static String renderTrendSymbol(PumpStatusEvent.CGM_TREND trend) {
+        // TODO - symbols used for trend arrow may vary per device, find a more robust solution
         switch (trend) {
             case DOUBLE_UP:
                 return "\u21c8";
@@ -721,6 +786,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
+
+            // auto scroll status log
+            if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
+                mScrollView.post(new Runnable() {
+                    public void run() {
+                        mScrollView.fullScroll(View.FOCUS_DOWN);
+                    }
+                });
+            }
         }
 
         public void clearMessages() {
@@ -735,6 +809,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
+            long nextRun = 60000L;
+
             TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
             TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
             TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
@@ -754,6 +830,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             updateChart(mRealm.where(PumpStatusEvent.class)
+                    .notEqualTo("sgv", 0)
                     .greaterThan("sgvDate", new Date(System.currentTimeMillis() - 1000 * 60 * 60 * 24))
                     .findAllSorted("sgvDate", Sort.ASCENDING));
 
@@ -770,6 +847,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     sgvString = "\u2014"; // &mdash;
                 }
 
+                nextRun = 60000L - (System.currentTimeMillis() - pumpStatusData.getSgvDate().getTime()) % 60000L;
                 textViewBg.setText(sgvString);
                 textViewBgTime.setText(DateUtils.getRelativeTimeSpanString(pumpStatusData.getSgvDate().getTime()));
 
@@ -807,8 +885,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             }
 
-            // Run myself again in 60 seconds;
-            mUiRefreshHandler.postDelayed(this, 60000L);
+            // Run myself again in 60 (or less) seconds;
+            mUiRefreshHandler.postDelayed(this, nextRun);
         }
 
         private void updateChart(RealmResults<PumpStatusEvent> results) {
@@ -879,7 +957,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             paint.setColor(Color.YELLOW);
                         else
                             paint.setColor(Color.RED);
-                        canvas.drawCircle(x, y, 3.6f, paint);
+                        float dotSize = 3.0f;
+                        if (chartZoom == 3) dotSize = 2.0f;
+                        else if (chartZoom == 6) dotSize = 2.0f;
+                        else if (chartZoom == 12) dotSize = 1.65f;
+                        else if (chartZoom == 24) dotSize = 1.25f;
+                        canvas.drawCircle(x, y, dipToPixels(getApplicationContext(), dotSize), paint);
                     }
                 });
 
@@ -891,13 +974,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             }
 
+            // TODO - chart viewport needs rework as currently using a workaround to handle updating
+
             // set viewport to latest SGV
             long lastSGVTimestamp = (long) mChart.getSeries().get(0).getHighestValueX();
+
+            long min_x = (((lastSGVTimestamp + 150000 - (chartZoom * 60 * 60 * 1000)) / 60000) * 60000);
+            long max_x = lastSGVTimestamp + 90000;
+
             if (!hasZoomedChart) {
-                mChart.getViewport().setMaxX(lastSGVTimestamp);
-                mChart.getViewport().setMinX(lastSGVTimestamp - chartZoom * 60 * 60 * 1000);
+                mChart.getViewport().setMinX(min_x);
+                mChart.getViewport().setMaxX(max_x);
             }
+            if (entries.length > 0) {
+                ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
+            }
+
         }
+    }
+
+    private static float dipToPixels(Context context, float dipValue) {
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dipValue, metrics);
     }
 
     /**
@@ -938,7 +1036,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 if (mEnableCgmService) {
                     clearDisconnectionNotification();
                 }
-
+                sendStatus("⚠ USB plugged in. Contour Next Link connected.");
                 if (hasUsbPermission()) {
                     // Give the USB a little time to warm up first
                     startCgmServiceDelayed(MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
@@ -950,6 +1048,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 Log.d(TAG, "USB unplugged");
                 if (mEnableCgmService) {
                     showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
+                    sendStatus("⚠ USB error. Contour Next Link unplugged.");
                 }
             } else if (MedtronicCnlIntentService.Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
                 Log.d(TAG, "No permission to read the USB device.");
