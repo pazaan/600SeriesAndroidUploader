@@ -389,10 +389,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         }
         long nextActualPollTime = lastActualPollTime + POLL_PERIOD_MS;
         long nextRequestedPollTime = lastActualPollTime + pollInterval;
-        // check if request is really needed (less then 10 seconds from now)
-        if ((nextRequestedPollTime - System.currentTimeMillis()) < 10000L) {
-            nextRequestedPollTime = nextActualPollTime;
-        }
         // extended unavailable SGV may be due to clash with the current polling time
         // while we wait for a good SGV event, polling is auto adjusted by offsetting the next poll based on miss count
         if (dataStore.getUnavailableSGVCount() > 0) {
@@ -406,7 +402,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             }
         }
         // check if requested poll time is too close to next actual poll time
-        if ((nextActualPollTime - System.currentTimeMillis()) < (POLL_PRE_GRACE_PERIOD_MS + POLL_GRACE_PERIOD_MS)) {
+        if ((nextRequestedPollTime - System.currentTimeMillis()) < (POLL_PRE_GRACE_PERIOD_MS + POLL_GRACE_PERIOD_MS)) {
             nextRequestedPollTime = nextActualPollTime;
         }
         MedtronicCnlAlarmManager.setAlarm(nextRequestedPollTime);
