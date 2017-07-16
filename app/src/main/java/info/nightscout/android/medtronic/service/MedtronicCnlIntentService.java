@@ -383,12 +383,17 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
     private void scheduleNextPoll(long timePollStarted, long timeLastGoodSGV, long pollInterval) {
         // smart polling and pump-sensor poll clash detection
+        long now = System.currentTimeMillis();
         long lastActualPollTime = timePollStarted;
         if (timeLastGoodSGV > 0) {
-            lastActualPollTime = timeLastGoodSGV + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((System.currentTimeMillis() - (timeLastGoodSGV + POLL_GRACE_PERIOD_MS)) / POLL_PERIOD_MS));
+            lastActualPollTime = timeLastGoodSGV + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((now - timeLastGoodSGV + POLL_GRACE_PERIOD_MS) / POLL_PERIOD_MS));
         }
         long nextActualPollTime = lastActualPollTime + POLL_PERIOD_MS;
         long nextRequestedPollTime = lastActualPollTime + pollInterval;
+        // check if request is really needed (less then 10 seconds from now)
+        if ((nextRequestedPollTime - System.currentTimeMillis()) < 10000L) {
+            nextRequestedPollTime = nextActualPollTime;
+        }
         // extended unavailable SGV may be due to clash with the current polling time
         // while we wait for a good SGV event, polling is auto adjusted by offsetting the next poll based on miss count
         if (dataStore.getUnavailableSGVCount() > 0) {
@@ -402,7 +407,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             }
         }
         // check if requested poll time is too close to next actual poll time
-        if ((nextRequestedPollTime - System.currentTimeMillis()) < (POLL_PRE_GRACE_PERIOD_MS + POLL_GRACE_PERIOD_MS)) {
+        if (nextRequestedPollTime - now > nextActualPollTime - now - POLL_PRE_GRACE_PERIOD_MS
+                && nextRequestedPollTime - now < nextActualPollTime - now + POLL_GRACE_PERIOD_MS) {
             nextRequestedPollTime = nextActualPollTime;
         }
         MedtronicCnlAlarmManager.setAlarm(nextRequestedPollTime);
