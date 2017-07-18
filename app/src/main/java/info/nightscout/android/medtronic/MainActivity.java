@@ -461,9 +461,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void statusStartup() {
-        sendStatus("Nightscout 600 Series Uploader");
-        sendStatus("Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
-        sendStatus("Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
+        sendStatus(MedtronicCnlIntentService.ICON_HEART + "Nightscout 600 Series Uploader");
+        sendStatus(MedtronicCnlIntentService.ICON_SETTING + "Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
+        sendStatus(MedtronicCnlIntentService.ICON_SETTING + "Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
     }
 
     private void refreshDisplay() {
@@ -1036,7 +1036,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 if (mEnableCgmService) {
                     clearDisconnectionNotification();
                 }
-                sendStatus("⚠ USB plugged in. Contour Next Link connected.");
+                dataStore.clearAllCommsErrors();
+                sendStatus(MedtronicCnlIntentService.ICON_INFO + "Contour Next Link plugged in.");
                 if (hasUsbPermission()) {
                     // Give the USB a little time to warm up first
                     startCgmServiceDelayed(MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
@@ -1048,7 +1049,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 Log.d(TAG, "USB unplugged");
                 if (mEnableCgmService) {
                     showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
-                    sendStatus("⚠ USB error. Contour Next Link unplugged.");
+                    sendStatus(MedtronicCnlIntentService.ICON_WARN + "USB error. Contour Next Link unplugged.");
                 }
             } else if (MedtronicCnlIntentService.Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
                 Log.d(TAG, "No permission to read the USB device.");
