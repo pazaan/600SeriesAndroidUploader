@@ -59,8 +59,8 @@
                 android:textSize="70sp" />
 
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="fill_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
                 android:layout_weight="1"
                 android:gravity="bottom|center_horizontal"
@@ -135,7 +135,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <TextView
+            <com.mikepenz.iconics.view.IconicsTextView
                 android:id="@+id/textview_log"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
