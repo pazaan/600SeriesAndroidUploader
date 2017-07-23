@@ -63,7 +63,7 @@ deploy:
     - app/build/outputs/apk/app-release.apk
   on:
     repo: pazaan/600SeriesAndroidUploader
-    # tags: true # Remove when finished with testing
+    tags: true
     # Octokit options
     prerelease: true
     draft: true
