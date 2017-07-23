@@ -42,8 +42,8 @@ android:
     - extra-android-m2repository
 
     # Emulator images
-    - sys-img-$ANDROID_ABI-$ANDROID_API_LEVEL
-    - sys-img-$ANDROID_ABI-$EMULATOR_API_LEVEL
+    - sys-img-$ANDROID_ABI-android-$ANDROID_API_LEVEL
+    - sys-img-$ANDROID_ABI-android-$EMULATOR_API_LEVEL
 
 
   licenses:
