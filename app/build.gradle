@@ -49,10 +49,15 @@ def gitBranch() {
     return ext.repo.branch.current.name
 }
 
-static def getBugfenderApiKey() {
-    Properties properties = new Properties()
-    properties.load(new FileInputStream("app/bugfender.properties"))
-    return "\"" + properties.getProperty("apiKey", "") + "\""
+def getBugfenderApiKey() {
+    String bugfenderApiKey = System.getenv("BUGFENDER_API_KEY")
+
+    if(bugfenderApiKey == null) {
+        logger.warn("Bugfender API key not set")
+        bugfenderApiKey = ""
+    }
+
+    return "\"" + bugfenderApiKey + "\""
 }
 
 android {
