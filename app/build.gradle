@@ -74,21 +74,11 @@ android {
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
-    signingConfigs {
-        release {
-            storeFile file(RELEASE_STORE_FILE)
-            storePassword RELEASE_STORE_PASSWORD
-            keyAlias RELEASE_KEY_ALIAS
-            keyPassword RELEASE_KEY_PASSWORD
-        }
-    }
-
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-            signingConfig signingConfigs.release
         }
     }
 
@@ -139,3 +129,5 @@ dependencies {
     }
     compile 'com.github.javiersantos:AppUpdater:2.6.1'
 }
+
+apply from: "signing.gradle"

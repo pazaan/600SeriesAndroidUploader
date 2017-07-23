@@ -1,0 +1,20 @@
+if (project.hasProperty("RELEASE_KEY_ALIAS") &&
+        project.hasProperty("RELEASE_KEY_PASSWORD") &&
+        project.hasProperty("RELEASE_STORE_PASSWORD") &&
+        file(RELEASE_STORE_FILE).exists()) {
+    android {
+        signingConfigs {
+            releaseSigningConfig {
+                storeFile file(RELEASE_STORE_FILE)
+                storePassword RELEASE_STORE_PASSWORD
+                keyAlias RELEASE_KEY_ALIAS
+                keyPassword RELEASE_KEY_PASSWORD
+            }
+        }
+        buildTypes {
+            release {
+                signingConfig signingConfigs.releaseSigningConfig
+            }
+        }
+    }
+}
