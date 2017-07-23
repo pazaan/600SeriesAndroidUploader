@@ -51,6 +51,9 @@ before_script:
 script:
 - ./gradlew clean build connectedCheck -PdisablePreDex --stacktrace
 
+before_deploy:
+- find . -name "*.apk"
+
 deploy:
   skip_cleanup: true
   provider: releases
