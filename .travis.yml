@@ -29,11 +29,11 @@ android:
     - tools
 
     # Build tools
-    - build-tools-ANDROID_BUILD_TOOLS_VERSION
+    - build-tools-$ANDROID_BUILD_TOOLS_VERSION
 
     # SDK Versions
-    - android-EMULATOR_API_LEVEL
-    - android-ANDROID_API_LEVEL
+    - android-$EMULATOR_API_LEVEL
+    - android-$ANDROID_API_LEVEL
 
     # Support library
     - extra-android-support
@@ -45,10 +45,11 @@ android:
     - sys-img-$ANDROID_ABI-$ANDROID_API_LEVEL
     - sys-img-$ANDROID_ABI-$EMULATOR_API_LEVEL
 
+
   licenses:
-    - android-sdk-preview-license-.+
     - android-sdk-license-.+
-    - google-gdk-license-.+
+    - android-sdk-preview-license-.+
+
 
 before_script:
   # Create and start emulator
