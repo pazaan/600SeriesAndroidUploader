@@ -15,22 +15,35 @@ cache:
 
 env:
   global:
-    - MIN_SDK_VERSION=14
-    - COMPILE_SDK_VERSION=25
-    - ANDROID_BUILD_TOOLS=25.0.2
+    - EMULATOR_API_LEVEL=14
+    - ANDROID_API_LEVEL=25
+    - ANDROID_BUILD_TOOLS_VERSION=25.0.2
+    - ANDROID_ABI=armeabi-v7a
     - ADB_INSTALL_TIMEOUT=5 # minutes
 
 android:
   components:
+    # to install Android SDK tools 25.1.x
     - tools
     - platform-tools
     - tools
-    - build-tools-$ANDROID_BUILD_TOOLS
-    - android-$MIN_SDK_VERSION
-    - android-$COMPILE_SDK_VERSION
-    - extra-android-m2repository # for design library
-    - sys-img-armeabi-v7a-addon-google_apis-google-$MIN_SDK_VERSION
-    - sys-img-armeabi-v7a-addon-google_apis-google-$COMPILE_SDK_VERSION
+
+    # Build tools
+    - build-tools-ANDROID_BUILD_TOOLS_VERSION
+
+    # SDK Versions
+    - android-EMULATOR_API_LEVEL
+    - android-ANDROID_API_LEVEL
+
+    # Support library
+    - extra-android-support
+
+    # Latest artifacts in local repository
+    - extra-android-m2repository
+
+    # Emulator images
+    - sys-img-$ANDROID_ABI-$ANDROID_API_LEVEL
+    - sys-img-$ANDROID_ABI-$EMULATOR_API_LEVEL
 
   licenses:
     - android-sdk-preview-license-.+
@@ -39,7 +52,7 @@ android:
 
 before_script:
   # Create and start emulator
-  - echo no | android create avd --force -n test -t android-25 --abi armeabi-v7a
+  - echo no | android create avd --force -n test -t android-$EMULATOR_API_LEVEL --abi $ANDROID_ABI
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
