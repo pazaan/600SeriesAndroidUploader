@@ -34,7 +34,7 @@ def generateVersionCode() {
     String url = "https://api.github.com/repos/pazaan/600SeriesAndroidUploader/releases"
     def json = new JsonSlurper().parseText(url.toURL().text)
 
-    def numOfTags = json.size() + 1
+    def numOfTags = json.size()
     logger.warn("Generated Version Code: " + numOfTags)
     return numOfTags
 }
