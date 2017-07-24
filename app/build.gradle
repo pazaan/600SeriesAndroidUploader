@@ -81,7 +81,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false // Set to true once we set up proguard-rules without breaking anything
             zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             ext.enableCrashlytics = file("fabric.properties").exists()
