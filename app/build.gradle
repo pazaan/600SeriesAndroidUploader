@@ -31,7 +31,7 @@ apply plugin: 'realm-android'
 def generateVersionCode() {
     // We need to get the number of releases directly from GitHub, since Travis
     // does a "git clone --depth=50", meaning we don't get all the tags locally.
-    String url = "https://api.github.com/repos/pazaan/600SeriesAndroidUploader/releases"
+    String url = "https://api.github.com/repos/pazaan/600SeriesAndroidUploader/tags"
     def json = new JsonSlurper().parseText(url.toURL().text)
 
     def numOfTags = json.size()
