@@ -8,9 +8,15 @@ import com.bugfender.sdk.Bugfender;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
 
+import info.nightscout.android.model.medtronicNg.BasalRate;
+import info.nightscout.android.model.medtronicNg.BasalSchedule;
+import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
+import info.nightscout.android.model.medtronicNg.PumpInfo;
+import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import io.fabric.sdk.android.Fabric;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
+import io.realm.annotations.RealmModule;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
 
 /**
@@ -43,9 +49,24 @@ public class UploaderApplication extends Application {
 
         Realm.init(this);
         RealmConfiguration realmConfiguration = new RealmConfiguration.Builder()
+                .modules(new MainModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
-
+/*
+        RealmConfiguration realmConfiguration2 = new RealmConfiguration.Builder()
+                .name("storerealm.realm")
+                .modules(new StoreModule())
+                .deleteRealmIfMigrationNeeded()
+                .build();
+*/
         Realm.setDefaultConfiguration(realmConfiguration);
     }
+
+    @RealmModule(classes = {BasalRate.class, BasalSchedule.class, ContourNextLinkInfo.class, PumpInfo.class, PumpStatusEvent.class})
+    public class MainModule {
+    }
+//    @RealmModule(classes = {StatusStore.class})
+//    public class StoreModule {
+//    }
+
 }

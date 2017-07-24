@@ -64,8 +64,6 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
@@ -78,10 +76,13 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.utils.ConfigurationStore;
 import info.nightscout.android.utils.DataStore;
+import info.nightscout.android.utils.StatusStore;
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
+import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
 import io.realm.Sort;
+import io.realm.annotations.RealmModule;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
@@ -99,11 +100,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private SharedPreferences prefs = null;
     private PumpInfo mActivePump;
     private TextView mTextViewLog; // This will eventually move to a status page.
+    private TextView mTextViewLogButtonTop;
+    private TextView mTextViewLogButtonTopRecent;
+    private TextView mTextViewLogButtonBottom;
+    private TextView mTextViewLogButtonBottomRecent;
+
     private ScrollView mScrollView;
     private GraphView mChart;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
+    private Realm storeRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private UsbReceiver usbReceiver = new UsbReceiver();
     private BatteryReceiver batteryReceiver = new BatteryReceiver();
@@ -115,6 +122,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 new Intent(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE)
                         .putExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA, message);
         LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+    }
+
+    @RealmModule(classes = {StatusStore.class})
+    public class StoreModule {
     }
 
     /**
@@ -148,12 +159,20 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return nextPoll;
     }
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
 
         mRealm = Realm.getDefaultInstance();
+
+        RealmConfiguration realmConfiguration = new RealmConfiguration.Builder()
+                .name("storerealm.realm")
+                .modules(new StoreModule())
+                .deleteRealmIfMigrationNeeded()
+                .build();
+        storeRealm = Realm.getInstance(realmConfiguration);
 
         RealmResults<PumpStatusEvent> data = mRealm.where(PumpStatusEvent.class)
                 .findAllSorted("eventDate", Sort.DESCENDING);
@@ -315,6 +334,39 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mTextViewLog = (TextView) findViewById(R.id.textview_log);
         mScrollView = (ScrollView) findViewById(R.id.scrollView);
         mScrollView.setSmoothScrollingEnabled(true);
+        mTextViewLogButtonTop = (TextView) findViewById(R.id.button_log_top);
+        mTextViewLogButtonTop.setVisibility(View.GONE);
+        mTextViewLogButtonTop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                statusMessageReceiver.changeStatusViewOlder();
+            }
+        });
+        mTextViewLogButtonTopRecent = (TextView) findViewById(R.id.button_log_top_recent);
+        mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+        mTextViewLogButtonTopRecent.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                statusMessageReceiver.changeStatusViewRecent();
+            }
+        });
+
+        mTextViewLogButtonBottom = (TextView) findViewById(R.id.button_log_bottom);
+        mTextViewLogButtonBottom.setVisibility(View.GONE);
+        mTextViewLogButtonBottom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                statusMessageReceiver.changeStatusViewNewer();
+            }
+        });
+        mTextViewLogButtonBottomRecent = (TextView) findViewById(R.id.button_log_bottom_recent);
+        mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
+        mTextViewLogButtonBottomRecent.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                statusMessageReceiver.changeStatusViewRecent();
+            }
+        });
 
         mChart = (GraphView) findViewById(R.id.chart);
 
@@ -559,16 +611,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.i(TAG, "onResume called");
         super.onResume();
         // Focus status log to most recent on returning to app
-        mScrollView.post(new Runnable() {
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
+        statusMessageReceiver.changeStatusViewRecent();
     }
 
     @Override
     protected void onDestroy() {
         Log.i(TAG, "onDestroy called");
+        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
+        statusMessageReceiver.addMessage("-----------------------------------------------------");
+
         super.onDestroy();
 
         unregisterReceiver(usbReceiver);
@@ -576,6 +627,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
         cancelDisplayRefreshLoop();
+
+        if (!storeRealm.isClosed()) {
+            storeRealm.close();
+        }
 
         if (!mRealm.isClosed()) {
             mRealm.close();
@@ -642,7 +697,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 // remove listener on old pump
                 mRealm.executeTransaction(new Realm.Transaction() {
                     @Override
-                    public void execute(Realm sRealm) {
+                    public void execute(Realm realm) {
                         mActivePump.removeAllChangeListeners();
                     }
                 });
@@ -746,64 +801,161 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private class StatusMessageReceiver extends BroadcastReceiver {
-        private class StatusMessage {
-            private long timestamp;
-            private String message;
-
-            StatusMessage(String message) {
-                this(System.currentTimeMillis(), message);
-            }
-
-            StatusMessage(long timestamp, String message) {
-                this.timestamp = timestamp;
-                this.message = message;
-            }
-
-            public String toString() {
-                return DateFormat.getTimeInstance(DateFormat.MEDIUM).format(timestamp) + ": " + message;
-            }
-        }
-
-        private final Queue<StatusMessage> messages = new ArrayBlockingQueue<>(400);
+        private static final int STATUS_LINES = 300;
+        private static final int STATUS_STALE = 72 * 60 * 60 * 1000;
+        private int statusView = 0;
+        private int statusViewLastSession = 0;
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            String message = intent.getStringExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA);
+            final String message = intent.getStringExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA);
             Log.i(TAG, "Message Receiver: " + message);
+            addMessage(message);
+        }
 
-            synchronized (messages) {
-                while (messages.size() > 398) {
-                    messages.poll();
+        private void addMessage(final String message) {
+            if (storeRealm.isClosed()) return;
+
+            storeRealm.executeTransaction(
+                    new Realm.Transaction() {
+                        @Override
+                        public void execute(Realm realm) {
+                            realm.createObject(StatusStore.class).StatusMessage(message);
+                        }
+                    });
+            statusViewLastSession++;            // last session view pointer
+            if (statusView > 0) statusView++;   // move the view pointer when not on first page
+            showLog();
+
+            if (statusView == 0) {
+                // auto scroll status log
+                if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
+                    mScrollView.post(new Runnable() {
+                        public void run() {
+                            mScrollView.fullScroll(View.FOCUS_DOWN);
+                        }
+                    });
                 }
-                messages.add(new StatusMessage(message));
             }
 
-            StringBuilder sb = new StringBuilder();
-            for (StatusMessage msg : messages) {
-                if (sb.length() > 0)
-                    sb.append("\n");
-                sb.append(msg);
-            }
-
-            mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
-
-            // auto scroll status log
-            if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
-                mScrollView.post(new Runnable() {
-                    public void run() {
-                        mScrollView.fullScroll(View.FOCUS_DOWN);
-                    }
-                });
+            final RealmResults results = storeRealm.where(StatusStore.class)
+                    .lessThan("timestamp", System.currentTimeMillis() - STATUS_STALE)
+                    .findAll();
+            if (results.size() > 0) {
+                storeRealm.executeTransaction(
+                        new Realm.Transaction() {
+                            @Override
+                            public void execute(Realm realm) {
+                                results.deleteAllFromRealm();
+                            }
+                        });
             }
         }
 
-        public void clearMessages() {
-            synchronized (messages) {
-                messages.clear();
+        private void showLog() {
+            RealmResults results = storeRealm.where(StatusStore.class)
+                    .findAllSorted("timestamp", Sort.DESCENDING);
+
+            int remain = results.size() - statusView;
+            int segment = remain;
+            if (statusView == 0 && statusViewLastSession < STATUS_LINES) segment = statusViewLastSession;
+            if (segment > STATUS_LINES) segment = STATUS_LINES;
+
+            if (segment > 0) {
+                StringBuilder sb = new StringBuilder();
+                for (int index = statusView; index < statusView + segment; index++)
+                        sb.insert(0, results.get(index) + (sb.length() > 0 ? "\n" : ""));
+                mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
             }
 
+            if (statusView > 0) {
+                mTextViewLogButtonBottom.setVisibility(View.VISIBLE);
+                mTextViewLogButtonBottomRecent.setVisibility(View.VISIBLE);
+            } else {
+                mTextViewLogButtonBottom.setVisibility(View.GONE);
+                mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
+            }
+            if (remain > segment) {
+                mTextViewLogButtonTop.setVisibility(View.VISIBLE);
+            } else {
+                mTextViewLogButtonTop.setVisibility(View.GONE);
+            }
+           if (statusView > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+            } else {
+                mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+            }
+        }
+
+        private void clearMessages() {
+            final RealmResults results = storeRealm.where(StatusStore.class)
+                    .findAll();
+            if (results.size() > 0) {
+                storeRealm.executeTransaction(
+                        new Realm.Transaction() {
+                            @Override
+                            public void execute(Realm realm) {
+                                results.deleteAllFromRealm();
+                            }
+                        });
+            }
             mTextViewLog.setText("", BufferType.EDITABLE);
+            mTextViewLogButtonTop.setVisibility(View.GONE);
+            mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+            mTextViewLogButtonBottom.setVisibility(View.GONE);
+            mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
+            statusView = 0;
+            statusViewLastSession = 0;
         }
+
+        private void changeStatusViewOlder() {
+            if (statusView == 0 && statusViewLastSession < STATUS_LINES) {
+                statusView = statusViewLastSession;
+            } else {
+                statusView += STATUS_LINES;
+            }
+            showLog();
+            mScrollView.post(new Runnable() {
+                public void run() {
+                    mScrollView.fullScroll(View.FOCUS_DOWN);
+                    if (statusView > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                        mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                    } else {
+                        mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
+        private void changeStatusViewNewer() {
+            statusView -= STATUS_LINES;
+            if (statusView < 0) statusView = 0;
+            showLog();
+            mScrollView.post(new Runnable() {
+                public void run() {
+                    mScrollView.fullScroll(View.FOCUS_UP);
+                    if (statusView > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                        mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                    } else {
+                        mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
+        private void changeStatusViewRecent() {
+            statusView = 0;
+            showLog();
+            mScrollView.post(new Runnable() {
+                public void run() {
+                    mScrollView.fullScroll(View.FOCUS_DOWN);
+                    if (statusView > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                        mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                    } else {
+                        mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
+
     }
 
     private class RefreshDisplayRunnable implements Runnable {
