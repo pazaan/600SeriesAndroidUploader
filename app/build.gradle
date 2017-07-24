@@ -26,7 +26,7 @@ repositories {
 apply plugin: 'io.fabric'
 apply plugin: 'realm-android'
 
-def gitVersion() {
+def generateVersionCode() {
     // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
     // above.
     ext.repo = Grgit.open()
@@ -34,19 +34,16 @@ def gitVersion() {
     // should result in the same value as running
     // git tag -l | wc -l or git tag -l | grep -c ".*" -
     def numOfTags = ext.repo.tag.list().size()
+    logger.warn("Generated Version Code: " + numOfTags)
     return numOfTags
 }
 
-def gitCommitId() {
+def generateVersionName() {
     ext.repo = Grgit.open()
 
-    return ext.repo.log().first().id.substring(0, 7) //+ " " + ext.repo.branch.current.name
-}
-
-
-def gitBranch() {
-    ext.repo = Grgit.open()
-    return ext.repo.branch.current.name
+    def tag = ext.repo.describe().replaceFirst("^v", "")
+    logger.warn("Generated Version Name: " + tag)
+    return tag
 }
 
 def getBugfenderApiKey() {
@@ -74,8 +71,8 @@ android {
         applicationId "info.nightscout.android"
         minSdkVersion 14
         targetSdkVersion 25
-        versionName project.properties['version'] + "/" + gitCommitId() // + " (" + gitBranch()+")"
-        versionCode gitVersion()
+        versionName generateVersionName()
+        versionCode generateVersionCode()
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
