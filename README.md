@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/pazaan/600SeriesAndroidUploader.svg?branch=master)](https://travis-ci.org/pazaan/600SeriesAndroidUploader)
 [![Stories in Progress](https://badge.waffle.io/pazaan/600SeriesAndroidUploader.svg?label=in%20progress&title=In%20Progress)](http://waffle.io/pazaan/600SeriesAndroidUploader)
 
 ## 600SeriesAndroidUploader
