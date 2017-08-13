@@ -64,11 +64,9 @@ public class MedtronicCnlIntentService extends IntentService {
     public static final String ICON_RESV = "{ion-paintbucket} ";
     public static final String ICON_CGM = "{ion-ios-pulse_strong} ";
     public static final String ICON_MEDICAL = "{ion-ios-medical} ";
-//    public static final String ICON_BOLUS = "{ion-ios-flask} ";
     public static final String ICON_BOLUS = "{ion-erlenmeyer-flask} ";
     public static final String ICON_BASAL = "{ion-ios-timer} ";
     public static final String ICON_NOTE = "{ion_android_notifications} ";
-//    public static final String ICON_NOTE = "{ion_ios_pricetag} ";
 
     // show warning message after repeated errors
     private final static int ERROR_COMMS_AT = 4;
@@ -472,7 +470,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     }
 
 // TODO fix square/dual bolus time after battery change as pump resets start time, use refs to work out actual time and duration?
-// TODO fix square/dual duration and notification time when it's been stopped before expected end time
 // TODO for NS add temp basal at 0% when suspended? use 30 or 60 min blocks and cancel temp when resumed?
 // TODO check on optimal use of Realm search+results as we make heavy use for validation
 
@@ -537,8 +534,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             if (bolusing_results.size() > 0) {
                 pumpRecord.setValidBolusSquare(true);
-                short duration = (short) Math.ceil((double) (bolusing_results.first().getPumpDate().getTime() - pumpRecord.getLastBolusPumpDate().getTime() + (bolusing_results.first().getBolusingMinutesRemaining() * 60000)) / 60000);
-                pumpRecord.setLastBolusDuration(duration);
+                long start = pumpRecord.getLastBolusPumpDate().getTime();
+                long end = pumpRecord.getPumpDate().getTime();
+                long duration = bolusing_results.first().getPumpDate().getTime() - start + (bolusing_results.first().getBolusingMinutesRemaining() * 60000);
+                if (start + duration > end) // was square bolus stopped before expected duration?
+                    duration = end - start;
+                pumpRecord.setLastBolusDuration((short) (duration / 60000));
             }
         }
 

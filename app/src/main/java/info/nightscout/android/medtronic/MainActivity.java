@@ -1089,6 +1089,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 boolean permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
                 if (permissionGranted) {
                     Log.d(TAG, "Got permission to access USB");
+                    sendStatus(MedtronicCnlIntentService.ICON_INFO + "Got permission to access USB.");
                     startCgmService();
                 } else {
                     Log.d(TAG, "Still no permission for USB. Waiting...");
