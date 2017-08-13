@@ -1,9 +1,6 @@
 .gradle
-app/build
-build/generated
 build
-workspace.xml
 fabric.properties
 local.properties
 .idea
-bugfender.properties
+/app/app.iml

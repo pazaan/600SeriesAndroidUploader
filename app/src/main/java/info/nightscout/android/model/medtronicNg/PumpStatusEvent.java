@@ -45,13 +45,16 @@ public class PumpStatusEvent extends RealmObject {
     @Index
     private boolean uploaded = false;
 
+    public PumpStatusEvent() {
+        // The the eventDate to now.
+        this.eventDate = new Date();
+    }
+
     public Date getEventDate() {
         return eventDate;
     }
 
-    public void setEventDate(Date eventDate) {
-        this.eventDate = eventDate;
-    }
+    // No EventDate setter. The eventDate is set at the time that the PumpStatusEvent is created.
 
     public Date getPumpDate() {
         return pumpDate;
@@ -78,15 +81,26 @@ public class PumpStatusEvent extends RealmObject {
     }
 
     public CGM_TREND getCgmTrend() {
-        return CGM_TREND.valueOf(cgmTrend);
-    }
-
-    public void setCgmTrend(CGM_TREND cgmTrend) {
-        this.cgmTrend = cgmTrend.name();
+        if (cgmTrend == null || !this.isCgmActive()) {
+            return CGM_TREND.NOT_SET;
+        } else {
+            return CGM_TREND.valueOf(cgmTrend);
+        }
     }
 
     public void setCgmTrend(String cgmTrend) {
         this.cgmTrend = cgmTrend;
+    }
+
+    public String getCgmTrendString() {
+        return cgmTrend;
+    }
+
+    public void setCgmTrend(CGM_TREND cgmTrend) {
+        if (cgmTrend != null)
+            this.cgmTrend = cgmTrend.name();
+        else
+            this.cgmTrend = CGM_TREND.NOT_SET.name();
     }
 
     public float getActiveInsulin() {
@@ -261,6 +275,38 @@ public class PumpStatusEvent extends RealmObject {
         this.pumpTimeOffset = pumpTimeOffset;
     }
 
+    @Override
+    public String toString() {
+        return "PumpStatusEvent{" +
+                "eventDate=" + eventDate +
+                ", pumpDate=" + pumpDate +
+                ", deviceName='" + deviceName + '\'' +
+                ", suspended=" + suspended +
+                ", bolusing=" + bolusing +
+                ", deliveringInsulin=" + deliveringInsulin +
+                ", tempBasalActive=" + tempBasalActive +
+                ", cgmActive=" + cgmActive +
+                ", activeBasalPattern=" + activeBasalPattern +
+                ", basalRate=" + basalRate +
+                ", tempBasalRate=" + tempBasalRate +
+                ", tempBasalPercentage=" + tempBasalPercentage +
+                ", tempBasalMinutesRemaining=" + tempBasalMinutesRemaining +
+                ", basalUnitsDeliveredToday=" + basalUnitsDeliveredToday +
+                ", batteryPercentage=" + batteryPercentage +
+                ", reservoirAmount=" + reservoirAmount +
+                ", minutesOfInsulinRemaining=" + minutesOfInsulinRemaining +
+                ", activeInsulin=" + activeInsulin +
+                ", sgv=" + sgv +
+                ", sgvDate=" + sgvDate +
+                ", lowSuspendActive=" + lowSuspendActive +
+                ", cgmTrend='" + cgmTrend + '\'' +
+                ", recentBolusWizard=" + recentBolusWizard +
+                ", bolusWizardBGL=" + bolusWizardBGL +
+                ", pumpTimeOffset=" + pumpTimeOffset +
+                ", uploaded=" + uploaded +
+                '}';
+    }
+
     public enum CGM_TREND {
         NONE,
         DOUBLE_UP,
@@ -272,6 +318,27 @@ public class PumpStatusEvent extends RealmObject {
         DOUBLE_DOWN,
         NOT_COMPUTABLE,
         RATE_OUT_OF_RANGE,
-        NOT_SET
+        NOT_SET;
+
+        public static CGM_TREND fromMessageByte(byte messageByte) {
+            switch (messageByte) {
+                case (byte) 0x60:
+                    return PumpStatusEvent.CGM_TREND.FLAT;
+                case (byte) 0xc0:
+                    return PumpStatusEvent.CGM_TREND.DOUBLE_UP;
+                case (byte) 0xa0:
+                    return PumpStatusEvent.CGM_TREND.SINGLE_UP;
+                case (byte) 0x80:
+                    return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_UP;
+                case (byte) 0x40:
+                    return PumpStatusEvent.CGM_TREND.FOURTY_FIVE_DOWN;
+                case (byte) 0x20:
+                    return PumpStatusEvent.CGM_TREND.SINGLE_DOWN;
+                case (byte) 0x00:
+                    return PumpStatusEvent.CGM_TREND.DOUBLE_DOWN;
+                default:
+                    return PumpStatusEvent.CGM_TREND.NOT_COMPUTABLE;
+            }
+        }
     }
 }

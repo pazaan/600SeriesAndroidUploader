@@ -16,9 +16,9 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
-import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
+import info.nightscout.android.utils.DataStore;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -33,7 +33,6 @@ public class XDripPlusUploadIntentService extends IntentService {
     private static final String TAG = XDripPlusUploadIntentService.class.getSimpleName();
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
     Context mContext;
-    private Realm mRealm;
 
     public XDripPlusUploadIntentService() {
         super(XDripPlusUploadIntentService.class.getName());
@@ -58,7 +57,7 @@ public class XDripPlusUploadIntentService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.d(TAG, "onHandleIntent called");
-        mRealm = Realm.getDefaultInstance();
+        Realm mRealm = Realm.getDefaultInstance();
 
         RealmResults<PumpStatusEvent> all_records = mRealm
                 .where(PumpStatusEvent.class)
@@ -70,6 +69,7 @@ public class XDripPlusUploadIntentService extends IntentService {
             List<PumpStatusEvent> records = all_records.subList(0, 1);
             doXDripUpload(records);
         }
+        mRealm.close();
         XDripPlusUploadReceiver.completeWakefulIntent(intent);
     }
 
@@ -85,10 +85,12 @@ public class XDripPlusUploadIntentService extends IntentService {
                 addMbgEntry(entriesBody, record);
             }
 
-            if (entriesBody.length() > 0) sendBundle(mContext, "add", "entries", entriesBody);
-            if (devicestatusBody.length() > 0)
+            if (entriesBody.length() > 0) {
+                sendBundle(mContext, "add", "entries", entriesBody);
+            }
+            if (devicestatusBody.length() > 0) {
                 sendBundle(mContext, "add", "devicestatus", devicestatusBody);
-
+            }
         } catch (Exception e) {
             Log.e(TAG, "Unable to send bundle: " + e);
         }
@@ -104,14 +106,16 @@ public class XDripPlusUploadIntentService extends IntentService {
         context.sendBroadcast(intent);
         List<ResolveInfo> receivers = context.getPackageManager().queryBroadcastReceivers(intent, 0);
         if (receivers.size() < 1) {
-            Log.e(TAG, "No receivers");
-        } else Log.e(TAG, receivers.size() + " receivers");
+            Log.w(TAG, "No xDrip receivers found. ");
+        } else {
+            Log.d(TAG, receivers.size() + " xDrip receivers");
+        }
     }
 
 
     private void addDeviceStatus(JSONArray devicestatusArray, PumpStatusEvent record) throws Exception {
         JSONObject json = new JSONObject();
-        json.put("uploaderBattery", MainActivity.batLevel);
+        json.put("uploaderBattery", DataStore.getInstance().getUploaderBatteryLevel());
         json.put("device", record.getDeviceName());
         json.put("created_at", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
 
@@ -141,8 +145,8 @@ public class XDripPlusUploadIntentService extends IntentService {
         json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
         json.put("device", pumpRecord.getDeviceName());
         json.put("type", "sgv");
-        json.put("date", pumpRecord.getEventDate().getTime());
-        json.put("dateString", pumpRecord.getEventDate());
+        json.put("date", pumpRecord.getSgvDate().getTime());
+        json.put("dateString", pumpRecord.getSgvDate());
 
         entriesArray.put(json);
     }

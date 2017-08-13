@@ -1,18 +1,21 @@
 import org.ajoberstar.grgit.Grgit
+import groovy.json.JsonSlurper
 
 buildscript {
     repositories {
+        jcenter()
         maven { url 'https://maven.fabric.io/public' }
     }
 
     dependencies {
-        classpath 'io.fabric.tools:gradle:1.21.6'
-        classpath 'io.realm:realm-gradle-plugin:1.1.1'
+        classpath 'io.fabric.tools:gradle:1.22.2'
+        classpath 'io.realm:realm-gradle-plugin:3.4.0'
         classpath 'org.ajoberstar:grgit:1.5.0'
+        classpath 'org.codehaus.groovy:groovy-json:2.4.12'
     }
 }
 plugins {
-    id 'net.researchgate.release' version '2.3.4'
+    id 'net.researchgate.release' version '2.6.0'
 }
 
 apply plugin: 'com.android.application'
@@ -25,38 +28,40 @@ repositories {
 apply plugin: 'io.fabric'
 apply plugin: 'realm-android'
 
-def gitVersion() {
-    // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
-    // above.
-    ext.repo = Grgit.open(project.file('..'))
+def generateVersionCode() {
+    // We need to get the number of releases directly from GitHub, since Travis
+    // does a "git clone --depth=50", meaning we don't get all the tags locally.
+    String url = "https://api.github.com/repos/pazaan/600SeriesAndroidUploader/tags"
+    def json = new JsonSlurper().parseText(url.toURL().text)
 
-    // should result in the same value as running
-    // git tag -l | wc -l or git tag -l | grep -c ".*" -
-    def numOfTags = ext.repo.tag.list().size()
+    def numOfTags = json.size()
+    logger.warn("Generated Version Code: " + numOfTags)
     return numOfTags
 }
 
-def gitCommitId() {
-    //def process = ['sh', '-c', 'git tag -l | grep -c ".*" -'].execute().text.trim()
-    //return process.toInteger() + 1
-    //return 42
-    // current dir is <your proj>/app, so it's likely that all your git repo files are in the dir
-    // above.
-    ext.repo = Grgit.open(project.file('..'))
+def generateVersionName() {
+    ext.repo = Grgit.open()
 
-    return ext.repo.log().first().id.substring(0, 7)
+    def tag = ext.repo.describe().replaceFirst("^v", "")
+    logger.warn("Generated Version Name: " + tag)
+    return tag
 }
 
 def getBugfenderApiKey() {
-    Properties properties = new Properties()
-    properties.load(new FileInputStream("app/bugfender.properties"))
-    return "\"" + properties.getProperty("apiKey", "") + "\""
+    String bugfenderApiKey = System.getenv("BUGFENDER_API_KEY")
+
+    if(bugfenderApiKey == null) {
+        logger.warn("Bugfender API key not set")
+        bugfenderApiKey = ""
+    }
+
+    return "\"" + bugfenderApiKey + "\""
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
-    // FIXME - replace with URLConnection. This is used in GetHmacAndKeyActivity.
+    compileSdkVersion 25
+    buildToolsVersion '25.0.2'
+    // FIXME - replace with URLConnection. This is used in ManageCNLActivity.
     useLibrary 'org.apache.http.legacy'
 
     applicationVariants.all { variant ->
@@ -66,16 +71,22 @@ android {
     defaultConfig {
         applicationId "info.nightscout.android"
         minSdkVersion 14
-        targetSdkVersion 23
-        versionName project.properties['version'] + "/" + gitCommitId()
-        versionCode gitVersion()
+        targetSdkVersion 25
+        versionName generateVersionName()
+        versionCode generateVersionCode()
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled false // Set to true once we set up proguard-rules without breaking anything
+            zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            ext.enableCrashlytics = file("fabric.properties").exists()
+        }
+
+        debug {
+            ext.enableCrashlytics = false
         }
     }
 
@@ -86,79 +97,45 @@ android {
     }
 }
 
-task signRelease << {
-    def command = [
-            'jarsigner',
-            '-verbose',
-            '-sigalg',
-            'SHA1withRSA',
-            '-digestalg',
-            'SHA1',
-            '-keystore',
-            '/Users/lennart/keystores/nightscout_android.jks',
-            'app/build/outputs/apk/app-release-unsigned.apk',
-            'nightscoutandroidkey'
-    ]
-
-    def proc = new ProcessBuilder(command)
-            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-            .redirectInput(ProcessBuilder.Redirect.INHERIT)
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start()
-
-    proc.waitFor()
-
-    if (0 != proc.exitValue()) {
-        throw new RuntimeException("Could not sign APK.")
-    }
-}
-
-task zipalignRelease << {
-    def command = [
-            '/Users/lennart/Library/Android/sdk/build-tools/23.0.3/zipalign',
-            '-v',
-            '4',
-            'app/build/outputs/apk/app-release-unsigned.apk',
-            'app/build/outputs/apk/640g-android-uploader.apk'
-    ]
-
-    def proc = new ProcessBuilder(command)
-            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-            .redirectInput(ProcessBuilder.Redirect.INHERIT)
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start()
-
-    proc.waitFor()
-
-    if (0 != proc.exitValue()) {
-        throw new RuntimeException("Could not align APK.")
-    }
-}
-
 release {
     tagTemplate = 'v${version}'
     buildTasks = ['build']
     beforeReleaseBuild.dependsOn 'clean'
-    afterReleaseBuild.dependsOn 'signRelease', 'zipalignRelease'
 }
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
-    compile('com.crashlytics.sdk.android:crashlytics:2.6.5@aar') {
+
+    compile 'com.android.support:support-v13:25.3.1'
+    compile 'com.android.support:design:25.3.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:recyclerview-v7:25.3.1'
+    compile 'com.android.support:cardview-v7:25.3.1'
+    compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
+    compile 'com.mikepenz:ionicons-typeface:2.0.1.3@aar'
+    compile 'uk.co.chrisjenx:calligraphy:2.2.0'
+    compile 'com.bugfender.sdk:android:0.7.2'
+    compile 'com.jjoe64:graphview:4.0.1'
+    compile 'com.google.code.gson:gson:2.7'
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.8@aar') {
+        transitive = true;
+    }
+
+    // The version of okhttp3 *must* be the same as the version in AppUpdater
+    compile 'com.squareup.okhttp3:okhttp:3.6.0'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.6.0'
+
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.7@aar') {
         transitive = true;
     }
     compile('com.mikepenz:materialdrawer:5.2.9@aar') {
         transitive = true
     }
-    compile 'com.android.support:appcompat-v7:23.4.0'
-    compile 'org.apache.commons:commons-lang3:3.4'
-    compile 'com.mikepenz:google-material-typeface:2.2.0.1.original@aar'
-    compile 'uk.co.chrisjenx:calligraphy:2.2.0'
-    compile 'com.bugfender.sdk:android:0.6.2'
-    compile 'com.github.PhilJay:MPAndroidChart:v3.0.0-beta1'
-    compile 'com.github.PhilJay:MPAndroidChart-Realm:v1.1.0@aar'
-    compile 'com.android.support:support-v4:23.4.0'
-    compile 'com.google.code.gson:gson:2.7'
-    compile 'com.squareup.retrofit2:retrofit:2.1.0'
-    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+    compile 'com.github.javiersantos:AppUpdater:2.6.1'
 }
+
+apply from: "signing.gradle"
