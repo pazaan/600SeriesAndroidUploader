@@ -52,21 +52,12 @@ public class UploaderApplication extends Application {
                 .modules(new MainModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
-/*
-        RealmConfiguration realmConfiguration2 = new RealmConfiguration.Builder()
-                .name("storerealm.realm")
-                .modules(new StoreModule())
-                .deleteRealmIfMigrationNeeded()
-                .build();
-*/
+
         Realm.setDefaultConfiguration(realmConfiguration);
     }
 
     @RealmModule(classes = {BasalRate.class, BasalSchedule.class, ContourNextLinkInfo.class, PumpInfo.class, PumpStatusEvent.class})
     public class MainModule {
     }
-//    @RealmModule(classes = {StatusStore.class})
-//    public class StoreModule {
-//    }
 
 }

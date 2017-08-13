@@ -3,7 +3,6 @@ package info.nightscout.android.model.medtronicNg;
 import java.util.Date;
 
 import io.realm.RealmObject;
-import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
 /**
@@ -11,20 +10,33 @@ import io.realm.annotations.Index;
  */
 public class PumpStatusEvent extends RealmObject {
     @Index
-    private Date eventDate; // The actual time of the event (assume the capture device eventDate/time is accurate)
-    private Date pumpDate; // The eventDate/time on the pump at the time of the event
+    private Date eventDate; // The actual time of the this event (uploader device time)
+    private Date pumpDate; // The time on the pump at the time of the this event
+    private long pumpTimeOffset; // millis the pump is ahead
+
     private String deviceName;
 
     // Data from the Medtronic Pump Status message
+
+//    private byte[] statusPayload; // temporary use here for message sniffing
+
+    private byte pumpStatus;
+    private byte cgmStatus;
     private boolean suspended;
-    private boolean bolusing;
+    private boolean bolusingNormal;
+    private boolean bolusingSquare;
+    private boolean bolusingDual;
     private boolean deliveringInsulin;
     private boolean tempBasalActive;
     private boolean cgmActive;
+    private boolean cgmCalibrating;
+    private boolean cgmCalibrationComplete;
+    private boolean cgmException;
+    private boolean cgmWarmUp;
     private byte activeBasalPattern;
     private float basalRate;
     private float tempBasalRate;
-    private byte tempBasalPercentage;
+    private short tempBasalPercentage;
     private short tempBasalMinutesRemaining;
     private float basalUnitsDeliveredToday;
     private short batteryPercentage;
@@ -32,18 +44,62 @@ public class PumpStatusEvent extends RealmObject {
     private short minutesOfInsulinRemaining; // 25h == "more than 1 day"
     private float activeInsulin;
     private int sgv;
-    private Date sgvDate;
+    private Date cgmDate;
+    private Date cgmPumpDate;
+    private byte cgmExceptionType;
     private boolean lowSuspendActive;
     private String cgmTrend;
-
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
-    private int bolusWizardBGL; // in mg/dL. 0 means no recent bolus wizard reading.
+    private int recentBGL; // in mg/dL. 0 means no recent finger bg reading.
+    private short alert;
+    private Date alertDate;
+    private Date alertPumpDate;
+    private float bolusingDelivered;
+    private short bolusingMinutesRemaining;
+    private short bolusingReference;
+    private float lastBolusAmount;
+    private Date lastBolusDate;
+    private Date lastBolusPumpDate;
+    private byte lastBolusType;
+    private short lastBolusDuration;
+    private short lastBolusReference;
+    private byte transmitterBattery;
+    private byte transmitterControl;
+    private short calibrationDueMinutes;
+    private float sensorRateOfChange;
 
-    @Ignore
-    private long pumpTimeOffset; // millis the pump is ahead
+    private boolean validCGM = false;
+    private boolean validSGV = false;
+    private boolean validBGL = false;
+    private boolean validBolus = false;
+    private boolean validBolusDual = false;
+    private boolean validBolusSquare = false;
+    private boolean validAlert = false;
+
+    private boolean oldSgvWhenNewExpected = false;
+
+    private boolean validTEMPBASAL = false;
+    private Date tempBasalAfterDate;
+    private boolean validCAGE = false;
+    private Date cageAfterDate;
+    private Date cageBeforeDate;
+    private boolean validSAGE = false;
+    private Date sageAfterDate;
+    private Date sageBeforeDate;
+    private boolean validBATTERY = false;
+    private Date batteryAfterDate;
+    private Date batteryBeforeDate;
 
     @Index
     private boolean uploaded = false;
+
+//    public byte[] getStatusPayload() {
+//        return statusPayload;
+//    }
+
+//    public void setStatusPayload(byte[] statusPayload) {
+//        this.statusPayload = statusPayload;
+//    }
 
     public PumpStatusEvent() {
         // The the eventDate to now.
@@ -131,12 +187,12 @@ public class PumpStatusEvent extends RealmObject {
         return recentBolusWizard;
     }
 
-    public int getBolusWizardBGL() {
-        return bolusWizardBGL;
+    public int getRecentBGL() {
+        return recentBGL;
     }
 
-    public void setBolusWizardBGL(int bolusWizardBGL) {
-        this.bolusWizardBGL = bolusWizardBGL;
+    public void setRecentBGL(int recentBGL) {
+        this.recentBGL = recentBGL;
     }
 
     public boolean isUploaded() {
@@ -147,6 +203,158 @@ public class PumpStatusEvent extends RealmObject {
         this.uploaded = uploaded;
     }
 
+    public boolean isOldSgvWhenNewExpected() {
+        return oldSgvWhenNewExpected;
+    }
+
+    public void setOldSgvWhenNewExpected(boolean oldSgvWhenNewExpected) {
+        this.oldSgvWhenNewExpected = oldSgvWhenNewExpected;
+    }
+
+    public boolean isValidCGM() {
+        return validCGM;
+    }
+
+    public void setValidCGM(boolean validCGM) {
+        this.validCGM = validCGM;
+    }
+
+    public boolean isValidSGV() {
+        return validSGV;
+    }
+
+    public void setValidSGV(boolean validSGV) {
+        this.validSGV = validSGV;
+    }
+
+    public boolean isValidBGL() {
+        return validBGL;
+    }
+
+    public void setValidBGL(boolean validBGL) {
+        this.validBGL = validBGL;
+    }
+
+    public boolean isValidBolus() {
+        return validBolus;
+    }
+
+    public void setValidBolus(boolean validBolus) {
+        this.validBolus = validBolus;
+    }
+
+    public boolean isValidBolusDual() {
+        return validBolusDual;
+    }
+
+    public void setValidBolusDual(boolean validBolusDual) {
+        this.validBolusDual = validBolusDual;
+    }
+
+    public boolean isValidBolusSquare() {
+        return validBolusSquare;
+    }
+
+    public void setValidBolusSquare(boolean validBolusSquare) {
+        this.validBolusSquare = validBolusSquare;
+    }
+
+    public boolean isValidAlert() {
+        return validAlert;
+    }
+
+    public void setValidAlert(boolean validAlert) {
+        this.validAlert = validAlert;
+    }
+
+    public boolean isValidTEMPBASAL() {
+        return validTEMPBASAL;
+    }
+
+    public void setValidTEMPBASAL(boolean validTEMPBASAL) {
+        this.validTEMPBASAL = validTEMPBASAL;
+    }
+
+    public Date getTempBasalAfterDate() {
+        return tempBasalAfterDate;
+    }
+
+    public void setTempBasalAfterDate(Date tempBasalAfterDate) {
+        this.tempBasalAfterDate = tempBasalAfterDate;
+    }
+
+    public boolean isValidCAGE() {
+        return validCAGE;
+    }
+
+    public void setValidCAGE(boolean validCAGE) {
+        this.validCAGE = validCAGE;
+    }
+
+    public Date getCageAfterDate() {
+        return cageAfterDate;
+    }
+
+    public void setCageAfterDate(Date cageAfterDate) {
+        this.cageAfterDate = cageAfterDate;
+    }
+
+    public Date getCageBeforeDate() {
+        return cageBeforeDate;
+    }
+
+    public void setCageBeforeDate(Date cageBeforeDate) {
+        this.cageBeforeDate = cageBeforeDate;
+    }
+
+    public boolean isValidSAGE() {
+        return validSAGE;
+    }
+
+    public void setValidSAGE(boolean validSAGE) {
+        this.validSAGE = validSAGE;
+    }
+
+    public Date getSageAfterDate() {
+        return sageAfterDate;
+    }
+
+    public void setSageAfterDate(Date sageAfterDate) {
+        this.sageAfterDate = sageAfterDate;
+    }
+
+    public Date getSageBeforeDate() {
+        return sageBeforeDate;
+    }
+
+    public void setSageBeforeDate(Date sageBeforeDate) {
+        this.sageBeforeDate = sageBeforeDate;
+    }
+
+    public boolean isValidBATTERY() {
+        return validBATTERY;
+    }
+
+    public void setValidBATTERY(boolean validBATTERY) {
+        this.validBATTERY = validBATTERY;
+    }
+
+    public Date getBatteryAfterDate() {
+        return batteryAfterDate;
+    }
+
+    public void setBatteryAfterDate(Date batteryAfterDate) {
+        this.batteryAfterDate = batteryAfterDate;
+    }
+
+    public Date getBatteryBeforeDate() {
+        return batteryBeforeDate;
+    }
+
+    public void setBatteryBeforeDate(Date batteryBeforeDate) {
+        this.batteryBeforeDate = batteryBeforeDate;
+    }
+
     public boolean isSuspended() {
         return suspended;
     }
@@ -155,12 +363,28 @@ public class PumpStatusEvent extends RealmObject {
         this.suspended = suspended;
     }
 
-    public boolean isBolusing() {
-        return bolusing;
+    public boolean isBolusingNormal() {
+        return bolusingNormal;
     }
 
-    public void setBolusing(boolean bolusing) {
-        this.bolusing = bolusing;
+    public void setBolusingNormal(boolean bolusingNormal) {
+        this.bolusingNormal = bolusingNormal;
+    }
+
+    public boolean isBolusingSquare() {
+        return bolusingSquare;
+    }
+
+    public void setBolusingSquare(boolean bolusingSquare) {
+        this.bolusingSquare = bolusingSquare;
+    }
+
+    public boolean isBolusingDual() {
+        return bolusingDual;
+    }
+
+    public void setBolusingDual(boolean bolusingDual) {
+        this.bolusingDual = bolusingDual;
     }
 
     public boolean isDeliveringInsulin() {
@@ -211,11 +435,11 @@ public class PumpStatusEvent extends RealmObject {
         this.tempBasalRate = tempBasalRate;
     }
 
-    public byte getTempBasalPercentage() {
+    public short getTempBasalPercentage() {
         return tempBasalPercentage;
     }
 
-    public void setTempBasalPercentage(byte tempBasalPercentage) {
+    public void setTempBasalPercentage(short tempBasalPercentage) {
         this.tempBasalPercentage = tempBasalPercentage;
     }
 
@@ -243,12 +467,20 @@ public class PumpStatusEvent extends RealmObject {
         this.minutesOfInsulinRemaining = minutesOfInsulinRemaining;
     }
 
-    public Date getSgvDate() {
-        return sgvDate;
+    public Date getCgmDate() {
+        return cgmDate;
     }
 
-    public void setSgvDate(Date sgvDate) {
-        this.sgvDate = sgvDate;
+    public void setCgmDate(Date cgmDate) {
+        this.cgmDate = cgmDate;
+    }
+
+    public Date getCgmPumpDate() {
+        return cgmPumpDate;
+    }
+
+    public void setCgmPumpDate(Date cgmPumpDate) {
+        this.cgmPumpDate = cgmPumpDate;
     }
 
     public boolean isLowSuspendActive() {
@@ -259,14 +491,6 @@ public class PumpStatusEvent extends RealmObject {
         this.lowSuspendActive = lowSuspendActive;
     }
 
-    public boolean isRecentBolusWizard() {
-        return recentBolusWizard;
-    }
-
-    public void setRecentBolusWizard(boolean recentBolusWizard) {
-        this.recentBolusWizard = recentBolusWizard;
-    }
-
     public long getPumpTimeOffset() {
         return pumpTimeOffset;
     }
@@ -275,17 +499,210 @@ public class PumpStatusEvent extends RealmObject {
         this.pumpTimeOffset = pumpTimeOffset;
     }
 
+    public int getPumpStatus() {
+        return pumpStatus;
+    }
+
+    public void setPumpStatus(byte pumpStatus) {
+        this.pumpStatus = pumpStatus;
+    }
+
+    public int getCgmStatus() {
+        return cgmStatus;
+    }
+
+    public void setCgmStatus(byte cgmStatus) {
+        this.cgmStatus = cgmStatus;
+    }
+
+    public boolean isCgmCalibrating() {
+        return cgmCalibrating;
+    }
+
+    public void setCgmCalibrating(boolean cgmCalibrating) {
+        this.cgmCalibrating = cgmCalibrating;
+    }
+
+    public boolean isCgmCalibrationComplete() {
+        return cgmCalibrationComplete;
+    }
+
+    public void setCgmCalibrationComplete(boolean cgmCalibrationComplete) {
+        this.cgmCalibrationComplete = cgmCalibrationComplete;
+    }
+
+    public boolean isCgmException() {
+        return cgmException;
+    }
+
+    public void setCgmException(boolean cgmException) {
+        this.cgmException = cgmException;
+    }
+
+    public boolean isCgmWarmUp() {
+        return cgmWarmUp;
+    }
+
+    public void setCgmWarmUp(boolean cgmWarmUp) {
+        this.cgmWarmUp = cgmWarmUp;
+    }
+
+    public byte getCgmExceptionType() {
+        return cgmExceptionType;
+    }
+
+    public void setCgmExceptionType(byte cgmExceptionType) {
+        this.cgmExceptionType = cgmExceptionType;
+    }
+
+    public short getAlert() {
+        return alert;
+    }
+
+    public void setAlert(short alert) {
+        this.alert = alert;
+    }
+
+    public Date getAlertDate() {
+        return alertDate;
+    }
+
+    public void setAlertDate(Date alertDate) {
+        this.alertDate = alertDate;
+    }
+
+    public Date getAlertPumpDate() {
+        return alertPumpDate;
+    }
+
+    public void setAlertPumpDate(Date alertPumpDate) {
+        this.alertPumpDate = alertPumpDate;
+    }
+
+    public float getBolusingDelivered() {
+        return bolusingDelivered;
+    }
+
+    public void setBolusingDelivered(float bolusingDelivered) {
+        this.bolusingDelivered = bolusingDelivered;
+    }
+
+    public short getBolusingMinutesRemaining() {
+        return bolusingMinutesRemaining;
+    }
+
+    public void setBolusingMinutesRemaining(short bolusingMinutesRemaining) {
+        this.bolusingMinutesRemaining = bolusingMinutesRemaining;
+    }
+
+    public short getBolusingReference() {
+        return bolusingReference;
+    }
+
+    public void setBolusingReference(short bolusingReference) {
+        this.bolusingReference = bolusingReference;
+    }
+
+    public float getLastBolusAmount() {
+        return lastBolusAmount;
+    }
+
+    public void setLastBolusAmount(float lastBolusAmount) {
+        this.lastBolusAmount = lastBolusAmount;
+    }
+
+    public Date getLastBolusDate() {
+        return lastBolusDate;
+    }
+
+    public void setLastBolusDate(Date lastBolusDate) {
+        this.lastBolusDate = lastBolusDate;
+    }
+
+    public Date getLastBolusPumpDate() {
+        return lastBolusPumpDate;
+    }
+
+    public void setLastBolusPumpDate(Date lastBolusPumpDate) {
+        this.lastBolusPumpDate = lastBolusPumpDate;
+    }
+
+    public short getLastBolusReference() {
+        return lastBolusReference;
+    }
+
+    public void setLastBolusReference(short lastBolusReference) {
+        this.lastBolusReference = lastBolusReference;
+    }
+
+    public byte getLastBolusType() {
+        return lastBolusType;
+    }
+
+    public void setLastBolusType(byte lastBolusType) {
+        this.lastBolusType = lastBolusType;
+    }
+
+    public short getLastBolusDuration() {
+        return lastBolusDuration;
+    }
+
+    public void setLastBolusDuration(short lastBolusDuration) {
+        this.lastBolusDuration = lastBolusDuration;
+    }
+
+    public byte getTransmitterBattery() {
+        return transmitterBattery;
+    }
+
+    public void setTransmitterBattery(byte transmitterBattery) {
+        this.transmitterBattery = transmitterBattery;
+    }
+
+    public byte getTransmitterControl() {
+        return transmitterControl;
+    }
+
+    public void setTransmitterControl(byte transmitterControl) {
+        this.transmitterControl = transmitterControl;
+    }
+
+    public short getCalibrationDueMinutes() {
+        return calibrationDueMinutes;
+    }
+
+    public void setCalibrationDueMinutes(short calibrationDueMinutes) {
+        this.calibrationDueMinutes = calibrationDueMinutes;
+    }
+
+    public float getSensorRateOfChange() {
+        return sensorRateOfChange;
+    }
+
+    public void setSensorRateOfChange(float sensorRateOfChange) {
+        this.sensorRateOfChange = sensorRateOfChange;
+    }
+
     @Override
     public String toString() {
         return "PumpStatusEvent{" +
                 "eventDate=" + eventDate +
                 ", pumpDate=" + pumpDate +
+                ", pumpTimeOffset=" + pumpTimeOffset +
                 ", deviceName='" + deviceName + '\'' +
+                ", pumpStatus=" + pumpStatus +
+                ", cgmStatus=" + cgmStatus +
                 ", suspended=" + suspended +
-                ", bolusing=" + bolusing +
+                ", bolusingNormal=" + bolusingNormal +
+                ", bolusingSquare=" + bolusingSquare +
+                ", bolusingDual=" + bolusingDual +
                 ", deliveringInsulin=" + deliveringInsulin +
                 ", tempBasalActive=" + tempBasalActive +
                 ", cgmActive=" + cgmActive +
+                ", cgmCalibrating=" + cgmCalibrating +
+                ", cgmCalibrationComplete=" + cgmCalibrationComplete +
+                ", cgmException=" + cgmException +
+                ", cgmWarmUp=" + cgmWarmUp +
                 ", activeBasalPattern=" + activeBasalPattern +
                 ", basalRate=" + basalRate +
                 ", tempBasalRate=" + tempBasalRate +
@@ -297,12 +714,44 @@ public class PumpStatusEvent extends RealmObject {
                 ", minutesOfInsulinRemaining=" + minutesOfInsulinRemaining +
                 ", activeInsulin=" + activeInsulin +
                 ", sgv=" + sgv +
-                ", sgvDate=" + sgvDate +
+                ", cgmDate=" + cgmDate +
+                ", cgmPumpDate=" + cgmPumpDate +
+                ", cgmExceptionType=" + cgmExceptionType +
                 ", lowSuspendActive=" + lowSuspendActive +
                 ", cgmTrend='" + cgmTrend + '\'' +
                 ", recentBolusWizard=" + recentBolusWizard +
-                ", bolusWizardBGL=" + bolusWizardBGL +
-                ", pumpTimeOffset=" + pumpTimeOffset +
+                ", recentBGL=" + recentBGL +
+                ", alert=" + alert +
+                ", alertDate=" + alertDate +
+                ", bolusingDelivered=" + bolusingDelivered +
+                ", bolusingMinutesRemaining=" + bolusingMinutesRemaining +
+                ", bolusingReference=" + bolusingReference +
+                ", lastBolusAmount=" + lastBolusAmount +
+                ", lastBolusDate=" + lastBolusDate +
+                ", lastBolusReference=" + lastBolusReference +
+                ", transmitterBattery=" + transmitterBattery +
+                ", transmitterControl=" + transmitterControl +
+                ", calibrationDueMinutes=" + calibrationDueMinutes +
+                ", sensorRateOfChange=" + sensorRateOfChange +
+                ", validCGM=" + validCGM +
+                ", validSGV=" + validSGV +
+                ", validBGL=" + validBGL +
+                ", validBolus=" + validBolus +
+                ", validBolusDual=" + validBolusDual +
+                ", validBolusSquare=" + validBolusSquare +
+                ", validAlert=" + validAlert +
+                ", oldSgvWhenNewExpected=" + oldSgvWhenNewExpected +
+                ", validTEMPBASAL=" + validTEMPBASAL +
+                ", tempBasalAfterDate=" + tempBasalAfterDate +
+                ", validCAGE=" + validCAGE +
+                ", cageAfterDate=" + cageAfterDate +
+                ", cageBeforeDate=" + cageBeforeDate +
+                ", validSAGE=" + validSAGE +
+                ", sageAfterDate=" + sageAfterDate +
+                ", sageBeforeDate=" + sageBeforeDate +
+                ", validBATTERY=" + validBATTERY +
+                ", batteryAfterDate=" + batteryAfterDate +
+                ", batteryBeforeDate=" + batteryBeforeDate +
                 ", uploaded=" + uploaded +
                 '}';
     }

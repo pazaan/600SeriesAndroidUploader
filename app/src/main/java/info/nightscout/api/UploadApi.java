@@ -17,17 +17,35 @@ public class UploadApi {
     private GlucoseEndpoints glucoseEndpoints;
     private BolusEndpoints bolusEndpoints;
     private DeviceEndpoints deviceEndpoints;
+    private TreatmentEndpoints treatmentEndpoints;
+    private TempBasalAbsoluteEndpoints tempBasalAbsoluteEndpoints;
+    private TempBasalPercentEndpoints tempBasalPercentEndpoints;
+    private TempBasalCancelEndpoints tempBasalCancelEndpoints;
+    private NoteEndpoints noteEndpoints;
 
     public GlucoseEndpoints getGlucoseEndpoints() {
         return glucoseEndpoints;
     }
-
     public BolusEndpoints getBolusEndpoints() {
         return bolusEndpoints;
     }
-
     public DeviceEndpoints getDeviceEndpoints() {
         return deviceEndpoints;
+    }
+    public TreatmentEndpoints getTreatmentEndpoints() {
+        return treatmentEndpoints;
+    }
+    public TempBasalAbsoluteEndpoints getTempBasalAbsoluteEndpoints() {
+        return tempBasalAbsoluteEndpoints;
+    }
+    public TempBasalPercentEndpoints getTempBasalPercentEndpoints() {
+        return tempBasalPercentEndpoints;
+    }
+    public TempBasalCancelEndpoints getTempBasalCancelEndpoints() {
+        return tempBasalCancelEndpoints;
+    }
+    public NoteEndpoints getNoteEndpoints() {
+        return noteEndpoints;
     }
 
     public UploadApi(String baseURL, String token) {
@@ -73,5 +91,10 @@ public class UploadApi {
         glucoseEndpoints = retrofit.create(GlucoseEndpoints.class);
         bolusEndpoints = retrofit.create(BolusEndpoints.class);
         deviceEndpoints = retrofit.create(DeviceEndpoints.class);
+        treatmentEndpoints = retrofit.create(TreatmentEndpoints.class);
+        tempBasalAbsoluteEndpoints = retrofit.create(TempBasalAbsoluteEndpoints.class);
+        tempBasalPercentEndpoints = retrofit.create(TempBasalPercentEndpoints.class);
+        tempBasalCancelEndpoints = retrofit.create(TempBasalCancelEndpoints.class);
+        noteEndpoints = retrofit.create(NoteEndpoints.class);
     }
 }

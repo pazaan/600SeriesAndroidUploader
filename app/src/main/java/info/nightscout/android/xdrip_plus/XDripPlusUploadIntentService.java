@@ -53,6 +53,7 @@ public class XDripPlusUploadIntentService extends IntentService {
         Log.i(TAG, "onCreate called");
         mContext = this.getBaseContext();
     }
+// check this stuff!!! pogman!
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -61,7 +62,8 @@ public class XDripPlusUploadIntentService extends IntentService {
 
         RealmResults<PumpStatusEvent> all_records = mRealm
                 .where(PumpStatusEvent.class)
-                .notEqualTo("sgv", 0)
+                .notEqualTo("validSGV", false)
+//                .notEqualTo("sgv", 0)
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
         // get the most recent record and send that
@@ -117,14 +119,14 @@ public class XDripPlusUploadIntentService extends IntentService {
         JSONObject json = new JSONObject();
         json.put("uploaderBattery", DataStore.getInstance().getUploaderBatteryLevel());
         json.put("device", record.getDeviceName());
-        json.put("created_at", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
+        json.put("created_at", ISO8601_DATE_FORMAT.format(record.getEventDate()));
 
         JSONObject pumpInfo = new JSONObject();
-        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
+        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getEventDate()));
         pumpInfo.put("reservoir", new BigDecimal(record.getReservoirAmount()).setScale(3, BigDecimal.ROUND_HALF_UP));
 
         JSONObject iob = new JSONObject();
-        iob.put("timestamp", record.getPumpDate());
+        iob.put("timestamp", record.getEventDate());
         iob.put("bolusiob", record.getActiveInsulin());
 
         JSONObject battery = new JSONObject();
@@ -145,8 +147,8 @@ public class XDripPlusUploadIntentService extends IntentService {
         json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
         json.put("device", pumpRecord.getDeviceName());
         json.put("type", "sgv");
-        json.put("date", pumpRecord.getSgvDate().getTime());
-        json.put("dateString", pumpRecord.getSgvDate());
+        json.put("date", pumpRecord.getCgmDate().getTime());
+        json.put("dateString", pumpRecord.getCgmDate());
 
         entriesArray.put(json);
     }
@@ -157,7 +159,7 @@ public class XDripPlusUploadIntentService extends IntentService {
 
             // TODO replace with Retrofit/EntriesSerializer
             json.put("type", "mbg");
-            json.put("mbg", pumpRecord.getBolusWizardBGL());
+            json.put("mbg", pumpRecord.getRecentBGL());
             json.put("device", pumpRecord.getDeviceName());
             json.put("date", pumpRecord.getEventDate().getTime());
             json.put("dateString", pumpRecord.getEventDate());
