@@ -33,7 +33,7 @@ public class EHSMMessage extends  MedtronicSendMessageRequestMessage<ContourNext
         }
 
         // The End EHSM Session only has an 0x81 response
-        if (readMessage_0x81(mDevice).length != 48) {
+        if (readMessage_0x81(mDevice) != 48) {
             throw new UnexpectedMessageException("length of EHSMMessage response does not match");
         }
 /*

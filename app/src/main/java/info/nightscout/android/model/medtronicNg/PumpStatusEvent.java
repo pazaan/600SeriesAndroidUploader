@@ -18,8 +18,6 @@ public class PumpStatusEvent extends RealmObject {
 
     // Data from the Medtronic Pump Status message
 
-//    private byte[] statusPayload; // temporary use here for message sniffing
-
     private byte pumpStatus;
     private byte cgmStatus;
     private boolean suspended;
@@ -92,14 +90,6 @@ public class PumpStatusEvent extends RealmObject {
 
     @Index
     private boolean uploaded = false;
-
-//    public byte[] getStatusPayload() {
-//        return statusPayload;
-//    }
-
-//    public void setStatusPayload(byte[] statusPayload) {
-//        this.statusPayload = statusPayload;
-//    }
 
     public PumpStatusEvent() {
         // The the eventDate to now.

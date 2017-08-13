@@ -23,8 +23,6 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
     // Data from the Medtronic Pump Status message
 
-//    private byte[] statusPayload; // temporary use here for message sniffing
-
     private byte pumpStatus;
     private byte cgmStatus;
     private boolean suspended;
@@ -87,8 +85,6 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             String outputString = HexDump.dumpHexString(statusBuffer.array());
             Log.d(TAG, "PAYLOAD: " + outputString);
         }
-
-//        statusPayload = statusBuffer.array(); // temporary use here for message sniffing
 
         // Status Flags
         pumpStatus = statusBuffer.get(0x03);
@@ -209,8 +205,6 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
      * @param pumpRecord
      */
     public void updatePumpRecord(PumpStatusEvent pumpRecord) {
-
-//        pumpRecord.setStatusPayload(statusPayload); // temporary use here for message sniffing
 
         // Status Flags
         pumpRecord.setPumpStatus(pumpStatus);

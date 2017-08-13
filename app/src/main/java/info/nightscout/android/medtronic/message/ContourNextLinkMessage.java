@@ -17,7 +17,7 @@ public abstract class ContourNextLinkMessage {
     private static final String TAG = ContourNextLinkMessage.class.getSimpleName();
 
     private static final int USB_BLOCKSIZE = 64;
-    private static final int READ_TIMEOUT_MS = 10000; //ASTM standard is 15 seconds (note was previously set at 10 seconds)
+    private static final int READ_TIMEOUT_MS = 15000; //ASTM standard is 15 seconds (note was previously set at 10 seconds)
     private static final String USB_HEADER = "ABC";
 
     protected ByteBuffer mPayload;
@@ -142,22 +142,23 @@ public abstract class ContourNextLinkMessage {
     // safety check to make sure a expected 0x81 response is received before next expected 0x80 response
     // very infrequent as clearMessage catches most issues but very important to save a CNL error situation
 
-    protected byte[] readMessage_0x81(UsbHidDriver mDevice) throws IOException, TimeoutException {
+    protected int readMessage_0x81(UsbHidDriver mDevice) throws IOException, TimeoutException {
 
-        byte[] responseBytes;
+        int responseSize = 0;
         boolean doRetry;
         do {
-            responseBytes = readMessage(mDevice);
+            byte[] responseBytes = readMessage(mDevice);
             if (responseBytes[18] != (byte) 0x81) {
                 doRetry = true;
                 Log.d(TAG, "readMessage0x81: did not get 0x81 response, got " + responseBytes[18]);
             } else {
                 doRetry = false;
+                responseSize = responseBytes.length;
             }
 
         } while (doRetry);
 
-        return responseBytes;
+        return responseSize;
     }
 
     // intercept unexpected messages from the CNL
