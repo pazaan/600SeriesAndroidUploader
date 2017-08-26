@@ -46,34 +46,43 @@ public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_VID = 0x1a79;
     public final static int USB_PID = 0x6210;
     public final static long USB_WARMUP_TIME_MS = 5000L;
+
     public final static long POLL_PERIOD_MS = 300000L;
     public final static long LOW_BATTERY_POLL_PERIOD_MS = 900000L;
     // Number of additional seconds to wait after the next expected CGM poll, so that we don't interfere with CGM radio comms.
     public final static long POLL_GRACE_PERIOD_MS = 30000L;
+    // Number of seconds before the next expected CGM poll that we will allow uploader comms to start
     public final static long POLL_PRE_GRACE_PERIOD_MS = 45000L;
+    // cgm n/a events to trigger anti clash poll timing
+    public final static int POLL_ANTI_CLASH = 3;
 
-    public static final String ICON_WARN = "{ion-alert-circled} ";
-    public static final String ICON_BGL = "{ion-waterdrop} ";
-    public static final String ICON_USB = "{ion-usb} ";
-    public static final String ICON_INFO = "{ion-information_circled} ";
-    public static final String ICON_HELP = "{ion-ios-lightbulb} ";
-    public static final String ICON_SETTING = "{ion-android-settings} ";
-    public static final String ICON_HEART = "{ion-heart} ";
-    public static final String ICON_LOW = "{ion-battery_low} ";
-    public static final String ICON_FULL = "{ion-battery_full} ";
-    public static final String ICON_RESV = "{ion-paintbucket} ";
-    public static final String ICON_CGM = "{ion-ios-pulse_strong} ";
-    public static final String ICON_MEDICAL = "{ion-ios-medical} ";
-    public static final String ICON_BOLUS = "{ion-erlenmeyer-flask} ";
-    public static final String ICON_BASAL = "{ion-ios-timer} ";
-    public static final String ICON_NOTE = "{ion_android_notifications} ";
+    // TODO - use a message type and insert icon as part of ui status message handling
+    public static final String ICON_WARN = "{ion_alert_circled} ";
+    public static final String ICON_BGL = "{ion_waterdrop} ";
+    public static final String ICON_USB = "{ion_usb} ";
+    public static final String ICON_INFO = "{ion_information_circled} ";
+    public static final String ICON_HELP = "{ion_ios_lightbulb} ";
+    public static final String ICON_SETTING = "{ion_android_settings} ";
+    public static final String ICON_HEART = "{ion_heart} ";
+    public static final String ICON_LOW = "{ion_battery_low} ";
+    public static final String ICON_FULL = "{ion_battery_full} ";
+    public static final String ICON_CGM = "{ion_ios_pulse_strong} ";
+    public static final String ICON_SUSPEND = "{ion_pause} ";
+    public static final String ICON_RESUME = "{ion_play} ";
+    public static final String ICON_BOLUS = "{ion_skip_forward} ";
+    public static final String ICON_BASAL = "{ion_skip_forward} ";
+    public static final String ICON_CHANGE = "{ion_android_hand} ";
+    public static final String ICON_BELL = "{ion_android_notifications} ";
+    public static final String ICON_NOTE = "{ion_clipboard} ";
 
     // show warning message after repeated errors
     private final static int ERROR_COMMS_AT = 4;
-    private final static int ERROR_CONNECT_AT = 8;
-    private final static int ERROR_SIGNAL_AT = 8;
-    private final static int ERROR_PUMPLOSTSENSOR_AT = 8;
+    private final static int ERROR_CONNECT_AT = 6;
+    private final static int ERROR_SIGNAL_AT = 6;
+    private final static int ERROR_PUMPLOSTSENSOR_AT = 6;
+    private final static int ERROR_PUMPBATTERY_AT = 3;
     private final static int ERROR_PUMPCLOCK_AT = 8;
+    private final static int ERROR_PUMPCLOCK_MS = 10 * 60 * 1000;
 
     private static final String TAG = MedtronicCnlIntentService.class.getSimpleName();
 
@@ -84,7 +93,7 @@ public class MedtronicCnlIntentService extends IntentService {
     private DataStore dataStore = DataStore.getInstance();
     private ConfigurationStore configurationStore = ConfigurationStore.getInstance();
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
-    private DateFormat dateFormatterNote = new SimpleDateFormat("HH:mm", Locale.US);
+    private DateFormat dateFormatterNote = new SimpleDateFormat("E HH:mm", Locale.US);
     private Realm realm;
     private long pumpOffset;
 
@@ -153,6 +162,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         Log.d(TAG, "onHandleIntent called");
         try {
             final long timePollStarted = System.currentTimeMillis();
+            long pollInterval = configurationStore.getPollInterval();
             realm = Realm.getDefaultInstance();
 
             long due = checkPollTime();
@@ -160,21 +170,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 sendStatus("Please wait: Pump is expecting sensor communication. Poll due in " + ((due - System.currentTimeMillis()) / 1000L) + " seconds");
                 MedtronicCnlAlarmManager.setAlarm(due);
                 return;
-            }
-
-            RealmResults<PumpStatusEvent> pumpresults = realm.where(PumpStatusEvent.class)
-                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - (6 * 60 * 60 * 1000)))
-                    .findAllSorted("eventDate", Sort.DESCENDING);
-            long pollInterval = configurationStore.getPollInterval();
-            if (pumpresults.size() > 0) {
-                short pumpBatteryLevel = pumpresults.first().getBatteryPercentage();
-                if ((pumpBatteryLevel > 0) && (pumpBatteryLevel <= 25)) {
-                    pollInterval = configurationStore.getLowBatteryPollInterval();
-                    sendStatus(ICON_WARN + "Warning: pump battery low");
-                    if (pollInterval != configurationStore.getPollInterval()) {
-                        sendStatus(ICON_SETTING + "Low battery poll interval: " + (pollInterval / 60000) + " minutes");
-                    }
-                }
             }
 
             // TODO - throw, don't return
@@ -243,14 +238,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         sendStatus(ICON_WARN + "Could not communicate with the pump. Is it nearby?");
                         Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
                         dataStore.incCommsConnectError();
-                        pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
+                        pollInterval = POLL_PERIOD_MS / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
                     } else if (cnlReader.getPumpSession().getRadioRSSIpercentage() < 5) {
                         sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                         sendStatus(ICON_WARN + "Warning: pump signal too weak. Is it nearby?");
                         Log.i(TAG, "Warning: pump signal too weak. Is it nearby?");
                         dataStore.incCommsConnectError();
                         dataStore.incCommsSignalError();
-                        pollInterval = configurationStore.getPollInterval() / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
+                        pollInterval = POLL_PERIOD_MS / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
                     } else {
                         dataStore.decCommsConnectError();
                         if (cnlReader.getPumpSession().getRadioRSSIpercentage() < 20)
@@ -273,13 +268,18 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         // TODO - this should not be necessary. We should reverse lookup the device name from PumpInfo
                         pumpRecord.setDeviceName(deviceName);
 
+                        if (radioChannel == 26) cnlReader.beginEHSMSession(); // gentle persuasion to leave channel 26 (weakest for CNL and causes Pebble to lose BT often) by using EHSM to influence pump channel change
+
                         long pumpTime = cnlReader.getPumpTime().getTime();
                         pumpOffset = pumpTime - System.currentTimeMillis();
                         Log.d(TAG, "Time offset between pump and device: " + pumpOffset + " millis.");
 
                         pumpRecord.setPumpTimeOffset(pumpOffset);
                         pumpRecord.setPumpDate(new Date(pumpTime));
+                        pumpRecord.setEventDate(new Date(System.currentTimeMillis()));
                         cnlReader.updatePumpStatus(pumpRecord);
+
+                        if (radioChannel == 26) cnlReader.endEHSMSession();
 
                         validatePumpRecord(pumpRecord, activePump);
                         activePump.getPumpHistory().add(pumpRecord);
@@ -287,6 +287,13 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                         dataStore.incCommsSuccess();
                         dataStore.clearCommsError();
+
+                        if (pumpRecord.getBatteryPercentage() <= 25) {
+                            dataStore.incPumpBatteryError();
+                            pollInterval = configurationStore.getLowBatteryPollInterval();
+                        } else {
+                            dataStore.clearPumpBatteryError();
+                        }
 
                         if (pumpRecord.isCgmActive()) {
                             dataStore.clearPumpCgmNA(); // poll clash detection
@@ -296,30 +303,38 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 sendStatus(ICON_CGM + "sensor is in warm-up phase");
                             else if (pumpRecord.getCalibrationDueMinutes() == 0)
                                 sendStatus(ICON_CGM + "sensor calibration is due now!");
+                            else if (pumpRecord.getSgv() == 0 && pumpRecord.isCgmCalibrating())
+                                sendStatus(ICON_CGM + "sensor is calibrating");
                             else if (pumpRecord.getSgv() == 0)
                                 sendStatus(ICON_CGM + "sensor error (pump graph gap)");
                             else {
                                 dataStore.incCommsSgvSuccess();
+                                // TODO - don't convert SGV here, convert dynamically in ui status message handler
                                 sendStatus("SGV: " + MainActivity.strFormatSGV(pumpRecord.getSgv())
                                         + "  At: " + dateFormatter.format(pumpRecord.getCgmDate().getTime())
                                         + "  Pump: " + (pumpOffset > 0 ? "+" : "") + (pumpOffset / 1000L) + "sec");
+                                if (pumpRecord.isCgmCalibrating())
+                                    sendStatus(ICON_CGM + "sensor is calibrating");
                                 if (pumpRecord.isOldSgvWhenNewExpected()) {
-                                    sendStatus(ICON_WARN + "Pump sent old SGV event");
+                                    sendStatus(ICON_CGM + "old SGV event received");
                                     // pump may have missed sensor transmission or be delayed in posting to status message
                                     // in most cases the next scheduled poll will have latest sgv, occasionally it is available this period after a delay
                                     // if user selects double poll option we try again this period or wait until next
-                                    pollInterval = POLL_PERIOD_MS / (configurationStore.isReducePollOnPumpAway() ? 2L : 1L);
+                                    pollInterval = configurationStore.isReducePollOnPumpAway() ? 60000 : POLL_PERIOD_MS;
                                 }
                             }
 
                         } else {
-                            sendStatus(ICON_CGM + "cgm n/a (pump lost sensor)");
                             dataStore.incPumpCgmNA(); // poll clash detection
-                            if (dataStore.getCommsSgvSuccess() > 0) // only count errors if cgm is being used
-                                dataStore.incPumpLostSensorError();
+                            if (dataStore.getCommsSgvSuccess() > 0) {
+                                dataStore.incPumpLostSensorError(); // only count errors if cgm is being used
+                                sendStatus(ICON_CGM + "cgm n/a (pump lost sensor)");
+                            } else {
+                                sendStatus(ICON_CGM + "cgm n/a");
+                            }
                         }
 
-                        sendStatusTreatments(pumpRecord);
+                        sendStatusNotifications(pumpRecord);
 
                         // Tell the Main Activity we have new data
                         sendMessage(Constants.ACTION_UPDATE_PUMP);
@@ -366,32 +381,29 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 Log.e(TAG, "Could not close connection.", e);
                 sendStatus(ICON_WARN + "Could not close connection: " + e.getMessage());
             } finally {
-
-                if (!realm.isClosed()) {
-                    if (realm.isInTransaction()) {
-                        // If we didn't commit the transaction, we've run into an error. Let's roll it back
-                        realm.cancelTransaction();
-                    }
-                    RemoveOutdatedRecords();
-
-                    long nextpoll = requestPollTime(timePollStarted, pollInterval);
-                    MedtronicCnlAlarmManager.setAlarm(nextpoll);
-                    sendStatus("Next poll due at: " + dateFormatter.format(nextpoll));
-
-                    realm.close();
+                if (realm.isInTransaction()) {
+                    // If we didn't commit the transaction, we've run into an error. Let's roll it back
+                    realm.cancelTransaction();
                 }
 
+                long nextpoll = requestPollTime(timePollStarted, pollInterval);
+                MedtronicCnlAlarmManager.setAlarm(nextpoll);
+                sendStatus("Next poll due at: " + dateFormatter.format(nextpoll));
+
+                RemoveOutdatedRecords();
                 uploadPollResults();
                 sendStatusWarnings();
             }
 
         } finally {
+            if (!realm.isClosed()) realm.close();
             MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
     }
 
-    private void sendStatusTreatments(PumpStatusEvent pumpRecord) {
+    private void sendStatusNotifications(PumpStatusEvent pumpRecord) {
         if (pumpRecord.isValidBGL())
+            // TODO - don't convert BGL here, convert dynamically in ui status message handler
             sendStatus(ICON_BGL + "Recent finger BG: " + MainActivity.strFormatSGV(pumpRecord.getRecentBGL()));
 
         if (pumpRecord.isValidBolus()) {
@@ -409,20 +421,35 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             else if (pumpRecord.getTempBasalMinutesRemaining() > 0)
                 sendStatus(ICON_BASAL + "Temp basal: " + pumpRecord.getTempBasalRate() + "u Remaining: " + pumpRecord.getTempBasalMinutesRemaining() + " minutes");
             else
-                sendStatus(ICON_BASAL + "Temp basal stopped");
+                sendStatus(ICON_BASAL + "Temp basal: stopped before expected duration");
         }
 
+        if (pumpRecord.isValidSUSPEND())
+            sendStatus(ICON_SUSPEND + "Pump suspended insulin delivery approx: " + dateFormatterNote.format(pumpRecord.getSuspendAfterDate()) + " - " + dateFormatterNote.format(pumpRecord.getSuspendBeforeDate()));
+        if (pumpRecord.isValidSUSPENDOFF())
+            sendStatus(ICON_RESUME + "Pump resumed insulin delivery approx: " + dateFormatterNote.format(pumpRecord.getSuspendAfterDate()) + " - " + dateFormatterNote.format(pumpRecord.getSuspendBeforeDate()));
+
         if (pumpRecord.isValidSAGE())
-            sendStatus(ICON_NOTE + "Sensor changed approx: " + dateFormatterNote.format(pumpRecord.getSageAfterDate()) + " - " + dateFormatterNote.format(pumpRecord.getSageBeforeDate()));
+            sendStatus(ICON_CHANGE + "Sensor changed approx: " + dateFormatterNote.format(pumpRecord.getSageAfterDate()) + " - " + dateFormatterNote.format(pumpRecord.getSageBeforeDate()));
         if (pumpRecord.isValidCAGE())
-            sendStatus(ICON_NOTE + "Reservoir changed approx: " + dateFormatterNote.format(pumpRecord.getCageAfterDate()) + " - " + dateFormatterNote.format(pumpRecord.getCageBeforeDate()));
+            sendStatus(ICON_CHANGE + "Reservoir changed approx: " + dateFormatterNote.format(pumpRecord.getCageAfterDate()) + " - " + dateFormatterNote.format(pumpRecord.getCageBeforeDate()));
         if (pumpRecord.isValidBATTERY())
-            sendStatus(ICON_NOTE + "Pump battery changed approx: " + dateFormatterNote.format(pumpRecord.getBatteryAfterDate()) + " - " + dateFormatterNote.format(pumpRecord.getBatteryBeforeDate()));
+            sendStatus(ICON_CHANGE + "Pump battery changed approx: " + dateFormatterNote.format(pumpRecord.getBatteryAfterDate()) + " - " + dateFormatterNote.format(pumpRecord.getBatteryBeforeDate()));
+
+        if (pumpRecord.isValidALERT())
+            sendStatus(ICON_BELL + "Active alert on pump At: " + dateFormatter.format(pumpRecord.getAlertDate()));
     }
 
     private void sendStatusWarnings() {
 
-        if (Math.abs(pumpOffset) > 10 * 60 * 1000)
+        if (dataStore.getPumpBatteryError() >= ERROR_PUMPBATTERY_AT) {
+            dataStore.clearPumpBatteryError();
+            sendStatus(ICON_WARN + "Warning: pump battery low");
+            if (configurationStore.getLowBatteryPollInterval() != configurationStore.getPollInterval())
+                sendStatus(ICON_SETTING + "Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) + " minutes");
+        }
+
+        if (Math.abs(pumpOffset) > ERROR_PUMPCLOCK_MS)
             dataStore.incPumpClockError();
         if (dataStore.getPumpClockError() >= ERROR_PUMPCLOCK_AT) {
             dataStore.clearPumpClockError();
@@ -430,20 +457,24 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     + " Pump is over " + (Math.abs(pumpOffset) / 60000L) + " minutes " + (pumpOffset > 0 ? "ahead" : "behind") + " of time used by uploader.");
             sendStatus(ICON_HELP + "The uploader phone/device should have the current time provided by network. Pump clock drifts forward and needs to be set to correct time occasionally.");
         }
+
         if (dataStore.getCommsError() >= ERROR_COMMS_AT) {
             sendStatus(ICON_WARN + "Warning: multiple comms/timeout errors detected.");
             sendStatus(ICON_HELP + "Try: disconnecting and reconnecting the Contour Next Link to phone / restarting phone / check pairing of CNL with Pump.");
         }
+
         if (dataStore.getPumpLostSensorError() >= ERROR_PUMPLOSTSENSOR_AT) {
             dataStore.clearPumpLostSensorError();
             sendStatus(ICON_WARN + "Warning: SGV is unavailable from pump often. The pump is missing transmissions from the sensor.");
             sendStatus(ICON_HELP + "Keep pump on same side of body as sensor. Avoid using body sensor locations that can block radio signal.");
         }
+
         if (dataStore.getCommsConnectError() >= ERROR_CONNECT_AT * (configurationStore.isReducePollOnPumpAway() ? 2 : 1)) {
             dataStore.clearCommsConnectError();
             sendStatus(ICON_WARN + "Warning: connecting to pump is failing often.");
             sendStatus(ICON_HELP + "Keep pump nearby to uploader phone/device. The body can block radio signals between pump and uploader.");
         }
+
         if (dataStore.getCommsSignalError() >= ERROR_SIGNAL_AT) {
             dataStore.clearCommsSignalError();
             sendStatus(ICON_WARN + "Warning: RSSI radio signal from pump is generally weak and may increase errors.");
@@ -452,30 +483,37 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     }
 
     private void RemoveOutdatedRecords() {
-        final RealmResults<PumpStatusEvent> resultsx =
+        final RealmResults<PumpStatusEvent> results =
                 realm.where(PumpStatusEvent.class)
                         .lessThan("eventDate", new Date(System.currentTimeMillis() - (48 * 60 * 60 * 1000)))
                         .findAll();
 
-        if (resultsx.size() > 0) {
+        if (results.size() > 0) {
             realm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     // Delete all matches
-                    Log.d(TAG, "Deleting " + resultsx.size() + " records from realm");
-                    resultsx.deleteAllFromRealm();
+                    Log.d(TAG, "Deleting " + results.size() + " records from realm");
+                    results.deleteAllFromRealm();
                 }
             });
         }
     }
 
-// TODO fix square/dual bolus time after battery change as pump resets start time, use refs to work out actual time and duration?
-// TODO for NS add temp basal at 0% when suspended? use 30 or 60 min blocks and cancel temp when resumed?
-// TODO check on optimal use of Realm search+results as we make heavy use for validation
+    // TODO - check on optimal use of Realm search+results as we make heavy use for validation
 
     private void validatePumpRecord(PumpStatusEvent pumpRecord, PumpInfo activePump) {
 
-        // TODO cgm/sgv validation - handle sensor exceptions
+        int index;
+        Date uploaderStartDate = dataStore.getUploaderStartDate();
+
+        // TODO - pump validation is unused but will allow for future record manipulation when adding data from pump history message (gap fill)
+
+        // validate that this contains a new PUMP record
+        pumpRecord.setValidPUMP(true);
+
+        // TODO - cgm validation - handle sensor exceptions
+
         // validate that this contains a new CGM record
         if (pumpRecord.isCgmActive()) {
             pumpRecord.setValidCGM(true);
@@ -508,6 +546,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             }
         }
 
+        // TODO - square/dual stopped and new bolus started between poll snapshots, check realm history to handle this?
+
         // validate that this contains a new BOLUS record
         RealmResults<PumpStatusEvent> lastbolus_results = activePump.getPumpHistory()
                 .where()
@@ -517,29 +557,42 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 .findAll();
 
         if (lastbolus_results.size() == 0) {
-            pumpRecord.setValidBolus(true);
-
-            if (pumpRecord.getBolusingReference() == pumpRecord.getLastBolusReference()
-                    && pumpRecord.getBolusingMinutesRemaining() > 10) {
-                pumpRecord.setValidBolusDual(true);
-            }
 
             RealmResults<PumpStatusEvent> bolusing_results = activePump.getPumpHistory()
                     .where()
                     .equalTo("bolusingReference", pumpRecord.getLastBolusReference())
-                    .greaterThan("bolusingMinutesRemaining", 10)
+                    .greaterThan("bolusingMinutesRemaining", 10)   // if a manual normal bolus referred to here while square is being delivered it will show the remaining time for all bolusing
                     .findAllSorted("eventDate", Sort.ASCENDING);
 
-            // note: if pump battery is changed during square/dual bolus period the last bolus time will be set to this time (pump asks user to resume/cancel bolus)
-
             if (bolusing_results.size() > 0) {
-                pumpRecord.setValidBolusSquare(true);
                 long start = pumpRecord.getLastBolusPumpDate().getTime();
+                long start_bolusing = bolusing_results.first().getPumpDate().getTime();
+
+                // if pump battery is changed during square/dual bolus period the last bolus time will be set to this time (pump asks user to resume/cancel bolus)
+                // use bolusing start time when this is detected
+                if (start - start_bolusing > 10 * 60)
+                    start = start_bolusing;
+
                 long end = pumpRecord.getPumpDate().getTime();
-                long duration = bolusing_results.first().getPumpDate().getTime() - start + (bolusing_results.first().getBolusingMinutesRemaining() * 60000);
+                long duration = start_bolusing - start + (bolusing_results.first().getBolusingMinutesRemaining() * 60000);
                 if (start + duration > end) // was square bolus stopped before expected duration?
                     duration = end - start;
-                pumpRecord.setLastBolusDuration((short) (duration / 60000));
+
+                // check that this was a square bolus and not a normal bolus
+                if (duration > 10) {
+                    pumpRecord.setValidBolus(true);
+                    pumpRecord.setValidBolusSquare(true);
+                    pumpRecord.setLastBolusDate(new Date (start));
+                    pumpRecord.setLastBolusDuration((short) (duration / 60000));
+                }
+            }
+
+            else if (pumpRecord.getLastBolusDate().getTime() >= uploaderStartDate.getTime()) {
+                pumpRecord.setValidBolus(true);
+                if (pumpRecord.getBolusingReference() == pumpRecord.getLastBolusReference()
+                        && pumpRecord.getBolusingMinutesRemaining() > 10) {
+                    pumpRecord.setValidBolusDual(true);
+                }
             }
         }
 
@@ -550,7 +603,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
                 .findAllSorted("eventDate", Sort.DESCENDING);
         if (pumpRecord.getTempBasalMinutesRemaining() > 0) {
-            int index = 0;
+            index = 0;
             if (tempbasal_results.size() > 1) {
                 short minutes = pumpRecord.getTempBasalMinutesRemaining();
                 for (index = 0; index < tempbasal_results.size(); index++) {
@@ -568,6 +621,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         tempbasal_results.get(index).getTempBasalRate() != pumpRecord.getTempBasalRate()) {
                     pumpRecord.setValidTEMPBASAL(true);
                     pumpRecord.setTempBasalAfterDate(tempbasal_results.get(index).getEventDate());
+                    pumpRecord.setTempBasalBeforeDate(pumpRecord.getEventDate());
                 }
         } else {
             // check if stopped before expected duration
@@ -575,7 +629,67 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (pumpRecord.getPumpDate().getTime() - tempbasal_results.first().getPumpDate().getTime() - (tempbasal_results.first().getTempBasalMinutesRemaining() * 60 * 1000) < -60 * 1000) {
                     pumpRecord.setValidTEMPBASAL(true);
                     pumpRecord.setTempBasalAfterDate(tempbasal_results.first().getEventDate());
+                    pumpRecord.setTempBasalBeforeDate(pumpRecord.getEventDate());
                 }
+        }
+
+        // validate that this contains a new SUSPEND record
+        RealmResults<PumpStatusEvent> suspend_results =  activePump.getPumpHistory()
+                .where()
+                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (2 * 60 * 60 * 1000)))
+                .equalTo("validSUSPEND", true)
+                .or()
+                .equalTo("validSUSPENDOFF", true)
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        if (suspend_results.size() > 0) {
+            // new valid suspend - set temp basal for 0u 60m in NS
+            if (pumpRecord.isSuspended() && suspend_results.first().isValidSUSPENDOFF()) {
+                pumpRecord.setValidSUSPEND(true);
+            }
+            // continuation valid suspend every 30m - set temp basal for 0u 60m in NS
+            else if (pumpRecord.isSuspended() && suspend_results.first().isValidSUSPEND() &&
+                    pumpRecord.getEventDate().getTime() - suspend_results.first().getEventDate().getTime() >= 30 * 60 * 1000) {
+                pumpRecord.setValidSUSPEND(true);
+            }
+            // valid suspendoff - set temp stopped in NS
+            else if (!pumpRecord.isSuspended() && suspend_results.first().isValidSUSPEND() &&
+                    pumpRecord.getEventDate().getTime() - suspend_results.first().getEventDate().getTime() <= 60 * 60 * 1000) {
+                pumpRecord.setValidSUSPENDOFF(true);
+                RealmResults<PumpStatusEvent> suspendended_results =  activePump.getPumpHistory()
+                        .where()
+                        .greaterThan("eventDate", new Date(System.currentTimeMillis() - (2 * 60 * 60 * 1000)))
+                        .findAllSorted("eventDate", Sort.DESCENDING);
+                pumpRecord.setSuspendAfterDate(suspendended_results.first().getEventDate());
+                pumpRecord.setSuspendBeforeDate(pumpRecord.getEventDate());
+            }
+        }
+        else if (pumpRecord.isSuspended()) {
+            pumpRecord.setValidSUSPEND(true);
+        }
+
+        // absolute suspend start time approx to after-before range
+        if (pumpRecord.isValidSUSPEND()) {
+            RealmResults<PumpStatusEvent> suspendstarted_results =  activePump.getPumpHistory()
+                    .where()
+                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
+                    .findAllSorted("eventDate", Sort.ASCENDING);
+            index = suspendstarted_results.size();
+            if (index > 0) {
+                while (index > 0) {
+                    index--;
+                    if (!suspendstarted_results.get(index).isSuspended())
+                        break;
+                }
+                pumpRecord.setSuspendAfterDate(suspendstarted_results.get(index).getEventDate());
+            }
+            else {
+                pumpRecord.setSuspendAfterDate(pumpRecord.getEventDate());
+            }
+            if (++index < suspendstarted_results.size())
+                pumpRecord.setSuspendBeforeDate(suspendstarted_results.get(index).getEventDate());
+            else
+                pumpRecord.setSuspendBeforeDate(pumpRecord.getEventDate());
         }
 
         // validate that this contains a new SAGE record
@@ -589,18 +703,18 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 pumpRecord.setValidSAGE(true);
                 RealmResults<PumpStatusEvent> sagedate_results = activePump.getPumpHistory()
                         .where()
-                        .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 1000)))
+                        .greaterThan("eventDate", new Date(System.currentTimeMillis() - (6 * 60 * 60 * 1000)))
                         .findAllSorted("eventDate", Sort.DESCENDING);
                 pumpRecord.setSageAfterDate(sagedate_results.first().getEventDate());
                 pumpRecord.setSageBeforeDate(pumpRecord.getEventDate());
             }
-        } else if (pumpRecord.isCgmActive() && pumpRecord.getTransmitterBattery() > 70) {
-            // note: transmitter battery can fluctuate when on the edge of a state change, usually low battery
+        } else if (pumpRecord.isCgmActive() && pumpRecord.getTransmitterBattery() == 100) {
+            // note: transmitter battery can fluctuate when on the edge of a state change
             RealmResults<PumpStatusEvent> sagebattery_results = activePump.getPumpHistory()
                     .where()
-                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
+                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - (6 * 60 * 60 * 1000)))
                     .equalTo("cgmActive", true)
-                    .lessThan("transmitterBattery", pumpRecord.getTransmitterBattery())
+                    .lessThan("transmitterBattery", 50)
                     .findAllSorted("eventDate", Sort.DESCENDING);
             if (sagebattery_results.size() > 0) {
                 RealmResults<PumpStatusEvent> sage_valid_results = activePump.getPumpHistory()
@@ -619,7 +733,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         // validate that this contains a new CAGE record
         RealmResults<PumpStatusEvent> cage_results = activePump.getPumpHistory()
                 .where()
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
+                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (6 * 60 * 60 * 1000)))
                 .lessThan("reservoirAmount", pumpRecord.getReservoirAmount())
                 .findAllSorted("eventDate", Sort.DESCENDING);
         if (cage_results.size() > 0) {
@@ -638,7 +752,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         // validate that this contains a new BATTERY record
         RealmResults<PumpStatusEvent> battery_results = activePump.getPumpHistory()
                 .where()
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
+                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (6 * 60 * 60 * 1000)))
                 .lessThan("batteryPercentage", pumpRecord.getBatteryPercentage())
                 .findAllSorted("eventDate", Sort.DESCENDING);
         if (battery_results.size() > 0) {
@@ -651,6 +765,18 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 pumpRecord.setValidBATTERY(true);
                 pumpRecord.setBatteryAfterDate(battery_results.first().getEventDate());
                 pumpRecord.setBatteryBeforeDate(pumpRecord.getEventDate());
+            }
+        }
+
+        // validate that this contains a new ALERT record
+        if (pumpRecord.getAlert() > 0) {
+            RealmResults<PumpStatusEvent> alert_results = activePump.getPumpHistory()
+                    .where()
+                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - (6 * 60 * 60 * 1000)))
+                    .findAllSorted("eventDate", Sort.DESCENDING);
+            if (alert_results.size() > 0) {
+                if (alert_results.first().getAlert() != pumpRecord.getAlert())
+                    pumpRecord.setValidALERT(true);
             }
         }
 
@@ -692,8 +818,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
         if (timeLastCGM == 0)
             nextRequestedPollTime += 15 * 1000; // push poll time forward to avoid potential clash when no previous poll time available to sync with
-        else if (pumpCgmNA > 2)
-            nextRequestedPollTime += ((pumpCgmNA - 2) % 3) * 30 * 1000; // adjust poll time in 30 second steps to avoid potential poll clash (adjustment: poll+30s / poll+60s / poll+0s)
+        else if (pumpCgmNA >= POLL_ANTI_CLASH)
+            nextRequestedPollTime += (((pumpCgmNA - POLL_ANTI_CLASH) % 3) + 1) * 30 * 1000; // adjust poll time in 30 second steps to avoid potential poll clash (adjustment: poll+30s / poll+60s / poll+90s)
 
         // check if requested poll time is too close to next actual poll time
         if (nextRequestedPollTime > nextActualPollTime - POLL_GRACE_PERIOD_MS - POLL_PRE_GRACE_PERIOD_MS

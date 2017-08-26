@@ -14,20 +14,20 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class UploadApi {
     private Retrofit retrofit;
-    private GlucoseEndpoints glucoseEndpoints;
-    private BolusEndpoints bolusEndpoints;
+    private SgvEndpoints sgvEndpoints;
+    private MbgEndpoints mbgEndpoints;
     private DeviceEndpoints deviceEndpoints;
     private TreatmentEndpoints treatmentEndpoints;
-    private TempBasalAbsoluteEndpoints tempBasalAbsoluteEndpoints;
+    private TempBasalRateEndpoints tempBasalRateEndpoints;
     private TempBasalPercentEndpoints tempBasalPercentEndpoints;
     private TempBasalCancelEndpoints tempBasalCancelEndpoints;
     private NoteEndpoints noteEndpoints;
 
-    public GlucoseEndpoints getGlucoseEndpoints() {
-        return glucoseEndpoints;
+    public SgvEndpoints getSgvEndpoints() {
+        return sgvEndpoints;
     }
-    public BolusEndpoints getBolusEndpoints() {
-        return bolusEndpoints;
+    public MbgEndpoints getMbgEndpoints() {
+        return mbgEndpoints;
     }
     public DeviceEndpoints getDeviceEndpoints() {
         return deviceEndpoints;
@@ -35,8 +35,8 @@ public class UploadApi {
     public TreatmentEndpoints getTreatmentEndpoints() {
         return treatmentEndpoints;
     }
-    public TempBasalAbsoluteEndpoints getTempBasalAbsoluteEndpoints() {
-        return tempBasalAbsoluteEndpoints;
+    public TempBasalRateEndpoints getTempBasalRateEndpoints() {
+        return tempBasalRateEndpoints;
     }
     public TempBasalPercentEndpoints getTempBasalPercentEndpoints() {
         return tempBasalPercentEndpoints;
@@ -88,11 +88,11 @@ public class UploadApi {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        glucoseEndpoints = retrofit.create(GlucoseEndpoints.class);
-        bolusEndpoints = retrofit.create(BolusEndpoints.class);
+        sgvEndpoints = retrofit.create(SgvEndpoints.class);
+        mbgEndpoints = retrofit.create(MbgEndpoints.class);
         deviceEndpoints = retrofit.create(DeviceEndpoints.class);
         treatmentEndpoints = retrofit.create(TreatmentEndpoints.class);
-        tempBasalAbsoluteEndpoints = retrofit.create(TempBasalAbsoluteEndpoints.class);
+        tempBasalRateEndpoints = retrofit.create(TempBasalRateEndpoints.class);
         tempBasalPercentEndpoints = retrofit.create(TempBasalPercentEndpoints.class);
         tempBasalCancelEndpoints = retrofit.create(TempBasalCancelEndpoints.class);
         noteEndpoints = retrofit.create(NoteEndpoints.class);

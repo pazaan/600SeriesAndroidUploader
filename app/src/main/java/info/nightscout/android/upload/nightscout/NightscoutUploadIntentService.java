@@ -60,6 +60,8 @@ public class NightscoutUploadIntentService extends IntentService {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 
             Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
+            Boolean enableTreatmentsUpload = prefs.getBoolean("EnableTreatmentsUpload", false);
+
             try {
                 if (enableRESTUpload) {
                     long start = System.currentTimeMillis();
@@ -67,7 +69,7 @@ public class NightscoutUploadIntentService extends IntentService {
                     String urlSetting = prefs.getString(mContext.getString(R.string.preference_nightscout_url), "");
                     String secretSetting = prefs.getString(mContext.getString(R.string.preference_api_secret), "YOURAPISECRET");
                     Boolean uploadSuccess = mNightScoutUpload.doRESTUpload(urlSetting,
-                            secretSetting, DataStore.getInstance().getUploaderBatteryLevel(), records);
+                            secretSetting, enableTreatmentsUpload, DataStore.getInstance().getUploaderBatteryLevel(), records);
                     if (uploadSuccess) {
                         mRealm.beginTransaction();
                         for (PumpStatusEvent updateRecord : records) {

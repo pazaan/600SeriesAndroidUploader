@@ -1,6 +1,8 @@
 package info.nightscout.android.utils;
 
 
+import java.util.Date;
+
 /**
  * Created by volker on 30.03.2017.
  */
@@ -8,8 +10,11 @@ package info.nightscout.android.utils;
 public class DataStore {
     private static DataStore instance;
 
+    private Date uploaderStartDate;
+
     private long activePumpMac = 0;
     private int uploaderBatteryLevel = 0;
+
     private int pumpCgmNA = 0;
 
     private int CommsSuccess = 0;
@@ -19,6 +24,7 @@ public class DataStore {
     private int CommsSgvSuccess = 0;
     private int PumpLostSensorError = 0;
     private int PumpClockError = 0;
+    private int PumpBatteryError = 0;
 
     private DataStore() {}
 
@@ -26,8 +32,13 @@ public class DataStore {
         if (DataStore.instance == null) {
             instance = new DataStore();
 
+            instance.uploaderStartDate = new Date();
         }
         return instance;
+    }
+
+    public Date getUploaderStartDate() {
+        return uploaderStartDate;
     }
 
     public long getActivePumpMac() {
@@ -132,6 +143,16 @@ public class DataStore {
         this.PumpClockError = 0;
     }
 
+    public int getPumpBatteryError() {
+        return PumpBatteryError;
+    }
+
+    public int incPumpBatteryError() { return PumpBatteryError++; }
+
+    public void clearPumpBatteryError() {
+        this.PumpBatteryError = 0;
+    }
+
     public void clearAllCommsErrors() {
         this.CommsSuccess = 0;
         this.CommsError = 0;
@@ -139,5 +160,6 @@ public class DataStore {
         this.CommsSignalError = 0;
         this.PumpLostSensorError = 0;
         this.PumpClockError = 0;
+        this.PumpBatteryError = 0;
     }
 }

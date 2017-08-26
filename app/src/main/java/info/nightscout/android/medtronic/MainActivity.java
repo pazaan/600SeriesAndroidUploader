@@ -109,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Realm mRealm;
     private Realm storeRealm;
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
+    private UpdatePumpReceiver updatePumpReceiver = new UpdatePumpReceiver();
     private UsbReceiver usbReceiver = new UsbReceiver();
     private BatteryReceiver batteryReceiver = new BatteryReceiver();
 
@@ -183,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 statusMessageReceiver,
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE));
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                new UpdatePumpReceiver(),
+                updatePumpReceiver,
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_UPDATE_PUMP));
 
         mEnableCgmService = Eula.show(this, prefs);
@@ -207,7 +208,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_USB_REGISTER));
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-
         if (toolbar != null) {
             setSupportActionBar(toolbar);
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
@@ -590,11 +590,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         super.onDestroy();
 
+        cancelDisplayRefreshLoop();
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(statusMessageReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(updatePumpReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
         unregisterReceiver(usbReceiver);
         unregisterReceiver(batteryReceiver);
 
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
-        cancelDisplayRefreshLoop();
 
         if (!storeRealm.isClosed()) {
             storeRealm.close();

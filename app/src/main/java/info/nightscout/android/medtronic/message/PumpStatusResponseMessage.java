@@ -156,6 +156,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Predictive low suspend
         // TODO - there is more status info in this byte other than just a boolean yes/no
+        // noted: 0x01=high 0x04=before high 0x08=before low 0x0A=low 0x80=suspend 0x92=suspend low
         lowSuspendActive = statusBuffer.get(0x3F) != 0;
 
         // Recent Bolus Wizard
