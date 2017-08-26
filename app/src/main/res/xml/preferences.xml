@@ -19,12 +19,12 @@
             android:switchTextOn="2"
             android:title="Decimals"/>
         <ListPreference
-            android:key="pollInterval"
             android:defaultValue="300000"
-            android:title="@string/preferences_poll_interval"
-            android:summary="%s"
             android:entries="@array/poll_interval"
-            android:entryValues="@array/poll_interval_millis"/>
+            android:entryValues="@array/poll_interval_millis"
+            android:key="pollInterval"
+            android:summary="%s"
+            android:title="@string/preferences_poll_interval" />
         <info.nightscout.android.utils.CustomSwitchPreference
             android:disableDependentsState="false"
             android:key="doublePollOnPumpAway"
@@ -70,6 +70,10 @@
             android:dialogTitle="Enter your Nightscout API secret"
             android:key="@string/preference_api_secret"
             android:title="API Secret"/>
+        <CheckBoxPreference android:title="Treatments"
+            android:key="EnableTreatmentsUpload"
+            android:dependency="@string/preference_enable_rest_upload"
+            android:summary="Enable upload of treatments to Nightscout"/>
         <Preference android:title="scan NS-Autoconfig QR-Code"
             android:key="scanButton"
             android:dependency="@string/preference_enable_rest_upload"
