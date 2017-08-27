@@ -143,7 +143,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         cgmDate = MessageUtils.decodeDateTime((long) statusBuffer.getInt(0x37) & 0x00000000FFFFFFFFL, (long) statusBuffer.getInt(0x3B));
         Log.d(TAG, "original cgm/sgv date: " + cgmDate);
 
-        if (cgmException) {
+        if (sgv >= 0x0300) {
             cgmExceptionType = (byte) (sgv & 0x00FF);
             cgmTrend = PumpStatusEvent.CGM_TREND.NOT_SET;
             if (cgmExceptionType == 0x01) cgmWarmUp = true;
