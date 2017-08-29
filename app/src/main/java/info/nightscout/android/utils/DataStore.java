@@ -3,9 +3,6 @@ package info.nightscout.android.utils;
 
 import java.util.Date;
 
-import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import io.realm.Realm;
-
 /**
  * Created by volker on 30.03.2017.
  */
@@ -13,10 +10,21 @@ import io.realm.Realm;
 public class DataStore {
     private static DataStore instance;
 
-    private PumpStatusEvent lastPumpStatus;
-    private int uploaderBatteryLevel = 0;
-    private int unavailableSGVCount = 0;
+    private Date uploaderStartDate;
+
     private long activePumpMac = 0;
+    private int uploaderBatteryLevel = 0;
+
+    private int pumpCgmNA = 0;
+
+    private int CommsSuccess = 0;
+    private int CommsError = 0;
+    private int CommsConnectError = 0;
+    private int CommsSignalError = 0;
+    private int CommsSgvSuccess = 0;
+    private int PumpLostSensorError = 0;
+    private int PumpClockError = 0;
+    private int PumpBatteryError = 0;
 
     private DataStore() {}
 
@@ -24,25 +32,21 @@ public class DataStore {
         if (DataStore.instance == null) {
             instance = new DataStore();
 
-            // set some initial dummy values
-            PumpStatusEvent dummyStatus = new PumpStatusEvent();
-
-            // bypass setter to avoid dealing with a real Realm object
-            instance.lastPumpStatus = dummyStatus;
+            instance.uploaderStartDate = new Date();
         }
-
         return instance;
     }
 
-    public PumpStatusEvent getLastPumpStatus() {
-        return lastPumpStatus;
+    public Date getUploaderStartDate() {
+        return uploaderStartDate;
     }
 
-    public void setLastPumpStatus(PumpStatusEvent lastPumpStatus) {
-        Realm realm = Realm.getDefaultInstance();
+    public long getActivePumpMac() {
+        return activePumpMac;
+    }
 
-        this.lastPumpStatus = realm.copyFromRealm(lastPumpStatus);
-        if (!realm.isClosed()) realm.close();
+    public void setActivePumpMac(long activePumpMac) {
+        this.activePumpMac = activePumpMac;
     }
 
     public int getUploaderBatteryLevel() {
@@ -53,26 +57,109 @@ public class DataStore {
         this.uploaderBatteryLevel = uploaderBatteryLevel;
     }
 
-    public int getUnavailableSGVCount() {
-        return unavailableSGVCount;
+    public int getPumpCgmNA() {
+        return pumpCgmNA;
     }
 
-    public int incUnavailableSGVCount() {
-        return unavailableSGVCount++;
+    public int incPumpCgmNA() {
+        return pumpCgmNA++;
     }
 
-    public void clearUnavailableSGVCount() {
-        this.unavailableSGVCount = 0;
-    }
-    public void setUnavailableSGVCount(int unavailableSGVCount) {
-        this.unavailableSGVCount = unavailableSGVCount;
+    public void clearPumpCgmNA() {
+        this.pumpCgmNA = 0;
     }
 
-    public long getActivePumpMac() {
-        return activePumpMac;
+    public int getCommsSuccess() {
+        return CommsSuccess;
     }
 
-    public void setActivePumpMac(long activePumpMac) {
-        this.activePumpMac = activePumpMac;
+    public int incCommsSuccess() { return CommsSuccess++; }
+
+    public void clearCommsSuccess() {
+        this.CommsSuccess = 0;
+    }
+
+    public int getCommsError() {
+        return CommsError;
+    }
+
+    public int incCommsError() { return CommsError++; }
+
+    public void clearCommsError() {
+        this.CommsError = 0;
+    }
+
+    public int getCommsConnectError() {
+        return CommsConnectError;
+    }
+
+    public int incCommsConnectError() { return CommsConnectError++; }
+
+    public int decCommsConnectError() {
+        if (CommsConnectError > 0) CommsConnectError--;
+        return CommsConnectError;}
+
+    public void clearCommsConnectError() {
+        this.CommsConnectError = 0;
+    }
+
+    public int getCommsSignalError() {
+        return CommsSignalError;
+    }
+
+    public int incCommsSignalError() { return CommsSignalError++; }
+
+    public int decCommsSignalError() {
+        if (CommsSignalError > 0) CommsSignalError--;
+        return CommsSignalError;}
+
+    public void clearCommsSignalError() {
+        this.CommsSignalError = 0;
+    }
+
+    public int getCommsSgvSuccess() {
+        return CommsSgvSuccess;
+    }
+
+    public int incCommsSgvSuccess() { return CommsSgvSuccess++; }
+
+    public int getPumpLostSensorError() {
+        return PumpLostSensorError;
+    }
+
+    public int incPumpLostSensorError() { return PumpLostSensorError++; }
+
+    public void clearPumpLostSensorError() {
+        this.PumpLostSensorError = 0;
+    }
+
+    public int getPumpClockError() {
+        return PumpClockError;
+    }
+
+    public int incPumpClockError() { return PumpClockError++; }
+
+    public void clearPumpClockError() {
+        this.PumpClockError = 0;
+    }
+
+    public int getPumpBatteryError() {
+        return PumpBatteryError;
+    }
+
+    public int incPumpBatteryError() { return PumpBatteryError++; }
+
+    public void clearPumpBatteryError() {
+        this.PumpBatteryError = 0;
+    }
+
+    public void clearAllCommsErrors() {
+        this.CommsSuccess = 0;
+        this.CommsError = 0;
+        this.CommsConnectError = 0;
+        this.CommsSignalError = 0;
+        this.PumpLostSensorError = 0;
+        this.PumpClockError = 0;
+        this.PumpBatteryError = 0;
     }
 }

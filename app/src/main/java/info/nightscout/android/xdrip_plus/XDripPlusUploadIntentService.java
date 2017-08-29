@@ -61,7 +61,9 @@ public class XDripPlusUploadIntentService extends IntentService {
 
         RealmResults<PumpStatusEvent> all_records = mRealm
                 .where(PumpStatusEvent.class)
-                .notEqualTo("sgv", 0)
+                .equalTo("validSGV", true)
+                .or()
+                .equalTo("validBGL", true)
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
         // get the most recent record and send that
@@ -117,14 +119,14 @@ public class XDripPlusUploadIntentService extends IntentService {
         JSONObject json = new JSONObject();
         json.put("uploaderBattery", DataStore.getInstance().getUploaderBatteryLevel());
         json.put("device", record.getDeviceName());
-        json.put("created_at", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
+        json.put("created_at", ISO8601_DATE_FORMAT.format(record.getEventDate()));
 
         JSONObject pumpInfo = new JSONObject();
-        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getPumpDate()));
+        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getEventDate()));
         pumpInfo.put("reservoir", new BigDecimal(record.getReservoirAmount()).setScale(3, BigDecimal.ROUND_HALF_UP));
 
         JSONObject iob = new JSONObject();
-        iob.put("timestamp", record.getPumpDate());
+        iob.put("timestamp", record.getEventDate());
         iob.put("bolusiob", record.getActiveInsulin());
 
         JSONObject battery = new JSONObject();
@@ -139,25 +141,27 @@ public class XDripPlusUploadIntentService extends IntentService {
     }
 
     private void addSgvEntry(JSONArray entriesArray, PumpStatusEvent pumpRecord) throws Exception {
-        JSONObject json = new JSONObject();
-        // TODO replace with Retrofit/EntriesSerializer
-        json.put("sgv", pumpRecord.getSgv());
-        json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
-        json.put("device", pumpRecord.getDeviceName());
-        json.put("type", "sgv");
-        json.put("date", pumpRecord.getEventDate().getTime());
-        json.put("dateString", pumpRecord.getEventDate());
+        if (pumpRecord.isValidSGV()) {
+            JSONObject json = new JSONObject();
+            // TODO replace with Retrofit/EntriesSerializer
+            json.put("sgv", pumpRecord.getSgv());
+            json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
+            json.put("device", pumpRecord.getDeviceName());
+            json.put("type", "sgv");
+            json.put("date", pumpRecord.getCgmDate().getTime());
+            json.put("dateString", pumpRecord.getCgmDate());
 
-        entriesArray.put(json);
+            entriesArray.put(json);
+        }
     }
 
     private void addMbgEntry(JSONArray entriesArray, PumpStatusEvent pumpRecord) throws Exception {
-        if (pumpRecord.hasRecentBolusWizard()) {
+        if (pumpRecord.isValidBGL()) {
             JSONObject json = new JSONObject();
 
             // TODO replace with Retrofit/EntriesSerializer
             json.put("type", "mbg");
-            json.put("mbg", pumpRecord.getBolusWizardBGL());
+            json.put("mbg", pumpRecord.getRecentBGL());
             json.put("device", pumpRecord.getDeviceName());
             json.put("date", pumpRecord.getEventDate().getTime());
             json.put("dateString", pumpRecord.getEventDate());

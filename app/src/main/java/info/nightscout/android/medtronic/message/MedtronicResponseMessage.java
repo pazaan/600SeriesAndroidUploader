@@ -40,9 +40,17 @@ public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
             // Replace the encrypted bytes by their decrypted equivalent (same block size)
             byte encryptedPayloadSize = payload[56];
 
+            if (encryptedPayloadSize == 0) {
+                throw new EncryptionException( "Could not decrypt Medtronic Message (encryptedPayloadSize == 0)" );
+            }
+
             ByteBuffer encryptedPayload = ByteBuffer.allocate(encryptedPayloadSize);
             encryptedPayload.put(payload, 57, encryptedPayloadSize);
             byte[] decryptedPayload = decrypt(pumpSession.getKey(), pumpSession.getIV(), encryptedPayload.array());
+
+            if (decryptedPayload == null) {
+                throw new EncryptionException( "Could not decrypt Medtronic Message (decryptedPayload == null)" );
+            }
 
             // Now that we have the decrypted payload, rewind the mPayload, and overwrite the bytes
             // TODO - because this messes up the existing CCITT, do we want to have a separate buffer for the decrypted payload?

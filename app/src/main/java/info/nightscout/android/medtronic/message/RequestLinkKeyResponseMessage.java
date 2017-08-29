@@ -1,21 +1,32 @@
 package info.nightscout.android.medtronic.message;
 
+import android.util.Log;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
 /**
  * Created by lgoedhart on 10/05/2016.
  */
 public class RequestLinkKeyResponseMessage extends MedtronicResponseMessage {
+    private static final String TAG = RequestLinkKeyResponseMessage.class.getSimpleName();
 
     private byte[] key;
 
-    protected RequestLinkKeyResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
+    protected RequestLinkKeyResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
+
+        if (this.encode().length < (0x57 - 4)) {
+            // Invalid message. Don't try and parse it
+            // TODO - deal with this more elegantly
+            Log.e(TAG, "Invalid message received for requestLinkKey");
+            throw new UnexpectedMessageException("Invalid message received for requestLinkKey, Contour Next Link is not paired with pump.");
+        }
 
         ByteBuffer infoBuffer = ByteBuffer.allocate(55);
         infoBuffer.order(ByteOrder.BIG_ENDIAN);

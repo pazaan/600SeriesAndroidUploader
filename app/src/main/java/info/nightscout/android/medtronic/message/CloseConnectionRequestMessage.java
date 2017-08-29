@@ -1,7 +1,9 @@
 package info.nightscout.android.medtronic.message;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
+import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
@@ -30,8 +32,7 @@ public class CloseConnectionRequestMessage extends ContourNextLinkBinaryRequestM
             }
         }
 
-        CloseConnectionResponseMessage response = this.getResponse(readMessage(mDevice));
-        return response;
+        return this.getResponse(readMessage(mDevice));
     }
 
     @Override

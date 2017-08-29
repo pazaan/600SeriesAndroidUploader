@@ -1,0 +1,12 @@
+-dontobfuscate
+-verbose
+-dump class_files.txt
+-printseeds seeds.txt
+-printusage unused.txt
+
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+
+-dontwarn okio.**
+-dontwarn org.slf4j.**
+-dontwarn retrofit2.Platform$Java8

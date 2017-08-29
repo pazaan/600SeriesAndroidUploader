@@ -1,0 +1,76 @@
+language: android
+jdk: oraclejdk8
+sudo: false
+
+before_cache:
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+  - $HOME/.gradle/caches/
+  - $HOME/.gradle/wrapper/
+  - $HOME/.android/build-cache
+
+env:
+  global:
+  - EMULATOR_API_LEVEL=14
+  - ANDROID_API_LEVEL=25
+  - ANDROID_BUILD_TOOLS_VERSION=25.0.2
+  - ANDROID_ABI=armeabi-v7a
+  - ADB_INSTALL_TIMEOUT=5
+
+android:
+  components:
+  - tools
+  - platform-tools
+  - tools
+  - build-tools-$ANDROID_BUILD_TOOLS_VERSION
+  - android-$EMULATOR_API_LEVEL
+  - android-$ANDROID_API_LEVEL
+  - extra-android-support
+  - extra-android-m2repository
+  - sys-img-$ANDROID_ABI-android-$ANDROID_API_LEVEL
+  - sys-img-$ANDROID_ABI-android-$EMULATOR_API_LEVEL
+  licenses:
+  - android-sdk-license-.+
+  - android-sdk-preview-license-.+
+
+before_install:
+- openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
+  -in keystore.jks.enc -out keystore.jks -d
+- openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
+  -in fabric.properties.enc -out app/fabric.properties -d
+
+before_script:
+- echo no | android create avd --force -n test -t android-14 --abi armeabi-v7a
+- emulator -avd test -no-skin -no-audio -no-window &
+- android-wait-for-emulator
+- adb shell input keyevent 82 &
+
+script:
+- ./gradlew clean build connectedCheck -PdisablePreDex --stacktrace
+
+before_deploy:
+- mv app/build/outputs/apk/app-release.apk app/build/outputs/apk/600-series-ns-uploader.apk
+
+deploy:
+  skip_cleanup: true
+  provider: releases
+  api_key:
+    secure: "z1DxcbyRZKwIAV6/EeJgKwU/RYDoxnL/IoMtBlGCVe80C/tDfiv9D5DeDhLGQp/MKK8pIec35aj5EMrAacF6sgXzpooXuWNlfNdZJhLnpa8mCr9/Wpr9ll82Wc5EPIPEHf/k0e83gXzPiQuwTdBnHRlNfqylmWcwduA595e5GJZW88IzDJY0fS2p2R+4e6QJgX4Tp7KlLMMirXzTo1FjGUwuD8sM2Eh1imLnwSMO5oeXptUcd4deQqgRVTCgrNVcSRAlQsJNK0sAbkWC54SOLeMM/8CUoKbfpTMlEflpJ2V/n+EiomB2PFZYi7G7rx/Kcpw39thFMUbNSOInrmU3nHqTGACjbkjluufhw92S/05kA/qNDZeMH/8UHrArgpvXZIQbaJPhEbAk4lG5YfMoI1fs+k3kcmbtkOI4+ve/IOPHOuFGVAJZot66t6/kETdD59edS7uVjW+oPD9cSgLG0IAKPzF8jBpPw8olPaviGvjHvJVElg8EhCHMKqrcpix0LbxyC9gNc8Js6Y/JVj7rseApCTREIuSi8ug4mTOVWoLqUKIfMVCGGgKWTVCTbJTADFl+zFiQZj5Y1t+YEWKq2Qz6T36ISVsUBnYTmyu2zUTRBzZKHWS0qgxHZpKppi80pYyw299c99YVeXfb4yGmHLSoO6e80sPjTgaT2DQs6E0="
+  file:
+    - app/build/outputs/apk/600-series-ns-uploader.apk
+  on:
+    repo: pazaan/600SeriesAndroidUploader
+    tags: true
+    # Octokit options
+    prerelease: true
+
+notifications:
+  webhooks:
+    urls:
+    - https://webhooks.gitter.im/e/0283e844d525908106b2
+    on_success: change
+    on_failure: always
+    on_start: false

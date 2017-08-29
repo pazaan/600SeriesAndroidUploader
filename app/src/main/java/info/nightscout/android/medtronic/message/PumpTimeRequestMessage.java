@@ -37,12 +37,15 @@ public class PumpTimeRequestMessage extends MedtronicSendMessageRequestMessage<P
         }
         // Read the 0x80
         byte[] payload = readMessage(mDevice);
+        // if pump sends an unexpected response get the next response as pump can resend or send out of sequence and this avoids comms errors
+        if (payload.length < 0x49) {
+            payload = readMessage(mDevice);
+        }
 
         // Pump sends additional 0x80 message when not using EHSM, lets clear this and any unexpected incoming messages
         clearMessage(mDevice);
 
-        PumpTimeResponseMessage response = this.getResponse(payload);
-        return response;
+        return this.getResponse(payload);
     }
 
     @Override

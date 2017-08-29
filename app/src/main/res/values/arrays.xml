@@ -3,7 +3,6 @@
     <string-array name="poll_interval">
         <item>5 min</item>
         <item>10 min</item>
-        <item>12 min</item>
         <item>15 min</item>
         <item>20 min</item>
         <item>30 min</item>
@@ -14,7 +13,6 @@
     <string-array name="poll_interval_millis">
         <item>300000</item>
         <item>600000</item>
-        <item>720000</item>
         <item>900000</item>
         <item>1200000</item>
         <item>1800000</item>

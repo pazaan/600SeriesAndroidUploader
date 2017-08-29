@@ -129,7 +129,7 @@ public class MedtronicCnlReader {
         RequestLinkKeyResponseMessage response = new RequestLinkKeyRequestMessage(mPumpSession).send(mDevice);
         this.getPumpSession().setKey(response.getKey());
 
-        Log.d(TAG, String.format("Finished requestLinkKey. linkKey = '%s'", this.getPumpSession().getKey()));
+        Log.d(TAG, String.format("Finished requestLinkKey. linkKey = '%s'", (Object) this.getPumpSession().getKey()));
     }
 
     public byte negotiateChannel(byte lastRadioChannel) throws IOException, ChecksumException, TimeoutException, EncryptionException {
@@ -141,6 +141,7 @@ public class MedtronicCnlReader {
 
             if (lastChannel != null) {
                 radioChannels.add(0, lastChannel);
+                radioChannels.add(5, lastChannel);  // retry last used channel again, this allows for transient noise if missed on first attempt when pump is in range
             }
         }
 

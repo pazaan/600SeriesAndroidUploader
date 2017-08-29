@@ -42,12 +42,15 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
         }
         // Read the 0x80
         byte[] payload = readMessage(mDevice);
+        // if pump sends an unexpected response get the next response as pump can resend or send out of sequence and this avoids comms errors
+        if (payload.length < 0x9C) {
+            payload = readMessage(mDevice);
+        }
 
         // clear unexpected incoming messages
         clearMessage(mDevice);
 
-        PumpStatusResponseMessage response = this.getResponse(payload);
-        return response;
+        return this.getResponse(payload);
     }
 
     @Override
