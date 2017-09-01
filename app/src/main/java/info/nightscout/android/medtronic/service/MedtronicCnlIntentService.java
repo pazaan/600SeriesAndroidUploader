@@ -3,8 +3,10 @@ package info.nightscout.android.medtronic.service;
 import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
@@ -54,7 +56,7 @@ public class MedtronicCnlIntentService extends IntentService {
     // Number of seconds before the next expected CGM poll that we will allow uploader comms to start
     public final static long POLL_PRE_GRACE_PERIOD_MS = 45000L;
     // cgm n/a events to trigger anti clash poll timing
-    public final static int POLL_ANTI_CLASH = 3;
+    public final static int POLL_ANTI_CLASH = 1; //3
 
     // TODO - use a message type and insert icon as part of ui status message handling
     public static final String ICON_WARN = "{ion_alert_circled} ";
@@ -97,6 +99,9 @@ public class MedtronicCnlIntentService extends IntentService {
     private Realm realm;
     private long pumpOffset;
 
+    private CnlIntentMessageReceiver cnlIntentMessageReceiver = new CnlIntentMessageReceiver();
+    private boolean commsActive = false;
+
     public MedtronicCnlIntentService() {
         super(MedtronicCnlIntentService.class.getName());
     }
@@ -129,6 +134,8 @@ public class MedtronicCnlIntentService extends IntentService {
 
         Log.d(TAG, "onDestroy called");
 
+        if (commsActive) Log.d(TAG, "onDestroy comms are active!!!");
+
         if (nm != null) {
             nm.cancelAll();
             nm = null;
@@ -138,6 +145,30 @@ public class MedtronicCnlIntentService extends IntentService {
             Log.i(TAG, "Closing serial device...");
             mHidDevice.close();
             mHidDevice = null;
+        }
+
+        unregisterReceiver(cnlIntentMessageReceiver);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.i("LocalService", "Received start id " + startId + ": " + intent);
+
+        IntentFilter cnlIntentMessageFilter = new IntentFilter();
+        cnlIntentMessageFilter.addAction(Constants.ACTION_READ_PUMP);
+        registerReceiver(cnlIntentMessageReceiver, cnlIntentMessageFilter);
+
+        return START_NOT_STICKY;
+    }
+
+    private class CnlIntentMessageReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //           String message = intent.getStringExtra(Constants.ACTION_READ_PUMP);
+            //           Log.i(TAG, "Message Receiver: " + message);
+            sendStatus("* service message");
+            getMyShit();
         }
     }
 
@@ -159,6 +190,11 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 */
 
     protected void onHandleIntent(Intent intent) {
+        MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+    }
+
+
+    protected void getMyShit() {
         Log.d(TAG, "onHandleIntent called");
         try {
             final long timePollStarted = System.currentTimeMillis();
@@ -179,6 +215,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
 
             realm.beginTransaction();
+
+            commsActive = true;
 
             try {
                 sendStatus("Connecting to Contour Next Link");
@@ -381,6 +419,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 Log.e(TAG, "Could not close connection.", e);
                 sendStatus(ICON_WARN + "Could not close connection: " + e.getMessage());
             } finally {
+                commsActive = false;
                 if (realm.isInTransaction()) {
                     // If we didn't commit the transaction, we've run into an error. Let's roll it back
                     realm.cancelTransaction();
@@ -397,7 +436,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
         } finally {
             if (!realm.isClosed()) realm.close();
-            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+//            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
         }
     }
 
@@ -931,5 +970,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         public static final String ACTION_UPDATE_PUMP = "info.nightscout.android.medtronic.UPDATE_PUMP";
 
         public static final String EXTENDED_DATA = "info.nightscout.android.medtronic.service.DATA";
+
+        public static final String ACTION_READ_PUMP = "info.nightscout.android.medtronic.service.READ_PUMP";
+
     }
 }

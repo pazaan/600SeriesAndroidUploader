@@ -22,8 +22,12 @@ public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
     public void onReceive(final Context context, Intent intent) {
         // Start the IntentService
         Log.d(TAG, "Received broadcast message at " + new Date(System.currentTimeMillis()));
-        Intent service = new Intent(context, MedtronicCnlIntentService.class);
-        startWakefulService(context, service);
+//        Intent service = new Intent(context, MedtronicCnlIntentService.class);
+//        startWakefulService(context, service);
+
+        Intent localIntent = new Intent(MedtronicCnlIntentService.Constants.ACTION_READ_PUMP);
+        context.sendBroadcast(localIntent);
+
         MedtronicCnlAlarmManager.restartAlarm();
     }
 }

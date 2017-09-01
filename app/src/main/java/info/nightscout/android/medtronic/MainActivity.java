@@ -386,11 +386,106 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         );
     }
 
+
+
+    @Override
+    protected void onStart() {
+        Log.i(TAG, "onStart called");
+        super.onStart();
+//        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "main OnStart");
+        checkForUpdateBackground(5);
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume called");
+        super.onResume();
+        // Focus status log to most recent on returning to app
+        statusMessageReceiver.changeStatusViewRecent();
+    }
+
+    @Override
+    protected void onStop() {
+        Log.i(TAG, "onStop called");
+        super.onStop();
+//        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "main OnStop");
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.i(TAG, "onDestroy called");
+        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
+        statusMessageReceiver.addMessage("-----------------------------------------------------");
+
+        super.onDestroy();
+
+        cancelDisplayRefreshLoop();
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(statusMessageReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(updatePumpReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
+        unregisterReceiver(usbReceiver);
+        unregisterReceiver(batteryReceiver);
+
+        PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
+
+        if (!storeRealm.isClosed()) {
+            storeRealm.close();
+        }
+        if (!mRealm.isClosed()) {
+            mRealm.close();
+        }
+        if (!mEnableCgmService) {
+            stopCgmService();
+        }
+    }
+
+
+/*
     @Override
     protected void onStart() {
         super.onStart();
         checkForUpdateBackground(5);
     }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume called");
+        super.onResume();
+        // Focus status log to most recent on returning to app
+        statusMessageReceiver.changeStatusViewRecent();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.i(TAG, "onDestroy called");
+        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
+        statusMessageReceiver.addMessage("-----------------------------------------------------");
+
+        super.onDestroy();
+
+        cancelDisplayRefreshLoop();
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(statusMessageReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(updatePumpReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
+        unregisterReceiver(usbReceiver);
+        unregisterReceiver(batteryReceiver);
+
+        PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
+
+        if (!storeRealm.isClosed()) {
+            storeRealm.close();
+        }
+        if (!mRealm.isClosed()) {
+            mRealm.close();
+        }
+        if (!mEnableCgmService) {
+            stopCgmService();
+        }
+    }
+*/
+
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
@@ -533,12 +628,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         // Cancel any existing polling.
         stopCgmService();
+        startService(new Intent(this, MedtronicCnlIntentService.class));
         MedtronicCnlAlarmManager.setAlarm(initialPoll);
     }
 
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
         MedtronicCnlAlarmManager.cancelAlarm();
+        stopService(new Intent(this, MedtronicCnlIntentService.class));
     }
 
     private void showDisconnectionNotification(String title, String message) {
@@ -572,43 +669,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void clearDisconnectionNotification() {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(MainActivity.USB_DISCONNECT_NOFICATION_ID);
-    }
-
-    @Override
-    protected void onResume() {
-        Log.i(TAG, "onResume called");
-        super.onResume();
-        // Focus status log to most recent on returning to app
-        statusMessageReceiver.changeStatusViewRecent();
-    }
-
-    @Override
-    protected void onDestroy() {
-        Log.i(TAG, "onDestroy called");
-        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
-        statusMessageReceiver.addMessage("-----------------------------------------------------");
-
-        super.onDestroy();
-
-        cancelDisplayRefreshLoop();
-
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(statusMessageReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(updatePumpReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
-        unregisterReceiver(usbReceiver);
-        unregisterReceiver(batteryReceiver);
-
-        PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
-
-        if (!storeRealm.isClosed()) {
-            storeRealm.close();
-        }
-        if (!mRealm.isClosed()) {
-            mRealm.close();
-        }
-        if (!mEnableCgmService) {
-            stopCgmService();
-        }
     }
 
     @Override
