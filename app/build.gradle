@@ -69,7 +69,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "info.nightscout.android"
+        applicationId "info.nightscout.medtronic600seriesuploader.alarm"
         minSdkVersion 14
         targetSdkVersion 25
         versionName generateVersionName()

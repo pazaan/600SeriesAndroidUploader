@@ -12,6 +12,8 @@ import io.fabric.sdk.android.Fabric;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
+import com.mikepenz.iconics.Iconics;
+import com.mikepenz.ionicons_typeface_library.Ionicons;
 
 /**
  * Created by lgoedhart on 9/06/2016.
@@ -25,6 +27,8 @@ public class UploaderApplication extends Application {
                 .setFontAttrId(R.attr.fontPath)
                 .build()
         );
+        Iconics.init(getApplicationContext());
+        Iconics.registerFont(new Ionicons());
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
