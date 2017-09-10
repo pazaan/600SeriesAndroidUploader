@@ -7,13 +7,13 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import info.nightscout.android.R;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.DataStore;
+import info.nightscout.android.utils.StatusMessage;
 import io.realm.Realm;
 import io.realm.RealmResults;
 
@@ -23,16 +23,10 @@ public class NightscoutUploadIntentService extends IntentService {
 
     private Context mContext;
     private NightScoutUpload mNightScoutUpload;
+    private StatusMessage statusMessage = StatusMessage.getInstance();
 
     public NightscoutUploadIntentService() {
         super(NightscoutUploadIntentService.class.getName());
-    }
-
-    protected void sendStatus(String message) {
-        Intent localIntent =
-                new Intent(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE)
-                        .putExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA, message);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
 
     @Override
@@ -77,7 +71,7 @@ public class NightscoutUploadIntentService extends IntentService {
                         }
                         mRealm.commitTransaction();
                     } else {
-                        sendStatus(MedtronicCnlIntentService.ICON_WARN + "Uploading to Nightscout returned unsuccessful");
+                        statusMessage.add(MedtronicCnlIntentService.ICON_WARN + "Uploading to Nightscout returned unsuccessful");
                     }
                     Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.size(), System.currentTimeMillis() - start));
                 } else {
@@ -88,7 +82,7 @@ public class NightscoutUploadIntentService extends IntentService {
                     mRealm.commitTransaction();
                 }
             } catch (Exception e) {
-                sendStatus(MedtronicCnlIntentService.ICON_WARN + "Error uploading: " + e.getMessage());
+                statusMessage.add(MedtronicCnlIntentService.ICON_WARN + "Error uploading: " + e.getMessage());
                 Log.e(TAG, "ERROR uploading data!!!!!", e);
             }
         } else {

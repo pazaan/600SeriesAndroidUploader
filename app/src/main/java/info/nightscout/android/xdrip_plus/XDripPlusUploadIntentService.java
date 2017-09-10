@@ -38,14 +38,6 @@ public class XDripPlusUploadIntentService extends IntentService {
         super(XDripPlusUploadIntentService.class.getName());
     }
 
-    // status unused
-    protected void sendStatus(String message) {
-        Intent localIntent =
-                new Intent(info.nightscout.android.xdrip_plus.XDripPlusUploadIntentService.Constants.ACTION_STATUS_MESSAGE)
-                        .putExtra(info.nightscout.android.xdrip_plus.XDripPlusUploadIntentService.Constants.EXTENDED_DATA, message);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();

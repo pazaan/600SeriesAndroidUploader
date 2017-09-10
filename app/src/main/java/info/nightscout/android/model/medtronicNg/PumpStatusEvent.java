@@ -16,7 +16,7 @@ public class PumpStatusEvent extends RealmObject {
 
     private String deviceName;
 
-    // Data from the Medtronic Pump Status message
+    // Data from the Medtronic Pump add message
 
     private byte pumpStatus;
     private byte cgmStatus;

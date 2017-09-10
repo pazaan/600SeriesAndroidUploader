@@ -1,8 +1,5 @@
 package info.nightscout.android.medtronic;
 
-import android.app.AlarmManager;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,20 +10,15 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbManager;
 import android.net.Uri;
-import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.NotificationCompat;
 import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateUtils;
@@ -66,7 +58,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import info.nightscout.android.R;
-import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import info.nightscout.android.medtronic.service.MedtronicCnlAlarmManager;
@@ -74,13 +66,13 @@ import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.utils.ConfigurationStore;
-import info.nightscout.android.utils.DataStore;
+import info.nightscout.android.utils.StatusMessage;
 import info.nightscout.android.utils.StatusStore;
+import io.realm.OrderedCollectionChangeSet;
+import io.realm.OrderedRealmCollectionChangeListener;
 import io.realm.Realm;
-import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
 import io.realm.Sort;
-import io.realm.annotations.RealmModule;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
@@ -88,7 +80,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     public static final int USB_DISCONNECT_NOFICATION_ID = 1;
     public static final float MMOLXLFACTOR = 18.016f;
 
-    private DataStore dataStore = DataStore.getInstance();
     private ConfigurationStore configurationStore = ConfigurationStore.getInstance();
 
     private int chartZoom = 3;
@@ -108,23 +99,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
     private Realm storeRealm;
-    private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
     private UpdatePumpReceiver updatePumpReceiver = new UpdatePumpReceiver();
-    private UsbReceiver usbReceiver = new UsbReceiver();
-    private BatteryReceiver batteryReceiver = new BatteryReceiver();
+    private StatusMessage statusMessage = StatusMessage.getInstance();
 
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
-
-    protected void sendStatus(String message) {
-        Intent localIntent =
-                new Intent(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE)
-                        .putExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA, message);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
-    }
-
-    @RealmModule(classes = {StatusStore.class})
-    private class StoreModule {
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -132,13 +110,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         super.onCreate(savedInstanceState);
 
         mRealm = Realm.getDefaultInstance();
-
-        RealmConfiguration realmConfiguration = new RealmConfiguration.Builder()
-                .name("storerealm.realm")
-                .modules(new StoreModule())
-                .deleteRealmIfMigrationNeeded()
-                .build();
-        storeRealm = Realm.getInstance(realmConfiguration);
+        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
 
         setContentView(R.layout.activity_main);
 
@@ -181,31 +153,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                statusMessageReceiver,
-                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE));
-        LocalBroadcastManager.getInstance(this).registerReceiver(
                 updatePumpReceiver,
                 new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_UPDATE_PUMP));
 
         mEnableCgmService = Eula.show(this, prefs);
-
-        IntentFilter batteryIntentFilter = new IntentFilter();
-        batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
-        batteryIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        batteryIntentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
-        registerReceiver(batteryReceiver, batteryIntentFilter);
-
-        IntentFilter usbIntentFilter = new IntentFilter();
-        usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        usbIntentFilter.addAction(MedtronicCnlIntentService.Constants.ACTION_USB_PERMISSION);
-        registerReceiver(usbReceiver, usbIntentFilter);
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                usbReceiver,
-                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_NO_USB_PERMISSION));
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                usbReceiver,
-                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_USB_REGISTER));
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -278,7 +229,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
                             // It was triggered by user so start reading of data now and not based on last poll.
-                            sendStatus("Requesting poll now...");
+                            statusMessage.add("Requesting poll now...");
                             startCgmService(System.currentTimeMillis() + 1000);
                         } else if (drawerItem.equals(itemClearLog)) {
                             clearLogText();
@@ -299,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mTextViewLogButtonTop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                statusMessageReceiver.changeStatusViewOlder();
+                changeStatusViewOlder();
             }
         });
         mTextViewLogButtonTopRecent = (TextView) findViewById(R.id.button_log_top_recent);
@@ -307,7 +258,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mTextViewLogButtonTopRecent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                statusMessageReceiver.changeStatusViewRecent();
+                changeStatusViewRecent();
             }
         });
 
@@ -316,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mTextViewLogButtonBottom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                statusMessageReceiver.changeStatusViewNewer();
+                changeStatusViewNewer();
             }
         });
         mTextViewLogButtonBottomRecent = (TextView) findViewById(R.id.button_log_bottom_recent);
@@ -324,9 +275,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mTextViewLogButtonBottomRecent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                statusMessageReceiver.changeStatusViewRecent();
+                changeStatusViewRecent();
             }
         });
+        initStatusView();
 
         mChart = (GraphView) findViewById(R.id.chart);
 
@@ -379,11 +331,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         if (isValueX) {
                             return mFormat.format(new Date((long) value));
                         } else {
-                            return MainActivity.strFormatSGV(value);
+                            return strFormatSGV(value);
                         }
                     }
                 }
         );
+
+        initDisplay();
+
     }
 
 
@@ -392,7 +347,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     protected void onStart() {
         Log.i(TAG, "onStart called");
         super.onStart();
-//        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "main OnStart");
+//        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "main OnStart");
         checkForUpdateBackground(5);
     }
 
@@ -401,31 +356,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.i(TAG, "onResume called");
         super.onResume();
         // Focus status log to most recent on returning to app
-        statusMessageReceiver.changeStatusViewRecent();
+        changeStatusViewRecent();
     }
 
     @Override
     protected void onStop() {
         Log.i(TAG, "onStop called");
         super.onStop();
-//        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "main OnStop");
+//        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "main OnStop");
     }
 
     @Override
     protected void onDestroy() {
         Log.i(TAG, "onDestroy called");
-        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
-        statusMessageReceiver.addMessage("-----------------------------------------------------");
+//        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
+//        statusMessage.add("-----------------------------------------------------");
+        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader UI.");
 
         super.onDestroy();
 
         cancelDisplayRefreshLoop();
 
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(statusMessageReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(updatePumpReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
-        unregisterReceiver(usbReceiver);
-        unregisterReceiver(batteryReceiver);
 
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
 
@@ -436,56 +388,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             mRealm.close();
         }
         if (!mEnableCgmService) {
-            stopCgmService();
+//            stopCgmService();
         }
     }
-
-
-/*
-    @Override
-    protected void onStart() {
-        super.onStart();
-        checkForUpdateBackground(5);
-    }
-
-    @Override
-    protected void onResume() {
-        Log.i(TAG, "onResume called");
-        super.onResume();
-        // Focus status log to most recent on returning to app
-        statusMessageReceiver.changeStatusViewRecent();
-    }
-
-    @Override
-    protected void onDestroy() {
-        Log.i(TAG, "onDestroy called");
-        statusMessageReceiver.addMessage(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
-        statusMessageReceiver.addMessage("-----------------------------------------------------");
-
-        super.onDestroy();
-
-        cancelDisplayRefreshLoop();
-
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(statusMessageReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(updatePumpReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
-        unregisterReceiver(usbReceiver);
-        unregisterReceiver(batteryReceiver);
-
-        PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
-
-        if (!storeRealm.isClosed()) {
-            storeRealm.close();
-        }
-        if (!mRealm.isClosed()) {
-            mRealm.close();
-        }
-        if (!mEnableCgmService) {
-            stopCgmService();
-        }
-    }
-*/
-
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
@@ -498,9 +403,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
-
-        // setup self handling alarm receiver
-        MedtronicCnlAlarmManager.setContext(getBaseContext());
     }
 
     @Override
@@ -523,32 +425,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return true;
     }
 
-    private boolean hasUsbPermission() {
-        UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
-        UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlIntentService.USB_VID, MedtronicCnlIntentService.USB_PID);
-
-        return !(usbManager != null && cnlDevice != null && !usbManager.hasPermission(cnlDevice));
-    }
-
-    private void waitForUsbPermission() {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent permissionIntent = new Intent(MedtronicCnlIntentService.Constants.ACTION_USB_PERMISSION);
-        permissionIntent.putExtra(UsbManager.EXTRA_PERMISSION_GRANTED, hasUsbPermission());
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, permissionIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1000L, pendingIntent);
-    }
-
-    private void requestUsbPermission() {
-        if (!hasUsbPermission()) {
-            UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
-            UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlIntentService.USB_VID, MedtronicCnlIntentService.USB_PID);
-            PendingIntent permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(MedtronicCnlIntentService.Constants.ACTION_USB_PERMISSION), 0);
-            usbManager.requestPermission(cnlDevice, permissionIntent);
-        }
-    }
-
     private void clearLogText() {
-        statusMessageReceiver.clearMessages();
+        statusMessage.clear();
     }
 
     private void checkForUpdateNow() {
@@ -568,9 +446,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void statusStartup() {
-        sendStatus(MedtronicCnlIntentService.ICON_HEART + "Nightscout 600 Series Uploader");
-        sendStatus(MedtronicCnlIntentService.ICON_SETTING + "Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
-        sendStatus(MedtronicCnlIntentService.ICON_SETTING + "Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
+        statusMessage.add(MedtronicCnlIntentService.ICON_HEART + "Nightscout 600 Series Uploader");
+        statusMessage.add(MedtronicCnlIntentService.ICON_SETTING + "Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
+        statusMessage.add(MedtronicCnlIntentService.ICON_SETTING + "Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
     }
 
     private void refreshDisplay() {
@@ -616,7 +494,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         startCgmService(start);
 
         if (start - now > 10 * 1000)
-            sendStatus("Next poll due at: " + dateFormatter.format(start));
+            statusMessage.add("Next poll due at: " + dateFormatter.format(start));
     }
 
     private void startCgmService(long initialPoll) {
@@ -627,48 +505,19 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         // Cancel any existing polling.
-        stopCgmService();
-        startService(new Intent(this, MedtronicCnlIntentService.class));
+//        stopCgmService();
+//        startService(new Intent(this, MedtronicCnlIntentService.class));
+
+//        Intent serviceIntent = new Intent(getApplicationContext(), MedtronicCnlIntentService.class);
+//        startService(serviceIntent);
+
+
         MedtronicCnlAlarmManager.setAlarm(initialPoll);
     }
 
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
-        MedtronicCnlAlarmManager.cancelAlarm();
         stopService(new Intent(this, MedtronicCnlIntentService.class));
-    }
-
-    private void showDisconnectionNotification(String title, String message) {
-        NotificationCompat.Builder mBuilder =
-                (NotificationCompat.Builder) new NotificationCompat.Builder(this)
-                        .setPriority(NotificationCompat.PRIORITY_MAX)
-                        .setSmallIcon(R.drawable.ic_launcher) // FIXME - this icon doesn't follow the standards (ie, it has black in it)
-                        .setContentTitle(title)
-                        .setContentText(message)
-                        .setTicker(message)
-                        .setVibrate(new long[]{1000, 1000, 1000, 1000, 1000});
-        // Creates an explicit intent for an Activity in your app
-        Intent resultIntent = new Intent(this, MainActivity.class);
-
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        // Adds the back stack for the Intent (but not the Intent itself)
-        stackBuilder.addParentStack(MainActivity.class);
-        // Adds the Intent that starts the Activity to the top of the stack
-        stackBuilder.addNextIntent(resultIntent);
-        PendingIntent resultPendingIntent =
-                stackBuilder.getPendingIntent(
-                        0,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
-        mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(USB_DISCONNECT_NOFICATION_ID, mBuilder.build());
-    }
-
-    private void clearDisconnectionNotification() {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancel(MainActivity.USB_DISCONNECT_NOFICATION_ID);
     }
 
     @Override
@@ -738,168 +587,130 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private class StatusMessageReceiver extends BroadcastReceiver {
-        private static final int PAGE_SIZE = 300;
-        private static final int FIRSTPAGE_SIZE = 100;
-        private static final int STALE_MS = 72 * 60 * 60 * 1000;
-        private int viewPosition = 0;
-        private int viewPositionSecondPage = 0;
+    private static final int PAGE_SIZE = 300;
+    private static final int FIRSTPAGE_SIZE = 100;
+    private int viewPosition = 0;
+    private int viewPositionSecondPage = 0;
+    RealmResults statusResults;
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String message = intent.getStringExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA);
-            Log.i(TAG, "Message Receiver: " + message);
-            addMessage(message);
-        }
+    private void initStatusView() {
+        statusResults = storeRealm.where(StatusStore.class)
+                .findAllSortedAsync("timestamp", Sort.DESCENDING);
 
-        private void addMessage(final String message) {
-            if (storeRealm.isClosed()) return;
+        statusResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
+            @Override
+            public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+                Log.d(TAG, "status listener triggered");
 
-            storeRealm.executeTransaction(
-                    new Realm.Transaction() {
-                        @Override
-                        public void execute(Realm realm) {
-                            realm.createObject(StatusStore.class).StatusMessage(message);
-                        }
-                    });
-            if (viewPositionSecondPage < FIRSTPAGE_SIZE) viewPositionSecondPage++; // older session log begins on next page
-            if (viewPosition > 0) viewPosition++; // move the view pointer when not on first page to keep aligned
-            showLog();
-
-            if (viewPosition == 0) {
-                // auto scroll status log
-                if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
-                    mScrollView.post(new Runnable() {
-                        public void run() {
-                            mScrollView.fullScroll(View.FOCUS_DOWN);
-                        }
-                    });
+                if (statusResults.size() > 0) {
+                    if (viewPositionSecondPage < FIRSTPAGE_SIZE)
+                        viewPositionSecondPage++; // older session log begins on next page
+                    if (viewPosition > 0)
+                        viewPosition++; // move the view pointer when not on first page to keep aligned
+                } else {
+                    viewPosition = 0;
+                    viewPositionSecondPage = 0;
                 }
-            }
 
-            // remove stale items but not while viewing older paged entries
-            if (viewPosition < viewPositionSecondPage) {
-                final RealmResults results = storeRealm.where(StatusStore.class)
-                        .lessThan("timestamp", System.currentTimeMillis() - STALE_MS)
-                        .findAll();
-                if (results.size() > 0) {
-                    storeRealm.executeTransaction(
-                            new Realm.Transaction() {
-                                @Override
-                                public void execute(Realm realm) {
-                                    results.deleteAllFromRealm();
-                                }
-                            });
-                }
-            }
-        }
+                buildStatusView();
 
-        private void showLog() {
-            RealmResults results = storeRealm.where(StatusStore.class)
-                    .findAllSorted("timestamp", Sort.DESCENDING);
-
-            int remain = results.size() - viewPosition;
-            int segment = remain;
-            if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) segment = viewPositionSecondPage;
-            if (segment > PAGE_SIZE) segment = PAGE_SIZE;
-
-            StringBuilder sb = new StringBuilder();
-            if (segment > 0) {
-                for (int index = viewPosition; index < viewPosition + segment; index++)
-                    sb.insert(0, results.get(index) + (sb.length() > 0 ? "\n" : ""));
-            }
-            mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
-
-            if (viewPosition > 0) {
-                mTextViewLogButtonBottom.setVisibility(View.VISIBLE);
-                mTextViewLogButtonBottomRecent.setVisibility(View.VISIBLE);
-            } else {
-                mTextViewLogButtonBottom.setVisibility(View.GONE);
-                mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
-            }
-            if (remain > segment) {
-                mTextViewLogButtonTop.setVisibility(View.VISIBLE);
-            } else {
-                mTextViewLogButtonTop.setVisibility(View.GONE);
-            }
-            if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-            } else {
-                mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-            }
-        }
-
-        private void clearMessages() {
-            final RealmResults results = storeRealm.where(StatusStore.class)
-                    .findAll();
-            if (results.size() > 0) {
-                storeRealm.executeTransaction(
-                        new Realm.Transaction() {
-                            @Override
-                            public void execute(Realm realm) {
-                                results.deleteAllFromRealm();
+                if (viewPosition == 0) {
+                    // auto scroll status log
+                    if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
+                        mScrollView.post(new Runnable() {
+                            public void run() {
+                                mScrollView.fullScroll(View.FOCUS_DOWN);
                             }
                         });
-            }
-            mTextViewLog.setText("", BufferType.EDITABLE);
-            mTextViewLogButtonTop.setVisibility(View.GONE);
-            mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-            mTextViewLogButtonBottom.setVisibility(View.GONE);
-            mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
-            viewPosition = 0;
-            viewPositionSecondPage = 0;
-        }
+                    }
+                }
 
-        private void changeStatusViewOlder() {
-            if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) {
-                viewPosition = viewPositionSecondPage;
-            } else {
-                viewPosition += PAGE_SIZE;
             }
-            showLog();
-            mScrollView.post(new Runnable() {
-                public void run() {
-                    mScrollView.fullScroll(View.FOCUS_DOWN);
-                    if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                        mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                    } else {
-                        mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-                    }
-                }
-            });
-        }
-        private void changeStatusViewNewer() {
-            viewPosition -= PAGE_SIZE;
-            if (viewPosition < 0) viewPosition = 0;
-            showLog();
-            mScrollView.post(new Runnable() {
-                public void run() {
-                    mScrollView.fullScroll(View.FOCUS_UP);
-                    if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                        mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                    } else {
-                        mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-                    }
-                }
-            });
-        }
-        private void changeStatusViewRecent() {
-            viewPosition = 0;
-            showLog();
-            mScrollView.post(new Runnable() {
-                public void run() {
-                    mScrollView.fullScroll(View.FOCUS_DOWN);
-                    if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                        mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                    } else {
-                        mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-                    }
-                }
-            });
-        }
-
+        });
     }
 
+    private void buildStatusView() {
+        int remain = statusResults.size() - viewPosition;
+        int segment = remain;
+        if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) segment = viewPositionSecondPage;
+        if (segment > PAGE_SIZE) segment = PAGE_SIZE;
+
+        StringBuilder sb = new StringBuilder();
+        if (segment > 0) {
+            for (int index = viewPosition; index < viewPosition + segment; index++)
+                sb.insert(0, statusResults.get(index) + (sb.length() > 0 ? "\n" : ""));
+        }
+        mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
+
+        if (viewPosition > 0) {
+            mTextViewLogButtonBottom.setVisibility(View.VISIBLE);
+            mTextViewLogButtonBottomRecent.setVisibility(View.VISIBLE);
+        } else {
+            mTextViewLogButtonBottom.setVisibility(View.GONE);
+            mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
+        }
+        if (remain > segment) {
+            mTextViewLogButtonTop.setVisibility(View.VISIBLE);
+        } else {
+            mTextViewLogButtonTop.setVisibility(View.GONE);
+        }
+        if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+            mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+        } else {
+            mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+        }
+    }
+
+    private void changeStatusViewOlder() {
+        if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) {
+            viewPosition = viewPositionSecondPage;
+        } else {
+            viewPosition += PAGE_SIZE;
+        }
+        buildStatusView();
+        mScrollView.post(new Runnable() {
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_DOWN);
+                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                } else {
+                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    private void changeStatusViewNewer() {
+        viewPosition -= PAGE_SIZE;
+        if (viewPosition < 0) viewPosition = 0;
+        buildStatusView();
+        mScrollView.post(new Runnable() {
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_UP);
+                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                } else {
+                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    private void changeStatusViewRecent() {
+        viewPosition = 0;
+        buildStatusView();
+        mScrollView.post(new Runnable() {
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_DOWN);
+                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                } else {
+                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+/*
     private class RefreshDisplayRunnable implements Runnable {
         @Override
         public void run() {
@@ -1074,7 +885,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         double sgv = dataPoint.getY();
 
                         StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
-                        sb.append(MainActivity.strFormatSGV(sgv));
+                        sb.append(strFormatSGV(sgv));
                         Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -1126,6 +937,269 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         }
     }
+*/
+
+    private class RefreshDisplayRunnable implements Runnable {
+        @Override
+        public void run() {
+            long nextRun = 60000L;
+
+            if (!mRealm.isClosed()) {
+
+                TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
+                TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
+
+                String timeString = "never";
+                float iob = 0;
+                int battery = 0;
+
+                // most recent sgv status
+                RealmResults<PumpStatusEvent> sgv_results =
+                        mRealm.where(PumpStatusEvent.class)
+                                .equalTo("validSGV", true)
+                                .findAllSorted("cgmDate", Sort.ASCENDING);
+
+                if (sgv_results.size() > 0) {
+                    long sgvtime = sgv_results.last().getCgmDate().getTime();
+                    nextRun = 60000L - (System.currentTimeMillis() - sgvtime) % 60000L;
+                    timeString = (DateUtils.getRelativeTimeSpanString(sgvtime)).toString();
+
+                    // most recent pump status
+                    RealmResults<PumpStatusEvent> pump_results =
+                            mRealm.where(PumpStatusEvent.class)
+                                    .findAllSorted("eventDate", Sort.ASCENDING);
+
+                    if (pump_results.size() > 0) {
+                        iob = pump_results.last().getActiveInsulin();
+                        battery = pump_results.last().getBatteryPercentage();
+                    }
+
+                    textViewBgTime.setText(timeString);
+                    textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", iob));
+
+                    ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
+                    if (batIcon != null) {
+                        switch (battery) {
+                            case 0:
+                                batIcon.setTitle("0%");
+                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+                                break;
+                            case 25:
+                                batIcon.setTitle("25%");
+                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
+                                break;
+                            case 50:
+                                batIcon.setTitle("50%");
+                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
+                                break;
+                            case 75:
+                                batIcon.setTitle("75%");
+                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
+                                break;
+                            case 100:
+                                batIcon.setTitle("100%");
+                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
+                                break;
+                            default:
+                                batIcon.setTitle(getResources().getString(R.string.menu_name_status));
+                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
+                        }
+                    }
+                }
+
+                // Run myself again in 60 (or less) seconds;
+                mUiRefreshHandler.postDelayed(this, nextRun);
+            }
+        }
+    }
+
+    RealmResults displayResults;
+
+    private void initDisplay() {
+
+        displayResults = mRealm.where(PumpStatusEvent.class)
+                .equalTo("validSGV", true)
+                .findAllSortedAsync("cgmDate", Sort.ASCENDING);
+
+        displayResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
+            @Override
+            public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+                Log.d(TAG, "display listener triggered");
+
+                goDisplay();
+            }
+        });
+    }
+
+    private void goDisplay() {
+        RealmResults<PumpStatusEvent> realm = displayResults;
+
+        TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
+        TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
+        TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
+        if (configurationStore.isMmolxl()) {
+            textViewUnits.setText(R.string.text_unit_mmolxl);
+        } else {
+            textViewUnits.setText(R.string.text_unit_mgxdl);
+        }
+        TextView textViewTrend = (TextView) findViewById(R.id.textview_trend);
+
+        String timeString = "never";
+        String sgvString = "\u2014"; // &mdash;
+        String trendString = "{ion_ios_minus_empty}";
+        int trendRotation = 0;
+
+        // most recent sgv status
+
+        if (realm.size() > 0) {
+            long sgvtime = realm.last().getCgmDate().getTime();
+            timeString = (DateUtils.getRelativeTimeSpanString(sgvtime)).toString();
+            sgvString = MainActivity.strFormatSGV(realm.last().getSgv());
+            if (configurationStore.isMmolxl()) {
+                Log.d(TAG, sgvString + " mmol/L");
+            } else {
+                Log.d(TAG, sgvString + " mg/dL");
+            }
+
+            switch (realm.last().getCgmTrend()) {
+                case DOUBLE_UP:
+                    trendString = "{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}";
+                    break;
+                case SINGLE_UP:
+                    trendString = "{ion_ios_arrow_thin_up}";
+                    break;
+                case FOURTY_FIVE_UP:
+                    trendRotation = -45;
+                    trendString = "{ion_ios_arrow_thin_right}";
+                    break;
+                case FLAT:
+                    trendString = "{ion_ios_arrow_thin_right}";
+                    break;
+                case FOURTY_FIVE_DOWN:
+                    trendRotation = 45;
+                    trendString = "{ion_ios_arrow_thin_right}";
+                    break;
+                case SINGLE_DOWN:
+                    trendString = "{ion_ios_arrow_thin_down}";
+                    break;
+                case DOUBLE_DOWN:
+                    trendString = "{ion_ios_arrow_thin_down}{ion_ios_arrow_thin_down}";
+                    break;
+                default:
+                    trendString = "{ion_ios_minus_empty}";
+                    break;
+            }
+
+            updateChart(realm.where()
+                    .greaterThan("cgmDate",  new Date(sgvtime - 1000 * 60 * 60 * 24))
+                    .findAllSorted("cgmDate", Sort.ASCENDING));
+        }
+
+        textViewBg.setText(sgvString);
+        textViewBgTime.setText(timeString);
+        textViewTrend.setText(trendString);
+        textViewTrend.setRotation(trendRotation);
+    }
+
+    private void updateChart(RealmResults<PumpStatusEvent> results) {
+
+        mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
+
+        int size = results.size();
+        if (size == 0) {
+            final long now = System.currentTimeMillis(),
+                    left = now - chartZoom * 60 * 60 * 1000;
+
+            mChart.getViewport().setXAxisBoundsManual(true);
+            mChart.getViewport().setMaxX(now);
+            mChart.getViewport().setMinX(left);
+
+            mChart.getViewport().setYAxisBoundsManual(true);
+            mChart.getViewport().setMinY(80);
+            mChart.getViewport().setMaxY(120);
+
+            mChart.postInvalidate();
+            return;
+        }
+
+        DataPoint[] entries = new DataPoint[size];
+
+        int pos = 0;
+        for (PumpStatusEvent pumpStatus : results) {
+            // turn your data into Entry objects
+            entries[pos++] = new DataPoint(pumpStatus.getCgmDate(), (double) pumpStatus.getSgv());
+        }
+
+        if (mChart.getSeries().size() == 0) {
+//                long now = System.currentTimeMillis();
+//                entries = new DataPoint[1000];
+//                int j = 0;
+//                for(long i = now - 24*60*60*1000; i < now - 30*60*1000; i+= 5*60*1000) {
+//                    entries[j++] = new DataPoint(i, (float) (Math.random()*200 + 89));
+//                }
+//                entries = Arrays.copyOfRange(entries, 0, j);
+
+            PointsGraphSeries sgvSeries = new PointsGraphSeries(entries);
+
+            sgvSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
+                DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.MEDIUM);
+
+                @Override
+                public void onTap(Series series, DataPointInterface dataPoint) {
+                    double sgv = dataPoint.getY();
+
+                    StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
+                    sb.append(strFormatSGV(sgv));
+                    Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            sgvSeries.setCustomShape(new PointsGraphSeries.CustomShape() {
+                @Override
+                public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
+                    double sgv = dataPoint.getY();
+                    if (sgv < 80)
+                        paint.setColor(Color.RED);
+                    else if (sgv <= 180)
+                        paint.setColor(Color.GREEN);
+                    else if (sgv <= 260)
+                        paint.setColor(Color.YELLOW);
+                    else
+                        paint.setColor(Color.RED);
+                    float dotSize = 3.0f;
+                    if (chartZoom == 3) dotSize = 2.0f;
+                    else if (chartZoom == 6) dotSize = 2.0f;
+                    else if (chartZoom == 12) dotSize = 1.65f;
+                    else if (chartZoom == 24) dotSize = 1.25f;
+                    canvas.drawCircle(x, y, dipToPixels(getApplicationContext(), dotSize), paint);
+                }
+            });
+
+            mChart.getViewport().setYAxisBoundsManual(false);
+            mChart.addSeries(sgvSeries);
+        } else {
+            if (entries.length > 0) {
+                ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
+            }
+        }
+
+        // TODO - chart viewport needs rework as currently using a workaround to handle updating
+
+        // set viewport to latest SGV
+        long lastSGVTimestamp = (long) mChart.getSeries().get(0).getHighestValueX();
+
+        long min_x = (((lastSGVTimestamp + 150000 - (chartZoom * 60 * 60 * 1000)) / 60000) * 60000);
+        long max_x = lastSGVTimestamp + 90000;
+
+        if (!hasZoomedChart) {
+            mChart.getViewport().setMinX(min_x);
+            mChart.getViewport().setMaxX(max_x);
+        }
+        if (entries.length > 0) {
+            ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
+        }
+
+    }
 
     private static float dipToPixels(Context context, float dipValue) {
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
@@ -1139,65 +1213,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         @Override
         public void onReceive(Context context, Intent intent) {
             refreshDisplay(500);
-        }
-    }
-
-    private class UsbReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            // TODO move this somewhere else ... wherever it belongs
-            // realm might be closed ... sometimes occurs when USB is disconnected and replugged ...
-            if (mRealm.isClosed()) mRealm = Realm.getDefaultInstance();
-            String action = intent.getAction();
-            if (MedtronicCnlIntentService.Constants.ACTION_USB_PERMISSION.equals(action)) {
-                boolean permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
-                if (permissionGranted) {
-                    Log.d(TAG, "Got permission to access USB");
-                    sendStatus(MedtronicCnlIntentService.ICON_INFO + "Got permission to access USB.");
-                    startCgmService();
-                } else {
-                    Log.d(TAG, "Still no permission for USB. Waiting...");
-                    waitForUsbPermission();
-                }
-            } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                Log.d(TAG, "USB plugged in");
-                if (mEnableCgmService) {
-                    clearDisconnectionNotification();
-                }
-                dataStore.clearAllCommsErrors();
-                sendStatus(MedtronicCnlIntentService.ICON_INFO + "Contour Next Link plugged in.");
-                if (hasUsbPermission()) {
-                    // Give the USB a little time to warm up first
-                    startCgmServiceDelayed(MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
-                } else {
-                    Log.d(TAG, "No permission for USB. Waiting.");
-                    sendStatus(MedtronicCnlIntentService.ICON_INFO + "Waiting for USB permission.");
-                    waitForUsbPermission();
-                }
-            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                Log.d(TAG, "USB unplugged");
-                if (mEnableCgmService) {
-                    showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
-                    sendStatus(MedtronicCnlIntentService.ICON_WARN + "USB error. Contour Next Link unplugged.");
-                }
-            } else if (MedtronicCnlIntentService.Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
-                Log.d(TAG, "No permission to read the USB device.");
-                sendStatus(MedtronicCnlIntentService.ICON_INFO + "Requesting USB permission.");
-                requestUsbPermission();
-            } else if (MedtronicCnlIntentService.Constants.ACTION_USB_REGISTER.equals(action)) {
-                openUsbRegistration();
-            }
-        }
-    }
-
-    private class BatteryReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context arg0, Intent arg1) {
-            if (arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_LOW)
-                    || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)
-                    || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_OKAY)) {
-                dataStore.setUploaderBatteryLevel(arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
-            }
         }
     }
 

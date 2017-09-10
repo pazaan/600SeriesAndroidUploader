@@ -1,5 +1,6 @@
 package info.nightscout.android.medtronic.service;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.WakefulBroadcastReceiver;
@@ -10,7 +11,8 @@ import java.util.Date;
 /**
  * Created by lgoedhart on 14/07/2016.
  */
-public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
+//public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
+public class MedtronicCnlAlarmReceiver extends BroadcastReceiver {
     private static final String TAG = MedtronicCnlAlarmReceiver.class.getSimpleName();
     private static final int ALARM_ID = 102; // Alarm id
 

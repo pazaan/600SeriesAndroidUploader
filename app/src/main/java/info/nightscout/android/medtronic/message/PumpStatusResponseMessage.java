@@ -21,7 +21,7 @@ import info.nightscout.android.utils.HexDump;
 public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessage {
     private static final String TAG = PumpStatusResponseMessage.class.getSimpleName();
 
-    // Data from the Medtronic Pump Status message
+    // Data from the Medtronic Pump add message
 
     private byte pumpStatus;
     private byte cgmStatus;
@@ -86,7 +86,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             Log.d(TAG, "PAYLOAD: " + outputString);
         }
 
-        // Status Flags
+        // add Flags
         pumpStatus = statusBuffer.get(0x03);
         cgmStatus = statusBuffer.get(0x41);
 
@@ -207,7 +207,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
      */
     public void updatePumpRecord(PumpStatusEvent pumpRecord) {
 
-        // Status Flags
+        // add Flags
         pumpRecord.setPumpStatus(pumpStatus);
         pumpRecord.setCgmStatus(cgmStatus);
 
