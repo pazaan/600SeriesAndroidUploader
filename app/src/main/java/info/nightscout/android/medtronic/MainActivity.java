@@ -1,10 +1,8 @@
 package info.nightscout.android.medtronic;
 
 import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.graphics.Canvas;
@@ -17,7 +15,6 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.menu.ActionMenuItemView;
 import android.support.v7.widget.Toolbar;
@@ -99,14 +96,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
     private Realm mRealm;
     private Realm storeRealm;
-    private UpdatePumpReceiver updatePumpReceiver = new UpdatePumpReceiver();
     private StatusMessage statusMessage = StatusMessage.getInstance();
 
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.i(TAG, "onCreate called");
+        Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
 
         mRealm = Realm.getDefaultInstance();
@@ -151,10 +147,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             }
         }
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                updatePumpReceiver,
-                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_UPDATE_PUMP));
 
         mEnableCgmService = Eula.show(this, prefs);
 
@@ -232,7 +224,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             statusMessage.add("Requesting poll now...");
                             startCgmService(System.currentTimeMillis() + 1000);
                         } else if (drawerItem.equals(itemClearLog)) {
-                            clearLogText();
+                            statusMessage.clear();
                         } else if (drawerItem.equals(itemCheckForUpdate)) {
                             checkForUpdateNow();
                         }
@@ -278,7 +270,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 changeStatusViewRecent();
             }
         });
-        initStatusView();
 
         mChart = (GraphView) findViewById(R.id.chart);
 
@@ -337,47 +328,41 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
         );
 
-        initDisplay();
-
     }
-
-
 
     @Override
     protected void onStart() {
-        Log.i(TAG, "onStart called");
+        Log.d(TAG, "onStart called");
         super.onStart();
-//        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "main OnStart");
         checkForUpdateBackground(5);
+        initStatusView();
+        initDisplay();
     }
 
     @Override
     protected void onResume() {
-        Log.i(TAG, "onResume called");
+        Log.d(TAG, "onResume called");
         super.onResume();
         // Focus status log to most recent on returning to app
-        changeStatusViewRecent();
+//        changeStatusViewRecent();
     }
 
     @Override
     protected void onStop() {
-        Log.i(TAG, "onStop called");
+        Log.d(TAG, "onStop called");
         super.onStop();
-//        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "main OnStop");
+        stopStatusView();
+        stopDisplay();
     }
 
     @Override
     protected void onDestroy() {
-        Log.i(TAG, "onDestroy called");
+        Log.d(TAG, "onDestroy called");
 //        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
 //        statusMessage.add("-----------------------------------------------------");
         statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader UI.");
 
         super.onDestroy();
-
-        cancelDisplayRefreshLoop();
-
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(updatePumpReceiver);
 
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
 
@@ -394,19 +379,21 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onPostCreate called");
         super.onPostCreate(savedInstanceState);
-        startDisplayRefreshLoop();
         statusStartup();
         startCgmService();
     }
 
     @Override
     protected void attachBaseContext(Context newBase) {
+        Log.d(TAG, "attachBaseContext called");
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(TAG, "onCreateOptionsMenu called");
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
 
@@ -423,10 +410,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 break;
         }
         return true;
-    }
-
-    private void clearLogText() {
-        statusMessage.clear();
     }
 
     private void checkForUpdateNow() {
@@ -446,26 +429,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void statusStartup() {
+        statusMessage.resetCounter();
         statusMessage.add(MedtronicCnlIntentService.ICON_HEART + "Nightscout 600 Series Uploader");
         statusMessage.add(MedtronicCnlIntentService.ICON_SETTING + "Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
         statusMessage.add(MedtronicCnlIntentService.ICON_SETTING + "Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
-    }
-
-    private void refreshDisplay() {
-        cancelDisplayRefreshLoop();
-        mUiRefreshHandler.post(mUiRefreshRunnable);
-    }
-    private void refreshDisplay(int delay) {
-        cancelDisplayRefreshLoop();
-        mUiRefreshHandler.postDelayed(mUiRefreshRunnable, delay);
-    }
-
-    private void startDisplayRefreshLoop() {
-        refreshDisplay(50);
-    }
-
-    private void cancelDisplayRefreshLoop() {
-        mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
     }
 
     private void startCgmService() {
@@ -546,7 +513,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         } else if (key.equals("chartZoom")) {
             chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
             hasZoomedChart = false;
-            refreshDisplay();
         }
     }
 
@@ -587,455 +553,49 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private static final int PAGE_SIZE = 300;
-    private static final int FIRSTPAGE_SIZE = 100;
-    private int viewPosition = 0;
-    private int viewPositionSecondPage = 0;
-    RealmResults statusResults;
 
-    private void initStatusView() {
-        statusResults = storeRealm.where(StatusStore.class)
-                .findAllSortedAsync("timestamp", Sort.DESCENDING);
 
-        statusResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
-            @Override
-            public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
-                Log.d(TAG, "status listener triggered");
 
-                if (statusResults.size() > 0) {
-                    if (viewPositionSecondPage < FIRSTPAGE_SIZE)
-                        viewPositionSecondPage++; // older session log begins on next page
-                    if (viewPosition > 0)
-                        viewPosition++; // move the view pointer when not on first page to keep aligned
-                } else {
-                    viewPosition = 0;
-                    viewPositionSecondPage = 0;
-                }
-
-                buildStatusView();
-
-                if (viewPosition == 0) {
-                    // auto scroll status log
-                    if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
-                        mScrollView.post(new Runnable() {
-                            public void run() {
-                                mScrollView.fullScroll(View.FOCUS_DOWN);
-                            }
-                        });
-                    }
-                }
-
-            }
-        });
-    }
-
-    private void buildStatusView() {
-        int remain = statusResults.size() - viewPosition;
-        int segment = remain;
-        if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) segment = viewPositionSecondPage;
-        if (segment > PAGE_SIZE) segment = PAGE_SIZE;
-
-        StringBuilder sb = new StringBuilder();
-        if (segment > 0) {
-            for (int index = viewPosition; index < viewPosition + segment; index++)
-                sb.insert(0, statusResults.get(index) + (sb.length() > 0 ? "\n" : ""));
-        }
-        mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
-
-        if (viewPosition > 0) {
-            mTextViewLogButtonBottom.setVisibility(View.VISIBLE);
-            mTextViewLogButtonBottomRecent.setVisibility(View.VISIBLE);
-        } else {
-            mTextViewLogButtonBottom.setVisibility(View.GONE);
-            mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
-        }
-        if (remain > segment) {
-            mTextViewLogButtonTop.setVisibility(View.VISIBLE);
-        } else {
-            mTextViewLogButtonTop.setVisibility(View.GONE);
-        }
-        if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-            mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-        } else {
-            mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-        }
-    }
-
-    private void changeStatusViewOlder() {
-        if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) {
-            viewPosition = viewPositionSecondPage;
-        } else {
-            viewPosition += PAGE_SIZE;
-        }
-        buildStatusView();
-        mScrollView.post(new Runnable() {
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                } else {
-                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-                }
-            }
-        });
-    }
-
-    private void changeStatusViewNewer() {
-        viewPosition -= PAGE_SIZE;
-        if (viewPosition < 0) viewPosition = 0;
-        buildStatusView();
-        mScrollView.post(new Runnable() {
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_UP);
-                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                } else {
-                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-                }
-            }
-        });
-    }
-
-    private void changeStatusViewRecent() {
-        viewPosition = 0;
-        buildStatusView();
-        mScrollView.post(new Runnable() {
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                } else {
-                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-                }
-            }
-        });
-    }
-/*
-    private class RefreshDisplayRunnable implements Runnable {
-        @Override
-        public void run() {
-            long nextRun = 60000L;
-
-            if (!mRealm.isClosed()) {
-
-                TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
-                TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
-                TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
-                if (configurationStore.isMmolxl()) {
-                    textViewUnits.setText(R.string.text_unit_mmolxl);
-                } else {
-                    textViewUnits.setText(R.string.text_unit_mgxdl);
-                }
-                TextView textViewTrend = (TextView) findViewById(R.id.textview_trend);
-                TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
-
-                String timeString = "never";
-                String sgvString = "\u2014"; // &mdash;
-                String trendString = "{ion_ios_minus_empty}";
-                int trendRotation = 0;
-                float iob = 0;
-                int battery = 0;
-
-                // most recent sgv status
-                RealmResults<PumpStatusEvent> sgv_results =
-                        mRealm.where(PumpStatusEvent.class)
-                                .equalTo("validSGV", true)
-                                .findAllSorted("cgmDate", Sort.ASCENDING);
-
-                if (sgv_results.size() > 0) {
-                    long sgvtime = sgv_results.last().getCgmDate().getTime();
-                    nextRun = 60000L - (System.currentTimeMillis() - sgvtime) % 60000L;
-                    timeString = (DateUtils.getRelativeTimeSpanString(sgvtime)).toString();
-                    sgvString = MainActivity.strFormatSGV(sgv_results.last().getSgv());
-                    if (configurationStore.isMmolxl()) {
-                        Log.d(TAG, sgvString + " mmol/L");
-                    } else {
-                        Log.d(TAG, sgvString + " mg/dL");
-                    }
-
-                    switch (sgv_results.last().getCgmTrend()) {
-                        case DOUBLE_UP:
-                            trendString = "{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}";
-                            break;
-                        case SINGLE_UP:
-                            trendString = "{ion_ios_arrow_thin_up}";
-                            break;
-                        case FOURTY_FIVE_UP:
-                            trendRotation = -45;
-                            trendString = "{ion_ios_arrow_thin_right}";
-                            break;
-                        case FLAT:
-                            trendString = "{ion_ios_arrow_thin_right}";
-                            break;
-                        case FOURTY_FIVE_DOWN:
-                            trendRotation = 45;
-                            trendString = "{ion_ios_arrow_thin_right}";
-                            break;
-                        case SINGLE_DOWN:
-                            trendString = "{ion_ios_arrow_thin_down}";
-                            break;
-                        case DOUBLE_DOWN:
-                            trendString = "{ion_ios_arrow_thin_down}{ion_ios_arrow_thin_down}";
-                            break;
-                        default:
-                            trendString = "{ion_ios_minus_empty}";
-                            break;
-                    }
-
-                    updateChart(sgv_results.where()
-                            .greaterThan("cgmDate",  new Date(sgvtime - 1000 * 60 * 60 * 24))
-                            .findAllSorted("cgmDate", Sort.ASCENDING));
-                }
-
-                // most recent pump status
-                RealmResults<PumpStatusEvent> pump_results =
-                        mRealm.where(PumpStatusEvent.class)
-                                .findAllSorted("eventDate", Sort.ASCENDING);
-
-                if (pump_results.size() > 0) {
-                    iob = pump_results.last().getActiveInsulin();
-                    battery = pump_results.last().getBatteryPercentage();
-                }
-
-                textViewBg.setText(sgvString);
-                textViewBgTime.setText(timeString);
-                textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", iob));
-                textViewTrend.setText(trendString);
-                textViewTrend.setRotation(trendRotation);
-
-                ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
-                if (batIcon != null) {
-                    switch (battery) {
-                        case 0:
-                            batIcon.setTitle("0%");
-                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
-                            break;
-                        case 25:
-                            batIcon.setTitle("25%");
-                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
-                            break;
-                        case 50:
-                            batIcon.setTitle("50%");
-                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
-                            break;
-                        case 75:
-                            batIcon.setTitle("75%");
-                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
-                            break;
-                        case 100:
-                            batIcon.setTitle("100%");
-                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
-                            break;
-                        default:
-                            batIcon.setTitle(getResources().getString(R.string.menu_name_status));
-                            batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
-                    }
-                }
-            }
-
-            // Run myself again in 60 (or less) seconds;
-            mUiRefreshHandler.postDelayed(this, nextRun);
-        }
-
-        private void updateChart(RealmResults<PumpStatusEvent> results) {
-
-            mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
-
-            int size = results.size();
-            if (size == 0) {
-                final long now = System.currentTimeMillis(),
-                        left = now - chartZoom * 60 * 60 * 1000;
-
-                mChart.getViewport().setXAxisBoundsManual(true);
-                mChart.getViewport().setMaxX(now);
-                mChart.getViewport().setMinX(left);
-
-                mChart.getViewport().setYAxisBoundsManual(true);
-                mChart.getViewport().setMinY(80);
-                mChart.getViewport().setMaxY(120);
-
-                mChart.postInvalidate();
-                return;
-            }
-
-            DataPoint[] entries = new DataPoint[size];
-
-            int pos = 0;
-            for (PumpStatusEvent pumpStatus : results) {
-                // turn your data into Entry objects
-                entries[pos++] = new DataPoint(pumpStatus.getCgmDate(), (double) pumpStatus.getSgv());
-            }
-
-            if (mChart.getSeries().size() == 0) {
-//                long now = System.currentTimeMillis();
-//                entries = new DataPoint[1000];
-//                int j = 0;
-//                for(long i = now - 24*60*60*1000; i < now - 30*60*1000; i+= 5*60*1000) {
-//                    entries[j++] = new DataPoint(i, (float) (Math.random()*200 + 89));
-//                }
-//                entries = Arrays.copyOfRange(entries, 0, j);
-
-                PointsGraphSeries sgvSeries = new PointsGraphSeries(entries);
-
-                sgvSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
-                    DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.MEDIUM);
-
-                    @Override
-                    public void onTap(Series series, DataPointInterface dataPoint) {
-                        double sgv = dataPoint.getY();
-
-                        StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
-                        sb.append(strFormatSGV(sgv));
-                        Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-                sgvSeries.setCustomShape(new PointsGraphSeries.CustomShape() {
-                    @Override
-                    public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
-                        double sgv = dataPoint.getY();
-                        if (sgv < 80)
-                            paint.setColor(Color.RED);
-                        else if (sgv <= 180)
-                            paint.setColor(Color.GREEN);
-                        else if (sgv <= 260)
-                            paint.setColor(Color.YELLOW);
-                        else
-                            paint.setColor(Color.RED);
-                        float dotSize = 3.0f;
-                        if (chartZoom == 3) dotSize = 2.0f;
-                        else if (chartZoom == 6) dotSize = 2.0f;
-                        else if (chartZoom == 12) dotSize = 1.65f;
-                        else if (chartZoom == 24) dotSize = 1.25f;
-                        canvas.drawCircle(x, y, dipToPixels(getApplicationContext(), dotSize), paint);
-                    }
-                });
-
-                mChart.getViewport().setYAxisBoundsManual(false);
-                mChart.addSeries(sgvSeries);
-            } else {
-                if (entries.length > 0) {
-                    ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
-                }
-            }
-
-            // TODO - chart viewport needs rework as currently using a workaround to handle updating
-
-            // set viewport to latest SGV
-            long lastSGVTimestamp = (long) mChart.getSeries().get(0).getHighestValueX();
-
-            long min_x = (((lastSGVTimestamp + 150000 - (chartZoom * 60 * 60 * 1000)) / 60000) * 60000);
-            long max_x = lastSGVTimestamp + 90000;
-
-            if (!hasZoomedChart) {
-                mChart.getViewport().setMinX(min_x);
-                mChart.getViewport().setMaxX(max_x);
-            }
-            if (entries.length > 0) {
-                ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
-            }
-
-        }
-    }
-*/
-
-    private class RefreshDisplayRunnable implements Runnable {
-        @Override
-        public void run() {
-            long nextRun = 60000L;
-
-            if (!mRealm.isClosed()) {
-
-                TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
-                TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
-
-                String timeString = "never";
-                float iob = 0;
-                int battery = 0;
-
-                // most recent sgv status
-                RealmResults<PumpStatusEvent> sgv_results =
-                        mRealm.where(PumpStatusEvent.class)
-                                .equalTo("validSGV", true)
-                                .findAllSorted("cgmDate", Sort.ASCENDING);
-
-                if (sgv_results.size() > 0) {
-                    long sgvtime = sgv_results.last().getCgmDate().getTime();
-                    nextRun = 60000L - (System.currentTimeMillis() - sgvtime) % 60000L;
-                    timeString = (DateUtils.getRelativeTimeSpanString(sgvtime)).toString();
-
-                    // most recent pump status
-                    RealmResults<PumpStatusEvent> pump_results =
-                            mRealm.where(PumpStatusEvent.class)
-                                    .findAllSorted("eventDate", Sort.ASCENDING);
-
-                    if (pump_results.size() > 0) {
-                        iob = pump_results.last().getActiveInsulin();
-                        battery = pump_results.last().getBatteryPercentage();
-                    }
-
-                    textViewBgTime.setText(timeString);
-                    textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", iob));
-
-                    ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
-                    if (batIcon != null) {
-                        switch (battery) {
-                            case 0:
-                                batIcon.setTitle("0%");
-                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
-                                break;
-                            case 25:
-                                batIcon.setTitle("25%");
-                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
-                                break;
-                            case 50:
-                                batIcon.setTitle("50%");
-                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
-                                break;
-                            case 75:
-                                batIcon.setTitle("75%");
-                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
-                                break;
-                            case 100:
-                                batIcon.setTitle("100%");
-                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
-                                break;
-                            default:
-                                batIcon.setTitle(getResources().getString(R.string.menu_name_status));
-                                batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
-                        }
-                    }
-                }
-
-                // Run myself again in 60 (or less) seconds;
-                mUiRefreshHandler.postDelayed(this, nextRun);
-            }
-        }
-    }
-
-    RealmResults displayResults;
+    private RealmResults displayResults;
+    private long timeLastSGV;
 
     private void initDisplay() {
+        Log.d(TAG, "initDisplay");
 
         displayResults = mRealm.where(PumpStatusEvent.class)
-                .equalTo("validSGV", true)
-                .findAllSortedAsync("cgmDate", Sort.ASCENDING);
+                .findAllSortedAsync("eventDate", Sort.ASCENDING);
 
         displayResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
             @Override
             public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
-                Log.d(TAG, "display listener triggered");
-
-                goDisplay();
+                if (changeSet != null) {
+                    Log.d(TAG, "display listener triggered");
+                    if (changeSet.getInsertions().length > 0) {
+                        refreshDisplay();
+                    }
+                }
             }
         });
+
+        refreshDisplay();
     }
 
-    private void goDisplay() {
-        RealmResults<PumpStatusEvent> realm = displayResults;
+    private void stopDisplay() {
+        Log.d(TAG, "stopDisplay");
+        displayResults.removeAllChangeListeners();
+        displayResults = null;
+
+        mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
+    }
+
+    private void refreshDisplay() {
+        Log.d(TAG, "refreshDisplay");
+
+        mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
+
+        timeLastSGV = 0;
 
         TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
-        TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
         TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
         if (configurationStore.isMmolxl()) {
             textViewUnits.setText(R.string.text_unit_mmolxl);
@@ -1043,25 +603,25 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             textViewUnits.setText(R.string.text_unit_mgxdl);
         }
         TextView textViewTrend = (TextView) findViewById(R.id.textview_trend);
+        TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
 
-        String timeString = "never";
         String sgvString = "\u2014"; // &mdash;
         String trendString = "{ion_ios_minus_empty}";
         int trendRotation = 0;
+        float iob = 0;
+        int battery = 0;
 
         // most recent sgv status
+        RealmResults<PumpStatusEvent> sgv_results =
+                mRealm.where(PumpStatusEvent.class)
+                        .equalTo("validSGV", true)
+                        .findAllSorted("cgmDate", Sort.ASCENDING);
 
-        if (realm.size() > 0) {
-            long sgvtime = realm.last().getCgmDate().getTime();
-            timeString = (DateUtils.getRelativeTimeSpanString(sgvtime)).toString();
-            sgvString = MainActivity.strFormatSGV(realm.last().getSgv());
-            if (configurationStore.isMmolxl()) {
-                Log.d(TAG, sgvString + " mmol/L");
-            } else {
-                Log.d(TAG, sgvString + " mg/dL");
-            }
+        if (sgv_results.size() > 0) {
+            timeLastSGV = sgv_results.last().getCgmDate().getTime();
+            sgvString = MainActivity.strFormatSGV(sgv_results.last().getSgv());
 
-            switch (realm.last().getCgmTrend()) {
+            switch (sgv_results.last().getCgmTrend()) {
                 case DOUBLE_UP:
                     trendString = "{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}";
                     break;
@@ -1090,15 +650,77 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     break;
             }
 
-            updateChart(realm.where()
-                    .greaterThan("cgmDate",  new Date(sgvtime - 1000 * 60 * 60 * 24))
+            updateChart(sgv_results.where()
+                    .greaterThan("cgmDate",  new Date(timeLastSGV - 1000 * 60 * 60 * 24))
                     .findAllSorted("cgmDate", Sort.ASCENDING));
         }
 
+        // most recent pump status
+        RealmResults<PumpStatusEvent> pump_results =
+                mRealm.where(PumpStatusEvent.class)
+                        .findAllSorted("eventDate", Sort.ASCENDING);
+
+        if (pump_results.size() > 0) {
+            iob = pump_results.last().getActiveInsulin();
+            battery = pump_results.last().getBatteryPercentage();
+        }
+
         textViewBg.setText(sgvString);
-        textViewBgTime.setText(timeString);
+        textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", iob));
         textViewTrend.setText(trendString);
         textViewTrend.setRotation(trendRotation);
+
+        ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
+        if (batIcon != null) {
+            switch (battery) {
+                case 0:
+                    batIcon.setTitle("0%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+                    break;
+                case 25:
+                    batIcon.setTitle("25%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
+                    break;
+                case 50:
+                    batIcon.setTitle("50%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
+                    break;
+                case 75:
+                    batIcon.setTitle("75%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
+                    break;
+                case 100:
+                    batIcon.setTitle("100%");
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
+                    break;
+                default:
+                    batIcon.setTitle(getResources().getString(R.string.menu_name_status));
+                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
+            }
+        }
+
+        mUiRefreshHandler.post(mUiRefreshRunnable);
+    }
+
+    private class RefreshDisplayRunnable implements Runnable {
+        @Override
+        public void run() {
+            Log.d(TAG, "refreshDisplayRunnable");
+            long nextRun = 60000L;
+
+            TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
+            String timeString = "never";
+
+            if (timeLastSGV > 0) {
+                nextRun = 60000L - (System.currentTimeMillis() - timeLastSGV) % 60000L;
+                timeString = (DateUtils.getRelativeTimeSpanString(timeLastSGV)).toString();
+            }
+
+            textViewBgTime.setText(timeString);
+
+            // Run myself again in 60 (or less) seconds;
+            mUiRefreshHandler.postDelayed(this, nextRun);
+        }
     }
 
     private void updateChart(RealmResults<PumpStatusEvent> results) {
@@ -1198,7 +820,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (entries.length > 0) {
             ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
         }
-
     }
 
     private static float dipToPixels(Context context, float dipValue) {
@@ -1206,14 +827,148 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dipValue, metrics);
     }
 
-    /**
-     * has to be done in MainActivity thread
-     */
-    private class UpdatePumpReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            refreshDisplay(500);
+
+
+    private static final int PAGE_SIZE = 300;
+    private static final int FIRSTPAGE_SIZE = 100;
+    private int viewPosition = 0;
+    private int viewPositionSecondPage = 0;
+    private RealmResults statusResults;
+
+    private void stopStatusView() {
+        Log.d(TAG, "stopStatusView");
+        statusResults.removeAllChangeListeners();
+        statusResults = null;
+    }
+
+    private void initStatusView() {
+        Log.d(TAG, "initStatusView");
+        viewPosition = 0;
+        viewPositionSecondPage = statusMessage.getCounter();
+        if (viewPositionSecondPage > FIRSTPAGE_SIZE)
+            viewPositionSecondPage = FIRSTPAGE_SIZE;
+
+        statusResults = storeRealm.where(StatusStore.class)
+                .findAllSortedAsync("timestamp", Sort.DESCENDING);
+
+        statusResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
+            @Override
+            public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+                if (changeSet != null) {
+                    Log.d(TAG, "status listener triggered");
+                    if (statusResults.size() > 0) {
+                        viewPositionSecondPage = statusMessage.getCounter();
+                        if (viewPositionSecondPage > FIRSTPAGE_SIZE)
+                            viewPositionSecondPage = FIRSTPAGE_SIZE;
+//                        if (viewPositionSecondPage < FIRSTPAGE_SIZE)
+//                            viewPositionSecondPage++; // older session log begins on next page
+                        if (viewPosition > 0)
+                            viewPosition++; // move the view pointer when not on first page to keep aligned
+                    } else {
+                        Log.d(TAG, "status listener reset!!!");
+                        viewPosition = 0;
+                        viewPositionSecondPage = 0;
+                    }
+                }
+
+                buildStatusView();
+
+                if (viewPosition == 0) {
+                    // auto scroll status log
+                    if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
+                        mScrollView.post(new Runnable() {
+                            public void run() {
+                                mScrollView.fullScroll(View.FOCUS_DOWN);
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    private void buildStatusView() {
+        Log.d(TAG, "* counter=" + statusMessage.getCounter() + " SP=" + viewPositionSecondPage + " VP=" + viewPosition);
+
+        int remain = statusResults.size() - viewPosition;
+        int segment = remain;
+        if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) segment = viewPositionSecondPage;
+        if (segment > PAGE_SIZE) segment = PAGE_SIZE;
+
+        StringBuilder sb = new StringBuilder();
+        if (segment > 0) {
+            for (int index = viewPosition; index < viewPosition + segment; index++)
+                sb.insert(0, statusResults.get(index) + (sb.length() > 0 ? "\n" : ""));
         }
+        mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
+
+        if (viewPosition > 0) {
+            mTextViewLogButtonBottom.setVisibility(View.VISIBLE);
+            mTextViewLogButtonBottomRecent.setVisibility(View.VISIBLE);
+        } else {
+            mTextViewLogButtonBottom.setVisibility(View.GONE);
+            mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
+        }
+        if (remain > segment) {
+            mTextViewLogButtonTop.setVisibility(View.VISIBLE);
+        } else {
+            mTextViewLogButtonTop.setVisibility(View.GONE);
+        }
+        if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+            mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+        } else {
+            mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+        }
+    }
+
+    private void changeStatusViewOlder() {
+        if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) {
+            viewPosition = viewPositionSecondPage;
+        } else {
+            viewPosition += PAGE_SIZE;
+        }
+        buildStatusView();
+        mScrollView.post(new Runnable() {
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_DOWN);
+                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                } else {
+                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    private void changeStatusViewNewer() {
+        viewPosition -= PAGE_SIZE;
+        if (viewPosition < 0) viewPosition = 0;
+        buildStatusView();
+        mScrollView.post(new Runnable() {
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_UP);
+                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                } else {
+                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    private void changeStatusViewRecent() {
+        viewPosition = 0;
+        buildStatusView();
+        mScrollView.post(new Runnable() {
+            public void run() {
+                mScrollView.fullScroll(View.FOCUS_DOWN);
+                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
+                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
+                } else {
+                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                }
+            }
+        });
     }
 
 }

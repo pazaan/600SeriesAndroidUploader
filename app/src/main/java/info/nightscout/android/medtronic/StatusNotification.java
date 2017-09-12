@@ -67,6 +67,14 @@ public class StatusNotification {
 
     public void initNotification(Context context) {
 
+        /*
+        RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.notification);
+        remoteViews.setTextViewText(R.id.textView1,"hello!");
+        remoteViews.setTextViewText(R.id.textView2,"hows!");
+        remoteViews.setTextViewText(R.id.textView3,"it!");
+        remoteViews.setTextViewText(R.id.textView4,"hanging!");
+        */
+
         Intent notificationIntent = new Intent(context, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, notificationIntent, 0);
 

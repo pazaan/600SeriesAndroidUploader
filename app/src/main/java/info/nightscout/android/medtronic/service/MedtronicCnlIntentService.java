@@ -25,7 +25,6 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -107,13 +106,11 @@ public class MedtronicCnlIntentService extends Service {
 
     private UsbHidDriver mHidDevice;
     private Context mContext;
-    private NotificationManagerCompat nm;
     private UsbManager mUsbManager;
     private DataStore dataStore = DataStore.getInstance();
     private ConfigurationStore configurationStore = ConfigurationStore.getInstance();
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
     private DateFormat dateFormatterNote = new SimpleDateFormat("E HH:mm", Locale.US);
-    private DateFormat dateFormatterNice = new SimpleDateFormat("h:mm:ss a", Locale.getDefault());
     private Realm realm;
     private long pumpOffset;
 
@@ -122,9 +119,7 @@ public class MedtronicCnlIntentService extends Service {
 
     private CnlIntentMessageReceiver cnlIntentMessageReceiver = new CnlIntentMessageReceiver();
     private boolean commsActive = false;
-
-    private NotificationCompat.Builder mNotificationBuilder;
-    private NotificationManager mNotificationManager;
+    private boolean commsDestroy = false;
 
     private StatusMessage statusMessage = StatusMessage.getInstance();
     private BatteryReceiver batteryReceiver = new BatteryReceiver();
@@ -195,27 +190,36 @@ public class MedtronicCnlIntentService extends Service {
         if (commsActive) {
             Log.d(TAG, "onDestroy comms are active!!!");
             statusMessage.add("onDestroy comms are active!!!");
-        }
+            commsDestroy = true;
+        } else {
 
-        if (nm != null) {
-            nm.cancelAll();
-            nm = null;
-        }
+            if (mHidDevice != null) {
+                Log.i(TAG, "Closing serial device...");
+                mHidDevice.close();
+                mHidDevice = null;
+            }
 
-        if (mHidDevice != null) {
-            Log.i(TAG, "Closing serial device...");
-            mHidDevice.close();
-            mHidDevice = null;
+            statusNotification.endNotification();
         }
 
         MedtronicCnlAlarmManager.cancelAlarm();
-
-        statusNotification.endNotification();
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
         unregisterReceiver(usbReceiver);
         unregisterReceiver(batteryReceiver);
         unregisterReceiver(cnlIntentMessageReceiver);
+    }
+
+    @Override
+    public void onTaskRemoved(Intent intent) {
+        Log.i(TAG, "onTaskRemoved called");
+        statusMessage.add("onTaskRemoved, comms active=" + commsActive);
+    }
+
+    @Override
+    public void onLowMemory() {
+        Log.i(TAG, "onLowMemory called");
+        statusMessage.add("onLowMemory, comms active=" + commsActive);
     }
 
     @Override
@@ -227,39 +231,18 @@ public class MedtronicCnlIntentService extends Service {
             // do nothing and return
             return START_STICKY;
         }
-/*
-        RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.notification);
-        remoteViews.setTextViewText(R.id.textView1,"hello!");
-        remoteViews.setTextViewText(R.id.textView2,"hows!");
-        remoteViews.setTextViewText(R.id.textView3,"it!");
-        remoteViews.setTextViewText(R.id.textView4,"hanging!");
-*/
+
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        mNotificationBuilder = new  NotificationCompat.Builder(this)
+        Notification notification = new  NotificationCompat.Builder(this)
                 .setContentTitle("600 Series Uploader")
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setVisibility(VISIBILITY_PUBLIC)
                 .setContentIntent(pendingIntent)
-//                .setContent(remoteViews)
-//                .setChannelId(CHANNEL_ID);
-                .setTicker("600 Series Nightscout Uploader");
-
-        Notification notification = mNotificationBuilder.build();
+                .setTicker("600 Series Nightscout Uploader")
+                .build();
         startForeground(SERVICE_NOTIFICATION_ID, notification);
-/*
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                long end = System.currentTimeMillis() + (60000 * 5);
-                long start = end - (60000 * 60*3) -  (60000 * 10);
-                mService.startForeground(new Notifications().ongoingNotificationId, new Notifications().createOngoingNotification(new BgGraphBuilder(mContext, start, end), mContext));
-            }
-        });
-*/
+
         statusNotification.initNotification(mContext);
 
         startCgm();
@@ -268,6 +251,10 @@ public class MedtronicCnlIntentService extends Service {
         statusMessage.add("Starting MedtronicCnlIntentService in foreground mode");
 
         return START_STICKY;
+    }
+
+    private void startCgmService() {
+        startCgmServiceDelayed(0);
     }
 
     private void startCgmServiceDelayed(long delay) {
@@ -292,7 +279,6 @@ public class MedtronicCnlIntentService extends Service {
         }
 
         MedtronicCnlAlarmManager.setAlarm(start);
-//        updateNotification(start);
         statusNotification.updateNotification(start);
 
         if (!realm.isClosed()) realm.close();
@@ -517,8 +503,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                         else {
                                             dataStore.incCommsSgvSuccess();
                                             // TODO - don't convert SGV here, convert dynamically in ui status message handler
-                                            statusMessage.add("SGV: " + strFormatSGV(pumpRecord.getSgv())
-                                                    + "  At: " + dateFormatter.format(pumpRecord.getCgmDate().getTime())
+                                            //statusMessage.add("SGV: " + strFormatSGV(pumpRecord.getSgv())
+                                            statusMessage.add("SGV: ¦" + pumpRecord.getSgv()
+                                                    + "¦  At: " + dateFormatter.format(pumpRecord.getCgmDate().getTime())
                                                     + "  Pump: " + (pumpOffset > 0 ? "+" : "") + (pumpOffset / 1000L) + "sec");
                                             if (pumpRecord.isCgmCalibrating())
                                                 statusMessage.add(ICON_CGM + "sensor is calibrating");
@@ -542,9 +529,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                     }
 
                                     statusNotifications(pumpRecord);
-
-                                    // Tell the Main Activity we have new data
-                                    sendMessage(Constants.ACTION_UPDATE_PUMP);
                                 }
 
                             } catch (UnexpectedMessageException e) {
@@ -594,20 +578,31 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 realm.cancelTransaction();
                             }
 
+                            if (commsDestroy) {
+                                Log.d(TAG, "commsDestroy!!!");
+                                statusNotification.endNotification();
+                            } else {
+
                             long nextpoll = requestPollTime(timePollStarted, pollInterval);
                             MedtronicCnlAlarmManager.setAlarm(nextpoll);
                             statusMessage.add("Next poll due at: " + dateFormatter.format(nextpoll));
 
-//                            updateNotification(nextpoll);
                             statusNotification.updateNotification(nextpoll);
 
                             RemoveOutdatedRecords();
                             uploadPollResults();
                             statusWarnings();
+                            }
                         }
 
                     } finally {
                         if (!realm.isClosed()) realm.close();
+                        if (mHidDevice != null) {
+                            Log.i(TAG, "Closing serial device...");
+                            mHidDevice.close();
+                            mHidDevice = null;
+                        }
+
 //            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
 
                         releaseWakeLock(wl);
@@ -617,95 +612,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         }.start();
     }
 
-    private void updateNotification(long nextpoll) {
-        String sgv = "";
-        String delta = "";
-        String bgl = "";
-        String iob = "";
-        String bolus = "";
-        String basal = "";
-        String cal = "";
-        String poll = "Next " + dateFormatterNice.format(nextpoll);
-        long now = System.currentTimeMillis();
-
-        long sgvtime = now;
-        RealmResults<PumpStatusEvent> cgmresults = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60 * 1000)))
-                .equalTo("validSGV", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-        if (cgmresults.size() > 0) {
-            sgv = "SGV " + strFormatSGV(cgmresults.first().getSgv());
-            sgvtime = cgmresults.first().getCgmDate().getTime();
-            if (cgmresults.size() > 1) {
-
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-                boolean isMmolxl = prefs.getBoolean("mmolxl", false);
-
-                int diff =  cgmresults.first().getSgv() - cgmresults.get(1).getSgv();
-                delta = "" + (diff > 0 ? "+" : "") + new BigDecimal(isMmolxl ? diff / MMOLXLFACTOR : diff).setScale(2, BigDecimal.ROUND_HALF_UP);
-            }
-        }
-        else
-            sgv = "No SGV available";
-
-        RealmResults<PumpStatusEvent> cgmresults1 = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
-                .equalTo("validBGL", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-        if (cgmresults1.size() > 0)
-            bgl = "Last BG: " + strFormatSGV(cgmresults1.first().getRecentBGL()) + " at " + dateFormatterNice.format(cgmresults1.first().getEventDate());
-
-        RealmResults<PumpStatusEvent> cgmresults2 = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
-                .equalTo("validBolus", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-        if (cgmresults2.size() > 0)
-            bolus = "Last Bolus: " + cgmresults2.first().getLastBolusAmount() + "u at " + dateFormatterNice.format(cgmresults2.first().getLastBolusDate());
-
-        RealmResults<PumpStatusEvent> cgmresults3 = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (15 * 60 * 1000)))
-                .equalTo("validCGM", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-        if (cgmresults3.size() > 0) {
-            cal = "Calibration ";
-            if (cgmresults3.first().isCgmCalibrating())
-                cal = "Calibrating...";
-            else if (cgmresults3.first().isCgmCalibrationComplete())
-                cal = "Calibration complete";
-            else {
-                if (cgmresults3.first().isCgmWarmUp())
-                    cal = "Warmup ";
-                if (cgmresults3.first().getCalibrationDueMinutes() > 0)
-                    cal += (cgmresults3.first().getCalibrationDueMinutes() >= 60 ? cgmresults3.first().getCalibrationDueMinutes() / 60 + "h" : "") + cgmresults3.first().getCalibrationDueMinutes() % 60 + "m";
-                else
-                    cal = "Calibrate now!";
-            }
-        }
-
-        RealmResults<PumpStatusEvent> cgmresults4 = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
-                .findAllSorted("eventDate", Sort.DESCENDING);
-        if (cgmresults4.size() > 0) {
-            iob = "IOB " + cgmresults4.first().getActiveInsulin() + "u";
-            basal = "Basal " + cgmresults4.first().getBasalRate() + "u";
-        }
-
-        NotificationCompat.InboxStyle sub = new  NotificationCompat.InboxStyle()
-                .addLine(iob)
-                .addLine(basal)
-                .addLine(bgl)
-                .addLine(bolus)
-                .setSummaryText(poll + "  " + cal);
-
-        mNotificationBuilder.setStyle(sub);
-        mNotificationBuilder.setWhen(sgvtime);
-
-        mNotificationBuilder.setContentTitle(sgv + "   " + delta);
-        mNotificationBuilder.setContentText(iob + "   " + cal);
-        mNotificationManager.notify(
-                SERVICE_NOTIFICATION_ID,
-                mNotificationBuilder.build());
-    }
 
     private String strFormatSGV(double sgvValue) {
 
@@ -731,7 +637,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     private void statusNotifications(PumpStatusEvent pumpRecord) {
         if (pumpRecord.isValidBGL())
             // TODO - don't convert BGL here, convert dynamically in ui status message handler
-            statusMessage.add(ICON_BGL + "Recent finger BG: " + strFormatSGV(pumpRecord.getRecentBGL()));
+            //statusMessage.add(ICON_BGL + "Recent finger BG: ¦" + strFormatSGV(pumpRecord.getRecentBGL()) + "¦");
+            statusMessage.add(ICON_BGL + "Recent finger BG: ¦" + pumpRecord.getRecentBGL() + "¦");
 
         if (pumpRecord.isValidBolus()) {
             if (pumpRecord.isValidBolusSquare())
@@ -1289,7 +1196,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (permissionGranted) {
                     Log.d(TAG, "Got permission to access USB");
                     statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "Got permission to access USB.");
-//                    startCgmService();
+                    startCgmService();
                 } else {
                     Log.d(TAG, "Still no permission for USB. Waiting...");
                     waitForUsbPermission();
