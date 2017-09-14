@@ -11,8 +11,8 @@ import java.util.Date;
 /**
  * Created by lgoedhart on 14/07/2016.
  */
-//public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
-public class MedtronicCnlAlarmReceiver extends BroadcastReceiver {
+public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
+//public class MedtronicCnlAlarmReceiver extends BroadcastReceiver {
     private static final String TAG = MedtronicCnlAlarmReceiver.class.getSimpleName();
     private static final int ALARM_ID = 102; // Alarm id
 
@@ -24,11 +24,12 @@ public class MedtronicCnlAlarmReceiver extends BroadcastReceiver {
     public void onReceive(final Context context, Intent intent) {
         // Start the IntentService
         Log.d(TAG, "Received broadcast message at " + new Date(System.currentTimeMillis()));
-//        Intent service = new Intent(context, MedtronicCnlIntentService.class);
-//        startWakefulService(context, service);
 
-        Intent localIntent = new Intent(MedtronicCnlIntentService.Constants.ACTION_READ_PUMP);
-        context.sendBroadcast(localIntent);
+        Intent service = new Intent(context, MedtronicCnlIntentService.class);
+        startWakefulService(context, service);
+
+//        Intent localIntent = new Intent(MedtronicCnlIntentService.Constants.ACTION_READ_PUMP);
+//        context.sendBroadcast(localIntent);
 
         MedtronicCnlAlarmManager.restartAlarm();
     }

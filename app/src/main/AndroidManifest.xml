@@ -92,7 +92,6 @@
         <receiver android:name=".xdrip_plus.XDripPlusUploadReceiver"
             />
 
-
         <receiver android:name=".utils.AutoStart"
             >
             <intent-filter>

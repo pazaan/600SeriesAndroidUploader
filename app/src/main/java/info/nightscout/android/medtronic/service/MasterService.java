@@ -83,10 +83,15 @@ public class MasterService extends Service {
 
         mContext = this.getBaseContext();
         mUsbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
-
+/*
         IntentFilter cnlIntentMessageFilter = new IntentFilter();
         cnlIntentMessageFilter.addAction(MedtronicCnlIntentService.Constants.ACTION_READ_PUMP);
         registerReceiver(cnlIntentMessageReceiver, cnlIntentMessageFilter);
+*/
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                cnlIntentMessageReceiver,
+                new IntentFilter(MedtronicCnlIntentService.Constants.ACTION_READ_PUMP));
+
 
         IntentFilter batteryIntentFilter = new IntentFilter();
         batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
@@ -133,9 +138,10 @@ public class MasterService extends Service {
         MedtronicCnlAlarmManager.cancelAlarm();
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
         unregisterReceiver(usbReceiver);
         unregisterReceiver(batteryReceiver);
-        unregisterReceiver(cnlIntentMessageReceiver);
+//        unregisterReceiver(cnlIntentMessageReceiver);
     }
 
     @Override
@@ -186,14 +192,58 @@ public class MasterService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
 
-            commsActive = true;
-            doitnow();
-            commsActive = false;
+//            statusMessage.add("got it");
+            killer();
+
+//            commsActive = true;
+//            doitnow();
+//            commsActive = false;
         }
+//    }
+
+//    private void doitnow () {
+//        startService(new Intent(this, MedtronicCnlIntentService.class));
     }
 
-    private void doitnow () {
-        startService(new Intent(this, MedtronicCnlIntentService.class));
+
+    private void killer() {
+        if (++testkill >= 30) {
+            Log.d(TAG, "!!! kill with fire !!!");
+            statusMessage.add("!!! kill with fire !!!");
+/*
+        if (commsActive) {
+            Log.d(TAG, "onDestroy comms are active!!!");
+            statusMessage.add("onDestroy comms are active!!!");
+            commsDestroy = true;
+        } else {
+
+            if (mHidDevice != null) {
+                Log.i(TAG, "Closing serial device...");
+                mHidDevice.close();
+                mHidDevice = null;
+            }
+
+            statusNotification.endNotification();
+        }
+*/
+            MedtronicCnlAlarmManager.cancelAlarm();
+
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(cnlIntentMessageReceiver);
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
+            unregisterReceiver(usbReceiver);
+            unregisterReceiver(batteryReceiver);
+//            unregisterReceiver(cnlIntentMessageReceiver);
+
+            if (mHidDevice != null) {
+                Log.i(TAG, "Closing serial device...");
+                mHidDevice.close();
+                mHidDevice = null;
+            }
+
+            statusNotification.endNotification();
+
+            android.os.Process.killProcess(android.os.Process.myPid());
+        }
     }
 
     private void startCgmService() {

@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import info.nightscout.android.R;
@@ -91,6 +92,10 @@ public class NightscoutUploadIntentService extends IntentService {
         mRealm.close();
 
         NightscoutUploadReceiver.completeWakefulIntent(intent);
+
+        //killer test
+        Intent localIntent = new Intent(MedtronicCnlIntentService.Constants.ACTION_READ_PUMP);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
 
     private boolean isOnline() {

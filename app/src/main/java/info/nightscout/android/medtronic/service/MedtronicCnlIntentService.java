@@ -1,6 +1,7 @@
 package info.nightscout.android.medtronic.service;
 
 import android.app.AlarmManager;
+import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -59,8 +60,8 @@ import io.realm.Sort;
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
 import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
 
-public class MedtronicCnlIntentService extends Service {
-//    public class MedtronicCnlIntentService extends IntentService {
+//public class MedtronicCnlIntentService extends Service {
+    public class MedtronicCnlIntentService extends IntentService {
     public final static int USB_VID = 0x1a79;
     public final static int USB_PID = 0x6210;
     public final static long USB_WARMUP_TIME_MS = 5000L;
@@ -119,7 +120,7 @@ public class MedtronicCnlIntentService extends Service {
     public static final int USB_DISCONNECT_NOFICATION_ID = 1;
     private static final int SERVICE_NOTIFICATION_ID = 2;
 
-    private CnlIntentMessageReceiver cnlIntentMessageReceiver;// = new CnlIntentMessageReceiver();
+//    private CnlIntentMessageReceiver cnlIntentMessageReceiver;// = new CnlIntentMessageReceiver();
     private boolean commsActive = false;
     private boolean commsDestroy = false;
 
@@ -129,11 +130,11 @@ public class MedtronicCnlIntentService extends Service {
 
     private StatusNotification statusNotification = StatusNotification.getInstance();
 
-    /*
+
     public MedtronicCnlIntentService() {
         super(MedtronicCnlIntentService.class.getName());
     }
-*/
+
     protected void sendMessage(String action) {
         try {
             Intent localIntent =
@@ -142,18 +143,18 @@ public class MedtronicCnlIntentService extends Service {
         } catch (Exception e ) {}
     }
 
-
+/*
     @Override
     public IBinder onBind(Intent intent) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
-
+*/
     @Override
     public void onCreate() {
         super.onCreate();
 
         Log.i(TAG, "onCreate called");
-        statusMessage.add(TAG + " onCreate called");
+//        statusMessage.add(TAG + " onCreate called");
 
         mContext = this.getBaseContext();
         mUsbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
@@ -187,7 +188,7 @@ public class MedtronicCnlIntentService extends Service {
         super.onDestroy();
 
         Log.d(TAG, "onDestroy called");
-        statusMessage.add(TAG + " onDestroy called");
+//        statusMessage.add(TAG + " onDestroy called");
 
         if (commsActive) {
             Log.d(TAG, "comms are active!!!");
@@ -224,7 +225,7 @@ public class MedtronicCnlIntentService extends Service {
         Log.i(TAG, "onLowMemory called");
         statusMessage.add(TAG + " onLowMemory, comms active=" + commsActive);
     }
-
+/*
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Received start id " + startId + ": " + intent);
@@ -262,10 +263,10 @@ public class MedtronicCnlIntentService extends Service {
         statusMessage.add(TAG + " Starting in foreground mode");
 
         return START_STICKY;
-*/
+
         return START_NOT_STICKY;
     }
-
+*/
     private void startCgmService() {
         startCgmServiceDelayed(0);
     }
@@ -297,7 +298,7 @@ public class MedtronicCnlIntentService extends Service {
         if (!realm.isClosed()) realm.close();
     }
 
-
+/*
     private class CnlIntentMessageReceiver extends BroadcastReceiver {
 
         @Override
@@ -360,6 +361,7 @@ public class MedtronicCnlIntentService extends Service {
     }
 
     private static final Object lock = new Object();
+*/
 
 /*
 
@@ -378,18 +380,18 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
 */
 
-//    protected void onHandleIntent(Intent intent) {
+    protected void onHandleIntent(Intent intent) {
 //        MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
 //    }
 
-
+/*
     protected void getMyShit() {
         new Thread() {
             @Override
             public void run() {
                 PowerManager.WakeLock wl = getWakeLock("getMyShit", 60000);
                 synchronized (lock) {
-
+*/
                     Log.d(TAG, "onHandleIntent called");
                     try {
                         final long timePollStarted = System.currentTimeMillis();
@@ -648,13 +650,17 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             mHidDevice = null;
                         }
 
-//            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
+            MedtronicCnlAlarmReceiver.completeWakefulIntent(intent);
 
-                        releaseWakeLock(wl);
+//                        Intent localIntent = new Intent(MedtronicCnlIntentService.Constants.ACTION_READ_PUMP);
+//                        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+
+//                        releaseWakeLock(wl);
                     }
-                } // lock
-            }
-        }.start();
+//                } // lock
+//            }
+//        }.start();
+
     }
 
 
