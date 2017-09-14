@@ -80,6 +80,9 @@
         <service
             android:name=".medtronic.service.MedtronicCnlIntentService"
             android:icon="@drawable/ic_launcher" />
+        <service
+            android:name=".medtronic.service.MasterService"
+            android:icon="@drawable/ic_launcher" />
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"
             />

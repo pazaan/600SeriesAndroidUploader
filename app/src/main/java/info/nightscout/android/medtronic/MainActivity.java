@@ -58,6 +58,7 @@ import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
+import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.medtronic.service.MedtronicCnlAlarmManager;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -74,16 +75,18 @@ import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
     private static final String TAG = MainActivity.class.getSimpleName();
-    public static final int USB_DISCONNECT_NOFICATION_ID = 1;
+
     public static final float MMOLXLFACTOR = 18.016f;
 
     private ConfigurationStore configurationStore = ConfigurationStore.getInstance();
+    private StatusMessage statusMessage = StatusMessage.getInstance();
 
     private int chartZoom = 3;
     private boolean hasZoomedChart = false;
 
     private boolean mEnableCgmService = true;
     private SharedPreferences prefs = null;
+
     private TextView mTextViewLog; // This will eventually move to a status page.
     private TextView mTextViewLogButtonTop;
     private TextView mTextViewLogButtonTopRecent;
@@ -94,9 +97,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private GraphView mChart;
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
+
     private Realm mRealm;
     private Realm storeRealm;
-    private StatusMessage statusMessage = StatusMessage.getInstance();
 
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
@@ -484,7 +487,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
-        stopService(new Intent(this, MedtronicCnlIntentService.class));
+//        stopService(new Intent(this, MedtronicCnlIntentService.class));
+        stopService(new Intent(this, MasterService.class));
     }
 
     @Override
@@ -888,7 +892,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void buildStatusView() {
-        Log.d(TAG, "* counter=" + statusMessage.getCounter() + " SP=" + viewPositionSecondPage + " VP=" + viewPosition);
+//        Log.d(TAG, "* counter=" + statusMessage.getCounter() + " SP=" + viewPositionSecondPage + " VP=" + viewPosition);
 
         int remain = statusResults.size() - viewPosition;
         int segment = remain;

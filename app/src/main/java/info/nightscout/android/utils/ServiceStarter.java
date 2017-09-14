@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 
 /**
@@ -52,12 +53,14 @@ public class ServiceStarter {
 
     private void startCNLService() {
         Log.d(TAG, "starting CNL service");
-        this.mContext.startService(new Intent(this.mContext, MedtronicCnlIntentService.class));
+//        this.mContext.startService(new Intent(this.mContext, MedtronicCnlIntentService.class));
+        this.mContext.startService(new Intent(this.mContext, MasterService.class));
     }
 
     private void stopCNLService() {
         Log.d(TAG, "stopping CNL service");
-        this.mContext.stopService(new Intent(this.mContext, MedtronicCnlIntentService.class));
+//        this.mContext.stopService(new Intent(this.mContext, MedtronicCnlIntentService.class));
+        this.mContext.stopService(new Intent(this.mContext, MasterService.class));
     }
 
 }

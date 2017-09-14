@@ -114,16 +114,18 @@ public class MedtronicCnlIntentService extends Service {
     private Realm realm;
     private long pumpOffset;
 
+    private long testkill = 0;
+
     public static final int USB_DISCONNECT_NOFICATION_ID = 1;
     private static final int SERVICE_NOTIFICATION_ID = 2;
 
-    private CnlIntentMessageReceiver cnlIntentMessageReceiver = new CnlIntentMessageReceiver();
+    private CnlIntentMessageReceiver cnlIntentMessageReceiver;// = new CnlIntentMessageReceiver();
     private boolean commsActive = false;
     private boolean commsDestroy = false;
 
     private StatusMessage statusMessage = StatusMessage.getInstance();
-    private BatteryReceiver batteryReceiver = new BatteryReceiver();
-    private UsbReceiver usbReceiver = new UsbReceiver();
+    private BatteryReceiver batteryReceiver;// = new BatteryReceiver();
+    private UsbReceiver usbReceiver;// = new UsbReceiver();
 
     private StatusNotification statusNotification = StatusNotification.getInstance();
 
@@ -151,11 +153,11 @@ public class MedtronicCnlIntentService extends Service {
         super.onCreate();
 
         Log.i(TAG, "onCreate called");
-        statusMessage.add("MedtronicCnlIntentService onCreate");
+        statusMessage.add(TAG + " onCreate called");
 
         mContext = this.getBaseContext();
         mUsbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
-
+/*
         IntentFilter cnlIntentMessageFilter = new IntentFilter();
         cnlIntentMessageFilter.addAction(Constants.ACTION_READ_PUMP);
         registerReceiver(cnlIntentMessageReceiver, cnlIntentMessageFilter);
@@ -177,7 +179,7 @@ public class MedtronicCnlIntentService extends Service {
 
         // setup self handling alarm receiver
         MedtronicCnlAlarmManager.setContext(mContext);
-
+*/
     }
 
     @Override
@@ -185,11 +187,11 @@ public class MedtronicCnlIntentService extends Service {
         super.onDestroy();
 
         Log.d(TAG, "onDestroy called");
-        statusMessage.add("MedtronicCnlIntentService onDestroy");
+        statusMessage.add(TAG + " onDestroy called");
 
         if (commsActive) {
-            Log.d(TAG, "onDestroy comms are active!!!");
-            statusMessage.add("onDestroy comms are active!!!");
+            Log.d(TAG, "comms are active!!!");
+            statusMessage.add(TAG + " comms are active!!!");
             commsDestroy = true;
         } else {
 
@@ -199,34 +201,43 @@ public class MedtronicCnlIntentService extends Service {
                 mHidDevice = null;
             }
 
-            statusNotification.endNotification();
+//            statusNotification.endNotification();
         }
-
+/*
         MedtronicCnlAlarmManager.cancelAlarm();
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
         unregisterReceiver(usbReceiver);
         unregisterReceiver(batteryReceiver);
         unregisterReceiver(cnlIntentMessageReceiver);
+*/
     }
 
     @Override
     public void onTaskRemoved(Intent intent) {
         Log.i(TAG, "onTaskRemoved called");
-        statusMessage.add("onTaskRemoved, comms active=" + commsActive);
+        statusMessage.add(TAG + " onTaskRemoved, comms active=" + commsActive);
     }
 
     @Override
     public void onLowMemory() {
         Log.i(TAG, "onLowMemory called");
-        statusMessage.add("onLowMemory, comms active=" + commsActive);
+        statusMessage.add(TAG + " onLowMemory, comms active=" + commsActive);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i("LocalService", "Received start id " + startId + ": " + intent);
-        statusMessage.add("LocalService " + "Received start id " + startId + ": " + (intent == null ? "null" : ""));
+        Log.i(TAG, "Received start id " + startId + ": " + intent);
+//        statusMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
 
+        if (intent == null) {
+            // do nothing and return
+            return START_NOT_STICKY;
+        }
+
+        getMyShit();
+
+/*
         if (intent == null) {
             // do nothing and return
             return START_STICKY;
@@ -247,10 +258,12 @@ public class MedtronicCnlIntentService extends Service {
 
         startCgm();
 
-        Log.i(TAG, "Starting MedtronicCnlIntentService in foreground mode");
-        statusMessage.add("Starting MedtronicCnlIntentService in foreground mode");
+        Log.i(TAG, "Starting in foreground mode");
+        statusMessage.add(TAG + " Starting in foreground mode");
 
         return START_STICKY;
+*/
+        return START_NOT_STICKY;
     }
 
     private void startCgmService() {
@@ -295,9 +308,41 @@ public class MedtronicCnlIntentService extends Service {
 //            statusMessage.add("* service message");
 
             getMyShit();
+            killer();
+
         }
     }
 
+    private void killer() {
+        if (testkill++ > 3) {
+            Log.d(TAG, "kill with fire");
+            statusMessage.add("kill with fire");
+
+            if (commsActive) {
+                Log.d(TAG, "onDestroy comms are active!!!");
+                statusMessage.add("onDestroy comms are active!!!");
+                commsDestroy = true;
+            } else {
+
+                if (mHidDevice != null) {
+                    Log.i(TAG, "Closing serial device...");
+                    mHidDevice.close();
+                    mHidDevice = null;
+                }
+
+                statusNotification.endNotification();
+            }
+
+            MedtronicCnlAlarmManager.cancelAlarm();
+
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(usbReceiver);
+            unregisterReceiver(usbReceiver);
+            unregisterReceiver(batteryReceiver);
+            unregisterReceiver(cnlIntentMessageReceiver);
+
+            android.os.Process.killProcess(android.os.Process.myPid());
+        }
+    }
 
     private final static boolean debug_wakelocks = true;
 
@@ -1284,7 +1329,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
     private void clearDisconnectionNotification() {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancel(MainActivity.USB_DISCONNECT_NOFICATION_ID);
+        notificationManager.cancel(USB_DISCONNECT_NOFICATION_ID);
     }
 
 }
