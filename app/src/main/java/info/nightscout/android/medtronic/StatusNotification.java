@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
@@ -25,6 +26,7 @@ import io.realm.Sort;
 
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
 import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
+import static info.nightscout.android.medtronic.service.MasterService.SERVICE_NOTIFICATION_ID;
 
 /**
  * Created by John on 8.9.17.
@@ -42,12 +44,11 @@ public class StatusNotification {
     private DateFormat dateFormatterNice = new SimpleDateFormat("h:mm:ss a", Locale.getDefault());
     private Realm realm;
 
-    private static final int SERVICE_NOTIFICATION_ID = 2;
-
     private StatusNotification() {
     }
 
     public static StatusNotification getInstance() {
+        Log.d(TAG, "getInstance called");
         if (StatusNotification.instance == null) {
             instance = new StatusNotification();
         }
@@ -55,6 +56,7 @@ public class StatusNotification {
     }
 
     public void endNotification () {
+        Log.d(TAG, "endNotification called");
         if (instance != null) {
             instance = null;
         }
@@ -66,6 +68,7 @@ public class StatusNotification {
     }
 
     public void initNotification(Context context) {
+        Log.d(TAG, "initNotification called");
 
         /*
         RemoteViews remoteViews = new RemoteViews(this.getPackageName(), R.layout.notification);
@@ -82,7 +85,7 @@ public class StatusNotification {
 
         mNotificationBuilder = new  NotificationCompat.Builder(context)
                 .setContentTitle("600 Series Uploader")
-                .setSmallIcon(R.drawable.ic_launcher)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setVisibility(VISIBILITY_PUBLIC)
                 .setContentIntent(pendingIntent)
 //                .setContent(remoteViews)
@@ -91,6 +94,7 @@ public class StatusNotification {
     }
 
     public void updateNotification(long nextpoll) {
+        Log.d(TAG, "updateNotification called");
         realm = Realm.getDefaultInstance();
 
         String sgv = "";

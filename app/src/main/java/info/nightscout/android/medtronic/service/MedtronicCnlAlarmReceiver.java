@@ -3,18 +3,18 @@ package info.nightscout.android.medtronic.service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
 import java.util.Date;
 
+import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.utils.ConfigurationStore;
+
 /**
  * Created by lgoedhart on 14/07/2016.
  */
-public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
-//public class MedtronicCnlAlarmReceiver extends BroadcastReceiver {
+public class MedtronicCnlAlarmReceiver extends BroadcastReceiver {
     private static final String TAG = MedtronicCnlAlarmReceiver.class.getSimpleName();
-    private static final int ALARM_ID = 102; // Alarm id
 
     public MedtronicCnlAlarmReceiver() {
         super();
@@ -25,11 +25,13 @@ public class MedtronicCnlAlarmReceiver extends WakefulBroadcastReceiver {
         // Start the IntentService
         Log.d(TAG, "Received broadcast message at " + new Date(System.currentTimeMillis()));
 
-        Intent service = new Intent(context, MedtronicCnlIntentService.class);
-        startWakefulService(context, service);
+        MasterService.commsActive = true;
 
-//        Intent localIntent = new Intent(MedtronicCnlIntentService.Constants.ACTION_READ_PUMP);
-//        context.sendBroadcast(localIntent);
+        Intent serviceintent = new Intent(context, MedtronicCnlIntentService.class)
+                .putExtra("PollInterval", ConfigurationStore.getInstance().getPollInterval())
+                .putExtra("LowBatteryPollInterval",  ConfigurationStore.getInstance().getLowBatteryPollInterval())
+                .putExtra("ReducePollOnPumpAway", ConfigurationStore.getInstance().isReducePollOnPumpAway());
+        context.startService(serviceintent);
 
         MedtronicCnlAlarmManager.restartAlarm();
     }

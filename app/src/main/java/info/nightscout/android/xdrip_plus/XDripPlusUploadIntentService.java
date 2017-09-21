@@ -3,8 +3,10 @@ package info.nightscout.android.xdrip_plus;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -16,9 +18,10 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+import info.nightscout.android.R;
+import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
-import info.nightscout.android.utils.DataStore;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -49,21 +52,29 @@ public class XDripPlusUploadIntentService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.d(TAG, "onHandleIntent called");
-        Realm mRealm = Realm.getDefaultInstance();
 
-        RealmResults<PumpStatusEvent> all_records = mRealm
-                .where(PumpStatusEvent.class)
-                .equalTo("validSGV", true)
-                .or()
-                .equalTo("validBGL", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+        Boolean enableXdripPlusUpload = prefs.getBoolean(getString(R.string.preference_enable_xdrip_plus), false);
 
-        // get the most recent record and send that
-        if (all_records.size() > 0) {
-            List<PumpStatusEvent> records = all_records.subList(0, 1);
-            doXDripUpload(records);
+        if (enableXdripPlusUpload) {
+
+            Realm mRealm = Realm.getDefaultInstance();
+
+            RealmResults<PumpStatusEvent> all_records = mRealm
+                    .where(PumpStatusEvent.class)
+                    .equalTo("validSGV", true)
+                    .or()
+                    .equalTo("validBGL", true)
+                    .findAllSorted("eventDate", Sort.DESCENDING);
+
+            // get the most recent record and send that
+            if (all_records.size() > 0) {
+                List<PumpStatusEvent> records = all_records.subList(0, 1);
+                doXDripUpload(records);
+            }
+            mRealm.close();
         }
-        mRealm.close();
+
         XDripPlusUploadReceiver.completeWakefulIntent(intent);
     }
 
@@ -109,7 +120,7 @@ public class XDripPlusUploadIntentService extends IntentService {
 
     private void addDeviceStatus(JSONArray devicestatusArray, PumpStatusEvent record) throws Exception {
         JSONObject json = new JSONObject();
-        json.put("uploaderBattery", DataStore.getInstance().getUploaderBatteryLevel());
+        json.put("uploaderBattery", MasterService.getUploaderBatteryLevel());
         json.put("device", record.getDeviceName());
         json.put("created_at", ISO8601_DATE_FORMAT.format(record.getEventDate()));
 

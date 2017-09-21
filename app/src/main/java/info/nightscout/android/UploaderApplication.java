@@ -15,7 +15,7 @@ import info.nightscout.android.model.medtronicNg.BasalSchedule;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.utils.ServiceStarter;
+import info.nightscout.android.utils.DataStore;
 import info.nightscout.android.utils.StatusStore;
 import io.fabric.sdk.android.Fabric;
 import io.realm.Realm;
@@ -30,6 +30,8 @@ public class UploaderApplication extends Application {
     private static final String TAG = UploaderApplication.class.getSimpleName();
     private static Context context;
     private static RealmConfiguration storeConfiguration;
+
+    public static int killer = 0;
 
     @Override
     public void onCreate() {
@@ -71,9 +73,6 @@ public class UploaderApplication extends Application {
                 .modules(new StoreModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
-
-        new ServiceStarter(getApplicationContext()).start(getApplicationContext());
-//        new ServiceStarter(getApplicationContext());
     }
 
     public static Context getAppContext() {
@@ -93,7 +92,7 @@ public class UploaderApplication extends Application {
         return storeConfiguration;
     }
 
-    @RealmModule(classes = {BasalRate.class, BasalSchedule.class, ContourNextLinkInfo.class, PumpInfo.class, PumpStatusEvent.class})
+    @RealmModule(classes = {BasalRate.class, BasalSchedule.class, ContourNextLinkInfo.class, PumpInfo.class, PumpStatusEvent.class, DataStore.class})
     public class MainModule {
     }
     @RealmModule(classes = {StatusStore.class})

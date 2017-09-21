@@ -59,7 +59,6 @@ import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import info.nightscout.android.medtronic.service.MasterService;
-import info.nightscout.android.medtronic.service.MedtronicCnlAlarmManager;
 import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
@@ -100,8 +99,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private Realm mRealm;
     private Realm storeRealm;
-
-    private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -225,7 +222,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         } else if (drawerItem.equals(itemGetNow)) {
                             // It was triggered by user so start reading of data now and not based on last poll.
                             statusMessage.add("Requesting poll now...");
-                            startCgmService(System.currentTimeMillis() + 1000);
+                            sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_NOW));
                         } else if (drawerItem.equals(itemClearLog)) {
                             statusMessage.clear();
                         } else if (drawerItem.equals(itemCheckForUpdate)) {
@@ -338,8 +335,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "onStart called");
         super.onStart();
         checkForUpdateBackground(5);
-        initStatusView();
-        initDisplay();
+        startStatusView();
+        startDisplay();
     }
 
     @Override
@@ -363,7 +360,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "onDestroy called");
 //        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader.");
 //        statusMessage.add("-----------------------------------------------------");
-        statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "Shutting down uploader UI.");
+        statusMessage.add(MasterService.ICON_INFO + "Shutting down uploader UI.");
 
         super.onDestroy();
 
@@ -403,6 +400,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return true;
     }
 
+    public void onNewIntent(Intent intent) {
+        Log.d(TAG, "onNewIntent called");
+        Log.d(TAG, "onNewIntent : " + intent);
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -433,62 +435,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void statusStartup() {
         statusMessage.resetCounter();
-        statusMessage.add(MedtronicCnlIntentService.ICON_HEART + "Nightscout 600 Series Uploader");
-        statusMessage.add(MedtronicCnlIntentService.ICON_SETTING + "Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
-        statusMessage.add(MedtronicCnlIntentService.ICON_SETTING + "Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
+        statusMessage.add(MasterService.ICON_HEART + "Nightscout 600 Series Uploader");
+        statusMessage.add(MasterService.ICON_SETTING + "Poll interval: " + (configurationStore.getPollInterval() / 60000) +" minutes");
+        statusMessage.add(MasterService.ICON_SETTING + "Low battery poll interval: " + (configurationStore.getLowBatteryPollInterval() / 60000) +" minutes");
     }
 
     private void startCgmService() {
-        startCgmServiceDelayed(0);
-    }
-
-    private void startCgmServiceDelayed(long delay) {
-        long now = System.currentTimeMillis();
-        long start = now + 1000;
-
-        if (!mRealm.isClosed()) {
-
-            RealmResults<PumpStatusEvent> results = mRealm.where(PumpStatusEvent.class)
-                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
-                    .equalTo("validCGM", true)
-                    .findAllSorted("cgmDate", Sort.DESCENDING);
-
-            if (results.size() > 0) {
-                long timeLastCGM = results.first().getCgmDate().getTime();
-                if (now - timeLastCGM <  MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS)
-                    start = timeLastCGM + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
-            }
-        }
-
-        if (start - now < delay) start = now + delay;
-        startCgmService(start);
-
-        if (start - now > 10 * 1000)
-            statusMessage.add("Next poll due at: " + dateFormatter.format(start));
-    }
-
-    private void startCgmService(long initialPoll) {
         Log.i(TAG, "startCgmService called");
-
-        if (!mEnableCgmService) {
-            return;
-        }
-
-        // Cancel any existing polling.
-//        stopCgmService();
-//        startService(new Intent(this, MedtronicCnlIntentService.class));
-
-//        Intent serviceIntent = new Intent(getApplicationContext(), MedtronicCnlIntentService.class);
-//        startService(serviceIntent);
-
-
-        MedtronicCnlAlarmManager.setAlarm(initialPoll);
+            Log.d(TAG, "starting master service");
+            prefs.edit().putBoolean("EnableCgmService", true).commit();
+            startService(new Intent(this, MasterService.class));
     }
 
     private void stopCgmService() {
         Log.i(TAG, "stopCgmService called");
-//        stopService(new Intent(this, MedtronicCnlIntentService.class));
-        stopService(new Intent(this, MasterService.class));
+            Log.d(TAG, "stopping master service");
+            prefs.edit().putBoolean("EnableCgmService", false).commit();
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_STOP_SERVICE));
     }
 
     @Override
@@ -562,9 +525,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private RealmResults displayResults;
     private long timeLastSGV;
+    private int battery = 0;
 
-    private void initDisplay() {
-        Log.d(TAG, "initDisplay");
+    private void startDisplay() {
+        Log.d(TAG, "startDisplay");
 
         displayResults = mRealm.where(PumpStatusEvent.class)
                 .findAllSortedAsync("eventDate", Sort.ASCENDING);
@@ -657,6 +621,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             updateChart(sgv_results.where()
                     .greaterThan("cgmDate",  new Date(timeLastSGV - 1000 * 60 * 60 * 24))
                     .findAllSorted("cgmDate", Sort.ASCENDING));
+        } else {
+            updateChart(sgv_results); // render empty chart
         }
 
         // most recent pump status
@@ -845,15 +811,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         statusResults = null;
     }
 
-    private void initStatusView() {
-        Log.d(TAG, "initStatusView");
+    private void startStatusView() {
+        Log.d(TAG, "startStatusView");
         viewPosition = 0;
         viewPositionSecondPage = statusMessage.getCounter();
         if (viewPositionSecondPage > FIRSTPAGE_SIZE)
             viewPositionSecondPage = FIRSTPAGE_SIZE;
+//        viewPositionSecondPage = 100;
 
         statusResults = storeRealm.where(StatusStore.class)
-                .findAllSortedAsync("timestamp", Sort.DESCENDING);
+//                .findAllSortedAsync("timestamp", Sort.DESCENDING);
+                .findAllSorted("timestamp", Sort.DESCENDING);
 
         statusResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
             @Override
@@ -862,6 +830,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     Log.d(TAG, "status listener triggered");
                     if (statusResults.size() > 0) {
                         viewPositionSecondPage = statusMessage.getCounter();
+//                        viewPositionSecondPage = 100;
                         if (viewPositionSecondPage > FIRSTPAGE_SIZE)
                             viewPositionSecondPage = FIRSTPAGE_SIZE;
 //                        if (viewPositionSecondPage < FIRSTPAGE_SIZE)
@@ -889,6 +858,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             }
         });
+
+        changeStatusViewRecent();
+
     }
 
     private void buildStatusView() {
@@ -896,7 +868,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         int remain = statusResults.size() - viewPosition;
         int segment = remain;
-        if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) segment = viewPositionSecondPage;
+//        if (viewPosition == 0 && viewPositionSecondPage < PAGE_SIZE) segment = viewPositionSecondPage;
         if (segment > PAGE_SIZE) segment = PAGE_SIZE;
 
         StringBuilder sb = new StringBuilder();

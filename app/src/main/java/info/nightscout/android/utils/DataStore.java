@@ -1,21 +1,24 @@
 package info.nightscout.android.utils;
 
-
 import java.util.Date;
+
+import io.realm.RealmObject;
+import io.realm.annotations.Index;
 
 /**
  * Created by volker on 30.03.2017.
  */
 
-public class DataStore {
-    private static DataStore instance;
+public class DataStore extends RealmObject {
+    @Index
+    private long timestamp;
 
     private Date uploaderStartDate;
 
-    private long activePumpMac = 0;
-    private int uploaderBatteryLevel = 0;
-
-    private int pumpCgmNA = 0;
+    private int PumpCgmNA = 0;
+    private int PumpOffsetCheck = 0;
+    private long PumpOffsetCheckTime = 0;
+    private long PumpOffset = 0;
 
     private int CommsSuccess = 0;
     private int CommsError = 0;
@@ -26,131 +29,101 @@ public class DataStore {
     private int PumpClockError = 0;
     private int PumpBatteryError = 0;
 
-    private DataStore() {}
-
-    public static DataStore getInstance() {
-        if (DataStore.instance == null) {
-            instance = new DataStore();
-
-            instance.uploaderStartDate = new Date();
-        }
-        return instance;
+    public DataStore() {
+        this.timestamp = new Date().getTime();
+        this.uploaderStartDate = new Date();
     }
 
     public Date getUploaderStartDate() {
         return uploaderStartDate;
     }
 
-    public long getActivePumpMac() {
-        return activePumpMac;
-    }
-
-    public void setActivePumpMac(long activePumpMac) {
-        this.activePumpMac = activePumpMac;
-    }
-
-    public int getUploaderBatteryLevel() {
-        return uploaderBatteryLevel;
-    }
-
-    public void setUploaderBatteryLevel(int uploaderBatteryLevel) {
-        this.uploaderBatteryLevel = uploaderBatteryLevel;
-    }
-
     public int getPumpCgmNA() {
-        return pumpCgmNA;
+        return PumpCgmNA;
     }
 
-    public int incPumpCgmNA() {
-        return pumpCgmNA++;
+    public void setPumpCgmNA(int pumpCgmNA) {
+        this.PumpCgmNA = pumpCgmNA;
     }
 
-    public void clearPumpCgmNA() {
-        this.pumpCgmNA = 0;
+    public int getPumpOffsetCheck() {
+        return PumpOffsetCheck;
+    }
+
+    public void setPumpOffsetCheck(int PumpOffsetCheck) {
+        this.PumpOffsetCheck = PumpOffsetCheck;
+    }
+
+    public long getPumpOffset() {
+        return PumpOffset;
+    }
+
+    public void setPumpOffset(long PumpOffset) {
+        this.PumpOffset = PumpOffset;
     }
 
     public int getCommsSuccess() {
         return CommsSuccess;
     }
 
-    public int incCommsSuccess() { return CommsSuccess++; }
-
-    public void clearCommsSuccess() {
-        this.CommsSuccess = 0;
+    public void setCommsSuccess(int CommsSuccess) {
+        this.CommsSuccess = CommsSuccess;
     }
 
     public int getCommsError() {
         return CommsError;
     }
 
-    public int incCommsError() { return CommsError++; }
-
-    public void clearCommsError() {
-        this.CommsError = 0;
+    public void setCommsError(int CommsError) {
+        this.CommsError = CommsError;
     }
 
     public int getCommsConnectError() {
         return CommsConnectError;
     }
 
-    public int incCommsConnectError() { return CommsConnectError++; }
-
-    public int decCommsConnectError() {
-        if (CommsConnectError > 0) CommsConnectError--;
-        return CommsConnectError;}
-
-    public void clearCommsConnectError() {
-        this.CommsConnectError = 0;
+    public void setCommsConnectError(int CommsConnectError) {
+        this.CommsConnectError = CommsConnectError;
     }
 
     public int getCommsSignalError() {
         return CommsSignalError;
     }
 
-    public int incCommsSignalError() { return CommsSignalError++; }
-
-    public int decCommsSignalError() {
-        if (CommsSignalError > 0) CommsSignalError--;
-        return CommsSignalError;}
-
-    public void clearCommsSignalError() {
-        this.CommsSignalError = 0;
+    public void setCommsSignalError(int CommsSignalError) {
+        this.CommsSignalError = CommsSignalError;
     }
 
     public int getCommsSgvSuccess() {
         return CommsSgvSuccess;
     }
 
-    public int incCommsSgvSuccess() { return CommsSgvSuccess++; }
+    public void setCommsSgvSuccess(int CommsSgvSuccess) {
+        this.CommsSgvSuccess = CommsSgvSuccess;
+    }
 
     public int getPumpLostSensorError() {
         return PumpLostSensorError;
     }
 
-    public int incPumpLostSensorError() { return PumpLostSensorError++; }
-
-    public void clearPumpLostSensorError() {
-        this.PumpLostSensorError = 0;
+    public void setPumpLostSensorError(int PumpLostSensorError) {
+        this.PumpLostSensorError = PumpLostSensorError;
     }
 
     public int getPumpClockError() {
         return PumpClockError;
     }
 
-    public int incPumpClockError() { return PumpClockError++; }
-
-    public void clearPumpClockError() {
-        this.PumpClockError = 0;
+    public void setPumpClockError(int PumpClockError) {
+        this.PumpClockError = PumpClockError;
     }
 
     public int getPumpBatteryError() {
         return PumpBatteryError;
     }
 
-    public int incPumpBatteryError() { return PumpBatteryError++; }
-
-    public void clearPumpBatteryError() {
-        this.PumpBatteryError = 0;
+    public void setPumpBatteryError(int PumpBatteryError) {
+        this.PumpBatteryError = PumpBatteryError;
     }
 
     public void clearAllCommsErrors() {
