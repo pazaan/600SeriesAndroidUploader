@@ -1,7 +1,11 @@
 package info.nightscout.android.medtronic.message;
 
-import java.io.IOException;
+import android.util.Log;
 
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
+import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
@@ -10,22 +14,17 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
+
 public class ReadHistoryInfoRequestMessage extends MedtronicSendMessageRequestMessage<ReadHistoryInfoResponseMessage> {
-    public ReadHistoryInfoRequestMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
-        super(SendMessageType.READ_BASAL_PATTERN_REQUEST, pumpSession, new byte[] {
-                2,
-                3,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-        });
+    private static final String TAG = ReadHistoryInfoRequestMessage.class.getSimpleName();
+
+    public ReadHistoryInfoRequestMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
+        super(MessageType.READ_HISTORY_INFO, pumpSession, payload);
+    }
+
+    public ReadHistoryInfoResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
+        sendToPump(mDevice, mPumpSession, TAG);
+        return getResponse(readFromPump(mDevice, mPumpSession, TAG));
     }
 
     @Override

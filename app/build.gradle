@@ -80,7 +80,7 @@ android {
         minSdkVersion 14
         targetSdkVersion 25
         versionName generateVersionName()
-        versionCode generateVersionCode()
+        versionCode generateVersionCode() // FIXME - this forces a need for an online lookup and compile fails when offline
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
@@ -112,6 +112,8 @@ release {
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
+//    compile files('libs/hadoop-lzo-0.4.20.jar')
+    compile files('libs/lzo-core-1.0.5.jar')
 
     compile 'com.android.support:support-v13:25.3.1'
     compile 'com.android.support:design:25.3.1'

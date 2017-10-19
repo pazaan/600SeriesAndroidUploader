@@ -15,6 +15,12 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.HexDump;
 
+import static info.nightscout.android.utils.ToolKit.getIntL;
+import static info.nightscout.android.utils.ToolKit.getIntLU;
+import static info.nightscout.android.utils.ToolKit.getShort;
+import static info.nightscout.android.utils.ToolKit.getShortIU;
+import static info.nightscout.android.utils.ToolKit.getShortLU;
+
 /**
  * Created by lgoedhart on 27/03/2016.
  */
@@ -47,6 +53,10 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private short minutesOfInsulinRemaining; // 25h == "more than 1 day"
     private float activeInsulin;
     private int sgv;
+
+//    private int cgmRTC;
+//    private int cgmOFFSET;
+
     private Date cgmDate;
     private byte cgmExceptionType;
     private boolean lowSuspendActive;
@@ -69,26 +79,14 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     protected PumpStatusResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
-        if (this.encode().length < (57 + 96)) {
-            // Invalid message. Don't try and parse it
-            // TODO - deal with this more elegantly
-            Log.e(TAG, "Invalid message received for updatePumpStatus");
-            throw new UnexpectedMessageException("Invalid message received for updatePumpStatus");
-        }
-
-        byte bufferSize = (byte) (this.encode()[0x38] - 2); // TODO - getting the size should be part of the superclass.
-        ByteBuffer statusBuffer = ByteBuffer.allocate(bufferSize);
-        statusBuffer.order(ByteOrder.BIG_ENDIAN);
-        statusBuffer.put(this.encode(), 0x39, bufferSize);
-
-        if (BuildConfig.DEBUG) {
-            String outputString = HexDump.dumpHexString(statusBuffer.array());
-            Log.d(TAG, "PAYLOAD: " + outputString);
+        if (!MedtronicSendMessageRequestMessage.MessageType.READ_PUMP_STATUS.response(getShortIU(payload, 0x01))) {
+            Log.e(TAG, "Invalid message received for PumpTime");
+            throw new UnexpectedMessageException("Invalid message received for PumpStatus");
         }
 
         // add Flags
-        pumpStatus = statusBuffer.get(0x03);
-        cgmStatus = statusBuffer.get(0x41);
+        pumpStatus = payload[0x03];
+        cgmStatus = payload[0x41];
 
         suspended = (pumpStatus & 0x01) != 0x00;
         bolusingNormal = (pumpStatus & 0x02) != 0x00;
@@ -102,45 +100,45 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         cgmException = (cgmStatus & 0x04) != 0x00;
 
         // Active basal pattern
-        activeBasalPattern = statusBuffer.get(0x1A);
+        activeBasalPattern = payload[0x1A];
 
         // Normal basal rate
-        long rawNormalBasal = statusBuffer.getInt(0x1B);
+        long rawNormalBasal = getIntLU(payload, 0x1B);
         basalRate = new BigDecimal(rawNormalBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Temp basal rate
-        long rawTempBasal = statusBuffer.getInt(0x1F) & 0x0000000000FFFFFFL;
+        long rawTempBasal = getIntLU(payload, 0x1F);
         tempBasalRate = new BigDecimal(rawTempBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Temp basal percentage
-        tempBasalPercentage =  (short) (statusBuffer.get(0x23) & 0x00FF);
+        tempBasalPercentage =  (short) (payload[0x23] & 0x00FF);
 
         // Temp basal minutes remaining
-        tempBasalMinutesRemaining = (short) (statusBuffer.getShort(0x24) & 0x00FF);
+        tempBasalMinutesRemaining = (short) (getShort(payload, 0x24) &  0x00FF);
 
         // Units of insulin delivered as basal today
-        long rawBasalUnitsDeliveredToday = statusBuffer.getInt(0x26) & 0x0000000000FFFFFFL;
+        long rawBasalUnitsDeliveredToday = getIntLU(payload, 0x26);
         basalUnitsDeliveredToday = new BigDecimal(rawBasalUnitsDeliveredToday / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Pump battery percentage
-        batteryPercentage = statusBuffer.get(0x2A);
+        batteryPercentage = (short) (payload[0x2A] & 0x00FF);
 
         // Reservoir amount
-        long rawReservoirAmount = statusBuffer.getInt(0x2B) & 0x0000000000FFFFFFL;
+        long rawReservoirAmount = getIntLU(payload, 0x2B);
         reservoirAmount = new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Amount of insulin left in pump (in minutes)
-        byte insulinHours = statusBuffer.get(0x2F);
-        byte insulinMinutes = statusBuffer.get(0x30);
+        byte insulinHours = payload[0x2F];
+        byte insulinMinutes = payload[0x30];
         minutesOfInsulinRemaining = (short) ((insulinHours * 60) + insulinMinutes);
 
         // Active insulin
-        long rawActiveInsulin = statusBuffer.getInt(0x31) & 0x0000000000FFFFFFL;
+        long rawActiveInsulin = getIntLU(payload, 0x31);
         activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // CGM SGV
-        sgv = (statusBuffer.getShort(0x35) & 0x0000FFFF); // In mg/DL. 0x0000 = no CGM reading, 0x03NN = sensor exception
-        cgmDate = MessageUtils.decodeDateTime((long) statusBuffer.getInt(0x37) & 0x00000000FFFFFFFFL, (long) statusBuffer.getInt(0x3B));
+        sgv = getShortIU(payload, 0x35); // In mg/DL. 0x0000 = no CGM reading, 0x03NN = sensor exception
+        cgmDate = MessageUtils.decodeDateTime(getIntLU(payload, 0x37), getIntL(payload, 0x3B));
         Log.d(TAG, "original cgm/sgv date: " + cgmDate);
 
         if (sgv >= 0x0300) {
@@ -150,43 +148,47 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             sgv = 0;
         } else {
             cgmExceptionType = 0;
-            cgmTrend = PumpStatusEvent.CGM_TREND.fromMessageByte((byte) (statusBuffer.get(0x40) & 0xF0)); // masked as low nibble can contain value when transmitter battery low
+            cgmTrend = PumpStatusEvent.CGM_TREND.fromMessageByte((byte) (payload[0x40] & 0xF0)); // masked as low nibble can contain value when transmitter battery low
             cgmWarmUp = false;
         }
+
+        Log.d(TAG, "RTC= " + getIntLU(payload, 0x37) + "  OFFSET= " + getIntLU(payload, 0x3B));
+//        cgmRTC = statusBuffer.getInt(0x37);
+//        cgmOFFSET = statusBuffer.getInt(0x3B);
 
         // Predictive low suspend
         // TODO - there is more status info in this byte other than just a boolean yes/no
         // noted: 0x01=high 0x04=before high 0x08=before low 0x0A=low 0x80=suspend 0x92=suspend low
-        lowSuspendActive = statusBuffer.get(0x3F) != 0;
+        lowSuspendActive = payload[0x3F] != 0;
 
         // Recent Bolus Wizard
-        recentBolusWizard = statusBuffer.get(0x48) != 0;
+        recentBolusWizard = payload[0x48] != 0;
 
         // Recent BGL
-        recentBGL = statusBuffer.getShort(0x49) & 0x0000FFFF; // In mg/DL
+        recentBGL = getShortIU(payload, 0x49); // In mg/DL
 
         // Active alert
-        alert = statusBuffer.getShort(0x4B);
-        alertDate = MessageUtils.decodeDateTime((long) statusBuffer.getInt(0x4D) & 0x00000000FFFFFFFFL, (long) statusBuffer.getInt(0x51));
+        alert = getShort(payload, 0x4B);
+        alertDate = MessageUtils.decodeDateTime(getIntLU(payload, 0x4D), getIntL(payload, 0x51));
 
         // Now bolusing
-        long rawBolusingDelivered = statusBuffer.getInt(0x04) & 0x0000000000FFFFFFL;
+        long rawBolusingDelivered = getIntLU(payload, 0x04);
         bolusingDelivered = new BigDecimal(rawBolusingDelivered / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
-        bolusingMinutesRemaining = statusBuffer.getShort(0x0C);
-        bolusingReference = statusBuffer.getShort(0x0E);
+        bolusingMinutesRemaining = getShort(payload, 0x0C);
+        bolusingReference = getShort(payload, 0x0E);
 
         // Last bolus
-        long rawLastBolusAmount = statusBuffer.getInt(0x10) & 0x0000000000FFFFFFL;
+        long rawLastBolusAmount = getIntLU(payload, 0x10);
         lastBolusAmount = new BigDecimal(rawLastBolusAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
-        lastBolusDate = MessageUtils.decodeDateTime((long) statusBuffer.getInt(0x14) & 0x00000000FFFFFFFFL, 0);
-        lastBolusReference = statusBuffer.getShort(0x18);
+        lastBolusDate = MessageUtils.decodeDateTime(getIntLU(payload, 0x14), 0);
+        lastBolusReference = getShort(payload, 0x18);
 
         // Calibration
-        calibrationDueMinutes = statusBuffer.getShort(0x43);
+        calibrationDueMinutes = getShort(payload, 0x43);
 
         // Transmitter
-        transmitterControl = statusBuffer.get(0x43);
-        transmitterBattery  = statusBuffer.get(0x45);
+        transmitterControl = payload[0x43];
+        transmitterBattery  = payload[0x45];
         // Normalise transmitter battery to percentage shown on pump sensor status screen
         if (transmitterBattery == 0x3F) transmitterBattery = 100;
         else if (transmitterBattery == 0x2B) transmitterBattery = 73;
@@ -196,7 +198,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         else transmitterBattery = 0;
 
         // Sensor
-        long rawSensorRateOfChange = statusBuffer.getShort(0x46);
+        long rawSensorRateOfChange = getShortLU(payload, 0x46);
         sensorRateOfChange = new BigDecimal(rawSensorRateOfChange / 100f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
     }
 

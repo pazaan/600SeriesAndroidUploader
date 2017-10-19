@@ -11,6 +11,7 @@ import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
 /**
  * Created by lgoedhart on 26/03/2016.
@@ -23,16 +24,28 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
     }
 
     @Override
-    public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException {
+    public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
         sendMessage(mDevice);
 
         // Don't care what the 0x81 response message is at this stage
         Log.d(TAG, "negotiateChannel: Reading 0x81 message");
-        readMessage(mDevice);
-        // The 0x80 message
-        Log.d(TAG, "negotiateChannel: Reading 0x80 message");
+        if (readMessage_0x81(mDevice).length != 0x27) {
+            Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response");
+            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x81 response");
+        }
 
-        return this.getResponse(readMessage(mDevice));
+        Log.d(TAG, "negotiateChannel: Reading 0x80 message");
+        // Read the 0x80
+        byte[] payload = readMessage(mDevice);
+        if(payload[0x12] != (byte) 0x80) {
+            Log.e(TAG, "Invalid message received for negotiateChannel 0x80 response");
+            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x80 response");
+        }
+
+        // Clear unexpected incoming messages
+//        clearMessage(mDevice);
+
+        return this.getResponse(payload);
     }
 
     @Override

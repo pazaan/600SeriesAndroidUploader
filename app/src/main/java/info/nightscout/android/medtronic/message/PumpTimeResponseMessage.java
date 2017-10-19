@@ -11,7 +11,12 @@ import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
+import info.nightscout.android.medtronic.service.MedtronicCnlService;
 import info.nightscout.android.utils.HexDump;
+
+import static info.nightscout.android.utils.ToolKit.getIntL;
+import static info.nightscout.android.utils.ToolKit.getIntLU;
+import static info.nightscout.android.utils.ToolKit.getShortIU;
 
 /**
  * Created by lgoedhart on 27/03/2016.
@@ -24,25 +29,17 @@ public class PumpTimeResponseMessage extends MedtronicSendMessageResponseMessage
     protected PumpTimeResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
-        if (this.encode().length < (61 + 8)) {
-            // Invalid message. Return an invalid date.
-            // TODO - deal with this more elegantly
+        if (!MedtronicSendMessageRequestMessage.MessageType.READ_PUMP_TIME.response(getShortIU(payload, 0x01))) {
             Log.e(TAG, "Invalid message received for getPumpTime");
-            throw new UnexpectedMessageException("Invalid message received for getPumpTime");
-        } else {
-            ByteBuffer dateBuffer = ByteBuffer.allocate(8);
-            dateBuffer.order(ByteOrder.BIG_ENDIAN);
-            dateBuffer.put(this.encode(), 0x3d, 8);
-
-            if (BuildConfig.DEBUG) {
-                String outputString = HexDump.dumpHexString(dateBuffer.array());
-                Log.d(TAG, "PAYLOAD: " + outputString);
-            }
-
-            long rtc = dateBuffer.getInt(0) & 0x00000000ffffffffL;
-            long offset = dateBuffer.getInt(4);
-            pumpTime = MessageUtils.decodeDateTime(rtc, offset);
+            throw new UnexpectedMessageException("Invalid message received for PumpTime");
         }
+
+        long rtc = getIntLU(payload, 0x04);
+        long offset = getIntL(payload, 0x08);
+        pumpTime = MessageUtils.decodeDateTime(rtc, offset);
+
+        MedtronicCnlService.pumpRTC = (int) rtc;
+        MedtronicCnlService.pumpOFFSET = (int) offset;
     }
 
     public Date getPumpTime() {

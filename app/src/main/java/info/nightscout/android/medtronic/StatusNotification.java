@@ -19,6 +19,7 @@ import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -87,10 +88,10 @@ public class StatusNotification {
                 .setContentTitle("600 Series Uploader")
                 .setSmallIcon(R.drawable.ic_notification)
                 .setVisibility(VISIBILITY_PUBLIC)
-                .setContentIntent(pendingIntent)
+                .setContentIntent(pendingIntent);
 //                .setContent(remoteViews)
 //                .setChannelId(CHANNEL_ID);
-                .setTicker("600 Series Nightscout Uploader");
+//                .setTicker("600 Series Nightscout Uploader");
     }
 
     public void updateNotification(long nextpoll) {
@@ -104,7 +105,11 @@ public class StatusNotification {
         String bolus = "";
         String basal = "";
         String cal = "";
-        String poll = "Next " + dateFormatterNice.format(nextpoll);
+
+        String poll = "";
+        if (nextpoll > 0)
+            poll = "Next " + dateFormatterNice.format(nextpoll);
+
         long now = System.currentTimeMillis();
 
         long sgvtime = now;
@@ -175,6 +180,18 @@ public class StatusNotification {
                 .addLine(bgl)
                 .addLine(bolus)
                 .setSummaryText(poll + "  " + cal);
+
+//        mNotificationBuilder.setProgress(0, 0, false);
+        if (MasterService.noteError)
+            mNotificationBuilder.setSmallIcon(R.drawable.ic_error);
+        else if (MasterService.commsActive) {
+//            mNotificationBuilder.setProgress(0, 0, true);
+            mNotificationBuilder.setSmallIcon(R.drawable.busy_anim);
+        }
+        else
+            mNotificationBuilder.setSmallIcon(R.drawable.ic_notification);
+
+
 
         mNotificationBuilder.setStyle(sub);
         mNotificationBuilder.setWhen(sgvtime);

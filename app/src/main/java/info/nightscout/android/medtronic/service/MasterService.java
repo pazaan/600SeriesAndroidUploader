@@ -18,7 +18,10 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
@@ -77,9 +80,16 @@ public class MasterService extends Service {
     private static int uploaderBatteryLevel = 0;
     private static boolean serviceActive = true;
 
-    public static boolean commsActive = false;
+    private static boolean serviceStarted = false;
 
-    public static int getUploaderBatteryLevel() {return uploaderBatteryLevel;}
+    public static boolean commsActive = false;
+    public static boolean noteError = false;
+
+    public static int getUploaderBatteryLevel() {
+        return uploaderBatteryLevel;
+    }
+
+    private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -96,10 +106,12 @@ public class MasterService extends Service {
         mContext = this.getBaseContext();
 
         IntentFilter masterServiceIntentFilter = new IntentFilter();
+        masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_ACTIVE);
         masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_FINISHED);
         masterServiceIntentFilter.addAction(Constants.ACTION_STOP_SERVICE);
         masterServiceIntentFilter.addAction(Constants.ACTION_READ_NOW);
-        //masterServiceIntentFilter.addAction(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE);
+        masterServiceIntentFilter.addAction(Constants.ACTION_TEST);
+        //masterServiceIntentFilter.addAction(MedtronicCnlService.Constants.ACTION_STATUS_MESSAGE);
         registerReceiver(masterServiceReceiver, masterServiceIntentFilter);
 
         registerReceiver(
@@ -115,7 +127,7 @@ public class MasterService extends Service {
         IntentFilter usbIntentFilter = new IntentFilter();
         usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        usbIntentFilter.addAction(Constants.ACTION_USB_PERMISSION);
+        usbIntentFilter.addAction(Constants.ACTION_HAS_USB_PERMISSION);
         usbIntentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
         registerReceiver(usbReceiver, usbIntentFilter);
 
@@ -145,22 +157,6 @@ public class MasterService extends Service {
     public void onTaskRemoved(Intent intent) {
         Log.i(TAG, "onTaskRemoved called");
         statusMessage.add(TAG + " onTaskRemoved");
-
-//        statusNotification.endNotification();
-//        MedtronicCnlAlarmManager.cancelAlarm();
-
-//        MedtronicCnlAlarmManager.setAlarmAfterMillis(10000);
-
-/*
-        statusNotification.endNotification();
-
-        MedtronicCnlAlarmManager.cancelAlarm();
-
-        unregisterReceiver(statusMessageReceiver);
-        unregisterReceiver(usbReceiver);
-        unregisterReceiver(batteryReceiver);
-        unregisterReceiver(masterServiceReceiver);
-*/
     }
 
     @Override
@@ -171,33 +167,64 @@ public class MasterService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "Received start id " + startId + ": " + intent);
+        Log.d(TAG, "Received start id " + startId + ": " + intent);
         statusMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
 /*
         if (intent == null) {
             // do nothing and return
             return START_STICKY;
         }
+        // null = service or process was killed
+        // startId = 1 first start
+
+        if (intent != null || startId == 1) {
+            Log.i(TAG, "service start");
+            statusMessage.add(TAG + " service start");
+
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+            Notification notification = new NotificationCompat.Builder(this)
+                    .setContentTitle("600 Series Uploader")
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setVisibility(VISIBILITY_PUBLIC)
+                    .setContentIntent(pendingIntent)
+                    .setTicker("600 Series Nightscout Uploader")
+                    .build();
+            startForeground(SERVICE_NOTIFICATION_ID, notification);
+
+            statusNotification.initNotification(mContext);
+
+            noteError = false;
+
+            startCgmService();
+
+            serviceActive = true;
+        }
 */
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        Notification notification = new NotificationCompat.Builder(this)
-                .setContentTitle("600 Series Uploader")
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setVisibility(VISIBILITY_PUBLIC)
-                .setContentIntent(pendingIntent)
-                .setTicker("600 Series Nightscout Uploader")
-                .build();
-        startForeground(SERVICE_NOTIFICATION_ID, notification);
+        if (intent == null || startId == 1) {
+            Log.i(TAG, "service start");
+            statusMessage.add(TAG + " service start");
 
-        statusNotification.initNotification(mContext);
+            // * use the status note for this
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+            Notification notification = new NotificationCompat.Builder(this)
+                    .setContentTitle("600 Series Uploader")
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setVisibility(VISIBILITY_PUBLIC)
+                    .setContentIntent(pendingIntent)
+                    .setTicker("600 Series Nightscout Uploader")
+                    .build();
+            startForeground(SERVICE_NOTIFICATION_ID, notification);
 
-        startCgm();
+            statusNotification.initNotification(mContext);
 
-        Log.i(TAG, "Starting in foreground mode");
-        statusMessage.add(TAG + " Starting in foreground mode");
+            noteError = false;
 
-        serviceActive = true;
+            startCgmService();
+
+            serviceActive = true;
+        }
 
         return START_STICKY;
     }
@@ -217,13 +244,16 @@ public class MasterService extends Service {
                     uploadPollResults();
 
                     long nextpoll = intent.getLongExtra("nextpoll", 0);
-                    statusNotification.updateNotification(nextpoll);
 
                     if (nextpoll > 0) {
                         MedtronicCnlAlarmManager.setAlarm(nextpoll);
+                        noteError = false;
                     } else {
                         MedtronicCnlAlarmManager.cancelAlarm();
+                        noteError = true;
                     }
+
+                    statusNotification.updateNotification(nextpoll);
 
                 } else {
                     Log.d(TAG, "onReceive : stopping master service");
@@ -233,11 +263,15 @@ public class MasterService extends Service {
             } else if (Constants.ACTION_STOP_SERVICE.equals(action)) {
                 MedtronicCnlAlarmManager.cancelAlarm();
                 serviceActive = false;
-                if (!commsActive)
-                    stopSelf();
+//                if (!commsActive)
+                stopSelf();
 
             } else if (Constants.ACTION_READ_NOW.equals(action)) {
                 MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000);
+
+            } else if (Constants.ACTION_CNL_COMMS_ACTIVE.equals(action)) {
+                commsActive = true;
+                statusNotification.updateNotification(0);
             }
 
         }
@@ -248,10 +282,6 @@ public class MasterService extends Service {
     }
 
     private void startCgmServiceDelayed(long delay) {
-        startCgm();
-    }
-
-    private void startCgm() {
         long now = System.currentTimeMillis();
         long start = now + 1000;
 
@@ -264,14 +294,18 @@ public class MasterService extends Service {
 
         if (results.size() > 0) {
             long timeLastCGM = results.first().getCgmDate().getTime();
-            if (now - timeLastCGM < MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS)
-                start = timeLastCGM + MedtronicCnlIntentService.POLL_GRACE_PERIOD_MS + MedtronicCnlIntentService.POLL_PERIOD_MS;
+            if (now - timeLastCGM < MedtronicCnlService.POLL_GRACE_PERIOD_MS + MedtronicCnlService.POLL_PERIOD_MS)
+                start = timeLastCGM + MedtronicCnlService.POLL_GRACE_PERIOD_MS + MedtronicCnlService.POLL_PERIOD_MS;
         }
 
+        if (!realm.isClosed()) realm.close();
+
+        if (start - now < delay) start = now + delay;
         MedtronicCnlAlarmManager.setAlarm(start);
         statusNotification.updateNotification(start);
 
-        if (!realm.isClosed()) realm.close();
+        if (start - now > 10 * 1000)
+            statusMessage.add("Next poll due at: " + dateFormatter.format(start));
     }
 
     private class StatusMessageReceiver extends BroadcastReceiver {
@@ -298,77 +332,73 @@ public class MasterService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (Constants.ACTION_USB_PERMISSION.equals(action)) {
-                boolean permissionGranted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
-                if (permissionGranted) {
-                    Log.d(TAG, "Got permission to access USB");
-                    statusMessage.add(ICON_INFO + "Got permission to access USB.");
-                    startCgmService();
-                } else {
-                    Log.d(TAG, "Still no permission for USB. Waiting...");
-                    waitForUsbPermission();
-                }
+
+            // received from UsbActivity via OS
+            if (Constants.ACTION_HAS_USB_PERMISSION.equals(action)) {
+
+                noteError = false;
+                commsActive = false;
+                statusNotification.updateNotification(0);
+
+                startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
+
+                // received from OS
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 Log.d(TAG, "USB plugged in");
-//                if (mEnableCgmService) {
-                clearDisconnectionNotification();
-//                }
-////                dataStore.clearAllCommsErrors();
                 statusMessage.add(ICON_INFO + "Contour Next Link plugged in.");
+                clearDisconnectionNotification();
+////                dataStore.clearAllCommsErrors();
+
                 if (hasUsbPermission()) {
-                    // Give the USB a little time to warm up first
-                    startCgmServiceDelayed(MedtronicCnlIntentService.USB_WARMUP_TIME_MS);
+
+                    noteError = false;
+                    commsActive = false;
+                    statusNotification.updateNotification(0);
+
                 } else {
                     Log.d(TAG, "No permission for USB. Waiting.");
                     statusMessage.add(ICON_INFO + "Waiting for USB permission.");
-                    waitForUsbPermission();
                 }
+
+                // received from OS
             } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
                 Log.d(TAG, "USB unplugged");
-//                if (mEnableCgmService) {
                 showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
                 statusMessage.add(ICON_WARN + "USB error. Contour Next Link unplugged.");
-//                }
+
+                MedtronicCnlAlarmManager.cancelAlarm();
+
+                noteError = true;
+                commsActive = false;
+                statusNotification.updateNotification(0);
+
+                // received from CnlService
             } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
                 Log.d(TAG, "No permission to read the USB device.");
                 statusMessage.add(ICON_WARN + "No permission to read the USB device.");
                 statusMessage.add(ICON_HELP + "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
 
-//                statusMessage.add(MedtronicCnlIntentService.ICON_INFO + "Requesting USB permission.");
-//                requestUsbPermission();
+                MedtronicCnlAlarmManager.cancelAlarm();
+
+                noteError = true;
+                commsActive = false;
+                statusNotification.updateNotification(0);
+
             }
         }
     }
 
     private boolean hasUsbPermission() {
         UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
-        UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlIntentService.USB_VID, MedtronicCnlIntentService.USB_PID);
+        UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID);
 
         return !(usbManager != null && cnlDevice != null && !usbManager.hasPermission(cnlDevice));
-    }
-
-    private void waitForUsbPermission() {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent permissionIntent = new Intent(Constants.ACTION_USB_PERMISSION);
-        permissionIntent.putExtra(UsbManager.EXTRA_PERMISSION_GRANTED, hasUsbPermission());
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, permissionIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 1000L, pendingIntent);
-    }
-
-    private void requestUsbPermission() {
-        if (!hasUsbPermission()) {
-            UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
-            UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlIntentService.USB_VID, MedtronicCnlIntentService.USB_PID);
-            PendingIntent permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(Constants.ACTION_USB_PERMISSION), 0);
-            usbManager.requestPermission(cnlDevice, permissionIntent);
-        }
     }
 
     private void showDisconnectionNotification(String title, String message) {
         android.support.v7.app.NotificationCompat.Builder mBuilder =
                 (android.support.v7.app.NotificationCompat.Builder) new android.support.v7.app.NotificationCompat.Builder(this)
                         .setPriority(android.support.v7.app.NotificationCompat.PRIORITY_MAX)
-//                        .setSmallIcon(R.drawable.ic_error)
                         .setSmallIcon(android.R.drawable.stat_notify_error)
                         .setContentTitle(title)
                         .setContentText(message)
@@ -400,15 +430,21 @@ public class MasterService extends Service {
 
     public final class Constants {
         public static final String ACTION_STATUS_MESSAGE = "info.nightscout.android.medtronic.STATUS_MESSAGE";
+        public static final String ACTION_CNL_COMMS_ACTIVE = "info.nightscout.android.medtronic.CNL_COMMS_ACTIVE";
         public static final String ACTION_CNL_COMMS_FINISHED = "info.nightscout.android.medtronic.CNL_COMMS_FINISHED";
         public static final String ACTION_STOP_SERVICE = "info.nightscout.android.medtronic.STOP_SERVICE";
         public static final String ACTION_READ_NOW = "info.nightscout.android.medtronic.READ_NOW";
 
+        public static final String ACTION_TEST = "info.nightscout.android.medtronic.TEST";
+
         public static final String ACTION_NO_USB_PERMISSION = "info.nightscout.android.medtronic.NO_USB_PERMISSION";
-        public static final String ACTION_USB_PERMISSION = "info.nightscout.android.medtronic.USB_PERMISSION";
+        public static final String ACTION_HAS_USB_PERMISSION = "info.nightscout.android.medtronic.HAS_USB_PERMISSION";
 
         public static final String ACTION_USB_REGISTER = "info.nightscout.android.medtronic.USB_REGISTER";
-        public static final String ACTION_UPDATE_PUMP = "info.nightscout.android.medtronic.UPDATE_PUMP";
+
+        public static final String ACTION_CNL_READPUMP = "info.nightscout.android.medtronic.CNL_READPUMP";
+        public static final String ACTION_CNL_SHUTDOWN = "info.nightscout.android.medtronic.CNL_SHUTDOWN";
+
         public static final String ACTION_UPDATE_STATUS = "info.nightscout.android.medtronic.UPDATE_STATUS";
 
         public static final String EXTENDED_DATA = "info.nightscout.android.medtronic.DATA";

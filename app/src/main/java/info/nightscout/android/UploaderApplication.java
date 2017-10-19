@@ -93,7 +93,7 @@ public class UploaderApplication extends Application {
     }
 
     @RealmModule(classes = {BasalRate.class, BasalSchedule.class, ContourNextLinkInfo.class, PumpInfo.class, PumpStatusEvent.class, DataStore.class})
-    public class MainModule {
+    private class MainModule {
     }
     @RealmModule(classes = {StatusStore.class})
     private class StoreModule {

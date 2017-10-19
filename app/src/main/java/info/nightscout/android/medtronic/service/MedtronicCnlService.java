@@ -1,13 +1,10 @@
 package info.nightscout.android.medtronic.service;
 
 import android.app.AlarmManager;
-import android.app.IntentService;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
@@ -30,6 +27,7 @@ import info.nightscout.android.medtronic.MedtronicCnlReader;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
+import info.nightscout.android.medtronic.message.ContourNextLinkCommandMessage;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
@@ -41,10 +39,11 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-public class MedtronicCnlIntentService extends Service {
+import static info.nightscout.android.utils.ToolKit.getWakeLock;
+import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
-//public class MedtronicCnlIntentService extends IntentService {
-    private static final String TAG = MedtronicCnlIntentService.class.getSimpleName();
+public class MedtronicCnlService extends Service {
+    private static final String TAG = MedtronicCnlService.class.getSimpleName();
 
     public final static int USB_VID = 0x1a79;
     public final static int USB_PID = 0x6210;
@@ -53,14 +52,14 @@ public class MedtronicCnlIntentService extends Service {
     public final static long POLL_PERIOD_MS = 300000L;
     public final static long LOW_BATTERY_POLL_PERIOD_MS = 900000L;
     // Number of additional seconds to wait after the next expected CGM poll, so that we don't interfere with CGM radio comms.
-    public final static long POLL_GRACE_PERIOD_MS = 30000L;
+    public final static long POLL_GRACE_PERIOD_MS = 15000L; //30000
     // Number of seconds before the next expected CGM poll that we will allow uploader comms to start
-    public final static long POLL_PRE_GRACE_PERIOD_MS = 45000L;
+    public final static long POLL_PRE_GRACE_PERIOD_MS = 30000; //45000L;
     // cgm n/a events to trigger anti clash poll timing
     public final static int POLL_ANTI_CLASH = 1; //3
 
     // show warning message after repeated errors
-    private final static int ERROR_COMMS_AT = 4;
+    private final static int ERROR_COMMS_AT = 3;
     private final static int ERROR_CONNECT_AT = 6;
     private final static int ERROR_SIGNAL_AT = 6;
     private final static int ERROR_PUMPLOSTSENSOR_AT = 6;
@@ -69,9 +68,9 @@ public class MedtronicCnlIntentService extends Service {
     private final static int ERROR_PUMPCLOCK_MS = 10 * 60 * 1000;
 
     private Context mContext;
-    private UsbHidDriver mHidDevice;
+    private static UsbHidDriver mHidDevice;
     private UsbManager mUsbManager;
-
+    private ReadPump readPump;
     private Realm realm;
 
     private int PumpCgmNA = 0;
@@ -91,24 +90,25 @@ public class MedtronicCnlIntentService extends Service {
     private long prefLowBatteryPollInterval;
 
     private boolean commsActive = false;
-    private boolean commsDestroy = false;
-
-    private CnlIntentMessageReceiver cnlIntentMessageReceiver = new CnlIntentMessageReceiver();
+    private boolean shutdownProtect = false;
 
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
     private DateFormat dateFormatterNote = new SimpleDateFormat("E HH:mm", Locale.US);
-/*
-    public MedtronicCnlIntentService() {
-        super(MedtronicCnlIntentService.class.getName());
-    }
-*/
+
+    public static int pumpRTC;
+    public static int pumpOFFSET;
+
+    public static int cnlClear = 0;
+    public static int cnl0x81 = 0;
+
     protected void sendStatus(String message) {
         try {
             Intent intent =
                     new Intent(MasterService.Constants.ACTION_STATUS_MESSAGE)
                             .putExtra(MasterService.Constants.EXTENDED_DATA, message);
             sendBroadcast(intent);
-        } catch (Exception e ) {}
+        } catch (Exception e) {
+        }
     }
 
     protected void sendMessage(String action) {
@@ -116,7 +116,8 @@ public class MedtronicCnlIntentService extends Service {
             Intent intent =
                     new Intent(action);
             sendBroadcast(intent);
-        } catch (Exception e ) {}
+        } catch (Exception e) {
+        }
     }
 
     @Override
@@ -131,105 +132,98 @@ public class MedtronicCnlIntentService extends Service {
 
         mContext = this.getBaseContext();
         mUsbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(MasterService.Constants.ACTION_UPDATE_PUMP);
-        registerReceiver(cnlIntentMessageReceiver, intentFilter);
-
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy called");
-/*
-        if (commsActive) {
-            Log.w(TAG, "onDestroy CNL comms are active!!!");
-            long timeStarted = System.currentTimeMillis();
-            int timeout = 0;
-            do {
-                Log.w(TAG, "onDestroy waiting!!!");
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                }
-            } while ((commsActive) && (++timeout < 90));
-            Log.w(TAG, "onDestroy sorted!!!");
+        Log.d(TAG, "onDestroy called : commsActive=" + commsActive);
+
+        if (mHidDevice != null) {
+            Log.i(TAG, "Closing serial device...");
+            mHidDevice.close();
+            mHidDevice = null;
         }
-*/
-        if (commsActive) {
-            Log.w(TAG, "onDestroy : CNL comms are active!!!");
-            sendStatus(TAG + " onDestroy : CNL comms are active!!!");
-            commsDestroy = true;
-        } else {
 
-            unregisterReceiver(cnlIntentMessageReceiver);
-
-            if (mHidDevice != null) {
-                Log.i(TAG, "Closing serial device...");
-                mHidDevice.close();
-                mHidDevice = null;
-            }
-
-            if (UploaderApplication.killer >= 12) {
-                Log.d(TAG, "!!! ninja kill cnl process !!!");
-                sendStatus("!!! ninja kill cnl process !!!");
+        if (UploaderApplication.killer >= 12) {
+            Log.d(TAG, "!!! ninja kill cnl process !!!");
+            sendStatus("!!! ninja kill cnl process !!!");
 //                System.runFinalization();
-                android.os.Process.killProcess(android.os.Process.myPid());
-            }
-
+            android.os.Process.killProcess(android.os.Process.myPid());
         }
     }
-
-// Intent { flg=0x10000000 cmp=info.nightscout.android/.SplashActivity }
-
-// Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=info.nightscout.android/.SplashActivity (has extras) }
-// Intent { flg=0x10000000 cmp=info.nightscout.android/.medtronic.MainActivity }
 
     @Override
     public void onTaskRemoved(Intent intent) {
         Log.d(TAG, "onTaskRemoved called : " + intent);
-        sendStatus(TAG + " onTaskRemoved : comms active=" + commsActive);
-/*
-        if (commsActive) {
-            if (intent.getAction() == "android.intent.action.MAIN") {
-                long timeStarted = System.currentTimeMillis();
-                int timeout = 0;
-                do {
-                    Log.w(TAG, "waiting for cnl comms to finish!!!");
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                    }
-                } while ((commsActive) && (++timeout < 90));
-                long timeEnded = System.currentTimeMillis();
-                Log.w(TAG, "sorted in " + (timeEnded - timeStarted) + "ms");
-            }
-        }
-*/
+        sendStatus(TAG + " onTaskRemoved : commsActive=" + commsActive);
     }
 
     @Override
     public void onLowMemory() {
         Log.d(TAG, "onLowMemory called");
-        sendStatus(TAG + " onLowMemory : comms active=" + commsActive);
+        sendStatus(TAG + " onLowMemory : commsActive=" + commsActive);
     }
-/*
 
-Notes on Errors:
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.i(TAG, "Received start id " + startId + "  : " + intent);
 
-CNL-PUMP pairing and registered devices
+        if (intent == null) {
+            return START_NOT_STICKY;
+        }
 
-CNL: paired PUMP: paired UPLOADER: registered = ok
-CNL: paired PUMP: paired UPLOADER: unregistered = ok
-CNL: paired PUMP: unpaired UPLOADER: registered = "Could not communicate with the pump. Is it nearby?"
-CNL: paired PUMP: unpaired UPLOADER: unregistered = "Could not communicate with the pump. Is it nearby?"
-CNL: unpaired PUMP: paired UPLOADER: registered = "Timeout communicating with the Contour Next Link."
-CNL: unpaired PUMP: paired UPLOADER: unregistered = "Invalid message received for requestLinkKey, Contour Next Link is not paired with pump."
-CNL: unpaired PUMP: unpaired UPLOADER: registered = "Timeout communicating with the Contour Next Link."
-CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received for requestLinkKey, Contour Next Link is not paired with pump."
+        String action = intent.getAction();
 
-*/
+        if (MasterService.Constants.ACTION_CNL_READPUMP.equals(action) && readPump == null) {
+            prefPollInterval = intent.getLongExtra("PollInterval", POLL_PERIOD_MS);
+            prefLowBatteryPollInterval = intent.getLongExtra("LowBatteryPollInterval", LOW_BATTERY_POLL_PERIOD_MS);
+            prefReducePollOnPumpAway = intent.getBooleanExtra("ReducePollOnPumpAway", false);
+
+            readPump = new ReadPump();
+            readPump.setPriority(Thread.MIN_PRIORITY);
+            readPump.start();
+
+            return START_STICKY;
+        }
+
+        else if (MasterService.Constants.ACTION_CNL_SHUTDOWN.equals(action) && readPump != null) {
+            // device is shutting down, pull the emergency brake!
+            // less then ideal but we need to stop CNL comms asap before android kills us while protecting comms that must complete to avoid a CNL E86 error
+            if (mHidDevice != null) {
+                Log.d(TAG, "device is shutting down, pull the emergency brake!");
+
+                long now = System.currentTimeMillis();
+                while (shutdownProtect && (System.currentTimeMillis() - now) < 1000) {
+                    Log.d(TAG, "shutdownProtect");
+                    readPump.interrupt();
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                    }
+                }
+
+                try {
+                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
+                            .sendNoResponse(mHidDevice);
+                    Thread.sleep(10);
+                } catch (IOException e) {
+                } catch (TimeoutException e) {
+                } catch (UnexpectedMessageException e) {
+                } catch (ChecksumException e) {
+                } catch (EncryptionException e) {
+                } catch (InterruptedException e) {
+                }
+
+                mHidDevice.close();
+                mHidDevice = null;
+            }
+            stopSelf();
+            android.os.Process.killProcess(android.os.Process.myPid());
+        }
+
+        return START_NOT_STICKY;
+    }
 
     private void readDataStore() {
         DataStore dataStore = realm
@@ -271,93 +265,56 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         realm.commitTransaction();
     }
 
-    private final static boolean debug_wakelocks = true;
-
-    public static PowerManager.WakeLock getWakeLock(final String name, int millis) {
-        final PowerManager pm = (PowerManager) UploaderApplication.getAppContext().getSystemService(Context.POWER_SERVICE);
-        PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, name);
-        wl.acquire(millis);
-        if (debug_wakelocks) Log.d(TAG, "getWakeLock: " + name + " " + wl.toString());
-        return wl;
-    }
-
-    public static void releaseWakeLock(PowerManager.WakeLock wl) {
-        if (debug_wakelocks) Log.d(TAG, "releaseWakeLock: " + wl.toString());
-        if (wl.isHeld()) wl.release();
-    }
-
-    private static final Object lock = new Object();
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "Received start id " + startId + ": " + intent);
-
-        if (intent == null) {
-            // do nothing and return
-            return START_NOT_STICKY;
-        }
-
-        prefPollInterval = intent.getLongExtra("PollInterval", POLL_PERIOD_MS);
-        prefLowBatteryPollInterval = intent.getLongExtra("LowBatteryPollInterval", LOW_BATTERY_POLL_PERIOD_MS);
-        prefReducePollOnPumpAway = intent.getBooleanExtra("ReducePollOnPumpAway", false);
-
-        Intent localIntent = new Intent(MasterService.Constants.ACTION_UPDATE_PUMP);
-        sendBroadcast(localIntent);
-
-        return START_STICKY;
-    }
-
-    private class CnlIntentMessageReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "onReceive called : " + intent);
-            //           String message = intent.getStringExtra(Constants.ACTION_READ_PUMP);
-            //           Log.i(TAG, "Message Receiver: " + message);
-
-//            statusMessage.add("* service message");
-
-            onHandleIntent(intent);
-
-        }
-    }
-
-    protected void onHandleIntent(Intent intent) {
-        Log.d(TAG, "onHandleIntent called");
-
-        PowerManager.WakeLock wl = getWakeLock("CNL", 60000);
-//        synchronized (lock) {
 /*
-            prefPollInterval = intent.getLongExtra("PollInterval", POLL_PERIOD_MS);
-            prefLowBatteryPollInterval = intent.getLongExtra("LowBatteryPollInterval", LOW_BATTERY_POLL_PERIOD_MS);
-            prefReducePollOnPumpAway = intent.getBooleanExtra("ReducePollOnPumpAway", false);
+
+Notes on Errors:
+
+CNL-PUMP pairing and registered devices
+
+CNL: paired PUMP: paired UPLOADER: registered = ok
+CNL: paired PUMP: paired UPLOADER: unregistered = ok
+CNL: paired PUMP: unpaired UPLOADER: registered = "Could not communicate with the pump. Is it nearby?"
+CNL: paired PUMP: unpaired UPLOADER: unregistered = "Could not communicate with the pump. Is it nearby?"
+CNL: unpaired PUMP: paired UPLOADER: registered = "Timeout communicating with the Contour Next Link."
+CNL: unpaired PUMP: paired UPLOADER: unregistered = "Invalid message received for requestLinkKey, Contour Next Link is not paired with pump."
+CNL: unpaired PUMP: unpaired UPLOADER: registered = "Timeout communicating with the Contour Next Link."
+CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received for requestLinkKey, Contour Next Link is not paired with pump."
+
 */
+
+    private class ReadPump extends Thread {
+        public void run() {
+            Log.d(TAG, "readPump called");
+
+//            sendStatus("PollInterval=" + prefPollInterval + " LowBatteryPollInterval=" + prefLowBatteryPollInterval + " ReducePollOnPumpAway=" + prefReducePollOnPumpAway );
+
+            PowerManager.WakeLock wl = getWakeLock(TAG, 60000);
+
             long timePollStarted = System.currentTimeMillis();
 //            long nextpoll = timePollStarted + POLL_GRACE_PERIOD_MS;
             long nextpoll = 0;
 
+            realm = Realm.getDefaultInstance();
+
+            readDataStore();
+
+            cnlClear = 0;
+            cnl0x81 = 0;
+
             try {
                 long pollInterval = prefPollInterval;
-                realm = Realm.getDefaultInstance();
-
-                readDataStore();
 
                 if (!openUsbDevice()) {
                     Log.w(TAG, "Could not open usb device");
 //                sendStatus(ICON_WARN + "Could not open usb device");
-
-//                    releaseWakeLock(wl);
-//                    stopSelf();
                     return;
                 }
 
                 long due = checkPollTime();
                 if (due > 0) {
+                    Log.d(TAG, "Please wait: Pump is expecting sensor communication. Poll due in " + ((due - System.currentTimeMillis()) / 1000L) + " seconds");
                     sendStatus("Please wait: Pump is expecting sensor communication. Poll due in " + ((due - System.currentTimeMillis()) / 1000L) + " seconds");
                     nextpoll = due;
-
-//                    releaseWakeLock(wl);
-//                    stopSelf();
                     return;
                 }
 
@@ -371,6 +328,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     sendStatus("Connecting to CNL [" + android.os.Process.myPid() + "]");
 //                sendStatus("Connecting to Contour Next Link ");
                     Log.d(TAG, "Connecting to Contour Next Link");
+
+                    shutdownProtect = true;
                     cnlReader.requestDeviceInfo();
 
                     // Is the device already configured?
@@ -389,6 +348,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                     try {
                         cnlReader.enterPassthroughMode();
+                        shutdownProtect = false;
                         cnlReader.openConnection();
 
                         cnlReader.requestReadInfo();
@@ -438,8 +398,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             if (CommsConnectError > 0) CommsConnectError--;
                             if (cnlReader.getPumpSession().getRadioRSSIpercentage() < 20)
                                 CommsSignalError++;
-                            else
-                            if (CommsSignalError > 0) CommsSignalError--;
+                            else if (CommsSignalError > 0) CommsSignalError--;
 
                             activePump.setLastRadioChannel(radioChannel);
                             sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
@@ -454,16 +413,26 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             // TODO - this should not be necessary. We should reverse lookup the device name from PumpInfo
                             pumpRecord.setDeviceName(deviceName);
 
-                            if (radioChannel == 26) cnlReader.beginEHSMSession(); // gentle persuasion to leave channel 26 (weakest for CNL and causes Pebble to lose BT often) by using EHSM to influence pump channel change
-
-                            if (PumpOffsetCheck > 0) {
-                                PumpOffsetCheck--;
-                            } else {
-                                sendStatus(MasterService.ICON_INFO + "Reading pump time difference");
-                                PumpOffset = cnlReader.getPumpTime().getTime() - System.currentTimeMillis();
-                                Log.d(TAG, "Time offset between pump and device: " + PumpOffset + " millis.");
-                                sendStatus(MasterService.ICON_INFO + "Time offset between pump and device: " + (PumpOffset > 0 ? "+" : "") + (PumpOffset / 1000L) + "sec");
+//                            cnlReader.beginEHSMSession();
 /*
+                            // gentle persuasion to leave channel 26 (weakest for CNL and on top of BT advertising channel) by using EHSM to influence pump channel change
+                            if (radioChannel == 26) {
+                                cnlReader.beginEHSMSession();
+                                cnlReader.getPumpSession().setEHSMmode(false);
+                            } else {
+                                cnlReader.getPumpSession().setEHSMmode(true);
+                            }
+*/
+                            cnlReader.getPumpSession().setEHSMmode(true);
+                               /*
+                        if (PumpOffsetCheck > 0) {
+                            PumpOffsetCheck--;
+                        } else {
+                            sendStatus(MasterService.ICON_INFO + "Reading pump time difference");
+                            PumpOffset = cnlReader.getPumpTime().getTime() - System.currentTimeMillis();
+                            Log.d(TAG, "Time offset between pump and device: " + PumpOffset + " millis.");
+                            sendStatus(MasterService.ICON_INFO + "Time offset between pump and device: " + (PumpOffset > 0 ? "+" : "") + (PumpOffset / 1000L) + "sec");
+
                             if (Math.abs(PumpOffset) < 60 * 1000)
                                 PumpOffsetCheck = 8 * 12;
                             else if (Math.abs(PumpOffset) < 120 * 1000)
@@ -472,9 +441,11 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 PumpOffsetCheck = 2 * 12;
                             else
                                 PumpOffsetCheck = 1 * 12;
+
+                            PumpOffsetCheck = 4 * 12;
+                        }
 */
-                                PumpOffsetCheck = 4 * 12;
-                            }
+                            PumpOffset = cnlReader.getPumpTime().getTime() - System.currentTimeMillis();
 
                             long eventTime = System.currentTimeMillis();
                             pumpRecord.setPumpTimeOffset(PumpOffset);
@@ -482,7 +453,16 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             pumpRecord.setEventDate(new Date(eventTime));
                             cnlReader.updatePumpStatus(pumpRecord);
 
-                            if (radioChannel == 26) cnlReader.endEHSMSession();
+//                            cnlReader.getHistoryInfo(timePollStarted - 1 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
+//                            cnlReader.getHistory(timePollStarted - 1 * 24 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
+//                            cnlReader.getHistory(timePollStarted - 1 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
+
+                            cnlReader.getBasalPatterns();
+
+
+                            //                           if (radioChannel == 26) cnlReader.endEHSMSession();
+
+//                            cnlReader.endEHSMSession();
 
                             validatePumpRecord(pumpRecord, activePump);
                             activePump.getPumpHistory().add(pumpRecord);
@@ -521,7 +501,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                         // pump may have missed sensor transmission or be delayed in posting to status message
                                         // in most cases the next scheduled poll will have latest sgv, occasionally it is available this period after a delay
                                         // if user selects double poll option we try again this period or wait until next
-                                        pollInterval = prefReducePollOnPumpAway ? 60000 : POLL_PERIOD_MS;
+//                                    pollInterval = prefReducePollOnPumpAway ? 60000 : POLL_PERIOD_MS;
+                                        pollInterval = 90000;
                                     }
                                 }
 
@@ -536,28 +517,31 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             }
 
                             statusNotifications(pumpRecord);
-                            statusWarnings();
 
                             realm.commitTransaction();
                         }
 
                     } catch (UnexpectedMessageException e) {
                         CommsError++;
-                        pollInterval = 60000L; // retry once during this poll period, this allows for transient radio noise
+                        pollInterval = 90000L; // retry once during this poll period, this allows for transient radio noise
                         Log.e(TAG, "Unexpected Message", e);
                         sendStatus(MasterService.ICON_WARN + "Communication Error: " + e.getMessage());
                     } catch (TimeoutException e) {
                         CommsError++;
                         pollInterval = 90000L; // retry once during this poll period, this allows for transient radio noise
                         Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
-                        sendStatus(MasterService.ICON_WARN + "Timeout communicating with the Contour Next Link / Pump.");
+ //                       sendStatus(MasterService.ICON_WARN + "Timeout communicating with the Contour Next Link / Pump.");
+                        sendStatus(MasterService.ICON_WARN + "Timeout Error: " + e.getMessage());
                     } catch (NoSuchAlgorithmException e) {
+                        CommsError++;
                         Log.e(TAG, "Could not determine CNL HMAC", e);
                         sendStatus(MasterService.ICON_WARN + "Error connecting to Contour Next Link: Hashing error.");
                     } finally {
                         try {
                             cnlReader.closeConnection();
+                            shutdownProtect = true;
                             cnlReader.endPassthroughMode();
+                            shutdownProtect = false;
                             cnlReader.endControlMode();
                         } catch (NoSuchAlgorithmException e) {}
                     }
@@ -565,22 +549,29 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     CommsError++;
                     Log.e(TAG, "Error connecting to Contour Next Link.", e);
                     sendStatus(MasterService.ICON_WARN + "Error connecting to Contour Next Link.");
+                    if (cnlReader.resetCNL()) sendStatus(MasterService.ICON_INFO + "CNL reset successful.");
                 } catch (ChecksumException e) {
                     CommsError++;
                     Log.e(TAG, "Checksum error getting message from the Contour Next Link.", e);
-                    sendStatus(MasterService.ICON_WARN + "Checksum error getting message from the Contour Next Link.");
+//                    sendStatus(MasterService.ICON_WARN + "Checksum error getting message from the Contour Next Link.");
+                    sendStatus(MasterService.ICON_WARN + "Checksum Error: " + e.getMessage());
+                    if (cnlReader.resetCNL()) sendStatus(MasterService.ICON_INFO + "CNL reset successful.");
                 } catch (EncryptionException e) {
                     CommsError++;
                     Log.e(TAG, "Error decrypting messages from Contour Next Link.", e);
                     sendStatus(MasterService.ICON_WARN + "Error decrypting messages from Contour Next Link.");
+                    if (cnlReader.resetCNL()) sendStatus(MasterService.ICON_INFO + "CNL reset successful.");
                 } catch (TimeoutException e) {
                     CommsError++;
                     Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
-                    sendStatus(MasterService.ICON_WARN + "Timeout communicating with the Contour Next Link.");
+//                    sendStatus(MasterService.ICON_WARN + "Timeout communicating with the Contour Next Link.");
+                    sendStatus(MasterService.ICON_WARN + "Timeout Error(2): " + e.getMessage());
+                    if (cnlReader.resetCNL()) sendStatus(MasterService.ICON_INFO + "CNL reset successful.");
                 } catch (UnexpectedMessageException e) {
                     CommsError++;
                     Log.e(TAG, "Could not close connection.", e);
                     sendStatus(MasterService.ICON_WARN + "Could not close connection: " + e.getMessage());
+                    if (cnlReader.resetCNL()) sendStatus(MasterService.ICON_INFO + "CNL reset successful.");
                 } finally {
                     commsActive = false;
                     if (realm.isInTransaction()) {
@@ -588,12 +579,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         realm.cancelTransaction();
                     }
 
-                    if (commsDestroy) {
-                        Log.w(TAG, "onDestroy was called before CNL comms completed and comms finished succesfully");
-                    }
+                    if (cnlClear > 0 || cnl0x81 > 0)
+                        sendStatus("*** cnlClear=" + cnlClear + " cnl0x81=" + cnl0x81);
 
                     nextpoll = requestPollTime(timePollStarted, pollInterval);
-                    sendStatus("Next poll due at: " + dateFormatter.format(nextpoll) + " [" + CommsSgvSuccess + "]");
+//                    sendStatus("Next poll due at: " + dateFormatter.format(nextpoll));
+                    sendStatus("Next poll due at: " + dateFormatter.format(nextpoll) + " [" + (System.currentTimeMillis() - timePollStarted) + "ms]");
 
                     RemoveOutdatedRecords();
                     //uploadPollResults();
@@ -602,6 +593,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 UploaderApplication.killer++;
 
             } finally {
+                statusWarnings();
                 writeDataStore();
 
                 if (!realm.isClosed()) realm.close();
@@ -612,16 +604,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     mHidDevice = null;
                 }
 
-                Log.d(TAG, "Broadcast ACTION_CNL_COMMS_FINISHED");
-                sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_FINISHED).putExtra("nextpoll",nextpoll));
+                sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_FINISHED).putExtra("nextpoll", nextpoll));
+
+                releaseWakeLock(wl);
+                stopSelf();
             }
 
-            releaseWakeLock(wl);
-//        } // lock
-
-        stopSelf();
-//        return START_NOT_STICKY;
-
+            readPump = null;
+        } // thread end
     }
 
     private void statusNotifications(PumpStatusEvent pumpRecord) {
@@ -792,7 +782,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 // if pump battery is changed during square/dual bolus period the last bolus time will be set to this time (pump asks user to resume/cancel bolus)
                 // use bolusing start time when this is detected
-                if (start - start_bolusing > 10 * 60)
+                if (start - start_bolusing > 10 * 60000)
                     start = start_bolusing;
 
                 long end = pumpRecord.getPumpDate().getTime();
@@ -801,10 +791,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     duration = end - start;
 
                 // check that this was a square bolus and not a normal bolus
-                if (duration > 10) {
+                if (duration > 10 * 60000) {
                     pumpRecord.setValidBolus(true);
                     pumpRecord.setValidBolusSquare(true);
-                    pumpRecord.setLastBolusDate(new Date (start));
+                    pumpRecord.setLastBolusDate(new Date(start));
                     pumpRecord.setLastBolusDuration((short) (duration / 60000));
                 }
             }
@@ -863,7 +853,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         }
 
         // validate that this contains a new SUSPEND record
-        RealmResults<PumpStatusEvent> suspend_results =  activePump.getPumpHistory()
+        RealmResults<PumpStatusEvent> suspend_results = activePump.getPumpHistory()
                 .where()
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (2 * 60 * 60 * 1000)))
                 .equalTo("validSUSPEND", true)
@@ -885,21 +875,20 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             else if (!pumpRecord.isSuspended() && suspend_results.first().isValidSUSPEND() &&
                     pumpRecord.getEventDate().getTime() - suspend_results.first().getEventDate().getTime() <= 60 * 60 * 1000) {
                 pumpRecord.setValidSUSPENDOFF(true);
-                RealmResults<PumpStatusEvent> suspendended_results =  activePump.getPumpHistory()
+                RealmResults<PumpStatusEvent> suspendended_results = activePump.getPumpHistory()
                         .where()
                         .greaterThan("eventDate", new Date(System.currentTimeMillis() - (2 * 60 * 60 * 1000)))
                         .findAllSorted("eventDate", Sort.DESCENDING);
                 pumpRecord.setSuspendAfterDate(suspendended_results.first().getEventDate());
                 pumpRecord.setSuspendBeforeDate(pumpRecord.getEventDate());
             }
-        }
-        else if (pumpRecord.isSuspended()) {
+        } else if (pumpRecord.isSuspended()) {
             pumpRecord.setValidSUSPEND(true);
         }
 
         // absolute suspend start time approx to after-before range
         if (pumpRecord.isValidSUSPEND()) {
-            RealmResults<PumpStatusEvent> suspendstarted_results =  activePump.getPumpHistory()
+            RealmResults<PumpStatusEvent> suspendstarted_results = activePump.getPumpHistory()
                     .where()
                     .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
                     .findAllSorted("eventDate", Sort.ASCENDING);
@@ -911,8 +900,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         break;
                 }
                 pumpRecord.setSuspendAfterDate(suspendstarted_results.get(index).getEventDate());
-            }
-            else {
+            } else {
                 pumpRecord.setSuspendAfterDate(pumpRecord.getEventDate());
             }
             if (++index < suspendstarted_results.size())
@@ -1019,6 +1007,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     // Any poll time request that falls within the pre-grace/grace period will be pushed to the next safe time slot
 
     private long requestPollTime(long lastPoll, long pollInterval) {
+        boolean isWarmup = false;
 
         RealmResults<PumpStatusEvent> cgmresults = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
@@ -1027,6 +1016,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         long timeLastCGM = 0;
         if (cgmresults.size() > 0) {
             timeLastCGM = cgmresults.first().getCgmDate().getTime();
+            isWarmup = cgmresults.first().isCgmWarmUp();
         }
 
         long now = System.currentTimeMillis();
@@ -1045,8 +1035,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
         if (timeLastCGM == 0)
             nextRequestedPollTime += 15 * 1000; // push poll time forward to avoid potential clash when no previous poll time available to sync with
+        else if (isWarmup)
+            nextRequestedPollTime += 60 * 1000; // in warmup sensor-pump comms need larger grace period
         else if (PumpCgmNA >= POLL_ANTI_CLASH)
-            nextRequestedPollTime += (((PumpCgmNA - POLL_ANTI_CLASH) % 3) + 1) * 30 * 1000; // adjust poll time in 30 second steps to avoid potential poll clash (adjustment: poll+30s / poll+60s / poll+90s)
+            nextRequestedPollTime += (((PumpCgmNA - POLL_ANTI_CLASH) % 3) + 2) * 30 * 1000; // adjust poll time in 30 second steps to avoid potential poll clash (adjustment: poll+30s / poll+60s / poll+90s)
 
         // check if requested poll time is too close to next actual poll time
         if (nextRequestedPollTime > nextActualPollTime - POLL_GRACE_PERIOD_MS - POLL_PRE_GRACE_PERIOD_MS

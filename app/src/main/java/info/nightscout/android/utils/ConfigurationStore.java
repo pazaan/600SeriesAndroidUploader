@@ -1,7 +1,7 @@
 package info.nightscout.android.utils;
 
 
-import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
+import info.nightscout.android.medtronic.service.MedtronicCnlService;
 
 /**
  * Created by volker on 30.03.2017.
@@ -11,8 +11,8 @@ public class ConfigurationStore {
     private static ConfigurationStore instance;
 
     private boolean reducePollOnPumpAway = false;
-    private long pollInterval = MedtronicCnlIntentService.POLL_PERIOD_MS;
-    private long lowBatteryPollInterval = MedtronicCnlIntentService.LOW_BATTERY_POLL_PERIOD_MS;
+    private long pollInterval = MedtronicCnlService.POLL_PERIOD_MS;
+    private long lowBatteryPollInterval = MedtronicCnlService.LOW_BATTERY_POLL_PERIOD_MS;
     private boolean mmolxl;
     private boolean mmolxlDecimals;
 

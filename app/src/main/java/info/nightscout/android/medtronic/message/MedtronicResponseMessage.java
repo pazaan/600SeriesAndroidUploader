@@ -20,6 +20,25 @@ import info.nightscout.android.utils.HexDump;
 public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
     private static final String TAG = MedtronicResponseMessage.class.getSimpleName();
 
+    protected MedtronicCnlSession mPumpSession;
+
+    protected MedtronicResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
+        super(payload);
+
+        mPumpSession = pumpSession;
+    }
+}
+
+
+
+
+
+
+
+/*
+public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
+    private static final String TAG = MedtronicResponseMessage.class.getSimpleName();
+
     static int ENVELOPE_SIZE = 22;
     static int ENCRYPTED_ENVELOPE_SIZE = 3;
     static int CRC_SIZE = 2;
@@ -58,10 +77,10 @@ public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
             this.mPayload.position(57);
             this.mPayload.put(decryptedPayload);
 
-            if (BuildConfig.DEBUG) {
+//            if (BuildConfig.DEBUG) {
                 String outputString = HexDump.dumpHexString(this.mPayload.array());
                 Log.d(TAG, "DECRYPTED: " + outputString);
-            }
+//            }
         }
     }
 
@@ -87,6 +106,7 @@ public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
      * | byte receiveSequenceNumber | BE short receiveMessageType | byte[] Payload bytes | BE short CCITT CRC |
      * +----------------------------+-----------------------------+----------------------+--------------------+
      */
+/*
     public static ContourNextLinkMessage fromBytes(MedtronicCnlSession pumpSession, byte[] bytes) throws ChecksumException, EncryptionException {
         // TODO - turn this into a factory
 
@@ -116,7 +136,9 @@ public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
             message.mPayload.put(decryptedPayload);
         }
         return message;*/
+/*
     }
+/*
 
     protected static byte[] decrypt(byte[] key, byte[] iv, byte[] encrypted) throws EncryptionException {
         SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
@@ -133,3 +155,4 @@ public class MedtronicResponseMessage extends ContourNextLinkResponseMessage {
         return decrypted;
     }
 }
+*/
