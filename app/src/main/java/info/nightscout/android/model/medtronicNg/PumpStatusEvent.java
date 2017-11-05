@@ -14,6 +14,12 @@ public class PumpStatusEvent extends RealmObject {
     private Date pumpDate; // The time on the pump at the time of the this event
     private long pumpTimeOffset; // millis the pump is ahead
 
+    private int pumpRTC;
+    private int pumpOFFSET;
+
+    private int cgmRTC;
+    private int cgmOFFSET;
+
     private String deviceName;
 
     // Data from the Medtronic Pump add message
@@ -123,6 +129,24 @@ public class PumpStatusEvent extends RealmObject {
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
     }
+
+
+    public int getCgmRTC() {
+        return cgmRTC;
+    }
+
+    public void setCgmRTC(int cgmRTC) {
+        this.cgmRTC = cgmRTC;
+    }
+
+    public int getCgmOFFSET() {
+        return cgmOFFSET;
+    }
+
+    public void setCgmOFFSET(int cgmOFFSET) {
+        this.cgmOFFSET = cgmOFFSET;
+    }
+
 
     public int getSgv() {
         return sgv;

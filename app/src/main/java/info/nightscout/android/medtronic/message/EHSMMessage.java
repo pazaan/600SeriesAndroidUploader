@@ -14,7 +14,7 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
  */
 
 public class EHSMMessage extends  MedtronicSendMessageRequestMessage<ContourNextLinkResponseMessage>{
-    private static final String TAG = ReadHistoryRequestMessage.class.getSimpleName();
+    private static final String TAG = EHSMMessage.class.getSimpleName();
 
     protected EHSMMessage(MessageType messageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
         super(messageType, pumpSession, payload);

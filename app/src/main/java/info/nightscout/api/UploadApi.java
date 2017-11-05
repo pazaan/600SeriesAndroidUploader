@@ -14,6 +14,20 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class UploadApi {
     private Retrofit retrofit;
+
+//    private DeviceEndpoints deviceEndpoints;
+    private EntriesEndpoints entriesEndpoints;
+    private TreatmentsEndpoints treatmentsEndpoints;
+
+    public EntriesEndpoints getEntriesEndpoints() {
+        return entriesEndpoints;
+    }
+    public TreatmentsEndpoints getTreatmentsEndpoints() {
+        return treatmentsEndpoints;
+    }
+
+
+
     private SgvEndpoints sgvEndpoints;
     private MbgEndpoints mbgEndpoints;
     private DeviceEndpoints deviceEndpoints;
@@ -47,6 +61,7 @@ public class UploadApi {
     public NoteEndpoints getNoteEndpoints() {
         return noteEndpoints;
     }
+
 
     public UploadApi(String baseURL, String token) {
 
@@ -87,6 +102,9 @@ public class UploadApi {
                 .client(okHttpClient.build())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
+
+        entriesEndpoints = retrofit.create(EntriesEndpoints.class);
+        treatmentsEndpoints = retrofit.create(TreatmentsEndpoints.class);
 
         sgvEndpoints = retrofit.create(SgvEndpoints.class);
         mbgEndpoints = retrofit.create(MbgEndpoints.class);

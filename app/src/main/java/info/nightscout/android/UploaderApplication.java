@@ -13,6 +13,13 @@ import com.crashlytics.android.answers.Answers;
 import info.nightscout.android.model.medtronicNg.BasalRate;
 import info.nightscout.android.model.medtronicNg.BasalSchedule;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
+import info.nightscout.android.model.medtronicNg.PumpHistory;
+import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
+import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
+import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
+import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
+import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
+import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.DataStore;
@@ -30,6 +37,7 @@ public class UploaderApplication extends Application {
     private static final String TAG = UploaderApplication.class.getSimpleName();
     private static Context context;
     private static RealmConfiguration storeConfiguration;
+    private static RealmConfiguration historyConfiguration;
 
     public static int killer = 0;
 
@@ -73,6 +81,12 @@ public class UploaderApplication extends Application {
                 .modules(new StoreModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
+
+        historyConfiguration = new RealmConfiguration.Builder()
+                .name("historyrealm.realm")
+                .modules(new HistoryModule())
+                .deleteRealmIfMigrationNeeded()
+                .build();
     }
 
     public static Context getAppContext() {
@@ -92,11 +106,18 @@ public class UploaderApplication extends Application {
         return storeConfiguration;
     }
 
+    public static RealmConfiguration getHistoryConfiguration() {
+        return historyConfiguration;
+    }
+
     @RealmModule(classes = {BasalRate.class, BasalSchedule.class, ContourNextLinkInfo.class, PumpInfo.class, PumpStatusEvent.class, DataStore.class})
     private class MainModule {
     }
     @RealmModule(classes = {StatusStore.class})
     private class StoreModule {
+    }
+    @RealmModule(classes = {PumpHistorySegment.class, PumpHistoryCGM.class, PumpHistoryBolus.class, PumpHistoryBasal.class, PumpHistoryBG.class, PumpHistoryMisc.class})
+    private class HistoryModule {
     }
 
 }

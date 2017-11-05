@@ -12,6 +12,7 @@ import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
+import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by lgoedhart on 26/03/2016.
@@ -25,6 +26,38 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
 
     @Override
     public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
+        byte[] payload;
+
+        clearMessage(mDevice, 100, mPumpSession);
+        sendMessage(mDevice);
+
+        payload = readMessage_0x81(mDevice);
+
+        // Don't care what the 0x81 response message is at this stage
+        Log.d(TAG, "negotiateChannel: Reading 0x81 message");
+        if (payload.length != 0x27) {
+            clearMessage(mDevice, 2000);
+            Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response");
+            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x81 response" + HexDump.toHexString(payload));
+        }
+
+        Log.d(TAG, "negotiateChannel: Reading 0x80 message");
+        // Read the 0x80
+        payload = readMessage(mDevice);
+        if(payload[0x12] != (byte) 0x80) {
+            clearMessage(mDevice, 2000);
+            Log.e(TAG, "Invalid message received for negotiateChannel 0x80 response");
+            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x80 response");
+        }
+
+        return this.getResponse(payload);
+    }
+
+    /*
+        @Override
+    public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
+
+        clearMessage(mDevice, 100, mPumpSession);
         sendMessage(mDevice);
 
         // Don't care what the 0x81 response message is at this stage
@@ -48,6 +81,7 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
         return this.getResponse(payload);
     }
 
+     */
     @Override
     protected ChannelNegotiateResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException {
         return new ChannelNegotiateResponseMessage(mPumpSession, payload);

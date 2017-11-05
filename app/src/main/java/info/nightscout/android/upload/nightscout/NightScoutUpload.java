@@ -42,8 +42,8 @@ import retrofit2.Response;
 import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
 
 class NightScoutUpload {
+    private static final String TAG = NightScoutUpload.class.getSimpleName();
 
-    private static final String TAG = NightscoutUploadIntentService.class.getSimpleName();
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
     private static final SimpleDateFormat NOTE_DATE_FORMAT = new SimpleDateFormat("E h:mm a", Locale.getDefault());
 
@@ -103,7 +103,7 @@ class NightScoutUpload {
         List<NoteEntry> noteEntries = new ArrayList<>();
 
         for (PumpStatusEvent record : records) {
-
+/*
             if (record.isValidSGV()) {
                 SgvEntry sgvEntry = new SgvEntry();
                 sgvEntry.setType("sgv");
@@ -114,7 +114,7 @@ class NightScoutUpload {
                 sgvEntry.setDateString(record.getCgmDate().toString());
                 sgvEntries.add(sgvEntry);
             }
-
+*/
             if (record.isValidBGL()) {
 
                 MbgEntry mbgEntry = new MbgEntry();
@@ -123,6 +123,7 @@ class NightScoutUpload {
                 mbgEntry.setDateString(record.getEventDate().toString());
                 mbgEntry.setDevice(record.getDeviceName());
                 mbgEntry.setMbg(record.getRecentBGL());
+                mbgEntry.setSgv(record.getSgv());
                 mbgEntries.add(mbgEntry);
 
                 // cgm offline or not in use (needed for NS to show bgl when no sgv data)

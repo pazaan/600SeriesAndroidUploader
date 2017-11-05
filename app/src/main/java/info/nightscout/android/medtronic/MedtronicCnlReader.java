@@ -8,10 +8,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.NoSuchAlgorithmException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeoutException;
 
@@ -169,11 +172,11 @@ public class MedtronicCnlReader {
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin enterPasshtroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("1|")
-                .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished enterPasshtroughMode");
     }
 
@@ -247,7 +250,37 @@ public class MedtronicCnlReader {
     public Date getPumpTime() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getPumpTime");
 
-        PumpTimeResponseMessage response = new PumpTimeRequestMessage(mPumpSession).send(mDevice);
+//        PumpTimeResponseMessage response = new PumpTimeRequestMessage(mPumpSession).send(mDevice);
+
+        PumpTimeResponseMessage response = null;
+        int unexpected = 0;
+        int timeout = 0;
+        do {
+            try {
+                response = new PumpTimeRequestMessage(mPumpSession).send(mDevice);
+                unexpected = 0;
+                timeout = 0;
+            } catch (UnexpectedMessageException e) {
+                Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
+                if (e.getMessage().contains("0x81 response was empty")) {
+                    throw new TimeoutException(e.getMessage() + " *** ending comms now!!!");
+                }
+                if (++unexpected >= 10) {
+                    throw new UnexpectedMessageException("Retry failed: " + e.getMessage());
+                }
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e1) {}
+            } catch (TimeoutException e) {
+                Log.e(TAG, "Attempt: " + (timeout + 1) + " TimeoutException: " + e.getMessage());
+                if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
+                    throw new TimeoutException(e.getMessage());
+                }
+                if (++timeout >= 3) {
+                    throw new TimeoutException("Retry failed: " + e.getMessage());
+                }
+            }
+        } while (unexpected > 0 || timeout > 0);
 
         Log.d(TAG, "Finished getPumpTime with date " + response.getPumpTime());
         return response.getPumpTime();
@@ -256,7 +289,38 @@ public class MedtronicCnlReader {
     public PumpStatusEvent updatePumpStatus(PumpStatusEvent pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin updatePumpStatus");
 
-        PumpStatusResponseMessage response = new PumpStatusRequestMessage(mPumpSession).send(mDevice);
+//        PumpStatusResponseMessage response = new PumpStatusRequestMessage(mPumpSession).send(mDevice);
+//        response.updatePumpRecord(pumpRecord);
+
+        PumpStatusResponseMessage response = null;
+        int unexpected = 0;
+        int timeout = 0;
+        do {
+            try {
+                response = new PumpStatusRequestMessage(mPumpSession).send(mDevice);
+                unexpected = 0;
+                timeout = 0;
+            } catch (UnexpectedMessageException e) {
+                Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
+                if (e.getMessage().contains("0x81 response was empty")) {
+                    throw new TimeoutException(e.getMessage() + " *** ending comms now!!!");
+                }
+                if (++unexpected >= 10) {
+                    throw new UnexpectedMessageException("Retry failed: " + e.getMessage());
+                }
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e1) {}
+            } catch (TimeoutException e) {
+                Log.e(TAG, "Attempt: " + (timeout + 1) + " TimeoutException: " + e.getMessage());
+                if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
+                    throw new TimeoutException(e.getMessage());
+                }
+                if (++timeout >= 3) {
+                    throw new TimeoutException("Retry failed: " + e.getMessage());
+                }
+            }
+        } while (unexpected > 0 || timeout > 0);
         response.updatePumpRecord(pumpRecord);
 
         Log.d(TAG, "Finished updatePumpStatus");
@@ -293,6 +357,23 @@ public class MedtronicCnlReader {
         Log.d(TAG, "Finished getHistoryInfo");
     }
 
+    public void getHistoryInfoX(int startTime, int endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin getHistoryInfo");
+
+        ByteBuffer buffer = ByteBuffer.allocate(12);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.put(0x00, (byte) type);  // pump data = 0x02, sensor data = 0x03
+        buffer.put(0x01, (byte) 0x04);
+        buffer.putInt(0x02, startTime);
+        buffer.putInt(0x06, endTime);
+        buffer.put(0x0A, (byte) 0x00);
+        buffer.put(0x0B, (byte) 0x00);
+
+        new ReadHistoryInfoRequestMessage(mPumpSession, buffer.array()).send(mDevice);
+
+        Log.d(TAG, "Finished getHistoryInfo");
+    }
+
     // will NAK if too many days (>24?), looks like a limit of 10000 events in any single history pull
 
     public void getHistory(long startTime, long endTime, int offset, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
@@ -307,10 +388,68 @@ public class MedtronicCnlReader {
         buffer.put(0x0A, (byte) 0x00);
         buffer.put(0x0B, (byte) 0x00);
 
-        new ReadHistoryRequestMessage(mPumpSession, buffer.array()).send(mDevice);
+        ReadHistoryResponseMessage response = new ReadHistoryRequestMessage(mPumpSession, buffer.array()).send(mDevice);
+        response.logcat();
 
         Log.d(TAG, "Finished getHistory");
     }
+
+    public Date[] getHistoryX(long startTime, long endTime, int offset, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin getHistory");
+
+        ByteBuffer buffer = ByteBuffer.allocate(12);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.put(0x00, (byte) type);  // pump data = 0x02, sensor data = 0x03
+        buffer.put(0x01, (byte) 0x04);
+        buffer.putInt(0x02, MessageUtils.rtcFromTime(startTime, offset));
+        buffer.putInt(0x06, MessageUtils.rtcFromTime(endTime, offset));
+        buffer.put(0x0A, (byte) 0x00);
+        buffer.put(0x0B, (byte) 0x00);
+
+//        ReadHistoryResponseMessage response = new ReadHistoryRequestMessage(mPumpSession, buffer.array()).send(mDevice);
+//        Date[] range = response.updatePumpHistoryCGM();
+//        Log.d(TAG, "info: " + (range[0] == null ? "null" : dateFormatterFull.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatterFull.format(range[1])));
+
+        ReadHistoryResponseMessage response = null;
+        int unexpected = 0;
+        int timeout = 0;
+        do {
+            try {
+                response = new ReadHistoryRequestMessage(mPumpSession, buffer.array()).send(mDevice);
+                unexpected = 0;
+                timeout = 0;
+            } catch (UnexpectedMessageException e) {
+                Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
+                if (e.getMessage().contains("0x81 response was empty")) {
+                    throw new TimeoutException(e.getMessage() + " *** ending comms now!!!");
+                }
+                if (++unexpected >= 10) {
+                    throw new UnexpectedMessageException("Retry failed: " + e.getMessage());
+                }
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e1) {}
+            } catch (TimeoutException e) {
+                Log.e(TAG, "Attempt: " + (timeout + 1) + " TimeoutException: " + e.getMessage());
+                if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
+                    throw new TimeoutException(e.getMessage());
+                }
+                if (++timeout >= 3) {
+                    throw new TimeoutException("Retry failed: " + e.getMessage());
+                }
+            }
+        } while (unexpected > 0 || timeout > 0);
+
+        Date[] range;
+        if (type == 2)
+            range = response.updatePumpHistoryPUMP();
+        else
+            range = response.updatePumpHistoryCGM();
+
+        Log.d(TAG, "Finished getHistory");
+        return range;
+    }
+    private DateFormat dateFormatterFull = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin endEHSMSession");
@@ -328,18 +467,18 @@ public class MedtronicCnlReader {
     public void endPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endPassthroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("0|")
-                .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished endPassthroughMode");
     }
 
     public void endControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endControlMode");
         new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
-                .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
+                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
         Log.d(TAG, "Finished endControlMode");
     }
 

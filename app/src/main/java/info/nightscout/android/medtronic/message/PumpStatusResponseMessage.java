@@ -15,6 +15,7 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.HexDump;
 
+import static info.nightscout.android.utils.ToolKit.getInt;
 import static info.nightscout.android.utils.ToolKit.getIntL;
 import static info.nightscout.android.utils.ToolKit.getIntLU;
 import static info.nightscout.android.utils.ToolKit.getShort;
@@ -54,8 +55,8 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private float activeInsulin;
     private int sgv;
 
-//    private int cgmRTC;
-//    private int cgmOFFSET;
+    private int cgmRTC;
+    private int cgmOFFSET;
 
     private Date cgmDate;
     private byte cgmExceptionType;
@@ -135,6 +136,10 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         // Active insulin
         long rawActiveInsulin = getIntLU(payload, 0x31);
         activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
+
+        // CGM time
+        cgmRTC = getInt(payload, 0x37);
+        cgmOFFSET = getInt(payload, 0x3B);
 
         // CGM SGV
         sgv = getShortIU(payload, 0x35); // In mg/DL. 0x0000 = no CGM reading, 0x03NN = sensor exception
@@ -255,6 +260,10 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Active insulin
         pumpRecord.setActiveInsulin(activeInsulin);
+
+        // CGM time
+        pumpRecord.setCgmRTC(cgmRTC);
+        pumpRecord.setCgmOFFSET(cgmOFFSET);
 
         // CGM SGV data
         pumpRecord.setSgv(sgv);

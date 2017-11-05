@@ -17,7 +17,7 @@ public class OpenConnectionRequestMessage extends ContourNextLinkBinaryRequestMe
     public OpenConnectionRequestMessage(MedtronicCnlSession pumpSession, byte[] payload) throws ChecksumException {
         super(CommandType.OPEN_CONNECTION, pumpSession, payload);
     }
-
+/*
     @Override
     public OpenConnectionResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
 
@@ -34,7 +34,7 @@ public class OpenConnectionRequestMessage extends ContourNextLinkBinaryRequestMe
 
         return this.getResponse(readMessage(mDevice));
     }
-
+*/
     @Override
     protected OpenConnectionResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException {
         return new OpenConnectionResponseMessage(payload);

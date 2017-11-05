@@ -60,6 +60,7 @@ import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.medtronic.service.MedtronicCnlService;
+import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.utils.ConfigurationStore;
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private Realm mRealm;
     private Realm storeRealm;
+    private Realm historyRealm;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -107,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mRealm = Realm.getDefaultInstance();
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
         setContentView(R.layout.activity_main);
 
@@ -372,6 +375,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
 
+        if (!historyRealm.isClosed()) {
+            historyRealm.close();
+        }
         if (!storeRealm.isClosed()) {
             storeRealm.close();
         }
@@ -540,7 +546,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private RealmResults displayResults;
     private long timeLastSGV;
-    private int battery = 0;
 
     private void startDisplay() {
         Log.d(TAG, "startDisplay");
@@ -561,6 +566,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         });
 
         refreshDisplay();
+
+        startDisplayCgm();
     }
 
     private void stopDisplay() {
@@ -569,6 +576,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         displayResults = null;
 
         mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
+
+        stopDisplayCgm();
     }
 
     private void refreshDisplay() {
@@ -632,12 +641,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     trendString = "{ion_ios_minus_empty}";
                     break;
             }
-
-            updateChart(sgv_results.where()
-                    .greaterThan("cgmDate",  new Date(timeLastSGV - 1000 * 60 * 60 * 24))
-                    .findAllSorted("cgmDate", Sort.ASCENDING));
-        } else {
-            updateChart(sgv_results); // render empty chart
         }
 
         // most recent pump status
@@ -702,13 +705,60 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             textViewBgTime.setText(timeString);
-
             // Run myself again in 60 (or less) seconds;
             mUiRefreshHandler.postDelayed(this, nextRun);
         }
     }
 
-    private void updateChart(RealmResults<PumpStatusEvent> results) {
+    private RealmResults displayCgmResults;
+
+    private void startDisplayCgm() {
+        stopDisplayCgm();
+
+        Log.d(TAG, "startDisplayCgm");
+
+        displayCgmResults = historyRealm.where(PumpHistoryCGM.class)
+                .notEqualTo("sgv", 0)
+                .findAllSortedAsync("eventDate", Sort.ASCENDING);
+
+        displayCgmResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
+            @Override
+            public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+                if (changeSet == null) {
+                    // initial refresh after start
+                    refreshDisplayCgm();
+                } else if (changeSet.getInsertions().length > 0) {
+                    // new items added
+                    refreshDisplayCgm();
+                }
+            }
+        });
+    }
+
+    private void stopDisplayCgm() {
+        Log.d(TAG, "stopDisplayCgm");
+        if (displayCgmResults != null) {
+            displayCgmResults.removeAllChangeListeners();
+            displayCgmResults = null;
+        }
+    }
+
+    private void refreshDisplayCgm() {
+        Log.d(TAG, "refreshDisplayCgm");
+
+        RealmResults<PumpHistoryCGM> results = displayCgmResults;
+
+        if (results.size() > 0) {
+            long timeLastSGV = results.last().getEventDate().getTime();
+            results = results.where()
+                    .greaterThan("eventDate",  new Date(timeLastSGV - 1000 * 60 * 60 * 24))
+                    .findAllSorted("eventDate", Sort.ASCENDING);
+        }
+
+        updateChart(results);
+    }
+
+    private void updateChart(RealmResults<PumpHistoryCGM> results) {
 
         mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
 
@@ -730,13 +780,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             return;
         }
 
+        long timeLastSGV = results.last().getEventDate().getTime();
+
         // calc X & Y chart bounds with readable stepping for mmol & ml/dl
         // X needs offsetting as graphview will not always show points near edges
         long minX = (((timeLastSGV + 150000 - (chartZoom * 60 * 60 * 1000)) / 60000) * 60000);
         long maxX = timeLastSGV + 90000;
 
-        RealmResults<PumpStatusEvent> minmaxY = results.where()
-                .greaterThan("cgmDate",  new Date(minX))
+        RealmResults<PumpHistoryCGM> minmaxY = results.where()
+                .greaterThan("eventDate",  new Date(minX))
                 .findAllSorted("sgv", Sort.ASCENDING);
 
         long rangeY, minRangeY;
@@ -754,7 +806,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             maxY = (long) (maxY * MMOLXLFACTOR / 2);
         } else {
             minY = (long) Math.floor(minY / 10) * 10;
-            maxY = (long) Math.ceil(maxY / 10) * 10;
+            maxY = (long) Math.ceil((maxY + 5) / 10) * 10;
             rangeY = maxY - minY;
             minRangeY = ((rangeY / 20 ) + 1) * 20;
             minY = minY - (long) Math.floor((minRangeY - rangeY) / 2);
@@ -772,9 +824,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         DataPoint[] entries = new DataPoint[size];
 
         int pos = 0;
-        for (PumpStatusEvent pumpStatus : results) {
+        for (PumpHistoryCGM event : results) {
             // turn your data into Entry objects
-            entries[pos++] = new DataPoint(pumpStatus.getCgmDate(), (double) pumpStatus.getSgv());
+            entries[pos++] = new DataPoint(event.getEventDate(), (double) event.getSgv());
         }
 
         if (mChart.getSeries().size() == 0) {
@@ -835,6 +887,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dipValue, metrics);
     }
+
 
 
 
@@ -1121,4 +1174,133 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
      */
+
+
+    /*
+
+        private void updateChart(RealmResults<PumpStatusEvent> results) {
+
+        mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
+
+        // empty chart when no data available
+        int size = results.size();
+        if (size == 0) {
+            final long now = System.currentTimeMillis(),
+                    left = now - chartZoom * 60 * 60 * 1000;
+
+            mChart.getViewport().setXAxisBoundsManual(true);
+            mChart.getViewport().setMaxX(now);
+            mChart.getViewport().setMinX(left);
+
+            mChart.getViewport().setYAxisBoundsManual(true);
+            mChart.getViewport().setMinY(80);
+            mChart.getViewport().setMaxY(120);
+
+            mChart.postInvalidate();
+            return;
+        }
+
+        // calc X & Y chart bounds with readable stepping for mmol & ml/dl
+        // X needs offsetting as graphview will not always show points near edges
+        long minX = (((timeLastSGV + 150000 - (chartZoom * 60 * 60 * 1000)) / 60000) * 60000);
+        long maxX = timeLastSGV + 90000;
+
+        RealmResults<PumpStatusEvent> minmaxY = results.where()
+                .greaterThan("cgmDate",  new Date(minX))
+                .findAllSorted("sgv", Sort.ASCENDING);
+
+        long rangeY, minRangeY;
+        long minY = minmaxY.first().getSgv();
+        long maxY = minmaxY.last().getSgv();
+
+        if (prefs.getBoolean("mmolxl", false)) {
+            minY = (long) Math.floor((minY / MMOLXLFACTOR) * 2);
+            maxY = (long) Math.ceil((maxY / MMOLXLFACTOR) * 2);
+            rangeY = maxY - minY;
+            minRangeY = ((rangeY / 4 ) + 1) * 4;
+            minY = minY - (long) Math.floor((minRangeY - rangeY) / 2);
+            maxY = minY + minRangeY;
+            minY = (long) (minY * MMOLXLFACTOR / 2);
+            maxY = (long) (maxY * MMOLXLFACTOR / 2);
+        } else {
+            minY = (long) Math.floor(minY / 10) * 10;
+            maxY = (long) Math.ceil(maxY / 10) * 10;
+            rangeY = maxY - minY;
+            minRangeY = ((rangeY / 20 ) + 1) * 20;
+            minY = minY - (long) Math.floor((minRangeY - rangeY) / 2);
+            maxY = minY + minRangeY;
+        }
+
+        mChart.getViewport().setYAxisBoundsManual(true);
+        mChart.getViewport().setMinY(minY);
+        mChart.getViewport().setMaxY(maxY);
+        mChart.getViewport().setXAxisBoundsManual(true);
+        mChart.getViewport().setMinX(minX);
+        mChart.getViewport().setMaxX(maxX);
+
+        // create chart
+        DataPoint[] entries = new DataPoint[size];
+
+        int pos = 0;
+        for (PumpStatusEvent pumpStatus : results) {
+            // turn your data into Entry objects
+            entries[pos++] = new DataPoint(pumpStatus.getCgmDate(), (double) pumpStatus.getSgv());
+        }
+
+        if (mChart.getSeries().size() == 0) {
+//                long now = System.currentTimeMillis();
+//                entries = new DataPoint[1000];
+//                int j = 0;
+//                for(long i = now - 24*60*60*1000; i < now - 30*60*1000; i+= 5*60*1000) {
+//                    entries[j++] = new DataPoint(i, (float) (Math.random()*200 + 89));
+//                }
+//                entries = Arrays.copyOfRange(entries, 0, j);
+
+            PointsGraphSeries sgvSeries = new PointsGraphSeries(entries);
+
+            sgvSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
+                DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.MEDIUM);
+
+                @Override
+                public void onTap(Series series, DataPointInterface dataPoint) {
+                    double sgv = dataPoint.getY();
+
+                    StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
+                    sb.append(strFormatSGV(sgv));
+                    Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            sgvSeries.setCustomShape(new PointsGraphSeries.CustomShape() {
+                @Override
+                public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
+                    double sgv = dataPoint.getY();
+                    if (sgv < 80)
+                        paint.setColor(Color.RED);
+                    else if (sgv <= 180)
+                        paint.setColor(Color.GREEN);
+                    else if (sgv <= 260)
+                        paint.setColor(Color.YELLOW);
+                    else
+                        paint.setColor(Color.RED);
+                    float dotSize = 3.0f;
+                    if (chartZoom == 3) dotSize = 2.0f;
+                    else if (chartZoom == 6) dotSize = 2.0f;
+                    else if (chartZoom == 12) dotSize = 1.65f;
+                    else if (chartZoom == 24) dotSize = 1.25f;
+                    canvas.drawCircle(x, y, dipToPixels(getApplicationContext(), dotSize), paint);
+                }
+            });
+
+            mChart.addSeries(sgvSeries);
+        } else {
+            if (entries.length > 0) {
+                ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
+            }
+        }
+
+    }
+
+     */
+
 }

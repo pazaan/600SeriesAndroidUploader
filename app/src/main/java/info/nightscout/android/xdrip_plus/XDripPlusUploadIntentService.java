@@ -15,11 +15,14 @@ import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 import info.nightscout.android.R;
+import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.service.MasterService;
+import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
 import io.realm.Realm;
@@ -58,8 +61,41 @@ public class XDripPlusUploadIntentService extends IntentService {
 
         if (enableXdripPlusUpload) {
 
+            String device = "NA";
+
             Realm mRealm = Realm.getDefaultInstance();
 
+            Realm historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+
+            RealmResults<PumpHistoryCGM> history_records = historyRealm
+                    .where(PumpHistoryCGM.class)
+                    .equalTo("xdrip", false)
+                    .notEqualTo("sgv", 0)
+                    .findAllSorted("eventDate", Sort.ASCENDING);
+
+            RealmResults<PumpStatusEvent> records = mRealm
+                    .where(PumpStatusEvent.class)
+                    .findAllSorted("eventDate", Sort.DESCENDING);
+
+            if (records.size() > 0) {
+                device = records.first().getDeviceName();
+                doXDripUploadDevice(records.first());
+            }
+
+            if (history_records.size() > 0) {
+                historyRealm.beginTransaction();
+                for (PumpHistoryCGM history_record : history_records) {
+                    doXDripUploadCGM(history_record, device);
+                    history_record.setXdrip(true);
+                }
+                historyRealm.commitTransaction();
+            }
+
+            historyRealm.close();
+            mRealm.close();
+
+/*
+            Realm mRealm = Realm.getDefaultInstance();
             RealmResults<PumpStatusEvent> all_records = mRealm
                     .where(PumpStatusEvent.class)
                     .equalTo("validSGV", true)
@@ -73,10 +109,69 @@ public class XDripPlusUploadIntentService extends IntentService {
                 doXDripUpload(records);
             }
             mRealm.close();
+*/
         }
 
         XDripPlusUploadReceiver.completeWakefulIntent(intent);
     }
+
+    private void doXDripUploadCGM(PumpHistoryCGM record, String device) {
+        try {
+            final JSONArray devicestatusBody = new JSONArray();
+            final JSONArray entriesBody = new JSONArray();
+
+            JSONObject json = new JSONObject();
+            json.put("sgv", record.getSgv());
+            //json.put("direction", "Flat");
+            json.put("device", device);
+            json.put("type", "sgv");
+            json.put("date", record.getEventDate().getTime());
+            json.put("dateString", record.getEventDate());
+            entriesBody.put(json);
+
+            if (entriesBody.length() > 0) {
+                sendBundle(mContext, "add", "entries", entriesBody);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to send bundle: " + e);
+        }
+    }
+
+    private void doXDripUploadDevice(PumpStatusEvent record) {
+        try {
+            final JSONArray devicestatusBody = new JSONArray();
+
+            JSONObject json = new JSONObject();
+            json.put("uploaderBattery", MasterService.getUploaderBatteryLevel());
+            json.put("device", record.getDeviceName());
+            json.put("created_at", ISO8601_DATE_FORMAT.format(record.getEventDate()));
+
+            JSONObject pumpInfo = new JSONObject();
+            pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getEventDate()));
+            pumpInfo.put("reservoir", new BigDecimal(record.getReservoirAmount()).setScale(3, BigDecimal.ROUND_HALF_UP));
+
+            JSONObject iob = new JSONObject();
+            iob.put("timestamp", record.getEventDate());
+            iob.put("bolusiob", record.getActiveInsulin());
+
+            JSONObject battery = new JSONObject();
+            battery.put("percent", record.getBatteryPercentage());
+
+            pumpInfo.put("iob", iob);
+            pumpInfo.put("battery", battery);
+            json.put("pump", pumpInfo);
+            //String jsonString = json.toString();
+
+            devicestatusBody.put(json);
+            if (devicestatusBody.length() > 0) {
+                sendBundle(mContext, "add", "devicestatus", devicestatusBody);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to send bundle: " + e);
+        }
+    }
+
+
 
     private void doXDripUpload(List<PumpStatusEvent> records) {
         try {
@@ -116,7 +211,6 @@ public class XDripPlusUploadIntentService extends IntentService {
             Log.d(TAG, receivers.size() + " xDrip receivers");
         }
     }
-
 
     private void addDeviceStatus(JSONArray devicestatusArray, PumpStatusEvent record) throws Exception {
         JSONObject json = new JSONObject();
@@ -172,7 +266,6 @@ public class XDripPlusUploadIntentService extends IntentService {
             entriesArray.put(json);
         }
     }
-
 
     public final class Constants {
         public static final String ACTION_STATUS_MESSAGE = "info.nightscout.android.xdrip_plus.STATUS_MESSAGE";

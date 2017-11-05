@@ -15,6 +15,7 @@ public interface MbgEndpoints {
         String dateString;
         long date;
         int mbg;
+        int sgv;
         String device;
 
         public MbgEntry() {  }
@@ -33,6 +34,10 @@ public interface MbgEndpoints {
 
         public void setMbg(int mbg) {
             this.mbg = mbg;
+        }
+
+        public void setSgv(int sgv) {
+            this.sgv = sgv;
         }
 
         public void setDevice(String device) {

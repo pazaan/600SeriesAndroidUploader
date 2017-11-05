@@ -27,6 +27,13 @@ import static info.nightscout.android.utils.ToolKit.getShortIU;
 public class ReadHistoryInfoResponseMessage extends MedtronicSendMessageResponseMessage {
     private static final String TAG = ReadHistoryInfoResponseMessage.class.getSimpleName();
 
+    private Date fromDate;
+    private Date toDate;
+    private int length;
+    private int blocks;
+
+    private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
+
     protected ReadHistoryInfoResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
@@ -35,14 +42,29 @@ public class ReadHistoryInfoResponseMessage extends MedtronicSendMessageResponse
             throw new UnexpectedMessageException("Invalid message received for ReadHistoryInfo");
         }
 
-        int length = getInt(payload, 0x04);
-        Date start = MessageUtils.decodeDateTime(getIntLU(payload, 0x08), getIntL(payload, 0x0C));
-        Date end = MessageUtils.decodeDateTime(getIntLU(payload, 0x10), getIntL(payload, 0x14));
+        length = getInt(payload, 0x04);
+        blocks = length / 2048;
+        fromDate = MessageUtils.decodeDateTime(getIntLU(payload, 0x08), getIntL(payload, 0x0C));
+        toDate = MessageUtils.decodeDateTime(getIntLU(payload, 0x10), getIntL(payload, 0x14));
 
         Log.d(TAG, "ReadHistoryInfo: length = " + length + " blocks = " + (length / 2048));
-        Log.d(TAG, "ReadHistoryInfo: start = " + dateFormatter.format(start));
-        Log.d(TAG, "ReadHistoryInfo: end = " + dateFormatter.format(end));
+        Log.d(TAG, "ReadHistoryInfo: start = " + dateFormatter.format(fromDate));
+        Log.d(TAG, "ReadHistoryInfo: end = " + dateFormatter.format(toDate));
     }
 
-    private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
+    public Date getFromDate() {
+        return fromDate;
+    }
+
+    public Date getToDate() {
+        return toDate;
+    }
+
+    public int getLength() {
+        return length;
+    }
+
+    public int getBlocks() {
+        return blocks;
+    }
 }
