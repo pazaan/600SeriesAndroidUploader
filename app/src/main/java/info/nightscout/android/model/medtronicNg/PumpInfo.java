@@ -17,7 +17,6 @@ public class PumpInfo extends RealmObject {
     private long lastQueryTS = 0;
     private RealmList<ContourNextLinkInfo> associatedCnls;
     private RealmList<PumpStatusEvent> pumpHistory = new RealmList<>();
-    private RealmList<BasalSchedule> basalSchedules;
 
     public long getPumpMac() {
         return pumpMac;
@@ -70,30 +69,4 @@ public class PumpInfo extends RealmObject {
     public void updateLastQueryTS() {
         lastQueryTS = System.currentTimeMillis();
     }
-
-    public RealmList<BasalSchedule> getBasalSchedules() {
-        return basalSchedules;
-    }
-
-    public void setBasalSchedules(RealmList<BasalSchedule> basalSchedules) {
-        this.basalSchedules = basalSchedules;
-    }
-
-    public boolean checkBasalRatesMatch(PumpStatusEvent pumpRecord) {
-        byte activeBasal = pumpRecord.getActiveBasalPattern();
-
-        BasalSchedule schedule = basalSchedules
-                .where()
-                .equalTo("scheduleNumber", activeBasal)
-                .findFirst();
-
-        if(schedule == null) {
-            Log.d("Schedule Check", "Didn't find a matching schedule for " + activeBasal);
-            return false;
-        } else {
-            Log.d("Schedule Check", "Found a schedule for " + activeBasal + " with name " + schedule.getName());
-            return true;
-        }
-    }
-
 }

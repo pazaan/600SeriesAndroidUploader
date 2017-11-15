@@ -29,6 +29,7 @@ import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.medtronic.StatusNotification;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.NightscoutUploadReceiver;
+import info.nightscout.android.utils.DataStore;
 import info.nightscout.android.utils.StatusMessage;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadReceiver;
 import io.realm.Realm;
@@ -68,6 +69,8 @@ public class MasterService extends Service {
 
     private Context mContext;
     private Realm realm;
+
+    private DataStore dataStore;
 
     private MasterServiceReceiver masterServiceReceiver = new MasterServiceReceiver();
     private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
@@ -110,6 +113,7 @@ public class MasterService extends Service {
         masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_FINISHED);
         masterServiceIntentFilter.addAction(Constants.ACTION_STOP_SERVICE);
         masterServiceIntentFilter.addAction(Constants.ACTION_READ_NOW);
+        masterServiceIntentFilter.addAction(Constants.ACTION_READ_PROFILE);
         masterServiceIntentFilter.addAction(Constants.ACTION_TEST);
         //masterServiceIntentFilter.addAction(MedtronicCnlService.Constants.ACTION_STATUS_MESSAGE);
         registerReceiver(masterServiceReceiver, masterServiceIntentFilter);
@@ -134,6 +138,8 @@ public class MasterService extends Service {
         // setup self handling alarm receiver
         MedtronicCnlAlarmManager.setContext(mContext);
 
+        realm = Realm.getDefaultInstance();
+        dataStore = realm.where(DataStore.class).findFirst();
     }
 
     @Override
@@ -146,6 +152,8 @@ public class MasterService extends Service {
         statusNotification.endNotification();
 
         MedtronicCnlAlarmManager.cancelAlarm();
+
+        if (!realm.isClosed()) realm.close();
 
         unregisterReceiver(statusMessageReceiver);
         unregisterReceiver(usbReceiver);
@@ -269,6 +277,15 @@ public class MasterService extends Service {
             } else if (Constants.ACTION_READ_NOW.equals(action)) {
                 MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000);
 
+            } else if (Constants.ACTION_READ_PROFILE.equals(action)) {
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        dataStore.setRequestProfile(true);
+                    }
+                });
+                MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000);
+
             } else if (Constants.ACTION_CNL_COMMS_ACTIVE.equals(action)) {
                 commsActive = true;
                 statusNotification.updateNotification(0);
@@ -285,8 +302,6 @@ public class MasterService extends Service {
         long now = System.currentTimeMillis();
         long start = now + 1000;
 
-        realm = Realm.getDefaultInstance();
-
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
                 .equalTo("validCGM", true)
@@ -297,8 +312,6 @@ public class MasterService extends Service {
             if (now - timeLastCGM < MedtronicCnlService.POLL_GRACE_PERIOD_MS + MedtronicCnlService.POLL_PERIOD_MS)
                 start = timeLastCGM + MedtronicCnlService.POLL_GRACE_PERIOD_MS + MedtronicCnlService.POLL_PERIOD_MS;
         }
-
-        if (!realm.isClosed()) realm.close();
 
         if (start - now < delay) start = now + delay;
         MedtronicCnlAlarmManager.setAlarm(start);
@@ -347,7 +360,13 @@ public class MasterService extends Service {
                 Log.d(TAG, "USB plugged in");
                 statusMessage.add(ICON_INFO + "Contour Next Link plugged in.");
                 clearDisconnectionNotification();
-////                dataStore.clearAllCommsErrors();
+
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        dataStore.clearAllCommsErrors();
+                    }
+                });
 
                 if (hasUsbPermission()) {
 
@@ -434,6 +453,7 @@ public class MasterService extends Service {
         public static final String ACTION_CNL_COMMS_FINISHED = "info.nightscout.android.medtronic.CNL_COMMS_FINISHED";
         public static final String ACTION_STOP_SERVICE = "info.nightscout.android.medtronic.STOP_SERVICE";
         public static final String ACTION_READ_NOW = "info.nightscout.android.medtronic.READ_NOW";
+        public static final String ACTION_READ_PROFILE = "info.nightscout.android.medtronic.READ_PROFILE";
 
         public static final String ACTION_TEST = "info.nightscout.android.medtronic.TEST";
 

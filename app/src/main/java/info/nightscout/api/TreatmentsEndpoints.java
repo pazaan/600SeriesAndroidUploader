@@ -50,6 +50,9 @@ public interface TreatmentsEndpoints {
         @SerializedName("reason")
         String reason;
 
+        @SerializedName("profile")
+        String profile;
+
         @SerializedName("enteredinsulin")
         String enteredinsulin;
 
@@ -151,6 +154,14 @@ public interface TreatmentsEndpoints {
 
         public void setReason(String reason) {
             this.reason = reason;
+        }
+
+        public String getProfile() {
+            return profile;
+        }
+
+        public void setProfile(String profile) {
+            this.profile = profile;
         }
 
         public String getEnteredinsulin() {
@@ -265,7 +276,7 @@ public interface TreatmentsEndpoints {
     }
 
     @GET("/api/v1/treatments.json")
-    Call<List<Treatment>> checkKey(@Query("find[key600]") String key);
+    Call<List<Treatment>> checkKey(@Query("find[created_at][$gte]") String date, @Query("find[key600]") String key);
 
     @DELETE("/api/v1/treatments/{id}")
     Call<ResponseBody> deleteID(@Path("id") String id);
@@ -274,6 +285,10 @@ public interface TreatmentsEndpoints {
             "Accept: application/json",
             "Content-type: application/json"
     })
+
+    @POST("/api/v1/treatments")
+    Call<ResponseBody> sendTreatment(@Body Treatment treatment);
+
     @POST("/api/v1/treatments")
     Call<ResponseBody> sendTreatments(@Body List<Treatment> treatments);
 }

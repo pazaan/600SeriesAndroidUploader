@@ -4,22 +4,22 @@ import android.util.Log;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.security.NoSuchAlgorithmException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.medtronic.message.BeginEHSMMessage;
+import info.nightscout.android.medtronic.message.BolusWizardCarbRatiosRequestMessage;
+import info.nightscout.android.medtronic.message.BolusWizardCarbRatiosResponseMessage;
+import info.nightscout.android.medtronic.message.BolusWizardSensitivityRequestMessage;
+import info.nightscout.android.medtronic.message.BolusWizardSensitivityResponseMessage;
+import info.nightscout.android.medtronic.message.BolusWizardTargetsRequestMessage;
+import info.nightscout.android.medtronic.message.BolusWizardTargetsResponseMessage;
 import info.nightscout.android.medtronic.message.ChannelNegotiateRequestMessage;
 import info.nightscout.android.medtronic.message.ChannelNegotiateResponseMessage;
 import info.nightscout.android.medtronic.exception.ChecksumException;
@@ -38,7 +38,6 @@ import info.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import info.nightscout.android.medtronic.message.ReadHistoryInfoRequestMessage;
-import info.nightscout.android.medtronic.message.ReadHistoryInfoResponseMessage;
 import info.nightscout.android.medtronic.message.ReadHistoryRequestMessage;
 import info.nightscout.android.medtronic.message.ReadHistoryResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoRequestMessage;
@@ -46,7 +45,6 @@ import info.nightscout.android.medtronic.message.ReadInfoResponseMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyRequestMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyResponseMessage;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
-import info.nightscout.android.medtronic.service.MedtronicCnlService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 
 /**
@@ -327,68 +325,65 @@ public class MedtronicCnlReader {
         return pumpRecord;
     }
 
-    public void getBasalPatterns() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public byte[] getBasalPatterns() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getBasalPatterns");
 
-        byte[] payload = {0};
-        for (int i = 1; i < 9; i ++) {
-            payload[0] = (byte) i;
-            new PumpBasalPatternRequestMessage(mPumpSession, payload).send(mDevice);
+        ByteArrayOutputStream basalPatterns = new ByteArrayOutputStream();
+
+        for (byte i = 1; i < 9; i ++) {
+            PumpBasalPatternResponseMessage response = new PumpBasalPatternRequestMessage(mPumpSession, i).send(mDevice);
+            basalPatterns.write(response.getBasalPattern());
         }
 
         Log.d(TAG, "Finished getBasalPatterns");
+        return basalPatterns.toByteArray();
     }
 
+    public byte[] getBolusWizardCarbRatios() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin getBolusWizardCarbRatios");
+
+        BolusWizardCarbRatiosResponseMessage response = new BolusWizardCarbRatiosRequestMessage(mPumpSession).send(mDevice);
+
+        Log.d(TAG, "Finished getBolusWizardCarbRatios");
+        return response.getCarbRatios();
+    }
+
+    public byte[] getBolusWizardTargets() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin getBolusWizardTargets");
+
+        BolusWizardTargetsResponseMessage response = new BolusWizardTargetsRequestMessage(mPumpSession).send(mDevice);
+
+        Log.d(TAG, "Finished getBolusWizardTargets");
+        return response.getTargets();
+    }
+
+    public byte[] getBolusWizardSensitivity() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin getBolusWizardCarbRatios");
+
+        BolusWizardSensitivityResponseMessage response = new BolusWizardSensitivityRequestMessage(mPumpSession).send(mDevice);
+
+        Log.d(TAG, "Finished getBolusWizardSensitivity");
+        return response.getSensitivity();
+    }
 
     public void getHistoryInfo(long startTime, long endTime, int offset, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistoryInfo");
 
-        ByteBuffer buffer = ByteBuffer.allocate(12);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.put(0x00, (byte) type);  // pump data = 0x02, sensor data = 0x03
-        buffer.put(0x01, (byte) 0x04);
-        buffer.putInt(0x02, MessageUtils.rtcFromTime(startTime, offset));
-        buffer.putInt(0x06, MessageUtils.rtcFromTime(endTime, offset));
-        buffer.put(0x0A, (byte) 0x00);
-        buffer.put(0x0B, (byte) 0x00);
-
-        new ReadHistoryInfoRequestMessage(mPumpSession, buffer.array()).send(mDevice);
+        int startRTC = MessageUtils.rtcFromTime(startTime, offset);
+        int endRTC = MessageUtils.rtcFromTime(endTime, offset);
+        new ReadHistoryInfoRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
 
         Log.d(TAG, "Finished getHistoryInfo");
     }
-
-    public void getHistoryInfoX(int startTime, int endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
-        Log.d(TAG, "Begin getHistoryInfo");
-
-        ByteBuffer buffer = ByteBuffer.allocate(12);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.put(0x00, (byte) type);  // pump data = 0x02, sensor data = 0x03
-        buffer.put(0x01, (byte) 0x04);
-        buffer.putInt(0x02, startTime);
-        buffer.putInt(0x06, endTime);
-        buffer.put(0x0A, (byte) 0x00);
-        buffer.put(0x0B, (byte) 0x00);
-
-        new ReadHistoryInfoRequestMessage(mPumpSession, buffer.array()).send(mDevice);
-
-        Log.d(TAG, "Finished getHistoryInfo");
-    }
-
-    // will NAK if too many days (>24?), looks like a limit of 10000 events in any single history pull
 
     public void getHistory(long startTime, long endTime, int offset, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistory");
 
-        ByteBuffer buffer = ByteBuffer.allocate(12);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.put(0x00, (byte) type);  // pump data = 0x02, sensor data = 0x03
-        buffer.put(0x01, (byte) 0x04);
-        buffer.putInt(0x02, MessageUtils.rtcFromTime(startTime, offset));
-        buffer.putInt(0x06, MessageUtils.rtcFromTime(endTime, offset));
-        buffer.put(0x0A, (byte) 0x00);
-        buffer.put(0x0B, (byte) 0x00);
+        int startRTC = MessageUtils.rtcFromTime(startTime, offset);
+        int endRTC = MessageUtils.rtcFromTime(endTime, offset);
+        new ReadHistoryInfoRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
 
-        ReadHistoryResponseMessage response = new ReadHistoryRequestMessage(mPumpSession, buffer.array()).send(mDevice);
+        ReadHistoryResponseMessage response = new ReadHistoryRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
         response.logcat();
 
         Log.d(TAG, "Finished getHistory");
@@ -397,25 +392,15 @@ public class MedtronicCnlReader {
     public Date[] getHistoryX(long startTime, long endTime, int offset, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistory");
 
-        ByteBuffer buffer = ByteBuffer.allocate(12);
-        buffer.order(ByteOrder.BIG_ENDIAN);
-        buffer.put(0x00, (byte) type);  // pump data = 0x02, sensor data = 0x03
-        buffer.put(0x01, (byte) 0x04);
-        buffer.putInt(0x02, MessageUtils.rtcFromTime(startTime, offset));
-        buffer.putInt(0x06, MessageUtils.rtcFromTime(endTime, offset));
-        buffer.put(0x0A, (byte) 0x00);
-        buffer.put(0x0B, (byte) 0x00);
-
-//        ReadHistoryResponseMessage response = new ReadHistoryRequestMessage(mPumpSession, buffer.array()).send(mDevice);
-//        Date[] range = response.updatePumpHistoryCGM();
-//        Log.d(TAG, "info: " + (range[0] == null ? "null" : dateFormatterFull.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatterFull.format(range[1])));
+        int startRTC = MessageUtils.rtcFromTime(startTime, offset);
+        int endRTC = MessageUtils.rtcFromTime(endTime, offset);
 
         ReadHistoryResponseMessage response = null;
         int unexpected = 0;
         int timeout = 0;
         do {
             try {
-                response = new ReadHistoryRequestMessage(mPumpSession, buffer.array()).send(mDevice);
+                response = new ReadHistoryRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
                 unexpected = 0;
                 timeout = 0;
             } catch (UnexpectedMessageException e) {
@@ -440,16 +425,11 @@ public class MedtronicCnlReader {
             }
         } while (unexpected > 0 || timeout > 0);
 
-        Date[] range;
-        if (type == 2)
-            range = response.updatePumpHistoryPUMP();
-        else
-            range = response.updatePumpHistoryCGM();
+        Date[] range = response.updatePumpHistory();
 
         Log.d(TAG, "Finished getHistory");
         return range;
     }
-    private DateFormat dateFormatterFull = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin endEHSMSession");

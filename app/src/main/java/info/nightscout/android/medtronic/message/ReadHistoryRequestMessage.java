@@ -10,6 +10,8 @@ import org.anarres.lzo.lzo_uintp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
@@ -36,12 +38,24 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
 
     private ByteArrayOutputStream blocks;
 
-    public ReadHistoryRequestMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        super(MessageType.READ_HISTORY, pumpSession, payload);
+    public ReadHistoryRequestMessage(MedtronicCnlSession pumpSession, int startRTC, int endRTC, int dataType) throws EncryptionException, ChecksumException {
+        super(MessageType.READ_HISTORY, pumpSession, buildPayload(startRTC, endRTC, dataType));
+    }
+
+    protected static byte[] buildPayload(int startRTC, int endRTC, int dataType) {
+        ByteBuffer payload = ByteBuffer.allocate(12);
+        payload.order(ByteOrder.BIG_ENDIAN);
+        payload.put(0x00, (byte) dataType);  // pump data = 0x02, sensor data = 0x03
+        payload.put(0x01, (byte) 0x04);
+        payload.putInt(0x02, startRTC);
+        payload.putInt(0x06, endRTC);
+        payload.put(0x0A, (byte) 0x00);
+        payload.put(0x0B, (byte) 0x00);
+        return payload.array();
     }
 
     public ReadHistoryResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        byte[] payload = null;
+        byte[] payload;
         blocks = new ByteArrayOutputStream();
 
         sendToPump(mDevice, mPumpSession, TAG);

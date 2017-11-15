@@ -124,16 +124,29 @@ public interface EntriesEndpoints {
         public Entry() {  }
     }
 
-    @GET("/api/v1/entries.json")
-    Call<List<Entry>> checkKey(@Query("find[key600]") String key);
+    @GET("/api/v1/entries/sgv.json")
+    Call<List<Entry>> checkKey(@Query("find[dateString][$gte]") String date, @Query("find[key600]") String key);
 
-    @DELETE("/api/v1/entries/{id}")
-    Call<ResponseBody> deleteID(@Path("id") String id);
+    @DELETE("/api/v1/entries/sgv.json")
+    Call<ResponseBody> deleteKey(@Query("find[dateString][$gte]") String date, @Query("find[key600]") String key);
+
+    // bulk delete
+    @DELETE("/api/v1/entries/sgv.json")
+    Call<ResponseBody> deleteDateRange(@Query("find[date][$gte]") String from, @Query("find[date][$lte]") String to);
+
+//    https://nsnemo.herokuapp.com/api/v1/entries/sgv.json?find[date][$gte]=1510110000000&find[date][$lte]=1510120000000&count=100
+
+//    @DELETE("/api/v1/entries/{id}")
+//    Call<ResponseBody> deleteID(@Path("id") String id);
 
     @Headers({
             "Accept: application/json",
             "Content-type: application/json"
     })
+
+    @POST("/api/v1/entries")
+    Call<ResponseBody> sendEntry(@Body Entry entry);
+
     @POST("/api/v1/entries")
     Call<ResponseBody> sendEntries(@Body List<Entry> entries);
 }

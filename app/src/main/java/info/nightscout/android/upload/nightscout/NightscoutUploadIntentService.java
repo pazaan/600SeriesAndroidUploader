@@ -21,11 +21,13 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
+import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.StatusMessage;
 import io.realm.Realm;
 import io.realm.RealmList;
 import io.realm.RealmResults;
+import io.realm.Sort;
 
 public class NightscoutUploadIntentService extends IntentService {
 
@@ -118,45 +120,56 @@ public class NightscoutUploadIntentService extends IntentService {
         Realm historyRealm;
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
-        List<PumpHistory> history = new ArrayList<>();
+        final List<PumpHistory> history = new ArrayList<>();
 
         RealmResults<PumpHistoryCGM> records = historyRealm
                 .where(PumpHistoryCGM.class)
                 .equalTo("uploadREQ", true)
-                .findAll();
-        for (PumpHistoryCGM record : records) history.add(record);
+                .findAllSorted("eventDate", Sort.DESCENDING);
+        int max = 400;
+        for (PumpHistoryCGM record : records) {
+            history.add(record);
+            if (--max == 0) break;
+        }
 
         RealmResults<PumpHistoryBG> records1 = historyRealm
                 .where(PumpHistoryBG.class)
                 .equalTo("uploadREQ", true)
-                .findAll();
+                .findAllSorted("eventDate", Sort.DESCENDING);
         for (PumpHistoryBG record : records1) history.add(record);
 
         RealmResults<PumpHistoryBolus> records2 = historyRealm
                 .where(PumpHistoryBolus.class)
                 .equalTo("uploadREQ", true)
-                .findAll();
+                .findAllSorted("eventDate", Sort.DESCENDING);
         for (PumpHistoryBolus record : records2) history.add(record);
 
         RealmResults<PumpHistoryBasal> records3 = historyRealm
                 .where(PumpHistoryBasal.class)
                 .equalTo("uploadREQ", true)
-                .findAll();
+                .findAllSorted("eventDate", Sort.DESCENDING);
         for (PumpHistoryBasal record : records3) history.add(record);
 
         RealmResults<PumpHistoryMisc> records4 = historyRealm
                 .where(PumpHistoryMisc.class)
                 .equalTo("uploadREQ", true)
-                .findAll();
+                .findAllSorted("eventDate", Sort.DESCENDING);
         for (PumpHistoryMisc record : records4) history.add(record);
 
-        Log.d(TAG, "*history* records to upload " + history.size());
+        RealmResults<PumpHistoryProfile> records5 = historyRealm
+                .where(PumpHistoryProfile.class)
+                .equalTo("uploadREQ", true)
+                .findAllSorted("eventDate", Sort.DESCENDING);
+        for (PumpHistoryProfile record : records5) history.add(record);
+
         Log.d(TAG, "*history* CGM records to upload " + records.size());
         Log.d(TAG, "*history* BG records to upload " + records1.size());
         Log.d(TAG, "*history* BOLUS records to upload " + records2.size());
         Log.d(TAG, "*history* BASAL records to upload " + records3.size());
         Log.d(TAG, "*history* MISC records to upload " + records4.size());
+        Log.d(TAG, "*history* PROFILE records to upload " + records5.size());
 
+        Log.d(TAG, "*history* requested upload of " + history.size() + " records for this pass" );
 
         if (history.size() > 0) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
@@ -173,17 +186,23 @@ public class NightscoutUploadIntentService extends IntentService {
 
                     Boolean uploadSuccess = mNightScoutUploadV2.doRESTUpload(urlSetting,
                             secretSetting, history);
+
                     if (uploadSuccess) {
-                        historyRealm.beginTransaction();
-                        for (PumpHistory updateRecord : history) {
-                            updateRecord.setUploadACK(true);
-                            updateRecord.setUploadREQ(false);
-                        }
-                        historyRealm.commitTransaction();
+                        historyRealm.executeTransaction(new Realm.Transaction() {
+                            @Override
+                            public void execute(Realm realm) {
+                                for (PumpHistory updateRecord : history) {
+                                    updateRecord.setUploadACK(true);
+                                    updateRecord.setUploadREQ(false);
+                                }
+                            }
+                        });
+
                     } else {
-                        statusMessage.add(MasterService.ICON_WARN + "*HISTORY* Uploading to Nightscout returned unsuccessful");
+                        statusMessage.add(MasterService.ICON_WARN + "*HISTORY* Uploading to Nightscout was unsuccessful");
                     }
                     Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", history.size(), System.currentTimeMillis() - start));
+
                 }
             } catch (Exception e) {
                 statusMessage.add(MasterService.ICON_WARN + "*HISTORY* Error uploading: " + e.getMessage());

@@ -15,53 +15,23 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class UploadApi {
     private Retrofit retrofit;
 
-//    private DeviceEndpoints deviceEndpoints;
+    private DeviceEndpoints deviceEndpoints;
+    private ProfileEndpoints profileEndpoints;
     private EntriesEndpoints entriesEndpoints;
     private TreatmentsEndpoints treatmentsEndpoints;
 
+    public DeviceEndpoints getDeviceEndpoints() {
+        return deviceEndpoints;
+    }
+    public ProfileEndpoints getProfileEndpoints() {
+        return profileEndpoints;
+    }
     public EntriesEndpoints getEntriesEndpoints() {
         return entriesEndpoints;
     }
     public TreatmentsEndpoints getTreatmentsEndpoints() {
         return treatmentsEndpoints;
     }
-
-
-
-    private SgvEndpoints sgvEndpoints;
-    private MbgEndpoints mbgEndpoints;
-    private DeviceEndpoints deviceEndpoints;
-    private TreatmentEndpoints treatmentEndpoints;
-    private TempBasalRateEndpoints tempBasalRateEndpoints;
-    private TempBasalPercentEndpoints tempBasalPercentEndpoints;
-    private TempBasalCancelEndpoints tempBasalCancelEndpoints;
-    private NoteEndpoints noteEndpoints;
-
-    public SgvEndpoints getSgvEndpoints() {
-        return sgvEndpoints;
-    }
-    public MbgEndpoints getMbgEndpoints() {
-        return mbgEndpoints;
-    }
-    public DeviceEndpoints getDeviceEndpoints() {
-        return deviceEndpoints;
-    }
-    public TreatmentEndpoints getTreatmentEndpoints() {
-        return treatmentEndpoints;
-    }
-    public TempBasalRateEndpoints getTempBasalRateEndpoints() {
-        return tempBasalRateEndpoints;
-    }
-    public TempBasalPercentEndpoints getTempBasalPercentEndpoints() {
-        return tempBasalPercentEndpoints;
-    }
-    public TempBasalCancelEndpoints getTempBasalCancelEndpoints() {
-        return tempBasalCancelEndpoints;
-    }
-    public NoteEndpoints getNoteEndpoints() {
-        return noteEndpoints;
-    }
-
 
     public UploadApi(String baseURL, String token) {
 
@@ -103,16 +73,9 @@ public class UploadApi {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
+        deviceEndpoints = retrofit.create(DeviceEndpoints.class);
+        profileEndpoints = retrofit.create(ProfileEndpoints.class);
         entriesEndpoints = retrofit.create(EntriesEndpoints.class);
         treatmentsEndpoints = retrofit.create(TreatmentsEndpoints.class);
-
-        sgvEndpoints = retrofit.create(SgvEndpoints.class);
-        mbgEndpoints = retrofit.create(MbgEndpoints.class);
-        deviceEndpoints = retrofit.create(DeviceEndpoints.class);
-        treatmentEndpoints = retrofit.create(TreatmentEndpoints.class);
-        tempBasalRateEndpoints = retrofit.create(TempBasalRateEndpoints.class);
-        tempBasalPercentEndpoints = retrofit.create(TempBasalPercentEndpoints.class);
-        tempBasalCancelEndpoints = retrofit.create(TempBasalCancelEndpoints.class);
-        noteEndpoints = retrofit.create(NoteEndpoints.class);
     }
 }

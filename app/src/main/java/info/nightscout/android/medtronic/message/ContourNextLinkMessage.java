@@ -410,6 +410,15 @@ public abstract class ContourNextLinkMessage {
                 } else if (MedtronicSendMessageRequestMessage.MessageType.READ_BASAL_PATTERN.response(cmd)) {
                     Log.d(TAG, "*** READ_BASAL_PATTERN response" + HexDump.dumpHexString(decrypted));
                     fetchMoreData = false;
+                } else if (MedtronicSendMessageRequestMessage.MessageType.READ_BOLUS_WIZARD_CARB_RATIOS.response(cmd)) {
+                    Log.d(TAG, "*** READ_BOLUS_WIZARD_CARB_RATIOS response" + HexDump.dumpHexString(decrypted));
+                    fetchMoreData = false;
+                } else if (MedtronicSendMessageRequestMessage.MessageType.READ_BOLUS_WIZARD_SENSITIVITY_FACTORS.response(cmd)) {
+                    Log.d(TAG, "*** READ_BOLUS_WIZARD_SENSITIVITY_FACTORS response" + HexDump.dumpHexString(decrypted));
+                    fetchMoreData = false;
+                } else if (MedtronicSendMessageRequestMessage.MessageType.READ_BOLUS_WIZARD_BG_TARGETS.response(cmd)) {
+                    Log.d(TAG, "*** READ_BOLUS_WIZARD_BG_TARGETS response" + HexDump.dumpHexString(decrypted));
+                    fetchMoreData = false;
                 } else {
                     Log.d(TAG, "*** ??? response" + HexDump.dumpHexString(decrypted));
                     fetchMoreData = true;
@@ -511,7 +520,7 @@ public abstract class ContourNextLinkMessage {
 
     // {NGP_PAYLOAD} when NGP_COMMAND=0x55
     public static final int NGP55_00 = 0x0000; // UInt8
-    public static final int NGP55_06 = 0x0001; // UInt8 (maybe response flag??? seen 02 04 for 0x81 and 06 for 0x81 messages)
+    public static final int NGP55_06 = 0x0001; // UInt8 (maybe response flag??? seen 02 04 for 0x81 and 06 for 0x80 messages)
     public static final int NGP55_PUMP_MAC = 0x0002; // UInt64LE
     public static final int NGP55_LINK_MAC = 0x000A; // UInt64LE
     public static final int NGP55_SEQUENCE = 0x0012; // UInt8

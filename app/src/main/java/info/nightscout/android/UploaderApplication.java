@@ -10,16 +10,15 @@ import com.bugfender.sdk.Bugfender;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
 
-import info.nightscout.android.model.medtronicNg.BasalRate;
-import info.nightscout.android.model.medtronicNg.BasalSchedule;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
-import info.nightscout.android.model.medtronicNg.PumpHistory;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
+import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
+import info.nightscout.android.model.medtronicNg.PumpHistorySettings;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.DataStore;
@@ -87,6 +86,18 @@ public class UploaderApplication extends Application {
                 .modules(new HistoryModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
+
+        Realm realm = Realm.getDefaultInstance();
+        if (realm.where(DataStore.class).findFirst() == null) {
+            realm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    realm.createObject(DataStore.class);
+                }
+            });
+        }
+        realm.close();
+
     }
 
     public static Context getAppContext() {
@@ -110,14 +121,29 @@ public class UploaderApplication extends Application {
         return historyConfiguration;
     }
 
-    @RealmModule(classes = {BasalRate.class, BasalSchedule.class, ContourNextLinkInfo.class, PumpInfo.class, PumpStatusEvent.class, DataStore.class})
-    private class MainModule {
-    }
-    @RealmModule(classes = {StatusStore.class})
-    private class StoreModule {
-    }
-    @RealmModule(classes = {PumpHistorySegment.class, PumpHistoryCGM.class, PumpHistoryBolus.class, PumpHistoryBasal.class, PumpHistoryBG.class, PumpHistoryMisc.class})
-    private class HistoryModule {
-    }
+    @RealmModule(classes = {
+            ContourNextLinkInfo.class,
+            PumpInfo.class,
+            PumpStatusEvent.class,
+            DataStore.class
+    })
+    private class MainModule {}
+
+    @RealmModule(classes = {
+            StatusStore.class
+    })
+    private class StoreModule {}
+
+    @RealmModule(classes = {
+            PumpHistorySegment.class,
+            PumpHistoryCGM.class,
+            PumpHistoryBolus.class,
+            PumpHistoryBasal.class,
+            PumpHistoryBG.class,
+            PumpHistoryMisc.class,
+            PumpHistoryProfile.class,
+            PumpHistorySettings.class
+    })
+    private class HistoryModule {}
 
 }

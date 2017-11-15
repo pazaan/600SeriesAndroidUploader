@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.api.EntriesEndpoints;
 import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
@@ -64,19 +65,21 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
     private String cgmTrend;
 
     public List Nightscout() {
-        Log.d(TAG, "*history* CGM do da thing! " + "sgv: " + sgv + " isig: " + isig);
-
         List list = new ArrayList();
-        list.add("entry");
-        if (uploadACK) list.add("update"); else list.add("new");
+
         EntriesEndpoints.Entry entry = new EntriesEndpoints.Entry();
+        list.add("entry");
+        list.add(uploadACK ? "update" : "new");
         list.add(entry);
 
+        entry.setKey600(key);
         entry.setType("sgv");
-        entry.setSgv(sgv);
         entry.setDate(eventDate.getTime());
         entry.setDateString(eventDate.toString());
-        entry.setKey600(key);
+
+        entry.setSgv(sgv);
+        if (cgmTrend != null) entry.setDirection(PumpHistoryParser.TextEN.valueOf("NS_TREND_" + cgmTrend).getText());
+
         return list;
     }
 
@@ -100,6 +103,62 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
         final RealmResults<PumpHistoryCGM> results = realm.where(PumpHistoryCGM.class)
                 .findAllSorted("eventDate", Sort.ASCENDING);
         Log.d(TAG, "records: " + results.size() + (results.size() > 0 ? " start: "+ dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
+    }
+
+    public static void event(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+                             int sgv,
+                             double isig,
+                             double vctr,
+                             double rateOfChange,
+                             byte sensorStatus,
+                             byte readingStatus,
+                             boolean backfilledData,
+                             boolean settingsChanged,
+                             boolean noisyData,
+                             boolean discardData,
+                             boolean sensorError,
+                             byte sensorException) {
+
+        PumpHistoryCGM object = realm.where(PumpHistoryCGM.class)
+                .equalTo("eventRTC", eventRTC)
+                .findFirst();
+        if (object == null) {
+            // create new entry
+            object = realm.createObject(PumpHistoryCGM.class);
+            object.setKey("CGM" + String.format("%08X", eventRTC));
+            object.setHistory(true);
+            object.setEventDate(eventDate);
+            object.setEventEndDate(eventDate);
+            object.setEventRTC(eventRTC);
+            object.setEventOFFSET(eventOFFSET);
+            object.setSgv(sgv);
+            object.setIsig(isig);
+            object.setVctr(vctr);
+            object.setSensorStatus(sensorStatus);
+            object.setReadingStatus(readingStatus);
+            object.setRateOfChange(rateOfChange);
+            object.setBackfilledData(backfilledData);
+            object.setSettingsChanged(settingsChanged);
+            object.setNoisyData(noisyData);
+            object.setDiscardData(discardData);
+            object.setSensorError(sensorError);
+            object.setSensorException(sensorException);
+            if (sgv > 0) object.setUploadREQ(true);
+        } else if (!object.isHistory()) {
+            // update the entry
+            object.setHistory(true);
+            object.setIsig(isig);
+            object.setVctr(vctr);
+            object.setSensorStatus(sensorStatus);
+            object.setReadingStatus(readingStatus);
+            object.setRateOfChange(rateOfChange);
+            object.setBackfilledData(backfilledData);
+            object.setSettingsChanged(settingsChanged);
+            object.setNoisyData(noisyData);
+            object.setDiscardData(discardData);
+            object.setSensorError(sensorError);
+            object.setSensorException(sensorException);
+        }
     }
 
     @Override
@@ -308,5 +367,13 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
 
     public void setSensorException(byte sensorException) {
         this.sensorException = sensorException;
+    }
+
+    public String getCgmTrend() {
+        return cgmTrend;
+    }
+
+    public void setCgmTrend(String cgmTrend) {
+        this.cgmTrend = cgmTrend;
     }
 }

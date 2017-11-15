@@ -92,6 +92,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         // 0x10 always needed for encryption or else there is a timeout
         // 0x01 optional but using this does increase comms speed without needing to engage EHSM session request
         // 0x01 must be set when EHSM session is operational or risk pump radio channel changing
+        // I suspect that BeginEHSM / EndEHSM are only ever needed if bulk data is being sent to pump!
 
         byte modeFlags = 0x10; // encrypted mode
 
@@ -100,8 +101,8 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         } else {
             sendPayloadBuffer.put(pumpSession.getComDSequenceNumber());
             pumpSession.incrComDSequenceNumber();
-            if (pumpSession.getEHSMmode()) modeFlags |= 0x01; // high speed mode
-//            modeFlags |= 0x01; // high speed mode
+            //if (pumpSession.getEHSMmode()) modeFlags |= 0x01; // high speed mode
+            modeFlags |= 0x01; // high speed mode
         }
 
         sendPayloadBuffer.putShort(messageType.request);

@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
@@ -43,11 +44,13 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
     private Date bgDate;
     private int bgRTC;
     private int bgOffset;
-    boolean calibrationFlag;
+
     int bgUnits;
+    int bgOrigin;
+
     int bg;
-    int bgSource;
     String serial;
+    boolean calibrationFlag;
 
     boolean calibration;
     private Date calibrationDate;
@@ -58,17 +61,16 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
 
     @Override
     public List Nightscout() {
-        Log.d(TAG, "*history* BG do da thing! " + "bg: " + bg + " cal: " + calibrationFactor);
-
         List list = new ArrayList();
-        list.add("treatment");
-        if (uploadACK) list.add("update"); else list.add("new");
+
         TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
+        list.add("treatment");
+        list.add(uploadACK ? "update" : "new");
         list.add(treatment);
 
         BigDecimal bgl;
         String units;
-        if (bgUnits == 0) {
+        if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits)) {
             bgl = new BigDecimal(bg).setScale(0);
             units = "mg/dl";
         } else {
@@ -83,7 +85,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
         treatment.setUnits(units);
         if (calibration) {
             long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
-            treatment.setNotes("Calibration: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)");
+            treatment.setNotes("CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)");
         }
 
         return list;
@@ -112,11 +114,11 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
     }
 
     public static void bg(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                              boolean calibrationFlag,
-                              int bgUnits,
-                              int bg,
-                              int bgSource,
-                              String serial) {
+                          boolean calibrationFlag,
+                          int bgUnits,
+                          int bg,
+                          int bgOrigin,
+                          String serial) {
 
         PumpHistoryBG object = realm.where(PumpHistoryBG.class)
                 .equalTo("bgRTC", eventRTC)
@@ -142,7 +144,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
             object.setCalibrationFlag(calibrationFlag);
             object.setBg(bg);
             object.setBgUnits(bgUnits);
-            object.setBgSource(bgSource);
+            object.setBgOrigin(bgOrigin);
             object.setSerial(serial);
             object.setKey("BG" + String.format("%08X", eventRTC));
             object.setUploadREQ(true);
@@ -279,20 +281,20 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
         this.bgOffset = bgOffset;
     }
 
-    public boolean isCalibrationFlag() {
-        return calibrationFlag;
-    }
-
-    public void setCalibrationFlag(boolean calibrationFlag) {
-        this.calibrationFlag = calibrationFlag;
-    }
-
     public int getBgUnits() {
         return bgUnits;
     }
 
     public void setBgUnits(int bgUnits) {
         this.bgUnits = bgUnits;
+    }
+
+    public int getBgOrigin() {
+        return bgOrigin;
+    }
+
+    public void setBgOrigin(int bgOrigin) {
+        this.bgOrigin = bgOrigin;
     }
 
     public int getBg() {
@@ -303,20 +305,20 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
         this.bg = bg;
     }
 
-    public int getBgSource() {
-        return bgSource;
-    }
-
-    public void setBgSource(int bgSource) {
-        this.bgSource = bgSource;
-    }
-
     public String getSerial() {
         return serial;
     }
 
     public void setSerial(String serial) {
         this.serial = serial;
+    }
+
+    public boolean isCalibrationFlag() {
+        return calibrationFlag;
+    }
+
+    public void setCalibrationFlag(boolean calibrationFlag) {
+        this.calibrationFlag = calibrationFlag;
     }
 
     public boolean isCalibration() {

@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
@@ -47,76 +48,74 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
     private int completedOFFSET;
     private Date completedDate;
 
-    private int preset;
     private int type;
+    private int preset;
+
     private double rate;
     private int percentageOfRate;
     private int duration;
     private boolean canceled;
 
     private boolean suspend = false;
-    private int suspendRTC;
-    private int suspendOFFSET;
-    private Date suspendDate;
     private int suspendReason;
 
     private boolean resume = false;
-    private int resumeRTC;
-    private int resumeOFFSET;
-    private Date resumeDate;
     private int resumeReason;
 
     @Override
     public List Nightscout() {
-        Log.d(TAG, "*history* BASAL do da thing! ");
-
         List list = new ArrayList();
-        list.add("treatment");
-        if (uploadACK) list.add("update"); else list.add("new");
+
         TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
+        list.add("treatment");
+        list.add(uploadACK ? "update" : "new");
         list.add(treatment);
 
         treatment.setKey600(key);
+        treatment.setEventType("Temp Basal");
+        String notes = "";
 
         if (suspend) {
-            treatment.setEventType("Temp Basal");
-            treatment.setCreated_at(suspendDate);
-            treatment.setDuration((float) 24 * 60);
+            treatment.setCreated_at(programmedDate);
+            treatment.setDuration((float) duration);
             treatment.setAbsolute((float) 0);
-            treatment.setNotes("Pump suspended insulin delivery, reason = " + suspendReason);
+            notes = PumpHistoryParser.TextEN.NS_SUSPEND.getText() + ": " +
+                    PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.SUSPEND_REASON.convert(suspendReason).name()).getText();
 
         } else if (resume) {
-            treatment.setEventType("Temp Basal");
-            treatment.setCreated_at(resumeDate);
+            treatment.setCreated_at(programmedDate);
             treatment.setDuration((float) 0);
-            treatment.setNotes("Pump resumed insulin delivery, reason = " + resumeReason);
+            notes = PumpHistoryParser.TextEN.NS_RESUME.getText() + ": " +
+                    PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.RESUME_REASON.convert(resumeReason).name()).getText();
 
         } else {
-            treatment.setEventType("Temp Basal");
             treatment.setCreated_at(programmedDate);
 
-            if (percentageOfRate > 0)
+            notes += "Temp Basal:";
+
+            if (PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(type)) {
                 treatment.setPercent((float) percentageOfRate - 100);
-            else
-                treatment.setAbsolute((float) rate);
-
-            if (!canceled)
-                treatment.setDuration((float) duration);
-            else
-                treatment.setDuration((float) (completedRTC - programmedRTC) / 60);
-
-            if (!completed) {
-                treatment.setDuration((float) duration);
-                treatment.setNotes("Temp Basal in progress");
+                notes += " " + percentageOfRate + "%";
             } else {
-                treatment.setDuration((float) (completedRTC - programmedRTC) / 60);
-                String notes = "Temp Basal: rate " + rate + "U, percent " + percentageOfRate + "%, duration " + duration;
-                if (canceled)
-                    notes += " * canceled, duration " + (completedRTC - programmedRTC) / 60 + " minutes";
-                treatment.setNotes(notes);
+                treatment.setAbsolute((float) rate);
+                notes += " " + rate + "U";
+            }
+
+            notes += ", duration " + duration + " minutes";
+
+            if (!PumpHistoryParser.TEMP_BASAL_PRESET.TEMP_BASAL_PRESET_0.equals(preset))
+                notes += " [" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.TEMP_BASAL_PRESET.convert(preset).name()).getText() + "]";
+
+            if (!canceled) {
+                treatment.setDuration((float) duration);
+            } else {
+                int minutes = (int) Math.ceil((completedRTC - programmedRTC) / 60);
+                treatment.setDuration((float) minutes);
+                notes += " * canceled, duration " + minutes + " minutes";
             }
         }
 
+        treatment.setNotes(notes);
         return list;
     }
 
@@ -207,7 +206,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
                 object.setCompletedDate(eventDate);
                 object.setCompletedRTC(eventRTC);
                 object.setCompletedOFFSET(eventOFFSET);
-                if (object.isProgrammed()) object.setUploadREQ(true);
+                if (object.isProgrammed() && canceled) object.setUploadREQ(true);
             }
         }
     }
@@ -216,16 +215,18 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
                             int reason) {
 
         PumpHistoryBasal object = realm.where(PumpHistoryBasal.class)
-                .equalTo("suspendRTC", eventRTC)
+                .equalTo("suspend", true)
+                .equalTo("programmedRTC", eventRTC)
                 .findFirst();
         if (object == null) {
             Log.d(TAG, "*new*" + " suspend basal");
             object = realm.createObject(PumpHistoryBasal.class);
             object.setEventDate(eventDate);
-            object.setEventEndDate(new Date(eventDate.getTime() + 24 * 60 * 60 * 1000L));
-            object.setSuspendDate(eventDate);
-            object.setSuspendRTC(eventRTC);
-            object.setSuspendOFFSET(eventOFFSET);
+            object.setEventEndDate(eventDate);
+            object.setProgrammedDate(eventDate);
+            object.setProgrammedRTC(eventRTC);
+            object.setProgrammedOFFSET(eventOFFSET);
+            object.setDuration(24 * 60);
             object.setSuspendReason(reason);
             object.setSuspend(true);
             object.setKey("SUSPEND" + String.format("%08X", eventRTC));
@@ -237,20 +238,32 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
                                int reason) {
 
         PumpHistoryBasal object = realm.where(PumpHistoryBasal.class)
-                .equalTo("resumeRTC", eventRTC)
+                .equalTo("resume", true)
+                .equalTo("programmedRTC", eventRTC)
                 .findFirst();
         if (object == null) {
             Log.d(TAG, "*new*" + " resume basal");
             object = realm.createObject(PumpHistoryBasal.class);
             object.setEventDate(eventDate);
-            object.setEventEndDate(new Date(eventDate.getTime() + 24 * 60 * 60 * 1000L));
-            object.setResumeDate(eventDate);
-            object.setResumeRTC(eventRTC);
-            object.setResumeOFFSET(eventOFFSET);
+            object.setEventEndDate(eventDate);
+            object.setProgrammedDate(eventDate);
+            object.setProgrammedRTC(eventRTC);
+            object.setProgrammedOFFSET(eventOFFSET);
             object.setResumeReason(reason);
             object.setResume(true);
             object.setKey("RESUME" + String.format("%08X", eventRTC));
             object.setUploadREQ(true);
+            // look for corresponding suspend and update it's duration
+            object = realm.where(PumpHistoryBasal.class)
+                    .equalTo("suspend", true)
+                    .equalTo("duration", 24 * 60)
+                    .greaterThan("programmedRTC", eventRTC - 24 * 60 * 60)
+                    .lessThan("programmedRTC", eventRTC)
+                    .findFirst();
+            if (object != null) {
+                object.setDuration((eventRTC - object.getProgrammedRTC()) / 60);
+                object.setUploadREQ(true);
+            }
         }
     }
 
@@ -388,6 +401,14 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
         this.completedDate = completedDate;
     }
 
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
     public int getPreset() {
         return preset;
     }
@@ -396,12 +417,12 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
         this.preset = preset;
     }
 
-    public int getType() {
-        return type;
+    public void setSuspendReason(int suspendReason) {
+        this.suspendReason = suspendReason;
     }
 
-    public void setType(int type) {
-        this.type = type;
+    public void setResumeReason(int resumeReason) {
+        this.resumeReason = resumeReason;
     }
 
     public double getRate() {
@@ -444,36 +465,8 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
         this.suspend = suspend;
     }
 
-    public int getSuspendRTC() {
-        return suspendRTC;
-    }
-
-    public void setSuspendRTC(int suspendRTC) {
-        this.suspendRTC = suspendRTC;
-    }
-
-    public int getSuspendOFFSET() {
-        return suspendOFFSET;
-    }
-
-    public void setSuspendOFFSET(int suspendOFFSET) {
-        this.suspendOFFSET = suspendOFFSET;
-    }
-
-    public Date getSuspendDate() {
-        return suspendDate;
-    }
-
-    public void setSuspendDate(Date suspendDate) {
-        this.suspendDate = suspendDate;
-    }
-
     public int getSuspendReason() {
         return suspendReason;
-    }
-
-    public void setSuspendReason(int suspendReason) {
-        this.suspendReason = suspendReason;
     }
 
     public boolean isResume() {
@@ -484,35 +477,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
         this.resume = resume;
     }
 
-    public int getResumeRTC() {
-        return resumeRTC;
-    }
-
-    public void setResumeRTC(int resumeRTC) {
-        this.resumeRTC = resumeRTC;
-    }
-
-    public int getResumeOFFSET() {
-        return resumeOFFSET;
-    }
-
-    public void setResumeOFFSET(int resumeOFFSET) {
-        this.resumeOFFSET = resumeOFFSET;
-    }
-
-    public Date getResumeDate() {
-        return resumeDate;
-    }
-
-    public void setResumeDate(Date resumeDate) {
-        this.resumeDate = resumeDate;
-    }
-
     public int getResumeReason() {
         return resumeReason;
-    }
-
-    public void setResumeReason(int resumeReason) {
-        this.resumeReason = resumeReason;
     }
 }

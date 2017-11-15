@@ -9,8 +9,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import info.nightscout.api.EntriesEndpoints;
-import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.RealmResults;
@@ -19,12 +17,12 @@ import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
 /**
- * Created by John on 26.10.17.
+ * Created by John on 8.11.17.
  */
 
-public class PumpHistoryMisc extends RealmObject implements PumpHistory {
+public class PumpHistorySettings extends RealmObject implements PumpHistory {
     @Ignore
-    private static final String TAG = PumpHistoryMisc.class.getSimpleName();
+    private static final String TAG = PumpHistorySettings.class.getSimpleName();
 
     @Index
     private Date eventDate;
@@ -38,48 +36,20 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistory {
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
+    private int eventType; // change type: basals/carbs/sensitivity/targets
     private int eventRTC;
     private int eventOFFSET;
 
-    private int item; // change sensor = 1, change battery = 2, change cannula = 3
-    private int lifetime;
+    private byte[] basalPaterns;
+    private byte[] carbRatios;
+    private byte[] sensitivity;
+    private byte[] targets;
 
     @Override
-    public List Nightscout() {
-        List list = new ArrayList();
-
-        TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
-        list.add("treatment");
-        list.add(uploadACK ? "update" : "new");
-        list.add(treatment);
-
-        treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
-
-        String notes = "";
-
-        if (item == 1) {
-            treatment.setEventType("Sensor Start");
-            notes += "Sensor changed";
-        } else if (item == 2) {
-            treatment.setEventType("Note");
-            notes += "Pump battery changed";
-        } else if (item == 3) {
-            treatment.setEventType("Site Change");
-            notes += "Reservoir changed";
-        } else {
-            treatment.setEventType("Note");
-            notes += "Unknown event";
-        }
-
-        if (lifetime > 0) notes += " (lifetime " + (lifetime / 1440) + " days " + ((lifetime % 1440) / 60) + " hours)";
-        treatment.setNotes(notes);
-
-        return list;
-    }
+    public List Nightscout() { return new ArrayList(); }
 
     public static void stale(Realm realm, Date date) {
-        final RealmResults results = realm.where(PumpHistoryMisc.class)
+        final RealmResults results = realm.where(PumpHistorySettings.class)
                 .lessThan("eventDate", date)
                 .findAll();
         if (results.size() > 0) {
@@ -95,42 +65,26 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistory {
 
     public static void records(Realm realm) {
         DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
-        final RealmResults<PumpHistoryMisc> results = realm.where(PumpHistoryMisc.class)
+        final RealmResults<PumpHistorySettings> results = realm.where(PumpHistorySettings.class)
                 .findAllSorted("eventDate", Sort.ASCENDING);
         Log.d(TAG, "records: " + results.size() + (results.size() > 0 ? " start: " + dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
     }
 
-    public static void item(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                   int item) {
+    public static void change(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+                            int eventType) {
 
-        PumpHistoryMisc object = realm.where(PumpHistoryMisc.class)
-                .equalTo("item", item)
+        PumpHistorySettings object = realm.where(PumpHistorySettings.class)
+                .equalTo("eventType", eventType)
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
         if (object == null) {
-            Log.d(TAG, "*new*" + " item: " + item);
-            object = realm.createObject(PumpHistoryMisc.class);
+            Log.d(TAG, "*new*" + " settings change: " + eventType);
+            object = realm.createObject(PumpHistorySettings.class);
             object.setEventDate(eventDate);
             object.setEventEndDate(eventDate);
-            object.setKey("MISC" + String.format("%08X", eventRTC));
             object.setEventRTC(eventRTC);
             object.setEventOFFSET(eventOFFSET);
-            object.setItem(item);
-            if (item == 1 || item == 2 || item == 3)
-                object.setUploadREQ(true);
-        }
-
-        // lifetime for items
-        RealmResults<PumpHistoryMisc> results = realm.where(PumpHistoryMisc.class)
-                .equalTo("item", item)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-        for (PumpHistoryMisc each : results) {
-            if (each.getLifetime() == 0) {
-                int lifetime = (int) ((object.getEventDate().getTime() - each.getEventDate().getTime()) / 60000L);
-                each.setLifetime(lifetime);
-                each.setUploadREQ(true);
-            }
-            object = each;
+            object.setEventType(eventType);
         }
     }
 
@@ -204,6 +158,14 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistory {
         this.key = key;
     }
 
+    public int getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(int eventType) {
+        this.eventType = eventType;
+    }
+
     public int getEventRTC() {
         return eventRTC;
     }
@@ -220,19 +182,35 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistory {
         this.eventOFFSET = eventOFFSET;
     }
 
-    public int getItem() {
-        return item;
+    public byte[] getBasalPaterns() {
+        return basalPaterns;
     }
 
-    public void setItem(int item) {
-        this.item = item;
+    public void setBasalPaterns(byte[] basalPaterns) {
+        this.basalPaterns = basalPaterns;
     }
 
-    public int getLifetime() {
-        return lifetime;
+    public byte[] getCarbRatios() {
+        return carbRatios;
     }
 
-    public void setLifetime(int lifetime) {
-        this.lifetime = lifetime;
+    public void setCarbRatios(byte[] carbRatios) {
+        this.carbRatios = carbRatios;
+    }
+
+    public byte[] getSensitivity() {
+        return sensitivity;
+    }
+
+    public void setSensitivity(byte[] sensitivity) {
+        this.sensitivity = sensitivity;
+    }
+
+    public byte[] getTargets() {
+        return targets;
+    }
+
+    public void setTargets(byte[] targets) {
+        this.targets = targets;
     }
 }

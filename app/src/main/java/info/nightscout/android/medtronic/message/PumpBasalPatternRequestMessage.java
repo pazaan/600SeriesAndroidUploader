@@ -1,6 +1,8 @@
 package info.nightscout.android.medtronic.message;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
@@ -12,11 +14,17 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 /**
  * Created by lgoedhart on 26/03/2016.
  */
+
 public class PumpBasalPatternRequestMessage extends MedtronicSendMessageRequestMessage<PumpBasalPatternResponseMessage> {
     private static final String TAG = PumpBasalPatternRequestMessage.class.getSimpleName();
 
-    public PumpBasalPatternRequestMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        super(MessageType.READ_BASAL_PATTERN, pumpSession, payload);
+    public PumpBasalPatternRequestMessage(MedtronicCnlSession pumpSession, byte patternNumber) throws EncryptionException, ChecksumException {
+        super(MessageType.READ_BASAL_PATTERN, pumpSession, buildPayload(patternNumber));
+    }
+
+    protected static byte[] buildPayload(byte patternNumber) {
+        byte[] payload = {patternNumber};
+        return payload;
     }
 
     public PumpBasalPatternResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {

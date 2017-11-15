@@ -24,22 +24,16 @@ import java.text.SimpleDateFormat;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.MedtronicCnlReader;
+import info.nightscout.android.medtronic.PumpHistoryHandler;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.medtronic.message.ContourNextLinkCommandMessage;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
-import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
-import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
-import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
-import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
-import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
-import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.upload.nightscout.NightscoutUploadReceiver;
-import info.nightscout.android.utils.HexDump;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadReceiver;
 import info.nightscout.android.utils.DataStore;
 import io.realm.Realm;
@@ -80,17 +74,19 @@ public class MedtronicCnlService extends Service {
     private ReadPump readPump;
     private Realm realm;
 
-    private int PumpCgmNA = 0;
-    private int PumpOffsetCheck = 0;
-    private long PumpOffset = 0;
-    private int CommsSuccess = 0;
-    private int CommsError = 0;
-    private int CommsConnectError = 0;
-    private int CommsSignalError = 0;
-    private int CommsSgvSuccess = 0;
-    private int PumpLostSensorError = 0;
-    private int PumpClockError = 0;
-    private int PumpBatteryError = 0;
+    private PumpHistoryHandler pumpHistoryHandler;
+
+    // DataStore local copy
+    private boolean RequestPumpHistory;
+    private int PumpCgmNA;
+    private int CommsSuccess;
+    private int CommsError;
+    private int CommsConnectError;
+    private int CommsSignalError;
+    private int CommsSgvSuccess;
+    private int PumpLostSensorError;
+    private int PumpClockError;
+    private int PumpBatteryError;
 
     private boolean prefReducePollOnPumpAway;
     private long prefPollInterval;
@@ -103,13 +99,15 @@ public class MedtronicCnlService extends Service {
     private DateFormat dateFormatterNote = new SimpleDateFormat("E HH:mm", Locale.US);
     private DateFormat dateFormatterFull = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
+    // WIP temporary
     public static int pumpRTC;
     public static int pumpOFFSET;
-    public static long pumpEvent;
-    public static long pumpDifference;
+    public static long pumpEventTime;
+    public static long pumpClockDiff;
 
     public static int cnlClear = 0;
     public static int cnl0x81 = 0;
+    public static int cnlChannelNegotiateError = 0;
 
     protected void sendStatus(String message) {
         try {
@@ -233,44 +231,38 @@ public class MedtronicCnlService extends Service {
         return START_NOT_STICKY;
     }
 
+    private DataStore dataStore;
+
     private void readDataStore() {
-        DataStore dataStore = realm
-                .where(DataStore.class)
-                .findFirst();
-        if (dataStore != null) {
-            PumpCgmNA = dataStore.getPumpCgmNA();
-            PumpOffsetCheck = dataStore.getPumpOffsetCheck();
-            PumpOffset = dataStore.getPumpOffset();
-            CommsSuccess = dataStore.getCommsSuccess();
-            CommsError = dataStore.getCommsError();
-            CommsConnectError = dataStore.getCommsConnectError();
-            CommsSignalError = dataStore.getCommsSignalError();
-            CommsSgvSuccess = dataStore.getCommsSgvSuccess();
-            PumpLostSensorError = dataStore.getPumpLostSensorError();
-            PumpClockError = dataStore.getPumpClockError();
-            PumpBatteryError = dataStore.getPumpBatteryError();
-        }
+        dataStore = realm.where(DataStore.class).findFirst();
+        RequestPumpHistory = dataStore.isRequestPumpHistory();
+        PumpCgmNA = dataStore.getPumpCgmNA();
+        CommsSuccess = dataStore.getCommsSuccess();
+        CommsError = dataStore.getCommsError();
+        CommsConnectError = dataStore.getCommsConnectError();
+        CommsSignalError = dataStore.getCommsSignalError();
+        CommsSgvSuccess = dataStore.getCommsSgvSuccess();
+        PumpLostSensorError = dataStore.getPumpLostSensorError();
+        PumpClockError = dataStore.getPumpClockError();
+        PumpBatteryError = dataStore.getPumpBatteryError();
     }
 
     private void writeDataStore() {
-        DataStore dataStore = realm
-                .where(DataStore.class)
-                .findFirst();
-        realm.beginTransaction();
-        if (dataStore == null)
-            dataStore = realm.createObject(DataStore.class);
-        dataStore.setPumpCgmNA(PumpCgmNA);
-        dataStore.setPumpOffsetCheck(PumpOffsetCheck);
-        dataStore.setPumpOffset(PumpOffset);
-        dataStore.setCommsSuccess(CommsSuccess);
-        dataStore.setCommsError(CommsError);
-        dataStore.setCommsConnectError(CommsConnectError);
-        dataStore.setCommsSignalError(CommsSignalError);
-        dataStore.setCommsSgvSuccess(CommsSgvSuccess);
-        dataStore.setPumpLostSensorError(PumpLostSensorError);
-        dataStore.setPumpClockError(PumpClockError);
-        dataStore.setPumpBatteryError(PumpBatteryError);
-        realm.commitTransaction();
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                dataStore.setRequestPumpHistory(RequestPumpHistory);
+                dataStore.setPumpCgmNA(PumpCgmNA);
+                dataStore.setCommsSuccess(CommsSuccess);
+                dataStore.setCommsError(CommsError);
+                dataStore.setCommsConnectError(CommsConnectError);
+                dataStore.setCommsSignalError(CommsSignalError);
+                dataStore.setCommsSgvSuccess(CommsSgvSuccess);
+                dataStore.setPumpLostSensorError(PumpLostSensorError);
+                dataStore.setPumpClockError(PumpClockError);
+                dataStore.setPumpBatteryError(PumpBatteryError);
+            }
+        });
     }
 
 /*
@@ -303,11 +295,13 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             long nextpoll = 0;
 
             realm = Realm.getDefaultInstance();
+            pumpHistoryHandler = new PumpHistoryHandler();
 
             readDataStore();
 
             cnlClear = 0;
             cnl0x81 = 0;
+            cnlChannelNegotiateError = 0;
 
             try {
                 long pollInterval = prefPollInterval;
@@ -389,7 +383,13 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                         activePump.updateLastQueryTS();
 
-                        byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
+                        byte radioChannel;
+                        int retry = 3;
+                        do {
+                            radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
+                        } while (radioChannel == 0 && --retry > 0);
+
+//                        byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                         if (radioChannel == 0) {
                             sendStatus(MasterService.ICON_WARN + "Could not communicate with the pump. Is it nearby?");
                             Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
@@ -408,6 +408,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 CommsSignalError++;
                             else if (CommsSignalError > 0) CommsSignalError--;
 
+                            if (retry != 3) {
+                                sendStatus("*** connect retry: " + (3 - retry));
+                            }
+
                             activePump.setLastRadioChannel(radioChannel);
                             sendStatus(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                             Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
@@ -421,60 +425,13 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             // TODO - this should not be necessary. We should reverse lookup the device name from PumpInfo
                             pumpRecord.setDeviceName(deviceName);
 
-//                            cnlReader.beginEHSMSession();
-/*
-                            // gentle persuasion to leave channel 26 (weakest for CNL and on top of BT advertising channel) by using EHSM to influence pump channel change
-                            if (radioChannel == 26) {
-                                cnlReader.beginEHSMSession();
-                                cnlReader.getPumpSession().setEHSMmode(false);
-                            } else {
-                                cnlReader.getPumpSession().setEHSMmode(true);
-                            }
-*/
-                            cnlReader.getPumpSession().setEHSMmode(true);
-                               /*
-                        if (PumpOffsetCheck > 0) {
-                            PumpOffsetCheck--;
-                        } else {
-                            sendStatus(MasterService.ICON_INFO + "Reading pump time difference");
-                            PumpOffset = cnlReader.getPumpTime().getTime() - System.currentTimeMillis();
-                            Log.d(TAG, "Time offset between pump and device: " + PumpOffset + " millis.");
-                            sendStatus(MasterService.ICON_INFO + "Time offset between pump and device: " + (PumpOffset > 0 ? "+" : "") + (PumpOffset / 1000L) + "sec");
+                            pumpEventTime = System.currentTimeMillis();
+                            pumpClockDiff = cnlReader.getPumpTime().getTime() - pumpEventTime;
 
-                            if (Math.abs(PumpOffset) < 60 * 1000)
-                                PumpOffsetCheck = 8 * 12;
-                            else if (Math.abs(PumpOffset) < 120 * 1000)
-                                PumpOffsetCheck = 4 * 12;
-                            else if (Math.abs(PumpOffset) < 180 * 1000)
-                                PumpOffsetCheck = 2 * 12;
-                            else
-                                PumpOffsetCheck = 1 * 12;
-
-                            PumpOffsetCheck = 4 * 12;
-                        }
-*/
-                            PumpOffset = cnlReader.getPumpTime().getTime() - System.currentTimeMillis();
-
-                            long eventTime = System.currentTimeMillis();
-
-                            pumpDifference = PumpOffset;
-                            pumpEvent = eventTime;
-
-                            pumpRecord.setPumpTimeOffset(PumpOffset);
-                            pumpRecord.setPumpDate(new Date(eventTime + PumpOffset));
-                            pumpRecord.setEventDate(new Date(eventTime));
+                            pumpRecord.setPumpTimeOffset(pumpClockDiff);
+                            pumpRecord.setPumpDate(new Date(pumpEventTime + pumpClockDiff));
+                            pumpRecord.setEventDate(new Date(pumpEventTime));
                             cnlReader.updatePumpStatus(pumpRecord);
-
-//                            cnlReader.getHistoryInfo(timePollStarted - 1 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
-//                            cnlReader.getHistory(timePollStarted - 3 * 24 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
-//                            cnlReader.getHistory(timePollStarted - 1 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
-
-//                            cnlReader.getBasalPatterns();
-
-
-                            //                           if (radioChannel == 26) cnlReader.endEHSMSession();
-
-//                            cnlReader.endEHSMSession();
 
 
                             validatePumpRecord(pumpRecord, activePump);
@@ -506,7 +463,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                     CommsSgvSuccess++;
                                     sendStatus("SGV: ¦" + pumpRecord.getSgv()
                                             + "¦  At: " + dateFormatter.format(pumpRecord.getCgmDate().getTime())
-                                            + "  Pump: " + (PumpOffset > 0 ? "+" : "") + (PumpOffset / 1000L) + "sec");
+                                            + "  Pump: " + (pumpClockDiff > 0 ? "+" : "") + (pumpClockDiff / 1000L) + "sec");
                                     if (pumpRecord.isCgmCalibrating())
                                         sendStatus(MasterService.ICON_CGM + "sensor is calibrating");
                                     if (pumpRecord.isOldSgvWhenNewExpected()) {
@@ -532,8 +489,33 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             realm.commitTransaction();
 
                             // got history? will need to make charts update based on this!
-                            history(pumpRecord, cnlReader);
-//                            cnlReader.endEHSMSession();
+
+                            //cnlReader.getHistoryInfo(timePollStarted - 1 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
+                            //cnlReader.getHistory(timePollStarted - 3 * 24 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
+
+                            //cnlReader.getHistory(timePollStarted - 1 * 60 * 60 * 1000, timePollStarted, pumpOFFSET, 2);
+
+                            //cnlReader.getBasalPatterns();
+                            //cnlReader.getBolusWizardCarbRatios();
+                            //cnlReader.getBolusWizardSensitivity();
+                            //cnlReader.getBolusWizardTargets();
+
+                            pumpHistoryHandler.setPumpOFFSET(pumpOFFSET); // temp not final
+                            pumpHistoryHandler.setPumpEvent(pumpEventTime); // temp not final
+
+                            if (RequestPumpHistory) pumpHistoryHandler.setPullPump(true) ;
+                            pumpHistoryHandler.history(pumpRecord, cnlReader);
+                            RequestPumpHistory = false;
+
+                            if (dataStore.isRequestProfile()) {
+                                pumpHistoryHandler.profile(cnlReader);
+                                realm.executeTransaction(new Realm.Transaction() {
+                                    @Override
+                                    public void execute(Realm realm) {
+                                        dataStore.setRequestProfile(false);
+                                    }
+                                });
+                            }
 
                         }
 
@@ -564,7 +546,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         sendStatus(MasterService.ICON_WARN + "Error connecting to Contour Next Link: Hashing error.");
                     } finally {
                         try {
-                            cnlReader.closeConnection();
+                            if (cnlChannelNegotiateError == 0)
+                                cnlReader.closeConnection();
                             shutdownProtect = true;
                             cnlReader.endPassthroughMode();
                             shutdownProtect = false;
@@ -630,7 +613,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 if (!realm.isClosed()) realm.close();
 
-                if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
+                if (pumpHistoryHandler != null) pumpHistoryHandler.close();
 
                 if (mHidDevice != null) {
                     Log.i(TAG, "Closing serial device...");
@@ -695,12 +678,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 sendStatus(MasterService.ICON_SETTING + "Low battery poll interval: " + (prefLowBatteryPollInterval / 60000) + " minutes");
         }
 
-        if (Math.abs(PumpOffset) > ERROR_PUMPCLOCK_MS)
+        if (Math.abs(pumpClockDiff) > ERROR_PUMPCLOCK_MS)
             PumpClockError++;
         if (PumpClockError >= ERROR_PUMPCLOCK_AT) {
             PumpClockError = 0;
             sendStatus(MasterService.ICON_WARN + "Warning: Time difference between Pump and Uploader excessive."
-                    + " Pump is over " + (Math.abs(PumpOffset) / 60000L) + " minutes " + (PumpOffset > 0 ? "ahead" : "behind") + " of time used by uploader.");
+                    + " Pump is over " + (Math.abs(pumpClockDiff) / 60000L) + " minutes " + (pumpClockDiff > 0 ? "ahead" : "behind") + " of time used by uploader.");
             sendStatus(MasterService.ICON_HELP + "The uploader phone/device should have the current time provided by network. Pump clock drifts forward and needs to be set to correct time occasionally.");
         }
 
@@ -751,21 +734,54 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
     private void validatePumpRecord(PumpStatusEvent pumpRecord, PumpInfo activePump) {
 
+        RealmResults<PumpStatusEvent> pump_results = activePump.getPumpHistory()
+                .where()
+                .findAllSorted("eventDate", Sort.ASCENDING);
+        if (pump_results.size() > 0) {
+            // use user + low batt intervals!
+            if (pumpRecord.getEventDate().getTime() - pump_results.last().getEventDate().getTime() > 15 * 60 * 1000)
+                RequestPumpHistory = true;
+
+            else if (pumpRecord.getActiveBasalPattern() != pump_results.last().getActiveBasalPattern())
+                RequestPumpHistory = true;
+
+            else if (pumpRecord.isSuspended() != pump_results.last().isSuspended())
+                RequestPumpHistory = true;
+
+            else if (pumpRecord.isTempBasalActive() != pump_results.last().isTempBasalActive())
+                RequestPumpHistory = true;
+
+            else if (pumpRecord.getLastBolusReference() != pump_results.last().getLastBolusReference())
+                RequestPumpHistory = true;
+            else if (pumpRecord.isBolusingSquare() != pump_results.last().isBolusingSquare())
+                RequestPumpHistory = true;
+            else if (pumpRecord.isBolusingDual() != pump_results.last().isBolusingDual())
+                RequestPumpHistory = true;
+
+            else if (pumpRecord.isCgmWarmUp() != pump_results.last().isCgmWarmUp())
+                RequestPumpHistory = true;
+            else if (pumpRecord.getReservoirAmount() > pump_results.last().getReservoirAmount())
+                RequestPumpHistory = true;
+            else if (pumpRecord.getBatteryPercentage() > pump_results.last().getBatteryPercentage())
+                RequestPumpHistory = true;
+
+            else if (pumpRecord.getRecentBGL() != 0 &&
+                    pump_results.where()
+                            .greaterThan("eventDate", new Date(System.currentTimeMillis() - (20 * 60 * 1000)))
+                            .equalTo("recentBGL", pumpRecord.getRecentBGL())
+                            .findAll()
+                            .size() == 0)
+                RequestPumpHistory = true;
+        }
+
+// for the trash heap baby!!!
+
         int index;
 
         // TODO - pump validation is unused but will allow for future record manipulation when adding data from pump history message (gap fill)
 
         // validate that this contains a new PUMP record
         pumpRecord.setValidPUMP(true);
-
-        RealmResults<PumpStatusEvent> pump_results = activePump.getPumpHistory()
-                .where()
-                .equalTo("validPUMP", true)
-                .findAllSorted("eventDate", Sort.ASCENDING);
-        if (pump_results.size() > 0) {
-            if (pumpRecord.getEventDate().getTime() - pump_results.last().getEventDate().getTime() > 15 * 60 * 1000)
-                pullPump = true;
-        }
 
         // TODO - cgm validation - handle sensor exceptions
 
@@ -798,7 +814,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     .findAll();
             if (bgl_results.size() == 0) {
                 pumpRecord.setValidBGL(true);
-                pullPump = true;
+//                RequestPumpHistory = true;
             }
         }
 
@@ -838,7 +854,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // check that this was a square bolus and not a normal bolus
                 if (duration > 10 * 60000) {
                     pumpRecord.setValidBolus(true);
-                    pullPump = true;
+//                    RequestPumpHistory = true;
                     pumpRecord.setValidBolusSquare(true);
                     pumpRecord.setLastBolusDate(new Date(start));
                     pumpRecord.setLastBolusDuration((short) (duration / 60000));
@@ -855,12 +871,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     .findAllSorted("eventDate", Sort.DESCENDING);
             if (session_results.size() > 0) {
 */
-                pumpRecord.setValidBolus(true);
-                pullPump = true;
-                if (pumpRecord.getBolusingReference() == pumpRecord.getLastBolusReference()
-                        && pumpRecord.getBolusingMinutesRemaining() > 10) {
-                    pumpRecord.setValidBolusDual(true);
-                }
+            pumpRecord.setValidBolus(true);
+//            RequestPumpHistory = true;
+            if (pumpRecord.getBolusingReference() == pumpRecord.getLastBolusReference()
+                    && pumpRecord.getBolusingMinutesRemaining() > 10) {
+                pumpRecord.setValidBolusDual(true);
+            }
 //            }
         }
 
@@ -888,7 +904,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         tempbasal_results.get(index).getTempBasalPercentage() != pumpRecord.getTempBasalPercentage() ||
                         tempbasal_results.get(index).getTempBasalRate() != pumpRecord.getTempBasalRate()) {
                     pumpRecord.setValidTEMPBASAL(true);
-                    pullPump = true;
+//                    RequestPumpHistory = true;
                     pumpRecord.setTempBasalAfterDate(tempbasal_results.get(index).getEventDate());
                     pumpRecord.setTempBasalBeforeDate(pumpRecord.getEventDate());
                 }
@@ -897,7 +913,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             if (tempbasal_results.size() > 0)
                 if (pumpRecord.getPumpDate().getTime() - tempbasal_results.first().getPumpDate().getTime() - (tempbasal_results.first().getTempBasalMinutesRemaining() * 60 * 1000) < -60 * 1000) {
                     pumpRecord.setValidTEMPBASAL(true);
-                    pullPump = true;
+//                    RequestPumpHistory = true;
                     pumpRecord.setTempBasalAfterDate(tempbasal_results.first().getEventDate());
                     pumpRecord.setTempBasalBeforeDate(pumpRecord.getEventDate());
                 }
@@ -916,7 +932,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             // new valid suspend - set temp basal for 0u 60m in NS
             if (pumpRecord.isSuspended() && suspend_results.first().isValidSUSPENDOFF()) {
                 pumpRecord.setValidSUSPEND(true);
-                pullPump = true;
+//                RequestPumpHistory = true;
             }
             // continuation valid suspend every 30m - set temp basal for 0u 60m in NS
             else if (pumpRecord.isSuspended() && suspend_results.first().isValidSUSPEND() &&
@@ -928,7 +944,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             else if (!pumpRecord.isSuspended() && suspend_results.first().isValidSUSPEND() &&
                     pumpRecord.getEventDate().getTime() - suspend_results.first().getEventDate().getTime() <= 60 * 60 * 1000) {
                 pumpRecord.setValidSUSPENDOFF(true);
-                pullPump = true;
+//                RequestPumpHistory = true;
                 RealmResults<PumpStatusEvent> suspendended_results = activePump.getPumpHistory()
                         .where()
                         .greaterThan("eventDate", new Date(System.currentTimeMillis() - (2 * 60 * 60 * 1000)))
@@ -938,7 +954,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             }
         } else if (pumpRecord.isSuspended()) {
             pumpRecord.setValidSUSPEND(true);
-            pullPump = true;
+//            RequestPumpHistory = true;
         }
 
         // absolute suspend start time approx to after-before range
@@ -973,7 +989,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     .findAll();
             if (sage_results.size() == 0) {
                 pumpRecord.setValidSAGE(true);
-                pullPump = true;
+//                RequestPumpHistory = true;
                 RealmResults<PumpStatusEvent> sagedate_results = activePump.getPumpHistory()
                         .where()
                         .greaterThan("eventDate", new Date(System.currentTimeMillis() - (6 * 60 * 60 * 1000)))
@@ -997,7 +1013,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         .findAll();
                 if (sage_valid_results.size() == 0) {
                     pumpRecord.setValidSAGE(true);
-                    pullPump = true;
+//                    RequestPumpHistory = true;
                     pumpRecord.setSageAfterDate(sagebattery_results.first().getEventDate());
                     pumpRecord.setSageBeforeDate(pumpRecord.getEventDate());
                 }
@@ -1018,7 +1034,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     .findAll();
             if (cage_valid_results.size() == 0) {
                 pumpRecord.setValidCAGE(true);
-                pullPump = true;
+//                RequestPumpHistory = true;
                 pumpRecord.setCageAfterDate(cage_results.first().getEventDate());
                 pumpRecord.setCageBeforeDate(pumpRecord.getEventDate());
             }
@@ -1038,7 +1054,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     .findAll();
             if (battery_valid_results.size() == 0) {
                 pumpRecord.setValidBATTERY(true);
-                pullPump = true;
+//                RequestPumpHistory = true;
                 pumpRecord.setBatteryAfterDate(battery_results.first().getEventDate());
                 pumpRecord.setBatteryBeforeDate(pumpRecord.getEventDate());
             }
@@ -1198,257 +1214,4 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         Log.d(TAG, "Scheduling Nightscout upload");
         wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
     }
-
-// persist pullPump in case of comms errors so it trys pull again on next poll
-// if there is a long period between pump connects do a pullPump 30mins?
-
-    // careful now, java works with int's and can sign extend to long if not explicit
-
-    public final static long HISTORY_STALE_MS = 3 * 24 * 60 * 60 * 1000L;
-    public final static long HISTORY_PULL_MS =  1 * 24 * 60 * 60 * 1000L;
-
-//    public final static long HISTORY_STALE_MS = 7 * 24 * 60 * 60 * 1000L;
-//    public final static long HISTORY_PULL_MS =  2 * 24 * 60 * 60 * 1000L;
-
-    public final static byte HISTORY_PUMP = 2;
-    public final static byte HISTORY_CGM = 3;
-
-    private boolean pullPump = false;
-
-    Realm historyRealm;
-
-    private void history(PumpStatusEvent pumpRecord, MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
-//        final long newest = System.currentTimeMillis();
-        final long newest = pumpEvent;
-        final long oldest = newest - HISTORY_STALE_MS;
-
-        historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
-
-        Date staleDate = new Date(oldest);
-        PumpHistoryCGM.stale(historyRealm, staleDate);
-        PumpHistoryBolus.stale(historyRealm, staleDate);
-        PumpHistoryBasal.stale(historyRealm, staleDate);
-        PumpHistoryBG.stale(historyRealm, staleDate);
-        PumpHistoryMisc.stale(historyRealm, staleDate);
-
-        boolean pullCGM = false;
-
-        // push the current sgv from status (always have latest sgv available even if there are comms errors after this)
-        if (pumpRecord.isValidSGV()) {
-
-            int sgv = pumpRecord.getSgv();
-            int rtc = pumpRecord.getCgmRTC();
-            int offset = pumpRecord.getCgmOFFSET();
-            Date date = pumpRecord.getCgmDate();
-
-            // sgv is available do we need the backfill?
-            final RealmResults<PumpHistoryCGM> results = historyRealm
-                    .where(PumpHistoryCGM.class)
-                    .findAllSorted("eventDate", Sort.ASCENDING);
-            if (results.size() == 0) {
-                pullCGM = true;
-            } else if (date.getTime() - results.last().getEventDate().getTime() > 9 * 60 * 1000) {
-                pullCGM = true;
-            }
-
-            Log.d(TAG, "adding status SGV event to PumpHistoryCGM");
-
-            String key = "CGM" + String.format("%08X", rtc);
-
-            final PumpHistoryCGM object = new PumpHistoryCGM();
-            object.setKey(key);
-            object.setSgv(sgv);
-            object.setEventRTC(rtc);
-            object.setEventOFFSET(offset);
-            object.setEventDate(date);
-            object.setUploadREQ(true);
-
-            historyRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    realm.copyToRealm(object);
-                }
-            });
-        }
-
-        // if CGM backfill is needed pull that first as pump can be busy after history pulls
-        if (pullCGM) {
-            updateHistrorySegments(cnlReader, historyRealm, oldest, newest, HISTORY_CGM, pullCGM, "CGM history: ");
-            updateHistrorySegments(cnlReader, historyRealm, oldest, newest, HISTORY_PUMP, pullPump, "PUMP history: ");
-        } else {
-            updateHistrorySegments(cnlReader, historyRealm, oldest, newest, HISTORY_PUMP, pullPump, "PUMP history: ");
-            updateHistrorySegments(cnlReader, historyRealm, oldest, newest, HISTORY_CGM, pullCGM, "CGM history: ");
-        }
-
-        PumpHistoryCGM.records(historyRealm);
-        PumpHistoryBolus.records(historyRealm);
-        PumpHistoryBasal.records(historyRealm);
-        PumpHistoryBG.records(historyRealm);
-        PumpHistoryMisc.records(historyRealm);
-
-        historyRealm.close();
-    }
-
-    void updateHistrorySegments(MedtronicCnlReader cnlReader, final Realm historyRealm, final long oldest, final long newest, final byte historyType, boolean pullHistory, String historyTAG)
-            throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
-
-        final RealmResults<PumpHistorySegment> segment = historyRealm
-                .where(PumpHistorySegment.class)
-                .equalTo("historyType", historyType)
-                .findAllSorted("fromDate", Sort.DESCENDING);
-
-        // add initial segment if needed
-        if (segment.size() == 0) {
-            pullHistory = true;
-            Log.d(TAG, historyTAG + "adding initial segment");
-            historyRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    historyRealm.createObject(PumpHistorySegment.class).addSegment(new Date(oldest), historyType);
-                }
-            });
-        } else if (segment.last().getFromDate().getTime() - oldest > 60 * 60 * 1000) {
-            Log.d(TAG, historyTAG + "store sized has increased, adding segment");
-            historyRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    historyRealm.createObject(PumpHistorySegment.class).addSegment(new Date(oldest), historyType);
-                }
-            });
-        } else {
-            // update the segment marker
-            // TODO need to check if there are any more outdated segments as a lot of time may have passed!!!
-            historyRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    segment.last().setFromDate(new Date(oldest));
-                    if (segment.last().getToDate().getTime() < oldest)
-                        segment.last().setToDate(new Date(oldest));
-                }
-            });
-        }
-
-        // async history puller
-        // works by reducing segment gaps over time until there is a single segment containing the entire range
-        // giving priority to most recent needed history
-
-        // [ab]................... < empty history with single segment marking the oldest dates
-        // [ab]...............[ab] < add a segment set to current date, history pulled async
-        // [ab]..........[a*****b] < *pull*
-        // [ab]....[a******-----b] < *pull*
-        // [a********-----------b] < *pull*, combine, complete
-
-        // [ab]..........[a-----b] < some history pulled and user exits
-        // [ab]...[a-----b]....... < user returns, time has passed
-        // [ab]...[a-----b]...[ab] < need recent, add a segment set to current date
-        // [ab]...[a-----b].[a**b] < *pull*
-        // [ab]...[a-----*****--b] < *pull*, combine
-        // [a*******------------b] < *pull*, combine, complete
-
-        if (pullHistory) {
-            // add marker
-            Log.d(TAG, historyTAG + "adding history pull marker");
-            historyRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    historyRealm.createObject(PumpHistorySegment.class).addSegment(new Date(newest), historyType);
-                }
-            });
-        }
-
-        if (segment.size() > 1) {
-            for (int i = 0; i < segment.size(); i++) {
-                Log.d(TAG, historyTAG + "segments=" + segment.size() + " segment[" + i + "] start= " + dateFormatterFull.format(segment.get(i).getFromDate()) + " end=" + dateFormatterFull.format(segment.get(i).getToDate()));
-            }
-
-            Date needFrom = segment.get(1).getToDate();
-            Date needTo = segment.get(0).getFromDate();
-
-            long start = needFrom.getTime();
-            long end = needTo.getTime();
-            if (end - start > HISTORY_PULL_MS)
-                start = end - HISTORY_PULL_MS;
-
-            Log.d(TAG, historyTAG + "requested " + dateFormatterFull.format(start) + " - " + dateFormatterFull.format(end));
-            sendStatus(historyTAG + "requested \n      " + dateFormatterFull.format(start) + " - " + dateFormatterFull.format(end));
-
-            Date[] range = cnlReader.getHistoryX(start, end, pumpOFFSET, historyType);
-
-            Log.d(TAG, historyTAG + "received  " + (range[0] == null ? "null" : dateFormatterFull.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatterFull.format(range[1])));
-            sendStatus(historyTAG + "received \n      " + (range[0] == null ? "null" : dateFormatterFull.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatterFull.format(range[1])));
-
-            final Date pulledFrom = range[0];
-            final Date pulledTo = range[1];
-/*
-            // update segment toDate as there may be more or less available then we requested
-            if (pulledTo.getTime() > segment.get(0).getToDate().getTime()) {
-                // update segment toDate
-                historyRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(Realm realm) {
-                        segment.get(0).setToDate(pulledTo);
-                    }
-                });
-            }
-*/
-            if (pulledFrom.getTime() > segment.get(1).getToDate().getTime()) {
-                // update the segment fromDate, we still need more history for this segment
-                historyRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(Realm realm) {
-                        segment.get(0).setFromDate(pulledFrom);
-                    }
-                });
-            } else {
-                // segments now overlap, combine to single segment
-                historyRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(Realm realm) {
-                        segment.get(1).setToDate(segment.get(0).getToDate());
-                        segment.deleteFromRealm(0);
-                    }
-                });
-                // check if any remaining segments need combining or deleting
-                boolean checkNext = true;
-                while (checkNext && segment.size() > 1) {
-                    // delete next segment if not needed as we have the events from recent pull
-                    if (segment.get(1).getFromDate().getTime() > pulledFrom.getTime()) {
-                        historyRealm.executeTransaction(new Realm.Transaction() {
-                            @Override
-                            public void execute(Realm realm) {
-                                segment.deleteFromRealm(1);
-                            }
-                        });
-                    }
-                    // combine segments if needed
-                    else {
-                        checkNext = false;
-                        if (segment.get(1).getToDate().getTime() > pulledFrom.getTime()) {
-                            historyRealm.executeTransaction(new Realm.Transaction() {
-                                @Override
-                                public void execute(Realm realm) {
-                                    segment.get(1).setToDate(segment.get(0).getToDate());
-                                    segment.deleteFromRealm(0);
-                                }
-                            });
-                        }
-                    }
-                }
-                // finally update segment fromDate if needed
-                if (segment.get(0).getFromDate().getTime() > pulledFrom.getTime()) {
-                    historyRealm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(Realm realm) {
-                            segment.get(0).setFromDate(pulledFrom);
-                        }
-                    });
-                }
-            }
-        }
-
-        for (int i = 0; i < segment.size(); i++) {
-            Log.d(TAG, historyTAG + "segments=" + segment.size() + " segment[" + i + "] start= " + dateFormatterFull.format(segment.get(i).getFromDate()) + " end=" + dateFormatterFull.format(segment.get(i).getToDate()));
-        }
-    }
-
 }

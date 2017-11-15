@@ -33,4 +33,6 @@ public interface PumpHistory extends RealmModel {
     void setKey(String key);
 
     List Nightscout();
+
+    //void Xdrip();
 }

@@ -13,16 +13,16 @@ public interface DeviceEndpoints {
 
     class Iob {
         final Date timestamp;
-        final float bolusiob;
+        final Float bolusiob;
         public Iob (Date timestamp,
-             float bolusiob) {
+             Float bolusiob) {
             this.timestamp = timestamp;
             this.bolusiob = bolusiob;
         }
     }
 
     class Battery {
-        final short percent;
+        final Short percent;
         public Battery(short percent) {
             this.percent = percent;
         }

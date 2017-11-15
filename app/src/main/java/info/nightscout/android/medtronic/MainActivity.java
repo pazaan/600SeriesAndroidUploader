@@ -64,6 +64,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.utils.ConfigurationStore;
+import info.nightscout.android.utils.DataStore;
 import info.nightscout.android.utils.StatusMessage;
 import info.nightscout.android.utils.StatusStore;
 import io.realm.OrderedCollectionChangeSet;
@@ -207,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         //itemUpdateProfile, // TODO - re-add when we to add Basal Profile Upload
                         itemRegisterUsb,
                         itemCheckForUpdate,
+                        itemUpdateProfile,
                         itemClearLog,
                         itemGetNow,
                         itemStopCollecting
@@ -227,6 +229,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             // It was triggered by user so start reading of data now and not based on last poll.
                             statusMessage.add("Requesting poll now...");
                             sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_NOW));
+                        } else if (drawerItem.equals(itemUpdateProfile)) {
+                            statusMessage.add("Scheduling pump profile update...");
+                            sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_PROFILE));
                         } else if (drawerItem.equals(itemClearLog)) {
                             startService(new Intent(UploaderApplication.getAppContext(), MedtronicCnlService.class)
                                     .setAction(MasterService.Constants.ACTION_CNL_SHUTDOWN));

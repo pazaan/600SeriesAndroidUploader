@@ -112,7 +112,6 @@ release {
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
-//    compile files('libs/hadoop-lzo-0.4.20.jar')
     compile files('libs/lzo-core-1.0.5.jar')
 
     compile 'com.android.support:support-v13:25.3.1'

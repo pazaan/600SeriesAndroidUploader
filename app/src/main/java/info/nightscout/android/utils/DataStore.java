@@ -15,10 +15,12 @@ public class DataStore extends RealmObject {
 
     private Date uploaderStartDate;
 
+    private boolean RequestProfileInit = false;
+    private boolean RequestProfile = false;
+    private boolean RequestPumpHistory = false;
+    private boolean RequestCgmHistory = false;
+
     private int PumpCgmNA = 0;
-    private int PumpOffsetCheck = 0;
-    private long PumpOffsetCheckTime = 0;
-    private long PumpOffset = 0;
 
     private int CommsSuccess = 0;
     private int CommsError = 0;
@@ -38,92 +40,108 @@ public class DataStore extends RealmObject {
         return uploaderStartDate;
     }
 
+    public boolean isRequestProfileInit() {
+        return RequestProfileInit;
+    }
+
+    public void setRequestProfileInit(boolean requestProfileInit) {
+        RequestProfileInit = requestProfileInit;
+    }
+
+    public boolean isRequestProfile() {
+        return RequestProfile;
+    }
+
+    public void setRequestProfile(boolean requestProfile) {
+        RequestProfile = requestProfile;
+    }
+
+    public boolean isRequestPumpHistory() {
+        return RequestPumpHistory;
+    }
+
+    public void setRequestPumpHistory(boolean requestPumpHistory) {
+        RequestPumpHistory = requestPumpHistory;
+    }
+
+    public boolean isRequestCgmHistory() {
+        return RequestCgmHistory;
+    }
+
+    public void setRequestCgmHistory(boolean requestCgmHistory) {
+        RequestCgmHistory = requestCgmHistory;
+    }
+
     public int getPumpCgmNA() {
         return PumpCgmNA;
     }
 
     public void setPumpCgmNA(int pumpCgmNA) {
-        this.PumpCgmNA = pumpCgmNA;
-    }
-
-    public int getPumpOffsetCheck() {
-        return PumpOffsetCheck;
-    }
-
-    public void setPumpOffsetCheck(int PumpOffsetCheck) {
-        this.PumpOffsetCheck = PumpOffsetCheck;
-    }
-
-    public long getPumpOffset() {
-        return PumpOffset;
-    }
-
-    public void setPumpOffset(long PumpOffset) {
-        this.PumpOffset = PumpOffset;
+        PumpCgmNA = pumpCgmNA;
     }
 
     public int getCommsSuccess() {
         return CommsSuccess;
     }
 
-    public void setCommsSuccess(int CommsSuccess) {
-        this.CommsSuccess = CommsSuccess;
+    public void setCommsSuccess(int commsSuccess) {
+        CommsSuccess = commsSuccess;
     }
 
     public int getCommsError() {
         return CommsError;
     }
 
-    public void setCommsError(int CommsError) {
-        this.CommsError = CommsError;
+    public void setCommsError(int commsError) {
+        CommsError = commsError;
     }
 
     public int getCommsConnectError() {
         return CommsConnectError;
     }
 
-    public void setCommsConnectError(int CommsConnectError) {
-        this.CommsConnectError = CommsConnectError;
+    public void setCommsConnectError(int commsConnectError) {
+        CommsConnectError = commsConnectError;
     }
 
     public int getCommsSignalError() {
         return CommsSignalError;
     }
 
-    public void setCommsSignalError(int CommsSignalError) {
-        this.CommsSignalError = CommsSignalError;
+    public void setCommsSignalError(int commsSignalError) {
+        CommsSignalError = commsSignalError;
     }
 
     public int getCommsSgvSuccess() {
         return CommsSgvSuccess;
     }
 
-    public void setCommsSgvSuccess(int CommsSgvSuccess) {
-        this.CommsSgvSuccess = CommsSgvSuccess;
+    public void setCommsSgvSuccess(int commsSgvSuccess) {
+        CommsSgvSuccess = commsSgvSuccess;
     }
 
     public int getPumpLostSensorError() {
         return PumpLostSensorError;
     }
 
-    public void setPumpLostSensorError(int PumpLostSensorError) {
-        this.PumpLostSensorError = PumpLostSensorError;
+    public void setPumpLostSensorError(int pumpLostSensorError) {
+        PumpLostSensorError = pumpLostSensorError;
     }
 
     public int getPumpClockError() {
         return PumpClockError;
     }
 
-    public void setPumpClockError(int PumpClockError) {
-        this.PumpClockError = PumpClockError;
+    public void setPumpClockError(int pumpClockError) {
+        PumpClockError = pumpClockError;
     }
 
     public int getPumpBatteryError() {
         return PumpBatteryError;
     }
 
-    public void setPumpBatteryError(int PumpBatteryError) {
-        this.PumpBatteryError = PumpBatteryError;
+    public void setPumpBatteryError(int pumpBatteryError) {
+        PumpBatteryError = pumpBatteryError;
     }
 
     public void clearAllCommsErrors() {
