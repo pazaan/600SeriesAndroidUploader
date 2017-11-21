@@ -2,19 +2,14 @@ package info.nightscout.android.model.medtronicNg;
 
 import android.util.Log;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
-import io.realm.RealmResults;
-import io.realm.Sort;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
@@ -22,31 +17,33 @@ import io.realm.annotations.Index;
  * Created by John on 26.10.17.
  */
 
-public class PumpHistoryBasal extends RealmObject implements PumpHistory {
+public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterface {
     @Ignore
     private static final String TAG = PumpHistoryBasal.class.getSimpleName();
 
     @Index
     private Date eventDate;
-    @Index
-    private Date eventEndDate; // event deleted when this is stale
 
+    @Index
     private boolean uploadREQ = false;
     private boolean uploadACK = false;
+
     private boolean xdripREQ = false;
     private boolean xdripACK = false;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
-    private boolean programmed = false;
+    @Index
     private int programmedRTC;
     private int programmedOFFSET;
     private Date programmedDate;
+    private boolean programmed = false;
 
-    private boolean completed = false;
+    @Index
     private int completedRTC;
     private int completedOFFSET;
     private Date completedDate;
+    private boolean completed = false;
 
     private int type;
     private int preset;
@@ -63,7 +60,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
     private int resumeReason;
 
     @Override
-    public List Nightscout() {
+    public List nightscout() {
         List list = new ArrayList();
 
         TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
@@ -77,14 +74,14 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
 
         if (suspend) {
             treatment.setCreated_at(programmedDate);
-            treatment.setDuration((float) duration);
+            treatment.setDuration(duration);
             treatment.setAbsolute((float) 0);
             notes = PumpHistoryParser.TextEN.NS_SUSPEND.getText() + ": " +
                     PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.SUSPEND_REASON.convert(suspendReason).name()).getText();
 
         } else if (resume) {
             treatment.setCreated_at(programmedDate);
-            treatment.setDuration((float) 0);
+            treatment.setDuration(0);
             notes = PumpHistoryParser.TextEN.NS_RESUME.getText() + ": " +
                     PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.RESUME_REASON.convert(resumeReason).name()).getText();
 
@@ -94,7 +91,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
             notes += "Temp Basal:";
 
             if (PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(type)) {
-                treatment.setPercent((float) percentageOfRate - 100);
+                treatment.setPercent(percentageOfRate - 100);
                 notes += " " + percentageOfRate + "%";
             } else {
                 treatment.setAbsolute((float) rate);
@@ -107,38 +104,16 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
                 notes += " [" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.TEMP_BASAL_PRESET.convert(preset).name()).getText() + "]";
 
             if (!canceled) {
-                treatment.setDuration((float) duration);
+                treatment.setDuration(duration);
             } else {
                 int minutes = (int) Math.ceil((completedRTC - programmedRTC) / 60);
-                treatment.setDuration((float) minutes);
+                treatment.setDuration(minutes);
                 notes += " * canceled, duration " + minutes + " minutes";
             }
         }
 
         treatment.setNotes(notes);
         return list;
-    }
-
-    public static void stale(Realm realm, Date date) {
-        final RealmResults results = realm.where(PumpHistoryBasal.class)
-                .lessThan("eventDate", date)
-                .findAll();
-        if (results.size() > 0) {
-            Log.d(TAG, "deleting " + results.size() + " records from realm");
-            realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    results.deleteAllFromRealm();
-                }
-            });
-        }
-    }
-
-    public static void records(Realm realm) {
-        DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
-        final RealmResults<PumpHistoryBasal> results = realm.where(PumpHistoryBasal.class)
-                .findAllSorted("eventDate", Sort.ASCENDING);
-        Log.d(TAG, "records: " + results.size() + (results.size() > 0 ? " start: "+ dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
     }
 
     public static void temp(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
@@ -174,13 +149,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
             if (object == null) {
                 Log.d(TAG, "*new*" + " temp basal");
                 object = realm.createObject(PumpHistoryBasal.class);
-                if (!completed) {
-                    object.setEventDate(eventDate);
-                    object.setEventEndDate(new Date(eventDate.getTime() + duration * 60 * 1000));
-                } else {
-                    object.setEventDate(new Date(eventDate.getTime() - duration * 60 * 1000));
-                    object.setEventEndDate(eventDate);
-                }
+                object.setEventDate(eventDate);
             } else {
                 Log.d(TAG, "*update*" + " temp basal");
             }
@@ -222,7 +191,6 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
             Log.d(TAG, "*new*" + " suspend basal");
             object = realm.createObject(PumpHistoryBasal.class);
             object.setEventDate(eventDate);
-            object.setEventEndDate(eventDate);
             object.setProgrammedDate(eventDate);
             object.setProgrammedRTC(eventRTC);
             object.setProgrammedOFFSET(eventOFFSET);
@@ -245,7 +213,6 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
             Log.d(TAG, "*new*" + " resume basal");
             object = realm.createObject(PumpHistoryBasal.class);
             object.setEventDate(eventDate);
-            object.setEventEndDate(eventDate);
             object.setProgrammedDate(eventDate);
             object.setProgrammedRTC(eventRTC);
             object.setProgrammedOFFSET(eventOFFSET);
@@ -275,16 +242,6 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistory {
     @Override
     public void setEventDate(Date eventDate) {
         this.eventDate = eventDate;
-    }
-
-    @Override
-    public Date getEventEndDate() {
-        return eventEndDate;
-    }
-
-    @Override
-    public void setEventEndDate(Date eventEndDate) {
-        this.eventEndDate = eventEndDate;
     }
 
     @Override

@@ -2,24 +2,20 @@ package info.nightscout.android.medtronic.message;
 
 import android.util.Log;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
-import info.nightscout.android.utils.HexDump;
 
-import static info.nightscout.android.utils.ToolKit.getInt;
-import static info.nightscout.android.utils.ToolKit.getIntL;
-import static info.nightscout.android.utils.ToolKit.getIntLU;
-import static info.nightscout.android.utils.ToolKit.getShortIU;
+import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoLong;
+import static info.nightscout.android.utils.ToolKit.read32BEtoULong;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
  * Created by lgoedhart on 27/03/2016.
@@ -37,15 +33,15 @@ public class ReadHistoryInfoResponseMessage extends MedtronicSendMessageResponse
     protected ReadHistoryInfoResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
-        if (!MedtronicSendMessageRequestMessage.MessageType.READ_HISTORY_INFO.response(getShortIU(payload, 0x01))) {
+        if (!MedtronicSendMessageRequestMessage.MessageType.READ_HISTORY_INFO.response(read16BEtoUInt(payload, 0x01))) {
             Log.e(TAG, "Invalid message received for ReadHistoryInfo");
             throw new UnexpectedMessageException("Invalid message received for ReadHistoryInfo");
         }
 
-        length = getInt(payload, 0x04);
+        length = read32BEtoInt(payload, 0x04);
         blocks = length / 2048;
-        fromDate = MessageUtils.decodeDateTime(getIntLU(payload, 0x08), getIntL(payload, 0x0C));
-        toDate = MessageUtils.decodeDateTime(getIntLU(payload, 0x10), getIntL(payload, 0x14));
+        fromDate = MessageUtils.decodeDateTime(read32BEtoULong(payload, 0x08), read32BEtoLong(payload, 0x0C));
+        toDate = MessageUtils.decodeDateTime(read32BEtoULong(payload, 0x10), read32BEtoLong(payload, 0x14));
 
         Log.d(TAG, "ReadHistoryInfo: length = " + length + " blocks = " + (length / 2048));
         Log.d(TAG, "ReadHistoryInfo: start = " + dateFormatter.format(fromDate));

@@ -47,6 +47,8 @@ import info.nightscout.android.medtronic.message.RequestLinkKeyResponseMessage;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 
+import static info.nightscout.android.medtronic.message.ContourNextLinkMessage.CNL_READ_TIMEOUT_MS;
+
 /**
  * Created by lgoedhart on 24/03/2016.
  */
@@ -54,12 +56,18 @@ public class MedtronicCnlReader {
     private static final String TAG = MedtronicCnlReader.class.getSimpleName();
 
     private static final byte[] RADIO_CHANNELS = {0x14, 0x11, 0x0e, 0x17, 0x1a};
+    private static final int SLEEP_MS = 500; //500;
+
     private UsbHidDriver mDevice;
 
     private MedtronicCnlSession mPumpSession = new MedtronicCnlSession();
     private String mStickSerial = null;
 
-    private static final int SLEEP_MS = 0; //500;
+    // provided by getPumpTime
+    private Date sessionDate;
+    private int sessionRTC;
+    private int sessionOFFSET;
+    private long sessionClockDifference;
 
     public MedtronicCnlReader(UsbHidDriver device) {
         mDevice = device;
@@ -73,6 +81,22 @@ public class MedtronicCnlReader {
         return mPumpSession;
     }
 
+    public Date getSessionDate() {
+        return sessionDate;
+    }
+
+    public int getSessionRTC() {
+        return sessionRTC;
+    }
+
+    public int getSessionOFFSET() {
+        return sessionOFFSET;
+    }
+
+    public long getSessionClockDifference() {
+        return sessionClockDifference;
+    }
+
     public void requestDeviceInfo()
             throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         DeviceInfoResponseCommandMessage response = new DeviceInfoRequestCommandMessage().send(mDevice);
@@ -80,28 +104,6 @@ public class MedtronicCnlReader {
         //TODO - extract more details form the device info.
         mStickSerial = response.getSerial();
     }
-/*
-    public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
-        boolean doRetry;
-
-        do {
-            doRetry = false;
-            try {
-                new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.NAK)
-                        .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
-                new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.ENQ)
-                        .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
-            } catch (UnexpectedMessageException e2) {
-                try {
-                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice);
-                } catch (IOException e) {}
-                finally {
-                    doRetry = true;
-                }
-            }
-        } while (doRetry);
-    }
-*/
 
     public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         try {
@@ -119,9 +121,9 @@ public class MedtronicCnlReader {
             doRetry = false;
             try {
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.NAK)
-                        .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
+                        .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.ENQ)
-                        .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                        .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
             } catch (UnexpectedMessageException e2) {
                 try {
                     new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice);
@@ -132,49 +134,15 @@ public class MedtronicCnlReader {
             }
         } while (doRetry);
     }
-
-    /*
-    public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
-        boolean doRetry;
-
-        do {
-            doRetry = false;
-            try {
-                new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.NAK)
-                        .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
-                new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.ENQ)
-                        .send(mDevice, SLEEP_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
-
-            } catch (TimeoutException e2) {
-                Log.d(TAG, "enterControlMode TimeoutException : trying to reset");
-                try {
-                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice);
-                } catch (IOException e) {}
-                finally {
-                    doRetry = true;
-                }
-
-            } catch (UnexpectedMessageException e2) {
-                Log.d(TAG, "enterControlMode UnexpectedMessageException : trying to reset");
-                try {
-                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice);
-                } catch (IOException e) {}
-                finally {
-                    doRetry = true;
-                }
-            }
-        } while (doRetry);
-    }
-*/
 
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin enterPasshtroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("1|")
-                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished enterPasshtroughMode");
     }
 
@@ -209,17 +177,17 @@ public class MedtronicCnlReader {
     public byte negotiateChannel(byte lastRadioChannel) throws IOException, ChecksumException, TimeoutException, EncryptionException, UnexpectedMessageException {
         ArrayList<Byte> radioChannels = new ArrayList<>(Arrays.asList(ArrayUtils.toObject(RADIO_CHANNELS)));
 
+        // retry strategy: last,chan0,last,chan1,last,chan2,last,chan3,last
         if (lastRadioChannel != 0x00) {
-            // If we know the last channel that was used, shuffle the negotiation order
-            Byte lastChannel = radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
-
-            if (lastChannel != null) {
-                radioChannels.add(0, lastChannel);
-                radioChannels.add(5, lastChannel);  // retry last used channel again, this allows for transient noise if missed on first attempt when pump is in range
-            }
+            radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
+            radioChannels.add(4, lastRadioChannel);
+            radioChannels.add(3, lastRadioChannel);
+            radioChannels.add(2, lastRadioChannel);
+            radioChannels.add(1, lastRadioChannel);
+            radioChannels.add(0, lastRadioChannel);
         }
 
-        Log.d(TAG, "Begin negotiateChannel");
+        Log.d(TAG, "Begin negotiateChannel " + radioChannels);
         for (byte channel : radioChannels) {
             Log.d(TAG, String.format("negotiateChannel: trying channel '%d'...", channel));
             mPumpSession.setRadioChannel(channel);
@@ -241,15 +209,13 @@ public class MedtronicCnlReader {
     public void beginEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin beginEHSMSession");
         new BeginEHSMMessage(mPumpSession).send(mDevice);
-        mPumpSession.setEHSMmode(true);
         Log.d(TAG, "Finished beginEHSMSession");
     }
 
     public Date getPumpTime() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getPumpTime");
 
-//        PumpTimeResponseMessage response = new PumpTimeRequestMessage(mPumpSession).send(mDevice);
-
+        // TODO - this is a bit messy, need a better handler for fails and retrys
         PumpTimeResponseMessage response = null;
         int unexpected = 0;
         int timeout = 0;
@@ -260,11 +226,11 @@ public class MedtronicCnlReader {
                 timeout = 0;
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
-                if (e.getMessage().contains("0x81 response was empty")) {
-                    throw new TimeoutException(e.getMessage() + " *** ending comms now!!!");
+                if (e.getMessage().contains("0x81 response was empty") || e.getMessage().contains("NAK")) {
+                    throw new UnexpectedMessageException(e.getMessage());
                 }
-                if (++unexpected >= 10) {
-                    throw new UnexpectedMessageException("Retry failed: " + e.getMessage());
+                if (++unexpected >= 5) {
+                    throw new UnexpectedMessageException("retry failed, " + e.getMessage());
                 }
                 try {
                     Thread.sleep(5000);
@@ -275,10 +241,15 @@ public class MedtronicCnlReader {
                     throw new TimeoutException(e.getMessage());
                 }
                 if (++timeout >= 3) {
-                    throw new TimeoutException("Retry failed: " + e.getMessage());
+                    throw new TimeoutException("retry failed, " + e.getMessage());
                 }
             }
         } while (unexpected > 0 || timeout > 0);
+
+        sessionRTC = response.getPumpTimeRTC();
+        sessionOFFSET = response.getPumpTimeOFFSET();
+        sessionDate = new Date(System.currentTimeMillis());
+        sessionClockDifference = response.getPumpTime().getTime() - sessionDate.getTime();
 
         Log.d(TAG, "Finished getPumpTime with date " + response.getPumpTime());
         return response.getPumpTime();
@@ -287,9 +258,7 @@ public class MedtronicCnlReader {
     public PumpStatusEvent updatePumpStatus(PumpStatusEvent pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin updatePumpStatus");
 
-//        PumpStatusResponseMessage response = new PumpStatusRequestMessage(mPumpSession).send(mDevice);
-//        response.updatePumpRecord(pumpRecord);
-
+        // TODO - this is a bit messy, need a better handler for fails and retrys
         PumpStatusResponseMessage response = null;
         int unexpected = 0;
         int timeout = 0;
@@ -300,11 +269,11 @@ public class MedtronicCnlReader {
                 timeout = 0;
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
-                if (e.getMessage().contains("0x81 response was empty")) {
-                    throw new TimeoutException(e.getMessage() + " *** ending comms now!!!");
+                if (e.getMessage().contains("0x81 response was empty") || e.getMessage().contains("NAK")) {
+                    throw new UnexpectedMessageException(e.getMessage());
                 }
-                if (++unexpected >= 10) {
-                    throw new UnexpectedMessageException("Retry failed: " + e.getMessage());
+                if (++unexpected >= 5) {
+                    throw new UnexpectedMessageException("retry failed, " + e.getMessage());
                 }
                 try {
                     Thread.sleep(5000);
@@ -315,10 +284,11 @@ public class MedtronicCnlReader {
                     throw new TimeoutException(e.getMessage());
                 }
                 if (++timeout >= 3) {
-                    throw new TimeoutException("Retry failed: " + e.getMessage());
+                    throw new TimeoutException("retry failed, " + e.getMessage());
                 }
             }
         } while (unexpected > 0 || timeout > 0);
+
         response.updatePumpRecord(pumpRecord);
 
         Log.d(TAG, "Finished updatePumpStatus");
@@ -366,35 +336,36 @@ public class MedtronicCnlReader {
         return response.getSensitivity();
     }
 
-    public void getHistoryInfo(long startTime, long endTime, int offset, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public void getHistoryInfo(long startTime, long endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistoryInfo");
 
-        int startRTC = MessageUtils.rtcFromTime(startTime, offset);
-        int endRTC = MessageUtils.rtcFromTime(endTime, offset);
+        int startRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
+        int endRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
         new ReadHistoryInfoRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
 
         Log.d(TAG, "Finished getHistoryInfo");
     }
 
-    public void getHistory(long startTime, long endTime, int offset, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public void getHistoryLogcat(long startTime, long endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistory");
 
-        int startRTC = MessageUtils.rtcFromTime(startTime, offset);
-        int endRTC = MessageUtils.rtcFromTime(endTime, offset);
+        int startRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
+        int endRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
         new ReadHistoryInfoRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
 
         ReadHistoryResponseMessage response = new ReadHistoryRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
-        response.logcat();
+        new PumpHistoryParser(response.getEventData()).logcat();
 
         Log.d(TAG, "Finished getHistory");
     }
 
-    public Date[] getHistoryX(long startTime, long endTime, int offset, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public Date[] getHistory(long startTime, long endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistory");
 
-        int startRTC = MessageUtils.rtcFromTime(startTime, offset);
-        int endRTC = MessageUtils.rtcFromTime(endTime, offset);
+        int startRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
+        int endRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
 
+        // TODO - this is a bit messy, need a better handler for fails and retrys
         ReadHistoryResponseMessage response = null;
         int unexpected = 0;
         int timeout = 0;
@@ -405,11 +376,11 @@ public class MedtronicCnlReader {
                 timeout = 0;
             } catch (UnexpectedMessageException e) {
                 Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
-                if (e.getMessage().contains("0x81 response was empty")) {
-                    throw new TimeoutException(e.getMessage() + " *** ending comms now!!!");
+                if (e.getMessage().contains("0x81 response was empty") || e.getMessage().contains("NAK")) {
+                    throw new UnexpectedMessageException(e.getMessage());
                 }
-                if (++unexpected >= 10) {
-                    throw new UnexpectedMessageException("Retry failed: " + e.getMessage());
+                if (++unexpected >= 5) {
+                    throw new UnexpectedMessageException("retry failed, " + e.getMessage());
                 }
                 try {
                     Thread.sleep(5000);
@@ -420,12 +391,12 @@ public class MedtronicCnlReader {
                     throw new TimeoutException(e.getMessage());
                 }
                 if (++timeout >= 3) {
-                    throw new TimeoutException("Retry failed: " + e.getMessage());
+                    throw new TimeoutException("retry failed, " + e.getMessage());
                 }
             }
         } while (unexpected > 0 || timeout > 0);
 
-        Date[] range = response.updatePumpHistory();
+        Date[] range = new PumpHistoryParser(response.getEventData()).process(sessionRTC, sessionOFFSET, sessionClockDifference);
 
         Log.d(TAG, "Finished getHistory");
         return range;
@@ -434,7 +405,6 @@ public class MedtronicCnlReader {
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin endEHSMSession");
         new EndEHSMMessage(mPumpSession).send(mDevice);
-        mPumpSession.setEHSMmode(false);
         Log.d(TAG, "Finished endEHSMSession");
     }
 
@@ -447,21 +417,22 @@ public class MedtronicCnlReader {
     public void endPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endPassthroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("0|")
-                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished endPassthroughMode");
     }
 
     public void endControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endControlMode");
         new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
-                .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
+                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
         Log.d(TAG, "Finished endControlMode");
     }
 
+    // helps to recover a CNL in a timeout state when trying to connect
     public boolean resetCNL() {
         Log.d(TAG, "Begin resetCNL");
         boolean success = false;
@@ -470,14 +441,9 @@ public class MedtronicCnlReader {
         do {
             try {
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
-                        .send(mDevice, SLEEP_MS, 2000).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
+                        .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
                 success = true;
-            } catch (IOException e) {
-            } catch (TimeoutException e) {
-            } catch (UnexpectedMessageException e) {
-            } catch (ChecksumException e) {
-            } catch (EncryptionException e) {
-            }
+            } catch (IOException | EncryptionException | ChecksumException | UnexpectedMessageException | TimeoutException e) { }
         } while (!success && --retry > 0);
 
         Log.d(TAG, "Finished resetCNL");

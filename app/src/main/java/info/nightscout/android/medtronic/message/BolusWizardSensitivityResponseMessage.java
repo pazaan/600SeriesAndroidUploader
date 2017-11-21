@@ -9,8 +9,8 @@ import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
-import static info.nightscout.android.utils.ToolKit.getByteIU;
-import static info.nightscout.android.utils.ToolKit.getShortIU;
+import static info.nightscout.android.utils.ToolKit.read8toUInt;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
  * Created by John on 8.11.17.
@@ -24,7 +24,7 @@ public class BolusWizardSensitivityResponseMessage extends MedtronicSendMessageR
     protected BolusWizardSensitivityResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
-        if (!MedtronicSendMessageRequestMessage.MessageType.READ_BOLUS_WIZARD_SENSITIVITY_FACTORS.response(getShortIU(payload, 0x01))) {
+        if (!MedtronicSendMessageRequestMessage.MessageType.READ_BOLUS_WIZARD_SENSITIVITY_FACTORS.response(read16BEtoUInt(payload, 0x01))) {
             Log.e(TAG, "Invalid message received for BolusWizardSensitivity");
             throw new UnexpectedMessageException("Invalid message received for BolusWizardSensitivity");
         }
@@ -39,16 +39,16 @@ public class BolusWizardSensitivityResponseMessage extends MedtronicSendMessageR
     public void logcat() {
         int index = 0;
         int isf_mgdl;
-        int isf_mmol;
+        double isf_mmol;
         int time;
 
-        int items = getByteIU(sensitivity, index++);
+        int items = read8toUInt(sensitivity, index++);
         Log.d(TAG, "Targets: Items: " + items);
 
         for (int i = 0; i < items; i++) {
-            isf_mgdl = getShortIU(sensitivity, index + 0x00);
-            isf_mmol = getShortIU(sensitivity, index + 0x02);
-            time = getByteIU(sensitivity, index + 0x04) * 30;
+            isf_mgdl = read16BEtoUInt(sensitivity, index + 0x00);
+            isf_mmol = read16BEtoUInt(sensitivity, index + 0x02) / 10.0;
+            time = read8toUInt(sensitivity, index + 0x04) * 30;
             Log.d(TAG, "TimePeriod: " + (i + 1) + " isf_mgdl: " + isf_mgdl + " isf_mmol: " + isf_mmol + " Time: " + time / 60 + "h" + time % 60 + "m");
             index += 5;
         }

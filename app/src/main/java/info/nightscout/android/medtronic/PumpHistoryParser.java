@@ -9,7 +9,6 @@ import java.util.Locale;
 
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.message.MessageUtils;
-import info.nightscout.android.medtronic.service.MedtronicCnlService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
@@ -18,13 +17,13 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
 import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import io.realm.Realm;
 
-import static info.nightscout.android.utils.ToolKit.getByteIU;
-import static info.nightscout.android.utils.ToolKit.getInt;
-import static info.nightscout.android.utils.ToolKit.getIntL;
-import static info.nightscout.android.utils.ToolKit.getIntLU;
-import static info.nightscout.android.utils.ToolKit.getShortI;
-import static info.nightscout.android.utils.ToolKit.getShortIU;
-import static info.nightscout.android.utils.ToolKit.getString;
+import static info.nightscout.android.utils.ToolKit.read8toUInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoLong;
+import static info.nightscout.android.utils.ToolKit.read32BEtoULong;
+import static info.nightscout.android.utils.ToolKit.read16BEtoInt;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
+import static info.nightscout.android.utils.ToolKit.readString;
 
 /**
  * Created by John on 7.11.17.
@@ -50,7 +49,7 @@ public class PumpHistoryParser {
 
     private int pumpRTC;
     private int pumpOFFSET;
-    private long pumpDIFF;
+    private long pumpClockDifference;
     private double pumpDRIFT;
 
     public PumpHistoryParser(byte[] eventData) {
@@ -59,13 +58,13 @@ public class PumpHistoryParser {
 
     private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
-    public Date[] process() {
-        historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+    public Date[] process(int pumpRTC, int pumpOFFSET, long pumpClockDifference) {
+        this.pumpRTC = pumpRTC;
+        this.pumpOFFSET = pumpOFFSET;
+        this.pumpClockDifference = pumpClockDifference;
+        this.pumpDRIFT = 4.0 / (24 * 60 * 60 * 1);
 
-        pumpRTC = MedtronicCnlService.pumpRTC;
-        pumpOFFSET = MedtronicCnlService.pumpOFFSET;
-        pumpDIFF = MedtronicCnlService.pumpClockDiff;
-        pumpDRIFT = 4.0 / (24 * 60 * 60 * 1);
+        historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
         eventOldest = 0;
         eventNewest = 0;
@@ -77,15 +76,15 @@ public class PumpHistoryParser {
 
         while (index < eventData.length) {
 
-            eventType = EventType.convert(getByteIU(eventData, index + 0x00));
-            eventSize = getByteIU(eventData, index + 0x02);
-            eventRTC = getInt(eventData, index + 0x03);
-            eventOFFSET = getInt(eventData, index + 0x07);
+            eventType = EventType.convert(read8toUInt(eventData, index + 0x00));
+            eventSize = read8toUInt(eventData, index + 0x02);
+            eventRTC = read32BEtoInt(eventData, index + 0x03);
+            eventOFFSET = read32BEtoInt(eventData, index + 0x07);
 
             int adjustedRTC = eventRTC + (int) ((double) (pumpRTC - eventRTC) * pumpDRIFT);
             Date timestamp = MessageUtils.decodeDateTime((long) adjustedRTC & 0xFFFFFFFFL, (long) pumpOFFSET);
 
-            eventDate = new Date(timestamp.getTime() - pumpDIFF);
+            eventDate = new Date(timestamp.getTime() - pumpClockDifference);
 
             long eventTime = eventDate.getTime();
             if (eventTime > eventNewest || eventNewest == 0) eventNewest = eventTime;
@@ -161,16 +160,16 @@ public class PumpHistoryParser {
     }
 
     private void SENSOR_GLUCOSE_READINGS_EXTENDED() {
-        int minutesBetweenReadings = getByteIU(eventData, index + 0x0B);
-        int numberOfReadings = getByteIU(eventData, index + 0x0C);
+        int minutesBetweenReadings = read8toUInt(eventData, index + 0x0B);
+        int numberOfReadings = read8toUInt(eventData, index + 0x0C);
 
         int pos = index + 15;
         for (int i = 0; i < numberOfReadings; i++) {
 
-            int sgv = getShortIU(eventData, pos + 0) & 0x03FF;
-            double isig = getShortIU(eventData, pos + 2) / 100.0;
+            int sgv = read16BEtoUInt(eventData, pos + 0) & 0x03FF;
+            double isig = read16BEtoUInt(eventData, pos + 2) / 100.0;
             double vctr = (((eventData[pos + 0] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF) / 100.0;
-            double rateOfChange = getShortI(eventData, pos + 5) / 100.0;
+            double rateOfChange = read16BEtoInt(eventData, pos + 5) / 100.0;
             byte sensorStatus = eventData[pos + 7];
             byte readingStatus = eventData[pos + 8];
 
@@ -190,7 +189,7 @@ public class PumpHistoryParser {
             int thisRTC = eventRTC - (i * minutesBetweenReadings * 60);
             int adjustedRTC = thisRTC + (int) ((double) (pumpRTC - thisRTC) * pumpDRIFT);
             Date timestamp = MessageUtils.decodeDateTime((long) adjustedRTC & 0xFFFFFFFFL, (long) pumpOFFSET);
-            Date thisDate = new Date(timestamp.getTime() - pumpDIFF);
+            Date thisDate = new Date(timestamp.getTime() - pumpClockDifference);
 
             PumpHistoryCGM.event(historyRealm, thisDate, thisRTC, eventOFFSET,
                     sgv,
@@ -215,11 +214,11 @@ public class PumpHistoryParser {
     }
 
     private void NORMAL_BOLUS_PROGRAMMED() {
-        int bolusSource = getByteIU(eventData, index + 0x0B);
-        int bolusRef = getByteIU(eventData, index + 0x0C);
-        int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-        double normalProgrammedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-        double activeInsulin = getInt(eventData, index + 0x12) / 10000.0;
+        int bolusSource = read8toUInt(eventData, index + 0x0B);
+        int bolusRef = read8toUInt(eventData, index + 0x0C);
+        int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+        double normalProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+        double activeInsulin = read32BEtoInt(eventData, index + 0x12) / 10000.0;
         PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.NORMAL_BOLUS.get(), true, false, false,
                 bolusRef,
@@ -232,12 +231,12 @@ public class PumpHistoryParser {
     }
 
     private void NORMAL_BOLUS_DELIVERED() {
-        int bolusSource = getByteIU(eventData, index + 0x0B);
-        int bolusRef = getByteIU(eventData, index + 0x0C);
-        int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-        double normalProgrammedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-        double normalDeliveredAmount = getInt(eventData, index + 0x12) / 10000.0;
-        double activeInsulin = getInt(eventData, index + 0x16) / 10000.0;
+        int bolusSource = read8toUInt(eventData, index + 0x0B);
+        int bolusRef = read8toUInt(eventData, index + 0x0C);
+        int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+        double normalProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+        double normalDeliveredAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
+        double activeInsulin = read32BEtoInt(eventData, index + 0x16) / 10000.0;
         PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.NORMAL_BOLUS.get(), false, true, false,
                 bolusRef,
@@ -250,12 +249,12 @@ public class PumpHistoryParser {
     }
 
     private void SQUARE_BOLUS_PROGRAMMED() {
-        int bolusSource = getByteIU(eventData, index + 0x0B);
-        int bolusRef = getByteIU(eventData, index + 0x0C);
-        int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-        double squareProgrammedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-        int squareProgrammedDuration = getShortIU(eventData, index + 0x12);
-        double activeInsulin = getInt(eventData, index + 0x14) / 10000.0;
+        int bolusSource = read8toUInt(eventData, index + 0x0B);
+        int bolusRef = read8toUInt(eventData, index + 0x0C);
+        int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+        double squareProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+        int squareProgrammedDuration = read16BEtoUInt(eventData, index + 0x12);
+        double activeInsulin = read32BEtoInt(eventData, index + 0x14) / 10000.0;
         PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.SQUARE_WAVE.get(), true, false, false,
                 bolusRef,
@@ -268,14 +267,14 @@ public class PumpHistoryParser {
     }
 
     private void SQUARE_BOLUS_DELIVERED() {
-        int bolusSource = getByteIU(eventData, index + 0x0B);
-        int bolusRef = getByteIU(eventData, index + 0x0C);
-        int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-        double squareProgrammedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-        double squareDeliveredAmount = getInt(eventData, index + 0x12) / 10000.0;
-        int squareProgrammedDuration = getShortIU(eventData, index + 0x16);
-        int squareDeliveredDuration = getShortIU(eventData, index + 0x18);
-        double activeInsulin = getInt(eventData, index + 0x1A) / 10000.0;
+        int bolusSource = read8toUInt(eventData, index + 0x0B);
+        int bolusRef = read8toUInt(eventData, index + 0x0C);
+        int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+        double squareProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+        double squareDeliveredAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
+        int squareProgrammedDuration = read16BEtoUInt(eventData, index + 0x16);
+        int squareDeliveredDuration = read16BEtoUInt(eventData, index + 0x18);
+        double activeInsulin = read32BEtoInt(eventData, index + 0x1A) / 10000.0;
         PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.SQUARE_WAVE.get(), true, false, false,
                 bolusRef,
@@ -288,13 +287,13 @@ public class PumpHistoryParser {
     }
 
     private void DUAL_BOLUS_PROGRAMMED() {
-        int bolusSource = getByteIU(eventData, index + 0x0B);
-        int bolusRef = getByteIU(eventData, index + 0x0C);
-        int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-        double normalProgrammedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-        double squareProgrammedAmount = getInt(eventData, index + 0x12) / 10000.0;
-        int squareProgrammedDuration = getShortIU(eventData, index + 0x16);
-        double activeInsulin = getInt(eventData, index + 0x18) / 10000.0;
+        int bolusSource = read8toUInt(eventData, index + 0x0B);
+        int bolusRef = read8toUInt(eventData, index + 0x0C);
+        int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+        double normalProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+        double squareProgrammedAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
+        int squareProgrammedDuration = read16BEtoUInt(eventData, index + 0x16);
+        double activeInsulin = read32BEtoInt(eventData, index + 0x18) / 10000.0;
         PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.DUAL_WAVE.get(), true, false, false,
                 bolusRef,
@@ -307,16 +306,16 @@ public class PumpHistoryParser {
     }
 
     private void DUAL_BOLUS_PART_DELIVERED() {
-        int bolusSource = getByteIU(eventData, index + 0x0B);
-        int bolusRef = getByteIU(eventData, index + 0x0C);
-        int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-        double normalProgrammedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-        double squareProgrammedAmount = getInt(eventData, index + 0x12) / 10000.0;
-        double deliveredAmount = getInt(eventData, index + 0x16) / 10000.0;
-        int bolusPart = getByteIU(eventData, index + 0x1A);
-        int squareProgrammedDuration = getShortIU(eventData, index + 0x1B);
-        int squareDeliveredDuration = getShortIU(eventData, index + 0x1D);
-        double activeInsulin = getInt(eventData, index + 0x1F) / 10000.0;
+        int bolusSource = read8toUInt(eventData, index + 0x0B);
+        int bolusRef = read8toUInt(eventData, index + 0x0C);
+        int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+        double normalProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+        double squareProgrammedAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
+        double deliveredAmount = read32BEtoInt(eventData, index + 0x16) / 10000.0;
+        int bolusPart = read8toUInt(eventData, index + 0x1A);
+        int squareProgrammedDuration = read16BEtoUInt(eventData, index + 0x1B);
+        int squareDeliveredDuration = read16BEtoUInt(eventData, index + 0x1D);
+        double activeInsulin = read32BEtoInt(eventData, index + 0x1F) / 10000.0;
         PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.DUAL_WAVE.get(), false, bolusPart == 1 ? true : false, bolusPart == 2 ? true : false,
                 bolusRef,
@@ -329,22 +328,22 @@ public class PumpHistoryParser {
     }
 
     private void BOLUS_WIZARD_ESTIMATE() {
-        int bgUnits = getByteIU(eventData, index + 0x0B);
-        int carbUnits = getByteIU(eventData, index + 0x0C);
-        double bgInput = getShortIU(eventData, index + 0x0D) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
-        double carbInput = getShortIU(eventData, index + 0x0F) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 10.0 : 1.0);
-        double isf = getShortIU(eventData, index + 0x11) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
-        double carbRatio = getIntLU(eventData, index + 0x13) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 1000.0 : 10.0);
-        double lowBgTarget = getShortIU(eventData, index + 0x17) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
-        double highBgTarget = getShortIU(eventData, index + 0x19) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
-        double correctionEstimate = getIntL(eventData, index + 0x1B) / 10000.0;
-        double foodEstimate = getIntLU(eventData, index + 0x1F) / 10000.0;
-        double iob = getInt(eventData, index + 0x23) / 10000.0;
-        double iobAdjustment = getInt(eventData, index + 0x27) / 10000.0;
-        double bolusWizardEstimate = getInt(eventData, index + 0x2B) / 10000.0;
-        int bolusStepSize = getByteIU(eventData, index + 0x2F);
-        boolean estimateModifiedByUser = (getByteIU(eventData, index + 0x30) & 1) == 1;
-        double finalEstimate = getInt(eventData, index + 0x31) / 10000.0;
+        int bgUnits = read8toUInt(eventData, index + 0x0B);
+        int carbUnits = read8toUInt(eventData, index + 0x0C);
+        double bgInput = read16BEtoUInt(eventData, index + 0x0D) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
+        double carbInput = read16BEtoUInt(eventData, index + 0x0F) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 10.0 : 1.0);
+        double isf = read16BEtoUInt(eventData, index + 0x11) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
+        double carbRatio = read32BEtoULong(eventData, index + 0x13) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 1000.0 : 10.0);
+        double lowBgTarget = read16BEtoUInt(eventData, index + 0x17) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
+        double highBgTarget = read16BEtoUInt(eventData, index + 0x19) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
+        double correctionEstimate = read32BEtoLong(eventData, index + 0x1B) / 10000.0;
+        double foodEstimate = read32BEtoULong(eventData, index + 0x1F) / 10000.0;
+        double iob = read32BEtoInt(eventData, index + 0x23) / 10000.0;
+        double iobAdjustment = read32BEtoInt(eventData, index + 0x27) / 10000.0;
+        double bolusWizardEstimate = read32BEtoInt(eventData, index + 0x2B) / 10000.0;
+        int bolusStepSize = read8toUInt(eventData, index + 0x2F);
+        boolean estimateModifiedByUser = (read8toUInt(eventData, index + 0x30) & 1) == 1;
+        double finalEstimate = read32BEtoInt(eventData, index + 0x31) / 10000.0;
         PumpHistoryBolus.estimate(historyRealm, eventDate, eventRTC, eventOFFSET,
                 bgUnits,
                 carbUnits,
@@ -365,11 +364,11 @@ public class PumpHistoryParser {
     }
 
     private void TEMP_BASAL_PROGRAMMED() {
-        int preset = getByteIU(eventData, index + 0x0B);
-        int type = getByteIU(eventData, index + 0x0C);
-        double rate = getInt(eventData, index + 0x0D) / 10000.0;
-        int percentageOfRate = getByteIU(eventData, index + 0x11);
-        int duration = getShortIU(eventData, index + 0x12);
+        int preset = read8toUInt(eventData, index + 0x0B);
+        int type = read8toUInt(eventData, index + 0x0C);
+        double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
+        int percentageOfRate = read8toUInt(eventData, index + 0x11);
+        int duration = read16BEtoUInt(eventData, index + 0x12);
         PumpHistoryBasal.temp(historyRealm, eventDate, eventRTC, eventOFFSET,
                 false,
                 preset,
@@ -381,11 +380,11 @@ public class PumpHistoryParser {
     }
 
     private void TEMP_BASAL_COMPLETE() {
-        int preset = getByteIU(eventData, index + 0x0B);
-        int type = getByteIU(eventData, index + 0x0C);
-        double rate = getInt(eventData, index + 0x0D) / 10000.0;
-        int percentageOfRate = getByteIU(eventData, index + 0x11);
-        int duration = getShortIU(eventData, index + 0x12);
+        int preset = read8toUInt(eventData, index + 0x0B);
+        int type = read8toUInt(eventData, index + 0x0C);
+        double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
+        int percentageOfRate = read8toUInt(eventData, index + 0x11);
+        int duration = read16BEtoUInt(eventData, index + 0x12);
         boolean canceled = (eventData[index + 0x14] & 1) == 1;
         PumpHistoryBasal.temp(historyRealm, eventDate, eventRTC, eventOFFSET,
                 true,
@@ -398,42 +397,42 @@ public class PumpHistoryParser {
     }
 
     private void BASAL_PATTERN_SELECTED() {
-        int oldPatternNumber = getByteIU(eventData, index + 0x0B);
-        int newPatternNumber = getByteIU(eventData, index + 0x0C);
+        int oldPatternNumber = read8toUInt(eventData, index + 0x0B);
+        int newPatternNumber = read8toUInt(eventData, index + 0x0C);
         PumpHistoryProfile.select(historyRealm, eventDate, eventRTC, eventOFFSET,
                 oldPatternNumber,
                 newPatternNumber);
     }
 
     private void INSULIN_DELIVERY_STOPPED() {
-        int reason = getByteIU(eventData, index + 0x0B);
+        int reason = read8toUInt(eventData, index + 0x0B);
         PumpHistoryBasal.suspend(historyRealm, eventDate, eventRTC, eventOFFSET,
                 reason);
     }
 
     private void INSULIN_DELIVERY_RESTARTED() {
-        int reason = getByteIU(eventData, index + 0x0B);
+        int reason = read8toUInt(eventData, index + 0x0B);
         PumpHistoryBasal.resume(historyRealm, eventDate, eventRTC, eventOFFSET,
                 reason);
     }
 
     private void BG_READING() {
         boolean calibrationFlag = (eventData[index + 0x0B] & 0x02) == 2;
-        int bgUnits = eventData[index + 0x0B] & 1;
-        int bg = getShortIU(eventData, index + 0x0C);
-        int bgOrigin = getByteIU(eventData, index + 0x0E);
-        String serial = new StringBuffer(getString(eventData, index + 0x0F, eventSize - 0x0F)).reverse().toString();
+        int bg = read16BEtoUInt(eventData, index + 0x0C);
+        byte bgUnits = (byte) (eventData[index + 0x0B] & 1);
+        byte bgSource = eventData[index + 0x0E];
+        String serial = new StringBuffer(readString(eventData, index + 0x0F, eventSize - 0x0F)).reverse().toString();
         PumpHistoryBG.bg(historyRealm, eventDate, eventRTC, eventOFFSET,
                 calibrationFlag,
-                bgUnits,
                 bg,
-                bgOrigin,
+                bgUnits,
+                bgSource,
                 serial);
     }
 
     private void CALIBRATION_COMPLETE() {
-        double calFactor = getShortIU(eventData, index + 0xB) / 100.0;
-        int bgTarget = getShortIU(eventData, index + 0xD);
+        double calFactor = read16BEtoUInt(eventData, index + 0xB) / 100.0;
+        int bgTarget = read16BEtoUInt(eventData, index + 0xD);
         PumpHistoryBG.calibration(historyRealm, eventDate, eventRTC, eventOFFSET,
                 calFactor,
                 bgTarget);
@@ -454,6 +453,8 @@ public class PumpHistoryParser {
                 3);
     }
 
+    // events to logcat, no clock difference/drift adjustments just the pump event times
+
     public void logcat() {
         String result;
 
@@ -462,11 +463,11 @@ public class PumpHistoryParser {
 
         while (index < eventData.length && event < 10000) {
 
-            eventType = EventType.convert(getByteIU(eventData, index + 0x00));
-            eventSize = getByteIU(eventData, index + 0x02);
+            eventType = EventType.convert(read8toUInt(eventData, index + 0x00));
+            eventSize = read8toUInt(eventData, index + 0x02);
 
-            eventRTC = getInt(eventData, index + 0x03);
-            eventOFFSET = getInt(eventData, index + 0x07);
+            eventRTC = read32BEtoInt(eventData, index + 0x03);
+            eventOFFSET = read32BEtoInt(eventData, index + 0x07);
             Date timestamp = MessageUtils.decodeDateTime(eventRTC & 0xFFFFFFFFL, eventOFFSET);
 
             result = "[" + event + "] " + eventType + " " + dateFormatter.format(timestamp);
@@ -474,33 +475,33 @@ public class PumpHistoryParser {
             if (eventType == EventType.BG_READING) {
                 boolean calibrationFlag = (eventData[index + 0x0B] & 0x02) == 2;
                 int bgUnits = eventData[index + 0x0B] & 1;
-                int bg = getShortIU(eventData, index + 0x0C);
-                int bgSource = getByteIU(eventData, index + 0x0E);
-                String serial = new StringBuffer(getString(eventData, index + 0x0F, eventSize - 0x0F)).reverse().toString();
+                int bg = read16BEtoUInt(eventData, index + 0x0C);
+                int bgSource = read8toUInt(eventData, index + 0x0E);
+                String serial = new StringBuffer(readString(eventData, index + 0x0F, eventSize - 0x0F)).reverse().toString();
                 result += " BG:" + bg + " Unit:" + bgUnits + " Source:" + bgSource + " Calibration:" + calibrationFlag + " Serial:" + serial;
 
             } else if (eventType == EventType.CALIBRATION_COMPLETE) {
-                double calFactor = getShortIU(eventData, index + 0xB) / 100.0;
-                int bgTarget = getShortIU(eventData, index + 0xD);
+                double calFactor = read16BEtoUInt(eventData, index + 0xB) / 100.0;
+                int bgTarget = read16BEtoUInt(eventData, index + 0xD);
                 result += " bgTarget:" + bgTarget + " calFactor:" + calFactor;
 
             } else if (eventType == EventType.BOLUS_WIZARD_ESTIMATE) {
-                int bgUnits = getByteIU(eventData, index + 0x0B);
-                int carbUnits = getByteIU(eventData, index + 0x0C);
-                double bgInput = getShortIU(eventData, index + 0x0D) / (bgUnits == 1 ? 10.0 : 1.0);
-                double carbInput = getShortIU(eventData, index + 0x0F) / (bgUnits == 1 ? 10.0 : 1.0);
-                double isf = getShortIU(eventData, index + 0x11) / (bgUnits == 1 ? 10.0 : 1.0);
-                double carbRatio = getIntLU(eventData, index + 0x13) / (carbUnits == 1 ? 1000.0 : 10.0);
-                double lowBgTarget = getShortIU(eventData, index + 0x17) / (bgUnits == 1 ? 10.0 : 1.0);
-                double highBgTarget = getShortIU(eventData, index + 0x19) / (bgUnits == 1 ? 10.0 : 1.0);
-                double correctionEstimate = getIntL(eventData, index + 0x1B) / 10000.0;
-                double foodEstimate = getIntLU(eventData, index + 0x1F) / 10000.0;
-                double iob = getInt(eventData, index + 0x23) / 10000.0;
-                double iobAdjustment = getInt(eventData, index + 0x27) / 10000.0;
-                double bolusWizardEstimate = getInt(eventData, index + 0x2B) / 10000.0;
-                int bolusStepSize = getByteIU(eventData, index + 0x2F);
-                boolean estimateModifiedByUser = (getByteIU(eventData, index + 0x30) & 1) == 1;
-                double finalEstimate = getInt(eventData, index + 0x31) / 10000.0;
+                int bgUnits = read8toUInt(eventData, index + 0x0B);
+                int carbUnits = read8toUInt(eventData, index + 0x0C);
+                double bgInput = read16BEtoUInt(eventData, index + 0x0D) / (bgUnits == 1 ? 10.0 : 1.0);
+                double carbInput = read16BEtoUInt(eventData, index + 0x0F) / (bgUnits == 1 ? 10.0 : 1.0);
+                double isf = read16BEtoUInt(eventData, index + 0x11) / (bgUnits == 1 ? 10.0 : 1.0);
+                double carbRatio = read32BEtoULong(eventData, index + 0x13) / (carbUnits == 1 ? 1000.0 : 10.0);
+                double lowBgTarget = read16BEtoUInt(eventData, index + 0x17) / (bgUnits == 1 ? 10.0 : 1.0);
+                double highBgTarget = read16BEtoUInt(eventData, index + 0x19) / (bgUnits == 1 ? 10.0 : 1.0);
+                double correctionEstimate = read32BEtoLong(eventData, index + 0x1B) / 10000.0;
+                double foodEstimate = read32BEtoULong(eventData, index + 0x1F) / 10000.0;
+                double iob = read32BEtoInt(eventData, index + 0x23) / 10000.0;
+                double iobAdjustment = read32BEtoInt(eventData, index + 0x27) / 10000.0;
+                double bolusWizardEstimate = read32BEtoInt(eventData, index + 0x2B) / 10000.0;
+                int bolusStepSize = read8toUInt(eventData, index + 0x2F);
+                boolean estimateModifiedByUser = (read8toUInt(eventData, index + 0x30) & 1) == 1;
+                double finalEstimate = read32BEtoInt(eventData, index + 0x31) / 10000.0;
                 result += " bgUnits:" + bgUnits + " carbUnits:" + carbUnits;
                 result += " bgInput:" + bgInput + " carbInput:" + carbInput;
                 result += " isf:" + isf + " carbRatio:" + carbRatio;
@@ -511,119 +512,119 @@ public class PumpHistoryParser {
                 result += " estimateModifiedByUser:" + estimateModifiedByUser + " finalEstimate:" + finalEstimate;
 
             } else if (eventType == EventType.NORMAL_BOLUS_PROGRAMMED) {
-                int bolusSource = getByteIU(eventData, index + 0x0B);
-                int bolusRef = getByteIU(eventData, index + 0x0C);
-                int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-                double programmedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-                double activeInsulin = getInt(eventData, index + 0x12) / 10000.0;
+                int bolusSource = read8toUInt(eventData, index + 0x0B);
+                int bolusRef = read8toUInt(eventData, index + 0x0C);
+                int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+                double programmedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+                double activeInsulin = read32BEtoInt(eventData, index + 0x12) / 10000.0;
                 result += " Source:" + bolusSource + " Ref:" + bolusRef + " Preset:" + presetBolusNumber;
                 result += " Prog:" + programmedAmount + " Active:" + activeInsulin;
 
             } else if (eventType == EventType.NORMAL_BOLUS_DELIVERED) {
-                int bolusSource = getByteIU(eventData, index + 0x0B);
-                int bolusRef = getByteIU(eventData, index + 0x0C);
-                int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-                double programmedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-                double deliveredAmount = getInt(eventData, index + 0x12) / 10000.0;
-                double activeInsulin = getInt(eventData, index + 0x16) / 10000.0;
+                int bolusSource = read8toUInt(eventData, index + 0x0B);
+                int bolusRef = read8toUInt(eventData, index + 0x0C);
+                int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+                double programmedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+                double deliveredAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
+                double activeInsulin = read32BEtoInt(eventData, index + 0x16) / 10000.0;
                 result += " Source:" + bolusSource + " Ref:" + bolusRef + " Preset:" + presetBolusNumber;
                 result += " Prog:" + programmedAmount + " Del:" + deliveredAmount + " Active:" + activeInsulin;
 
             } else if (eventType == EventType.DUAL_BOLUS_PROGRAMMED) {
-                int bolusSource = getByteIU(eventData, index + 0x0B);
-                int bolusRef = getByteIU(eventData, index + 0x0C);
-                int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-                double normalProgrammedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-                double squareProgrammedAmount = getInt(eventData, index + 0x12) / 10000.0;
-                int programmedDuration = getShortIU(eventData, index + 0x16);
-                double activeInsulin = getInt(eventData, index + 0x18) / 10000.0;
+                int bolusSource = read8toUInt(eventData, index + 0x0B);
+                int bolusRef = read8toUInt(eventData, index + 0x0C);
+                int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+                double normalProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+                double squareProgrammedAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
+                int programmedDuration = read16BEtoUInt(eventData, index + 0x16);
+                double activeInsulin = read32BEtoInt(eventData, index + 0x18) / 10000.0;
                 result += " Source:" + bolusSource + " Ref:" + bolusRef + " Preset:" + presetBolusNumber;
                 result += " Norm:" + normalProgrammedAmount + " Sqr:" + squareProgrammedAmount;
                 result += " Dur:" + programmedDuration + " Active:" + activeInsulin;
 
             } else if (eventType == EventType.DUAL_BOLUS_PART_DELIVERED) {
-                int bolusSource = getByteIU(eventData, index + 0x0B);
-                int bolusRef = getByteIU(eventData, index + 0x0C);
-                int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-                double normalProgrammedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-                double squareProgrammedAmount = getInt(eventData, index + 0x12) / 10000.0;
-                double deliveredAmount = getInt(eventData, index + 0x16) / 10000.0;
-                int bolusPart = getByteIU(eventData, index + 0x1A);
-                int programmedDuration = getShortIU(eventData, index + 0x1B);
-                int deliveredDuration = getShortIU(eventData, index + 0x1D);
-                double activeInsulin = getInt(eventData, index + 0x1F) / 10000.0;
+                int bolusSource = read8toUInt(eventData, index + 0x0B);
+                int bolusRef = read8toUInt(eventData, index + 0x0C);
+                int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+                double normalProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+                double squareProgrammedAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
+                double deliveredAmount = read32BEtoInt(eventData, index + 0x16) / 10000.0;
+                int bolusPart = read8toUInt(eventData, index + 0x1A);
+                int programmedDuration = read16BEtoUInt(eventData, index + 0x1B);
+                int deliveredDuration = read16BEtoUInt(eventData, index + 0x1D);
+                double activeInsulin = read32BEtoInt(eventData, index + 0x1F) / 10000.0;
                 result += " Source:" + bolusSource + " Ref:" + bolusRef + " Preset:" + presetBolusNumber;
                 result += " Norm:" + normalProgrammedAmount + " Sqr:" + squareProgrammedAmount;
                 result += " Del:" + deliveredAmount + " Part:" + bolusPart;
                 result += " Dur:" + programmedDuration + " delDur:" + deliveredDuration + " Active:" + activeInsulin;
 
             } else if (eventType == EventType.SQUARE_BOLUS_PROGRAMMED) {
-                int bolusSource = getByteIU(eventData, index + 0x0B);
-                int bolusRef = getByteIU(eventData, index + 0x0C);
-                int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-                double programmedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-                int programmedDuration = getShortIU(eventData, index + 0x12);
-                double activeInsulin = getInt(eventData, index + 0x14) / 10000.0;
+                int bolusSource = read8toUInt(eventData, index + 0x0B);
+                int bolusRef = read8toUInt(eventData, index + 0x0C);
+                int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+                double programmedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+                int programmedDuration = read16BEtoUInt(eventData, index + 0x12);
+                double activeInsulin = read32BEtoInt(eventData, index + 0x14) / 10000.0;
                 result += " Source:" + bolusSource + " Ref:" + bolusRef + " Preset:" + presetBolusNumber;
                 result += " Prog:" + programmedAmount;
                 result += " Dur:" + programmedDuration + " Active:" + activeInsulin;
 
             } else if (eventType == EventType.SQUARE_BOLUS_DELIVERED) {
-                int bolusSource = getByteIU(eventData, index + 0x0B);
-                int bolusRef = getByteIU(eventData, index + 0x0C);
-                int presetBolusNumber = getByteIU(eventData, index + 0x0D);
-                double programmedAmount = getInt(eventData, index + 0x0E) / 10000.0;
-                double deliveredAmount = getInt(eventData, index + 0x12) / 10000.0;
-                int programmedDuration = getShortIU(eventData, index + 0x16);
-                int deliveredDuration = getShortIU(eventData, index + 0x18);
-                double activeInsulin = getInt(eventData, index + 0x1A) / 10000.0;
+                int bolusSource = read8toUInt(eventData, index + 0x0B);
+                int bolusRef = read8toUInt(eventData, index + 0x0C);
+                int presetBolusNumber = read8toUInt(eventData, index + 0x0D);
+                double programmedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
+                double deliveredAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
+                int programmedDuration = read16BEtoUInt(eventData, index + 0x16);
+                int deliveredDuration = read16BEtoUInt(eventData, index + 0x18);
+                double activeInsulin = read32BEtoInt(eventData, index + 0x1A) / 10000.0;
                 result += " Source:" + bolusSource + " Ref:" + bolusRef + " Preset:" + presetBolusNumber;
                 result += " Prog:" + programmedAmount + " Del:" + deliveredAmount;
                 result += " Dur:" + programmedDuration + " delDur:" + deliveredDuration + " Active:" + activeInsulin;
 
             } else if (eventType == EventType.TEMP_BASAL_PROGRAMMED) {
-                int preset = getByteIU(eventData, index + 0x0B);
-                int type = getByteIU(eventData, index + 0x0C);
-                double rate = getInt(eventData, index + 0x0D) / 10000.0;
-                int percentageOfRate = getByteIU(eventData, index + 0x11);
-                int duration = getShortIU(eventData, index + 0x12);
+                int preset = read8toUInt(eventData, index + 0x0B);
+                int type = read8toUInt(eventData, index + 0x0C);
+                double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
+                int percentageOfRate = read8toUInt(eventData, index + 0x11);
+                int duration = read16BEtoUInt(eventData, index + 0x12);
                 result += " Preset:" + preset + " Type:" + type;
                 result += " Rate:" + rate + " Percent:" + percentageOfRate;
                 result += " Dur:" + duration;
 
             } else if (eventType == EventType.TEMP_BASAL_COMPLETE) {
-                int preset = getByteIU(eventData, index + 0x0B);
-                int type = getByteIU(eventData, index + 0x0C);
-                double rate = getInt(eventData, index + 0x0D) / 10000.0;
-                int percentageOfRate = getByteIU(eventData, index + 0x11);
-                int duration = getShortIU(eventData, index + 0x12);
+                int preset = read8toUInt(eventData, index + 0x0B);
+                int type = read8toUInt(eventData, index + 0x0C);
+                double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
+                int percentageOfRate = read8toUInt(eventData, index + 0x11);
+                int duration = read16BEtoUInt(eventData, index + 0x12);
                 boolean canceled = (eventData[index + 0x14] & 1) == 1;
                 result += " Preset:" + preset + " Type:" + type;
                 result += " Rate:" + rate + " Percent:" + percentageOfRate;
                 result += " Dur:" + duration + " Canceled:" + canceled;
 
             } else if (eventType == EventType.BASAL_SEGMENT_START) {
-                int preset = getByteIU(eventData, index + 0x0B);
-                int segment = getByteIU(eventData, index + 0x0C);
-                double rate = getInt(eventData, index + 0x0D) / 10000.0;
+                int preset = read8toUInt(eventData, index + 0x0B);
+                int segment = read8toUInt(eventData, index + 0x0C);
+                double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
                 result += " Preset:" + preset + " Segment:" + segment + " Rate:" + rate;
 
             } else if (eventType == EventType.INSULIN_DELIVERY_STOPPED
                     || eventType == EventType.INSULIN_DELIVERY_RESTARTED) {
-                int reason = getByteIU(eventData, index + 0x0B);
+                int reason = read8toUInt(eventData, index + 0x0B);
                 result += " Reason: " + reason;
 
             } else if (eventType == EventType.NETWORK_DEVICE_CONNECTION) {
                 boolean flag1 = (eventData[index + 0x0B] & 0x01) == 1;
-                int value1 = getByteIU(eventData, index + 0x0C);
+                int value1 = read8toUInt(eventData, index + 0x0C);
                 boolean flag2 = (eventData[index + 0x0D] & 0x01) == 1;
-                String serial = new StringBuffer(getString(eventData, index + 0x0E, eventSize - 0x0E)).reverse().toString();
+                String serial = new StringBuffer(readString(eventData, index + 0x0E, eventSize - 0x0E)).reverse().toString();
                 result += " Flag1:" + flag1 + " Flag2:" + flag2 + " Value1:" + value1 + " Serial:" + serial;
 
             } else if (eventType == EventType.SENSOR_GLUCOSE_READINGS_EXTENDED) {
-                int minutesBetweenReadings = getByteIU(eventData, index + 0x0B);
-                int numberOfReadings = getByteIU(eventData, index + 0x0C);
-                int predictedSg = getShortIU(eventData, index + 0x0D);
+                int minutesBetweenReadings = read8toUInt(eventData, index + 0x0B);
+                int numberOfReadings = read8toUInt(eventData, index + 0x0C);
+                int predictedSg = read16BEtoUInt(eventData, index + 0x0D);
                 result += " Min:" + minutesBetweenReadings + " Num:" + numberOfReadings + " SGP:" + predictedSg;
 
                 int pos = index + 15;
@@ -631,12 +632,12 @@ public class PumpHistoryParser {
 
                     Date sgtimestamp = MessageUtils.decodeDateTime(eventRTC & 0xFFFFFFFFL - (i * minutesBetweenReadings * 60), eventOFFSET);
 
-                    int sg = getShortIU(eventData, pos + 0) & 0x03FF;
-                    double isig = getShortIU(eventData, pos + 2) / 100.0;
+                    int sg = read16BEtoUInt(eventData, pos + 0) & 0x03FF;
+                    double isig = read16BEtoUInt(eventData, pos + 2) / 100.0;
                     double vctr = (((eventData[pos + 0] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF) / 100.0;
-                    double rateOfChange = getShortI(eventData, pos + 5) / 100.0;
-                    int sensorStatus = getByteIU(eventData, pos + 7);
-                    int readingStatus = getByteIU(eventData, pos + 8);
+                    double rateOfChange = read16BEtoInt(eventData, pos + 5) / 100.0;
+                    int sensorStatus = read8toUInt(eventData, pos + 7);
+                    int readingStatus = read8toUInt(eventData, pos + 8);
 
                     boolean backfilledData = (readingStatus & 1) == 1;
                     boolean settingsChanged = (readingStatus & 2) == 2;
@@ -663,13 +664,13 @@ public class PumpHistoryParser {
 
             } else if (eventType == EventType.OLD_BOLUS_WIZARD_INSULIN_SENSITIVITY
                 || eventType == EventType.NEW_BOLUS_WIZARD_INSULIN_SENSITIVITY) {
-                int units = getByteIU(eventData, index + 0x0B); // 0=mgdl 1=mmol
-                int numberOfSegments = getByteIU(eventData, index + 0x0C);
+                int units = read8toUInt(eventData, index + 0x0B); // 0=mgdl 1=mmol
+                int numberOfSegments = read8toUInt(eventData, index + 0x0C);
                 result += " Units: " + units + " Segments: " + numberOfSegments;
                 int pos = index + 0x0D;
                 for (int i = 0; i < numberOfSegments; i++) {
-                    int start = getByteIU(eventData, pos + 0) * 30;
-                    double amount = getShortIU(eventData, pos + 1) / (units == 0 ? 1.0 : 10.0);
+                    int start = read8toUInt(eventData, pos + 0) * 30;
+                    double amount = read16BEtoUInt(eventData, pos + 1) / (units == 0 ? 1.0 : 10.0);
                     String time = (start / 60 < 10 ? "0" : "") +  start / 60 + (start % 60 < 30 ? ":00" : ":30");
                     result += " ["  + time + " " + amount + "]";
                     pos += 3;
@@ -677,13 +678,13 @@ public class PumpHistoryParser {
 
                 } else if (eventType == EventType.OLD_BOLUS_WIZARD_INSULIN_TO_CARB_RATIOS
                     || eventType == EventType.NEW_BOLUS_WIZARD_INSULIN_TO_CARB_RATIOS) {
-                int units = getByteIU(eventData, index + 0x0B); // 0=grams 1=exchanges
-                int numberOfSegments = getByteIU(eventData, index + 0x0C);
+                int units = read8toUInt(eventData, index + 0x0B); // 0=grams 1=exchanges
+                int numberOfSegments = read8toUInt(eventData, index + 0x0C);
                 result += " Units: " + units + " Segments: " + numberOfSegments;
                 int pos = index + 0x0D;
                 for (int i = 0; i < numberOfSegments; i++) {
-                    int start = getByteIU(eventData, pos + 0) * 30;
-                    double amount = getIntLU(eventData, pos + 1) / (units == 0 ? 10.0 : 1000.0);
+                    int start = read8toUInt(eventData, pos + 0) * 30;
+                    double amount = read32BEtoULong(eventData, pos + 1) / (units == 0 ? 10.0 : 1000.0);
                     String time = (start / 60 < 10 ? "0" : "") +  start / 60 + (start % 60 < 30 ? ":00" : ":30");
                     result += " ["  + time + " " + amount + "]";
                     pos += 5;
@@ -691,14 +692,14 @@ public class PumpHistoryParser {
 
             } else if (eventType == EventType.OLD_BOLUS_WIZARD_BG_TARGETS
                     || eventType == EventType.NEW_BOLUS_WIZARD_BG_TARGETS) {
-                int units = getByteIU(eventData, index + 0x0B); // 0=mgdl 1=mmol
-                int numberOfSegments = getByteIU(eventData, index + 0x0C);
+                int units = read8toUInt(eventData, index + 0x0B); // 0=mgdl 1=mmol
+                int numberOfSegments = read8toUInt(eventData, index + 0x0C);
                 result += " Units: " + units + " Segments: " + numberOfSegments;
                 int pos = index + 0x0D;
                 for (int i = 0; i < numberOfSegments; i++) {
-                    int start = getByteIU(eventData, pos + 0) * 30;
-                    double high = getShortIU(eventData, pos + 1) / (units == 0 ? 1.0 : 10.0);
-                    double low = getShortIU(eventData, pos + 3) / (units == 0 ? 1.0 : 10.0);
+                    int start = read8toUInt(eventData, pos + 0) * 30;
+                    double high = read16BEtoUInt(eventData, pos + 1) / (units == 0 ? 1.0 : 10.0);
+                    double low = read16BEtoUInt(eventData, pos + 3) / (units == 0 ? 1.0 : 10.0);
                     String time = (start / 60 < 10 ? "0" : "") +  start / 60 + (start % 60 < 30 ? ":00" : ":30");
                     result += " ["  + time + " " + low + "-" + high + "]";
                     pos += 5;
@@ -706,21 +707,21 @@ public class PumpHistoryParser {
 
             } else if (eventType == EventType.OLD_BASAL_PATTERN
                     || eventType == EventType.NEW_BASAL_PATTERN) {
-                int pPatternNumber = getByteIU(eventData, index + 0x0B);
-                int numberOfSegments = getByteIU(eventData, index + 0x0C);
+                int pPatternNumber = read8toUInt(eventData, index + 0x0B);
+                int numberOfSegments = read8toUInt(eventData, index + 0x0C);
                 result += " Pattern: " + pPatternNumber + " Segments: " + numberOfSegments;
                 int pos = index + 0x0D;
                 for (int i = 0; i < numberOfSegments; i++) {
-                    double rate = getIntLU(eventData, pos + 0) / 10000.0;
-                    int start = getByteIU(eventData, pos + 4) * 30;
+                    double rate = read32BEtoULong(eventData, pos + 0) / 10000.0;
+                    int start = read8toUInt(eventData, pos + 4) * 30;
                     String time = (start / 60 < 10 ? "0" : "") +  start / 60 + (start % 60 < 30 ? ":00" : ":30");
                     result += " [" + time + " " + rate + "U]";
                     pos += 5;
                 }
 
             } else if (eventType == EventType.BASAL_PATTERN_SELECTED) {
-                int oldPatternNumber = getByteIU(eventData, index + 0x0B);
-                int newPatternNumber = getByteIU(eventData, index + 0x0C);
+                int oldPatternNumber = read8toUInt(eventData, index + 0x0B);
+                int newPatternNumber = read8toUInt(eventData, index + 0x0C);
                 result += " oldPatternNumber:" + oldPatternNumber + " newPatternNumber:" + newPatternNumber;
 
             } else {

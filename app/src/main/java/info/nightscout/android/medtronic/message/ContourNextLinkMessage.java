@@ -20,8 +20,8 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.medtronic.service.MedtronicCnlService;
 import info.nightscout.android.utils.HexDump;
 
-import static info.nightscout.android.utils.ToolKit.getInt;
-import static info.nightscout.android.utils.ToolKit.getShortIU;
+import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
  * Created by lgoedhart on 26/03/2016.
@@ -29,8 +29,18 @@ import static info.nightscout.android.utils.ToolKit.getShortIU;
 public abstract class ContourNextLinkMessage {
     private static final String TAG = ContourNextLinkMessage.class.getSimpleName();
 
+    public static final int CLEAR_TIMEOUT_MS = 500;
+    public static final int ERROR_CLEAR_TIMEOUT_MS = 2000;
+    public static final int PRESEND_CLEAR_TIMEOUT_MS = 100;
+
+    public static final int READ_TIMEOUT_MS = 10000;
+    public static final int CNL_READ_TIMEOUT_MS = 2000;
+    public static final int PUMP_READ_TIMEOUT_MS = 10000;
+
+    private static final int MULTIPACKET_TIMEOUT_MS = 1000;
+    private static final int SEGMENT_RETRY = 10;
+
     private static final int USB_BLOCKSIZE = 64;
-    private static final int READ_TIMEOUT_MS = 10000;
     private static final String USB_HEADER = "ABC";
 
     protected ByteBuffer mPayload;
@@ -212,34 +222,6 @@ public abstract class ContourNextLinkMessage {
         return count;
     }
 
-    protected int clearMessage(UsbHidDriver mDevice, int timeout, MedtronicCnlSession pumpSession) throws IOException, EncryptionException, ChecksumException {
-        int count = 0;
-        boolean cleared = false;
-
-        do {
-            try {
-                byte[] payload = readMessage(mDevice, timeout);
-                //readMessage(mDevice, timeout);
-                count++;
-                MedtronicCnlService.cnlClear++;
-
-                if (payload.length >= 0x39 && payload[0x21] == 0x55 && pumpSession != null) {
-                    byte[] decrypted = decode(pumpSession, payload);
-                    Log.d(TAG, "*** cleared dycrypted response" + HexDump.dumpHexString(decrypted));
-                }
-
-            } catch (TimeoutException e) {
-                cleared = true;
-            }
-        } while (!cleared);
-
-        if (count > 0) {
-            Log.d(TAG, "clearMessage: message stream cleared " + count + " messages.");
-        }
-
-        return count;
-    }
-
     public enum ASCII {
         STX(0x02),
         EOT(0x04),
@@ -271,7 +253,7 @@ public abstract class ContourNextLinkMessage {
 
         // extra safety check and delay, CNL is not happy when we miss incomming messages
         // the short delay also helps with state readiness
-        clearMessage(mDevice, 100, pumpSession);
+        clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
 
         sendMessage(mDevice);
 
@@ -280,7 +262,7 @@ public abstract class ContourNextLinkMessage {
         } catch (TimeoutException e) {
             // ugh... there should always be a CNL 0x81 response and if we don't get one it usually ends with a E86 / E81 error on the CNL needing a unplug/plug cycle
             Log.e(TAG, "Timeout waiting for 0x81 response." + tag);
-            clearMessage(mDevice, 2000, pumpSession);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new TimeoutException("Timeout waiting for 0x81 response" + tag);
         }
 
@@ -290,29 +272,24 @@ public abstract class ContourNextLinkMessage {
         // and these need to be read and cleared asap or yep E86 me baby and a unresponsive CNL
         // the extra delay from the clearMessage timeout may be helping here too by holding back any further downstream sends etc - investigate
         if (payload.length <= 0x21) {
-            clearMessage(mDevice, 2000, pumpSession);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new UnexpectedMessageException("0x81 response was empty" + tag);  // *bad* CNL death soon after this, may want to end comms immediately
         } else if (payload.length != 0x30 && payload[0x21] != 0x55) {
-            clearMessage(mDevice, 2000, pumpSession);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new UnexpectedMessageException("0x81 response was not a 0x55 message" + tag);
         } else if (payload[0x2C] != medtronicSequenceNumber) {
-            clearMessage(mDevice, 2000, pumpSession);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new UnexpectedMessageException("0x81 sequence number does not match" + tag);
         } else if (payload[0x2D] == 0x04) {
-            clearMessage(mDevice, 2000, pumpSession);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new UnexpectedMessageException("0x81 connection busy" + tag);
         } else if (payload[0x2D] != 0x02) {
-            clearMessage(mDevice, 2000, pumpSession);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new UnexpectedMessageException("0x81 connection lost" + tag);
         }
 
         return payload;
     }
-
-    private static final int CLEAR_TIMEOUT_MS = 1500;
-
-    private static final int MULTIPACKET_TIMEOUT_MS = 1000;
-    private static final int SEGMENT_RETRY_MAX = 15;
 
     protected byte[] readFromPump(UsbHidDriver mDevice, MedtronicCnlSession pumpSession, String tag) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
         tag = " (" + tag + ")";
@@ -334,13 +311,13 @@ public abstract class ContourNextLinkMessage {
                     if (expectedSegments < 1) {
                         tupple = multipacketSession.missingSegments();
                         new MultipacketResendPacketsMessage(pumpSession, tupple).send(mDevice);
-                        expectedSegments = getShortIU(tupple, 0x02);
+                        expectedSegments = read16BEtoUInt(tupple, 0x02);
                     }
                     try {
                         payload = readMessage(mDevice, MULTIPACKET_TIMEOUT_MS);
                         retry = 0;
                     } catch (TimeoutException e) {
-                        if (++retry >= SEGMENT_RETRY_MAX)
+                        if (++retry >= SEGMENT_RETRY)
                             throw new TimeoutException("Timeout waiting for response from pump (multipacket)" + tag);
                         Log.d(TAG, "*** Multisession timeout, expecting:" + expectedSegments + " retry: " + retry);
                         expectedSegments = 0;
@@ -361,7 +338,7 @@ public abstract class ContourNextLinkMessage {
             } else {
                 decrypted = decode(pumpSession, payload);
 
-                cmd = getShortIU(decrypted, RESPONSE_COMMAND);
+                cmd = read16BEtoUInt(decrypted, RESPONSE_COMMAND);
                 Log.d(TAG, "CMD: " + HexDump.toHexString(cmd));
 
                 if (MedtronicSendMessageRequestMessage.MessageType.EHSM_SESSION.response(cmd)) { // EHSM_SESSION(0)
@@ -369,7 +346,7 @@ public abstract class ContourNextLinkMessage {
                     fetchMoreData = true;
                 } else if (MedtronicSendMessageRequestMessage.MessageType.NAK_COMMAND.response(cmd)) {
                     Log.d(TAG, "*** NAK response" + HexDump.dumpHexString(decrypted));
-                    clearMessage(mDevice, 2000, pumpSession); // if multipacket was in progress we may need to clear 2 EHSM_SESSION(1) messages from pump
+                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS); // if multipacket was in progress we may need to clear 2 EHSM_SESSION(1) messages from pump
                     throw new UnexpectedMessageException("Pump sent a NAK response" + tag);
                     //fetchMoreData = false;
                 } else if (MedtronicSendMessageRequestMessage.MessageType.INITIATE_MULTIPACKET_TRANSFER.response(cmd)) {
@@ -438,10 +415,10 @@ public abstract class ContourNextLinkMessage {
         private byte[] response;
 
         private MultipacketSession(byte[] settings) {
-            sessionSize = getInt(settings, 0x0003);
-            packetSize = getShortIU(settings, 0x0007);
-            lastPacketSize = getShortIU(settings, 0x0009);
-            packetsToFetch = getShortIU(settings, 0x000B);
+            sessionSize = read32BEtoInt(settings, 0x0003);
+            packetSize = read16BEtoUInt(settings, 0x0007);
+            lastPacketSize = read16BEtoUInt(settings, 0x0009);
+            packetsToFetch = read16BEtoUInt(settings, 0x000B);
             response = new byte[sessionSize + 1];
             segments  = new boolean[packetsToFetch];
             response[0] = settings[0]; // comDSequenceNumber
@@ -465,7 +442,7 @@ public abstract class ContourNextLinkMessage {
         }
 
         private void addSegment(byte[] data) throws UnexpectedMessageException {
-            int packetNumber = getShortIU(data, 0x0003);
+            int packetNumber = read16BEtoUInt(data, 0x0003);
             int packetSize = data.length - 7;
             segments[packetNumber] = true;
 

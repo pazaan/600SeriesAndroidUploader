@@ -1,7 +1,5 @@
 package info.nightscout.android.model.medtronicNg;
 
-import android.util.Log;
-
 import io.realm.RealmList;
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;

@@ -2,12 +2,9 @@ package info.nightscout.android.model.medtronicNg;
 
 import android.util.Log;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.TimeZone;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
@@ -15,36 +12,35 @@ import info.nightscout.api.ProfileEndpoints;
 import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
-import io.realm.RealmResults;
-import io.realm.Sort;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
-import static info.nightscout.android.utils.ToolKit.getByteIU;
-import static info.nightscout.android.utils.ToolKit.getInt;
-import static info.nightscout.android.utils.ToolKit.getIntLU;
-import static info.nightscout.android.utils.ToolKit.getShortIU;
+import static info.nightscout.android.utils.ToolKit.read8toUInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoULong;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
  * Created by John on 7.11.17.
  */
 
-public class PumpHistoryProfile extends RealmObject implements PumpHistory {
+public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterface {
     @Ignore
     private static final String TAG = PumpHistoryProfile.class.getSimpleName();
 
     @Index
     private Date eventDate;
-    @Index
-    private Date eventEndDate; // event deleted when this is stale
 
+    @Index
     private boolean uploadREQ = false;
     private boolean uploadACK = false;
+
     private boolean xdripREQ = false;
     private boolean xdripACK = false;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
+    @Index
     private int profileRTC;
     private int profileOFFSET;
 
@@ -64,7 +60,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
     private byte[] targets;
 
     @Override
-    public List Nightscout() {
+    public List nightscout() {
         List list = new ArrayList();
 
         if (profileSwitch) {
@@ -86,10 +82,6 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
 
         } else if (profileDefine) {
 
-            // Nightscout currently does not account for profiles older then start date but does store them in the db
-            // NS will only process s profile from that start date and use the "default" from current profile for anything older
-            // to simplify user experience we only update a single "master" profile and set the start date to 1999-01-01T00:00:00.000Z
-
             TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
             list.add("treatment");
             list.add(uploadACK ? "update" : "new");
@@ -106,7 +98,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
             list.add(profile);
 
             TimeZone tz = TimeZone.getDefault();
-            Date startdate = new Date(eventDate.getTime() - 90 * 24 * 60 * 60 * 1000L) ; // active from date
+            Date startdate = new Date(eventDate.getTime() - 90 * 24 * 60 * 60000L) ; // active from date
             String timezone = tz.getID();  // (Time Zone) - time zone local to the patient. Should be set.
             String units = "mmol"; // (Profile Units) - blood glucose units used in the profile, either "mgdl" or "mmol"   ??? get from uploader or NS ???
             String carbshr = "20"; // (Carbs per Hour) - The number of carbs that are processed per hour          ??? set as 30/35 as an general average for now ???
@@ -115,9 +107,9 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
 
             profile.setKey600(key);
             profile.setCreated_at(eventDate);
-//            profile.setStartDate(startdate);
-//            profile.setMills("" + startdate.getTime());
-            profile.setStartDate("1970-01-01T00:00:00");
+            profile.setStartDate(startdate);
+            profile.setMills("" + startdate.getTime());
+//            profile.setStartDate("1970-01-01T00:00:00");
 
             profile.setDefaultProfile("Basal 1");
             profile.setUnits(units);
@@ -144,58 +136,6 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
             store.setWorkday(bp.makeProfile());
             store.setDayoff(bp.makeProfile());
             store.setSickday(bp.makeProfile());
-
-
-
-
-
-
-/*
-
-            profile = new ProfileEndpoints.Profile();
-            list.add("profile");
-            list.add(uploadACK ? "update" : "new");
-            list.add(profile);
-
-            Date ed = new Date(eventDate.getTime() - 365 * 24 * 60 * 60 * 1000L);
-            startdate = new Date(ed.getTime() - 90 * 24 * 60 * 60 * 1000L) ; // active from date
-            timezone = tz.getID();  // (Time Zone) - time zone local to the patient. Should be set.
-            units = "mmol"; // (Profile Units) - blood glucose units used in the profile, either "mgdl" or "mmol"   ??? get from uploader or NS ???
-            carbshr = "20"; // (Carbs per Hour) - The number of carbs that are processed per hour          ??? set as 30/35 as an general average for now ???
-            dia = "3.0"; // (Insulin duration) - value should be the duration of insulin action to use in calculating how much insulin is left active. Defaults to 3 hours.
-            delay = "20"; // NS default value - delay from action to activation for insulin?
-
-            profile.setKey600(key + "TEST");
-            profile.setCreated_at(startdate);
-            profile.setStartDate(startdate);
-            profile.setMills("" + startdate.getTime());
-
-            profile.setDefaultProfile("Basal 1");
-            profile.setUnits(units);
-
-            store = new ProfileEndpoints.Store(); // <-- BasalProfile x8 as named on Pump
-            profile.setStore(store);
-
-            bp = new BasalProfile();
-            bp.startdate = startdate;
-            bp.timezone = timezone;
-            bp.units = units;
-            bp.carbshr = carbshr;
-            bp.dia = dia;
-            bp.delay = delay;
-            bp.parseCarbRatios();
-            bp.parseSensitivity();
-            bp.parseTargets();
-
-            store.setBasal1(bp.makeProfile());
-            store.setBasal2(bp.makeProfile());
-            store.setBasal3(bp.makeProfile());
-            store.setBasal4(bp.makeProfile());
-            store.setBasal5(bp.makeProfile());
-            store.setWorkday(bp.makeProfile());
-            store.setDayoff(bp.makeProfile());
-            store.setSickday(bp.makeProfile());
-*/
         }
 
         return list;
@@ -217,9 +157,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
         private ProfileEndpoints.BasalProfile makeProfile() {
             ProfileEndpoints.BasalProfile basalProfile = new ProfileEndpoints.BasalProfile();
 
-            basalProfile.setStartDate("1970-01-01T00:00:00");
-
-            //basalProfile.setStartDate(startdate);
+            basalProfile.setStartDate(startdate);
             basalProfile.setTimezone(timezone);
             basalProfile.setDelay(delay);
             basalProfile.setCarbs_hr(carbshr);
@@ -239,8 +177,8 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
         private List<ProfileEndpoints.TimePeriod> parseBasalPattern() {
             List<ProfileEndpoints.TimePeriod> basalpattern = new ArrayList();
 
-            int pattern = getByteIU(basalPatterns, index++);
-            int items = getByteIU(basalPatterns, index++);
+            int pattern = read8toUInt(basalPatterns, index++);
+            int items = read8toUInt(basalPatterns, index++);
             double rate;
             int time;
 
@@ -248,8 +186,8 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
                 basalpattern.add(addPeriod(0, "0.0"));
             else {
                 for (int i = 0; i < items; i++) {
-                    rate = getIntLU(basalPatterns, index) / 10000.0;
-                    time = getByteIU(basalPatterns, index + 4) * 30;
+                    rate = read32BEtoULong(basalPatterns, index) / 10000.0;
+                    time = read8toUInt(basalPatterns, index + 4) * 30;
                     basalpattern.add(addPeriod(time, "" + rate));
                     index += 5;
                 }
@@ -265,14 +203,14 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
             int rate2;
             int time;
 
-            int items = getByteIU(carbRatios, index++);
+            int items = read8toUInt(carbRatios, index++);
             if (items == 0)
                 carbratio.add(addPeriod(0, "0"));
             else {
                 for (int i = 0; i < items; i++) {
-                    rate1 = getInt(carbRatios, index + 0) / 10;
-                    rate2 = getInt(carbRatios, index + 4);
-                    time = getByteIU(carbRatios, index + 8) * 30;
+                    rate1 = read32BEtoInt(carbRatios, index + 0) / 10;
+                    rate2 = read32BEtoInt(carbRatios, index + 4);
+                    time = read8toUInt(carbRatios, index + 8) * 30;
                     carbratio.add(addPeriod(time, "" + rate1));
                     index += 9;
                 }
@@ -283,18 +221,18 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
             sens = new ArrayList();
             int index = 0;
             int isf_mgdl;
-            int isf_mmol;
+            double isf_mmol;
             int time;
 
-            int items = getByteIU(sensitivity, index++);
+            int items = read8toUInt(sensitivity, index++);
             if (items == 0)
                 sens.add(addPeriod(0, "0"));
             else {
                 for (int i = 0; i < items; i++) {
-                    isf_mgdl = getShortIU(sensitivity, index + 0);
-                    isf_mmol = getShortIU(sensitivity, index + 2);
-                    time = getByteIU(sensitivity, index + 4) * 30;
-                    sens.add(addPeriod(time, "" + (units == "mgdl" ? isf_mgdl : isf_mmol)));
+                    isf_mgdl = read16BEtoUInt(sensitivity, index + 0);
+                    isf_mmol = read16BEtoUInt(sensitivity, index + 2) / 10.0;
+                    time = read8toUInt(sensitivity, index + 4) * 30;
+                    sens.add(addPeriod(time, "" + (units.equals("mgdl") ? isf_mgdl : isf_mmol)));
                     index += 5;
                 }
             }
@@ -310,19 +248,19 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
             double lo_mmol;
             int time;
 
-            int items = getByteIU(targets, index++);
+            int items = read8toUInt(targets, index++);
             if (items == 0) {
                 target_low.add(addPeriod(0, "0"));
                 target_high.add(addPeriod(0, "0"));
             } else {
                 for (int i = 0; i < items; i++) {
-                    hi_mgdl = getShortIU(targets, index + 0);
-                    hi_mmol = getShortIU(targets, index + 2) / 10.0;
-                    lo_mgdl = getShortIU(targets, index + 4);
-                    lo_mmol = getShortIU(targets, index + 6) / 10.0;
-                    time = getByteIU(targets, index + 8) * 30;
-                    target_low.add(addPeriod(time, "" + (units == "mgdl" ? lo_mgdl : lo_mmol)));
-                    target_high.add(addPeriod(time, "" + (units == "mgdl" ? hi_mgdl : hi_mmol)));
+                    hi_mgdl = read16BEtoUInt(targets, index + 0);
+                    hi_mmol = read16BEtoUInt(targets, index + 2) / 10.0;
+                    lo_mgdl = read16BEtoUInt(targets, index + 4);
+                    lo_mmol = read16BEtoUInt(targets, index + 6) / 10.0;
+                    time = read8toUInt(targets, index + 8) * 30;
+                    target_low.add(addPeriod(time, "" + (units.equals("mgdl") ? lo_mgdl : lo_mmol)));
+                    target_high.add(addPeriod(time, "" + (units.equals("mgdl") ? hi_mgdl : hi_mmol)));
                     index += 9;
                 }
             }
@@ -348,7 +286,6 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
         object.setKey("PRO" + String.format("%08X", eventRTC));
         object.setProfileDefine(true);
         object.setEventDate(eventDate);
-        object.setEventEndDate(eventDate);
         object.setProfileRTC(eventRTC);
         object.setProfileOFFSET(eventOFFSET);
         object.setBasalPatterns(basalPatterns);
@@ -372,37 +309,12 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
             object.setKey("PRO" + String.format("%08X", eventRTC));
             object.setProfileSwitch(true);
             object.setEventDate(eventDate);
-            object.setEventEndDate(eventDate);
             object.setProfileRTC(eventRTC);
             object.setProfileOFFSET(eventOFFSET);
             object.setOldPatternNumber(oldPatternNumber);
             object.setNewPatternNumber(newPatternNumber);
             object.setUploadREQ(true);
         }
-    }
-
-    public static void stale(Realm realm, Date date) {
-        final RealmResults results = realm.where(PumpHistoryProfile.class)
-                .lessThan("eventDate", date)
-                .findAll();
-        if (results.size() > 0) {
-            Log.d(TAG, "deleting " + results.size() + " records from realm");
-            realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    results.deleteAllFromRealm();
-                }
-            });
-        }
-        //RealmResults x = results;
-        //RealmObject.class  = PumpHistoryProfile.class;
-    }
-
-    public static void records(Realm realm) {
-        DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
-        final RealmResults<PumpHistoryProfile> results = realm.where(PumpHistoryProfile.class)
-                .findAllSorted("eventDate", Sort.ASCENDING);
-        Log.d(TAG, "records: " + results.size() + (results.size() > 0 ? " start: " + dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
     }
 
     @Override
@@ -413,16 +325,6 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistory {
     @Override
     public void setEventDate(Date eventDate) {
         this.eventDate = eventDate;
-    }
-
-    @Override
-    public Date getEventEndDate() {
-        return eventEndDate;
-    }
-
-    @Override
-    public void setEventEndDate(Date eventEndDate) {
-        this.eventEndDate = eventEndDate;
     }
 
     @Override

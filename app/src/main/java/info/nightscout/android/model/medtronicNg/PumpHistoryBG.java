@@ -3,19 +3,14 @@ package info.nightscout.android.model.medtronicNg;
 import android.util.Log;
 
 import java.math.BigDecimal;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
-import io.realm.RealmResults;
-import io.realm.Sort;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
@@ -25,28 +20,29 @@ import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
  * Created by John on 26.10.17.
  */
 
-public class PumpHistoryBG extends RealmObject implements PumpHistory {
+public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     @Ignore
     private static final String TAG = PumpHistoryBG.class.getSimpleName();
 
     @Index
     private Date eventDate;
-    @Index
-    private Date eventEndDate; // event deleted when this is stale
 
+    @Index
     private boolean uploadREQ = false;
     private boolean uploadACK = false;
+
     private boolean xdripREQ = false;
     private boolean xdripACK = false;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
-    private Date bgDate;
+    @Index
     private int bgRTC;
     private int bgOffset;
+    private Date bgDate;
 
-    int bgUnits;
-    int bgOrigin;
+    byte bgUnits;
+    byte bgSource;
 
     int bg;
     String serial;
@@ -60,7 +56,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
     private int calibrationTarget;
 
     @Override
-    public List Nightscout() {
+    public List nightscout() {
         List list = new ArrayList();
 
         TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
@@ -78,7 +74,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
             units = "mmol";
         }
         treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
+        treatment.setCreated_at(bgDate);
         treatment.setEventType("BG Check");
         treatment.setGlucoseType("Finger");
         treatment.setGlucose(bgl);
@@ -91,33 +87,11 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
         return list;
     }
 
-    public static void stale(Realm realm, Date date) {
-        final RealmResults results = realm.where(PumpHistoryBG.class)
-                .lessThan("eventEndDate", date)
-                .findAll();
-        if (results.size() > 0) {
-            Log.d(TAG, "deleting " + results.size() + " records from realm");
-            realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    results.deleteAllFromRealm();
-                }
-            });
-        }
-    }
-
-    public static void records(Realm realm) {
-        DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
-        final RealmResults<PumpHistoryBG> results = realm.where(PumpHistoryBG.class)
-                .findAllSorted("eventDate", Sort.ASCENDING);
-        Log.d(TAG, "records: " + results.size() + (results.size() > 0 ? " start: "+ dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
-    }
-
     public static void bg(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
                           boolean calibrationFlag,
-                          int bgUnits,
                           int bg,
-                          int bgOrigin,
+                          byte bgUnits,
+                          byte bgSource,
                           String serial) {
 
         PumpHistoryBG object = realm.where(PumpHistoryBG.class)
@@ -134,7 +108,6 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
                 Log.d(TAG, "*new*" + " bg");
                 object = realm.createObject(PumpHistoryBG.class);
                 object.setEventDate(eventDate);
-                object.setEventEndDate(new Date(eventDate.getTime() + 20 * 60));
             } else {
                 Log.d(TAG, "*update*" + " add bg to calibration");
             }
@@ -144,13 +117,13 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
             object.setCalibrationFlag(calibrationFlag);
             object.setBg(bg);
             object.setBgUnits(bgUnits);
-            object.setBgOrigin(bgOrigin);
+            object.setBgSource(bgSource);
             object.setSerial(serial);
             object.setKey("BG" + String.format("%08X", eventRTC));
             object.setUploadREQ(true);
         } else if (calibrationFlag && !object.isCalibrationFlag()){
             Log.d(TAG, "*update*" + " bg used for calibration");
-            object.setCalibrationFlag(calibrationFlag);
+            object.setCalibrationFlag(true);
         }
     }
 
@@ -172,8 +145,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
             if (object == null) {
                 Log.d(TAG, "*new*" + " calibration");
                 object = realm.createObject(PumpHistoryBG.class);
-                object.setEventDate(new Date(eventDate.getTime() - 20 * 60));
-                object.setEventEndDate(eventDate);
+                object.setEventDate(eventDate);
             } else {
                 Log.d(TAG, "*update*"  + " bg with calibration");
                 object.setUploadREQ(true);
@@ -195,16 +167,6 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
     @Override
     public void setEventDate(Date eventDate) {
         this.eventDate = eventDate;
-    }
-
-    @Override
-    public Date getEventEndDate() {
-        return eventEndDate;
-    }
-
-    @Override
-    public void setEventEndDate(Date eventEndDate) {
-        this.eventEndDate = eventEndDate;
     }
 
     @Override
@@ -285,16 +247,16 @@ public class PumpHistoryBG extends RealmObject implements PumpHistory {
         return bgUnits;
     }
 
-    public void setBgUnits(int bgUnits) {
+    public void setBgUnits(byte bgUnits) {
         this.bgUnits = bgUnits;
     }
 
-    public int getBgOrigin() {
-        return bgOrigin;
+    public int getBgSource() {
+        return bgSource;
     }
 
-    public void setBgOrigin(int bgOrigin) {
-        this.bgOrigin = bgOrigin;
+    public void setBgSource(byte bgSource) {
+        this.bgSource = bgSource;
     }
 
     public int getBg() {

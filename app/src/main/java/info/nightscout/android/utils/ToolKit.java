@@ -28,47 +28,55 @@ public class ToolKit {
         if (wl.isHeld()) wl.release();
     }
 
-    public static int getByteI(byte[] data, int offset) {
+    public static short read8toShort(byte[] data, int offset) {
+        return (short) data[offset];
+    }
+
+    public static short read8toUShort(byte[] data, int offset) {
+        return (short) (data[offset] & 0x00FF);
+    }
+
+    public static int read8toInt(byte[] data, int offset) {
         return data[offset];
     }
 
-    public static int getByteIU(byte[] data, int offset) {
+    public static int read8toUInt(byte[] data, int offset) {
         return data[offset] & 0x000000FF;
     }
 
-    public static short getShort(byte[] data, int offset) {
+    public static short read16BEtoShort(byte[] data, int offset) {
         return (short) (data[offset] << 8 & 0xFF00 | data[offset + 1] & 0x00FF);
     }
 
-    public static int getShortI(byte[] data, int offset) {
+    public static int read16BEtoInt(byte[] data, int offset) {
         return data[offset] << 8 & 0xFFFFFF00 | data[offset + 1] & 0x000000FF;
     }
 
-    public static int getShortIU(byte[] data, int offset) {
+    public static int read16BEtoUInt(byte[] data, int offset) {
         return data[offset] << 8 & 0x0000FF00 | data[offset + 1] & 0x000000FF;
     }
 
-    public static long getShortL(byte[] data, int offset) {
+    public static long read16BEtoLong(byte[] data, int offset) {
         return data[offset] << 8 & 0xFFFFFFFFFFFFFF00L | data[offset + 1] & 0x000000FFL;
     }
 
-    public static long getShortLU(byte[] data, int offset) {
+    public static long read16BEtoULong(byte[] data, int offset) {
         return data[offset] << 8 & 0x0000FF00L | data[offset + 1] & 0x000000FFL;
     }
 
-    public static int getInt(byte[] data, int offset) {
+    public static int read32BEtoInt(byte[] data, int offset) {
         return data[offset] << 24 & 0xFF000000 | data[offset + 1] << 16 & 0x00FF0000 | data[offset + 2] << 8 & 0x0000FF00 | data[offset + 3] & 0x000000FF;
     }
 
-    public static long getIntL(byte[] data, int offset) {
+    public static long read32BEtoLong(byte[] data, int offset) {
         return data[offset] << 24 & 0xFF000000 | data[offset + 1] << 16 & 0x00FF0000 | data[offset + 2] << 8 & 0x0000FF00 | data[offset + 3] & 0x000000FF;
     }
 
-    public static long getIntLU(byte[] data, int offset) {
+    public static long read32BEtoULong(byte[] data, int offset) {
         return data[offset] << 24 & 0xFF000000L | data[offset + 1] << 16 & 0x00FF0000L | data[offset + 2] << 8 & 0x0000FF00L | data[offset + 3] & 0x000000FFL;
     }
 
-    public static String getString(byte[] data, int offset, int size) {
+    public static String readString(byte[] data, int offset, int size) {
         String string = "";
         for (int i = 0; i < size; i++) {
             string += (char) data[offset + i];

@@ -1,18 +1,8 @@
 package info.nightscout.android.medtronic.message;
 
-import android.util.Log;
-
-import java.nio.ByteBuffer;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
-import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
-import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by lgoedhart on 26/03/2016.

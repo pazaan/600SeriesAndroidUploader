@@ -1,51 +1,43 @@
 package info.nightscout.android.model.medtronicNg;
 
-import android.util.Log;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.api.EntriesEndpoints;
-import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
-import io.realm.RealmResults;
-import io.realm.Sort;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
-import io.realm.annotations.PrimaryKey;
 
 /**
  * Created by John on 19.10.17.
  */
 
-public class PumpHistoryCGM extends RealmObject implements PumpHistory {
+public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface {
     @Ignore
     private static final String TAG = PumpHistoryCGM.class.getSimpleName();
 
     @Index
     private Date eventDate;
-    @Index
-    private Date eventEndDate; // event deleted when this is stale
 
+    @Index
     private boolean uploadREQ = false;
     private boolean uploadACK = false;
+
     private boolean xdripREQ = false;
     private boolean xdripACK = false;
 
+    private boolean xdrip = false; // TODO - refactor xdrip service
+
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
-    private boolean history = false; // history or status? we add these initially as polled from status and fill in extra details during history pulls
+    private boolean history = false; // update or status? we add these initially as polled from status and fill in extra details during update pulls
 
-    private boolean uploaded = false;
-    private boolean xdrip = false;
-    private int eventRTC;
-    private int eventOFFSET;
+    @Index
+    private int cgmRTC;
+    private int cgmOFFSET;
 
     private int sgv;
     private double isig;
@@ -53,6 +45,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
     private double rateOfChange;
     private byte sensorStatus;
     private byte readingStatus;
+    private byte sensorException;
 
     private boolean backfilledData;
     private boolean settingsChanged;
@@ -60,11 +53,10 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
     private boolean discardData;
     private boolean sensorError;
 
-    byte sensorException;
+    private String cgmTrend; // only available when added via the status message
 
-    private String cgmTrend;
-
-    public List Nightscout() {
+    @Override
+    public List nightscout() {
         List list = new ArrayList();
 
         EntriesEndpoints.Entry entry = new EntriesEndpoints.Entry();
@@ -83,28 +75,6 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
         return list;
     }
 
-    public static void stale(Realm realm, Date date) {
-        final RealmResults results = realm.where(PumpHistoryCGM.class)
-                .lessThan("eventDate", date)
-                .findAll();
-        if (results.size() > 0) {
-            Log.d(TAG, "deleting " + results.size() + " records from realm");
-            realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    results.deleteAllFromRealm();
-                }
-            });
-        }
-    }
-
-    public static void records(Realm realm) {
-        DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
-        final RealmResults<PumpHistoryCGM> results = realm.where(PumpHistoryCGM.class)
-                .findAllSorted("eventDate", Sort.ASCENDING);
-        Log.d(TAG, "records: " + results.size() + (results.size() > 0 ? " start: "+ dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
-    }
-
     public static void event(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
                              int sgv,
                              double isig,
@@ -120,7 +90,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
                              byte sensorException) {
 
         PumpHistoryCGM object = realm.where(PumpHistoryCGM.class)
-                .equalTo("eventRTC", eventRTC)
+                .equalTo("cgmRTC", eventRTC)
                 .findFirst();
         if (object == null) {
             // create new entry
@@ -128,9 +98,8 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
             object.setKey("CGM" + String.format("%08X", eventRTC));
             object.setHistory(true);
             object.setEventDate(eventDate);
-            object.setEventEndDate(eventDate);
-            object.setEventRTC(eventRTC);
-            object.setEventOFFSET(eventOFFSET);
+            object.setCgmRTC(eventRTC);
+            object.setCgmOFFSET(eventOFFSET);
             object.setSgv(sgv);
             object.setIsig(isig);
             object.setVctr(vctr);
@@ -144,6 +113,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
             object.setSensorError(sensorError);
             object.setSensorException(sensorException);
             if (sgv > 0) object.setUploadREQ(true);
+
         } else if (!object.isHistory()) {
             // update the entry
             object.setHistory(true);
@@ -158,6 +128,27 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
             object.setDiscardData(discardData);
             object.setSensorError(sensorError);
             object.setSensorException(sensorException);
+        }
+    }
+
+    public static void cgm(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+                           int sgv,
+                           String trend) {
+
+        PumpHistoryCGM object = realm.where(PumpHistoryCGM.class)
+                .equalTo("cgmRTC", eventRTC)
+                .findFirst();
+        if (object == null) {
+            // create new entry
+            object = realm.createObject(PumpHistoryCGM.class);
+            object.setKey("CGM" + String.format("%08X", eventRTC));
+            object.setHistory(false);
+            object.setEventDate(eventDate);
+            object.setCgmRTC(eventRTC);
+            object.setCgmOFFSET(eventOFFSET);
+            object.setSgv(sgv);
+            object.setCgmTrend(trend);
+            object.setUploadREQ(true);
         }
     }
 
@@ -179,16 +170,6 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
     @Override
     public void setEventDate(Date eventDate) {
         this.eventDate = eventDate;
-    }
-
-    @Override
-    public Date getEventEndDate() {
-        return eventEndDate;
-    }
-
-    @Override
-    public void setEventEndDate(Date eventEndDate) {
-        this.eventEndDate = eventEndDate;
     }
 
     @Override
@@ -233,20 +214,20 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
 
 
 
-    public int getEventRTC() {
-        return eventRTC;
+    public int getCgmRTC() {
+        return cgmRTC;
     }
 
-    public void setEventRTC(int eventRTC) {
-        this.eventRTC = eventRTC;
+    public void setCgmRTC(int cgmRTC) {
+        this.cgmRTC = cgmRTC;
     }
 
-    public int getEventOFFSET() {
-        return eventOFFSET;
+    public int getCgmOFFSET() {
+        return cgmOFFSET;
     }
 
-    public void setEventOFFSET(int eventOFFSET) {
-        this.eventOFFSET = eventOFFSET;
+    public void setCgmOFFSET(int cgmOFFSET) {
+        this.cgmOFFSET = cgmOFFSET;
     }
 
     public boolean isHistory() {
@@ -255,14 +236,6 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistory {
 
     public void setHistory(boolean history) {
         this.history = history;
-    }
-
-    public boolean isUploaded() {
-        return uploaded;
-    }
-
-    public void setUploaded(boolean uploaded) {
-        this.uploaded = uploaded;
     }
 
     public boolean isXdrip() {

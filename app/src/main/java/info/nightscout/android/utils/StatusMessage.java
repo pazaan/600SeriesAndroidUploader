@@ -11,7 +11,6 @@ public class StatusMessage {
     private static StatusMessage instance;
 
     private static final int STALE_MS = 72 * 60 * 60 * 1000;
-    private int counter = 0;
 
     private StatusMessage() {
     }
@@ -37,7 +36,6 @@ public class StatusMessage {
                 .findAll();
         if (results.size() > 0) results.deleteAllFromRealm();
 
-        counter++;
         storeRealm.commitTransaction();
         storeRealm.close();
     }
@@ -57,12 +55,7 @@ public class StatusMessage {
             results.deleteAllFromRealm();
         }
 
-        counter = 0;
         storeRealm.commitTransaction();
         storeRealm.close();
     }
-
-    public int getCounter() {return this.counter;}
-
-    public void resetCounter() {this.counter = 0;}
 }

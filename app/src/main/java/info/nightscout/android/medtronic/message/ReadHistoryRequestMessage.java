@@ -22,9 +22,9 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.utils.HexDump;
 
-import static info.nightscout.android.utils.ToolKit.getByteIU;
-import static info.nightscout.android.utils.ToolKit.getInt;
-import static info.nightscout.android.utils.ToolKit.getShortIU;
+import static info.nightscout.android.utils.ToolKit.read8toUInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
  * Created by John on 6.10.17.
@@ -64,7 +64,7 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
         while (!receivedEndHistoryCommand) {
             payload = readFromPump(mDevice, mPumpSession, TAG);
 
-            int cmd = getShortIU(payload, 1);
+            int cmd = read16BEtoUInt(payload, 1);
             if (MessageType.END_HISTORY_TRANSMISSION.response(cmd)) {
                 // read 0412 = EHSM_SESSION (1)
                 readMessage(mDevice);
@@ -84,16 +84,16 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
     }
 
     private void addHistoryBlock(byte[] payload) throws UnexpectedMessageException, ChecksumException {
-        int dataType = getByteIU(payload, 0x03); // pump data = 0x02, sensor data = 0x03
-        int historySizeCompressed = getInt(payload, 0x04);
-        int historySizeUncompressed = getInt(payload, 0x08);
+        int dataType = read8toUInt(payload, 0x03); // pump data = 0x02, sensor data = 0x03
+        int historySizeCompressed = read32BEtoInt(payload, 0x04);
+        int historySizeUncompressed = read32BEtoInt(payload, 0x08);
         boolean historyCompressed = (payload[0x0C] & 0x01) == 0x01;
 
         Log.d(TAG, "dataType=" + dataType + " historySizeCompressed=" + historySizeCompressed + " historySizeUncompressed=" + historySizeUncompressed + " historyCompressed=" + historyCompressed);
 
         // Check that we have the correct number of bytes in this message
         if (payload.length - HEADER_SIZE != historySizeCompressed) {
-            throw new UnexpectedMessageException("Unexpected history message size");
+            throw new UnexpectedMessageException("Unexpected update message size");
         }
 
         byte[] blockPayload;
@@ -106,7 +106,7 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
             int lzoReturnCode = decompressor.decompress(payload, HEADER_SIZE, historySizeCompressed, blockPayload, 0, new lzo_uintp(historySizeUncompressed));
 
             if (lzoReturnCode != LzoTransformer.LZO_E_OK)
-                throw new UnexpectedMessageException("Error trying to decompress history message (" + decompressor.toErrorString(lzoReturnCode) + ")");
+                throw new UnexpectedMessageException("Error trying to decompress update message (" + decompressor.toErrorString(lzoReturnCode) + ")");
         } else {
             blockPayload = Arrays.copyOfRange(payload, HEADER_SIZE, payload.length);
         }
@@ -117,8 +117,8 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
 
         for (int i = 0; i < blockPayload.length / BLOCK_SIZE; i++) {
             int blockStart = i * BLOCK_SIZE;
-            int blockSize = getShortIU(blockPayload, blockStart + BLOCK_SIZE - 4);
-            int blockChecksum = getShortIU(blockPayload, blockStart + BLOCK_SIZE - 2);
+            int blockSize = read16BEtoUInt(blockPayload, blockStart + BLOCK_SIZE - 4);
+            int blockChecksum = read16BEtoUInt(blockPayload, blockStart + BLOCK_SIZE - 2);
 
             int calculatedChecksum = MessageUtils.CRC16CCITT(blockPayload, blockStart, 0xFFFF, 0x1021, blockSize);
             if (blockChecksum != calculatedChecksum) {

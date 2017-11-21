@@ -61,6 +61,9 @@ public class MasterService extends Service {
     public static final String ICON_BOLUS = "{ion_skip_forward} ";
     public static final String ICON_BASAL = "{ion_skip_forward} ";
     public static final String ICON_CHANGE = "{ion_android_hand} ";
+//    public static final String ICON_REFRESH = "{ion_android_sync} ";
+//    public static final String ICON_REFRESH = "{ion_ios_refresh_outline} ";
+    public static final String ICON_REFRESH = "{ion_loop} ";
     public static final String ICON_BELL = "{ion_android_notifications} ";
     public static final String ICON_NOTE = "{ion_clipboard} ";
 
@@ -104,7 +107,7 @@ public class MasterService extends Service {
         super.onCreate();
 
         Log.i(TAG, "onCreate called");
-        statusMessage.add(TAG + " onCreate called");
+        //statusMessage.add(TAG + " onCreate called");
 
         mContext = this.getBaseContext();
 
@@ -147,7 +150,7 @@ public class MasterService extends Service {
         super.onDestroy();
 
         Log.d(TAG, "onDestroy called");
-        statusMessage.add(TAG + " onDestroy called");
+        //statusMessage.add(TAG + " onDestroy called");
 
         statusNotification.endNotification();
 
@@ -164,19 +167,19 @@ public class MasterService extends Service {
     @Override
     public void onTaskRemoved(Intent intent) {
         Log.i(TAG, "onTaskRemoved called");
-        statusMessage.add(TAG + " onTaskRemoved");
+        //statusMessage.add(TAG + " onTaskRemoved");
     }
 
     @Override
     public void onLowMemory() {
         Log.i(TAG, "onLowMemory called");
-        statusMessage.add(TAG + " onLowMemory");
+        //statusMessage.add(TAG + " onLowMemory");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Received start id " + startId + ": " + intent);
-        statusMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
+        //statusMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
 /*
         if (intent == null) {
             // do nothing and return
@@ -196,7 +199,7 @@ public class MasterService extends Service {
                     .setSmallIcon(R.drawable.ic_notification)
                     .setVisibility(VISIBILITY_PUBLIC)
                     .setContentIntent(pendingIntent)
-                    .setTicker("600 Series Nightscout Uploader")
+                    .setTicker("600 Series nightscout Uploader")
                     .build();
             startForeground(SERVICE_NOTIFICATION_ID, notification);
 
@@ -211,7 +214,7 @@ public class MasterService extends Service {
 */
         if (intent == null || startId == 1) {
             Log.i(TAG, "service start");
-            statusMessage.add(TAG + " service start");
+            //statusMessage.add(TAG + " service start");
 
             // * use the status note for this
             Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -221,7 +224,7 @@ public class MasterService extends Service {
                     .setSmallIcon(R.drawable.ic_notification)
                     .setVisibility(VISIBILITY_PUBLIC)
                     .setContentIntent(pendingIntent)
-                    .setTicker("600 Series Nightscout Uploader")
+                    .setTicker("600 Series nightscout Uploader")
                     .build();
             startForeground(SERVICE_NOTIFICATION_ID, notification);
 
@@ -495,11 +498,11 @@ public class MasterService extends Service {
     }
 
     private void uploadToNightscout() {
-        // TODO - set status if offline or Nightscout not reachable
+        // TODO - set status if offline or nightscout not reachable
         Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
         final long timestamp = System.currentTimeMillis() + 200L; //1000L
         final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
-        Log.d(TAG, "Scheduling Nightscout upload");
+        Log.d(TAG, "Scheduling nightscout upload");
         wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
     }
 }

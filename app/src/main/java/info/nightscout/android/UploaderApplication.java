@@ -3,6 +3,7 @@ package info.nightscout.android;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -38,12 +39,14 @@ public class UploaderApplication extends Application {
     private static RealmConfiguration storeConfiguration;
     private static RealmConfiguration historyConfiguration;
 
-    public static int killer = 0;
+    private static long startupRealtime;
 
     @Override
     public void onCreate() {
         Log.i(TAG, "onCreate Called");
-        UploaderApplication.context = getApplicationContext();
+        UploaderApplication.context = getApplicationContext(); // Google says this is safe and not leaky! evil???
+
+        startupRealtime = SystemClock.elapsedRealtime();
 
         super.onCreate();
         CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
@@ -98,6 +101,14 @@ public class UploaderApplication extends Application {
         }
         realm.close();
 
+    }
+
+    public static long getStartupRealtime() {
+        return UploaderApplication.startupRealtime;
+    }
+
+    public static long getUptime() {
+        return SystemClock.elapsedRealtime() - UploaderApplication.startupRealtime;
     }
 
     public static Context getAppContext() {

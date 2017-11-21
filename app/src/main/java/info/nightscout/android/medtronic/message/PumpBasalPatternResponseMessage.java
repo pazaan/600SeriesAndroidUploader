@@ -9,9 +9,9 @@ import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
-import static info.nightscout.android.utils.ToolKit.getByteIU;
-import static info.nightscout.android.utils.ToolKit.getIntLU;
-import static info.nightscout.android.utils.ToolKit.getShortIU;
+import static info.nightscout.android.utils.ToolKit.read8toUInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoULong;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
  * Created by lgoedhart on 27/03/2016.
@@ -24,7 +24,7 @@ public class PumpBasalPatternResponseMessage extends MedtronicSendMessageRespons
     protected PumpBasalPatternResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
-        if (!MedtronicSendMessageRequestMessage.MessageType.READ_BASAL_PATTERN.response(getShortIU(payload, 0x01))) {
+        if (!MedtronicSendMessageRequestMessage.MessageType.READ_BASAL_PATTERN.response(read16BEtoUInt(payload, 0x01))) {
             Log.e(TAG, "Invalid message received for PumpBasalPattern");
             throw new UnexpectedMessageException("Invalid message received for PumpBasalPattern");
         }
@@ -41,13 +41,13 @@ public class PumpBasalPatternResponseMessage extends MedtronicSendMessageRespons
         double rate;
         int time;
 
-        int number = getByteIU(basalPattern, index++);
-        int items = getByteIU(basalPattern, index++);
+        int number = read8toUInt(basalPattern, index++);
+        int items = read8toUInt(basalPattern, index++);
         Log.d(TAG, "Pattern: " + number + " Items: " + items);
 
         for (int i = 0; i < items; i++) {
-            rate = getIntLU(basalPattern, index + 0x00) / 10000.0;
-            time = getByteIU(basalPattern, index + 0x04) * 30;
+            rate = read32BEtoULong(basalPattern, index + 0x00) / 10000.0;
+            time = read8toUInt(basalPattern, index + 0x04) * 30;
             Log.d(TAG, "TimePeriod: " + (i + 1) + " Rate: " + rate + " Time: " + time / 60 + "h" + time % 60 + "m");
             index += 5;
         }

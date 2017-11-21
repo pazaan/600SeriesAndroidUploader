@@ -9,13 +9,10 @@ import io.realm.RealmModel;
  * Created by John on 19.10.17.
  */
 
-public interface PumpHistory extends RealmModel {
+public interface PumpHistoryInterface extends RealmModel {
 
     Date getEventDate();
     void setEventDate(Date eventDate);
-
-    Date getEventEndDate();
-    void setEventEndDate(Date eventEndDate);
 
     boolean isUploadREQ();
     void setUploadREQ(boolean value);
@@ -32,7 +29,7 @@ public interface PumpHistory extends RealmModel {
     String getKey();
     void setKey(String key);
 
-    List Nightscout();
+    List nightscout();
 
     //void Xdrip();
 }

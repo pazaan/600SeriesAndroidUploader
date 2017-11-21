@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -15,12 +14,12 @@ import org.json.JSONObject;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -79,7 +78,7 @@ public class XDripPlusUploadIntentService extends IntentService {
 
             if (records.size() > 0) {
                 device = records.first().getDeviceName();
-                doXDripUploadDevice(records.first());
+                doXDripUploadStatus(records.first());
             }
 
             if (history_records.size() > 0) {
@@ -93,23 +92,6 @@ public class XDripPlusUploadIntentService extends IntentService {
 
             historyRealm.close();
             mRealm.close();
-
-/*
-            Realm mRealm = Realm.getDefaultInstance();
-            RealmResults<PumpStatusEvent> all_records = mRealm
-                    .where(PumpStatusEvent.class)
-                    .equalTo("validSGV", true)
-                    .or()
-                    .equalTo("validBGL", true)
-                    .findAllSorted("eventDate", Sort.DESCENDING);
-
-            // get the most recent record and send that
-            if (all_records.size() > 0) {
-                List<PumpStatusEvent> records = all_records.subList(0, 1);
-                doXDripUpload(records);
-            }
-            mRealm.close();
-*/
         }
 
         XDripPlusUploadReceiver.completeWakefulIntent(intent);
@@ -117,27 +99,25 @@ public class XDripPlusUploadIntentService extends IntentService {
 
     private void doXDripUploadCGM(PumpHistoryCGM record, String device) {
         try {
-            final JSONArray devicestatusBody = new JSONArray();
-            final JSONArray entriesBody = new JSONArray();
-
+            JSONArray entriesBody = new JSONArray();
             JSONObject json = new JSONObject();
-            json.put("sgv", record.getSgv());
-            //json.put("direction", "Flat");
+
             json.put("device", device);
             json.put("type", "sgv");
             json.put("date", record.getEventDate().getTime());
             json.put("dateString", record.getEventDate());
-            entriesBody.put(json);
+            json.put("sgv", record.getSgv());
+            String trend = record.getCgmTrend();
+            if (trend != null) json.put("direction", PumpHistoryParser.TextEN.valueOf("NS_TREND_" + trend).getText());
 
-            if (entriesBody.length() > 0) {
-                sendBundle(mContext, "add", "entries", entriesBody);
-            }
+            entriesBody.put(json);
+            sendBundle(mContext, "add", "entries", entriesBody);
         } catch (Exception e) {
             Log.e(TAG, "Unable to send bundle: " + e);
         }
     }
 
-    private void doXDripUploadDevice(PumpStatusEvent record) {
+    private void doXDripUploadStatus(PumpStatusEvent record) {
         try {
             final JSONArray devicestatusBody = new JSONArray();
 
@@ -160,12 +140,9 @@ public class XDripPlusUploadIntentService extends IntentService {
             pumpInfo.put("iob", iob);
             pumpInfo.put("battery", battery);
             json.put("pump", pumpInfo);
-            //String jsonString = json.toString();
 
             devicestatusBody.put(json);
-            if (devicestatusBody.length() > 0) {
-                sendBundle(mContext, "add", "devicestatus", devicestatusBody);
-            }
+            sendBundle(mContext, "add", "devicestatus", devicestatusBody);
         } catch (Exception e) {
             Log.e(TAG, "Unable to send bundle: " + e);
         }
@@ -253,6 +230,7 @@ public class XDripPlusUploadIntentService extends IntentService {
     }
 
     private void addMbgEntry(JSONArray entriesArray, PumpStatusEvent pumpRecord) throws Exception {
+        /*
         if (pumpRecord.isValidBGL()) {
             JSONObject json = new JSONObject();
 
@@ -265,6 +243,7 @@ public class XDripPlusUploadIntentService extends IntentService {
 
             entriesArray.put(json);
         }
+        */
     }
 
     public final class Constants {

@@ -72,22 +72,22 @@ public interface TreatmentsEndpoints {
         Float insulin;
 
         @SerializedName("duration")
-        Float duration;
+        Integer duration;
 
         @SerializedName("absolute")
         Float absolute;
 
         @SerializedName("percent")
-        Float percent;
+        Integer percent;
 
         @SerializedName("relative")
-        Float relative;
+        Integer relative;
 
         @SerializedName("preBolus")
         Float preBolus;
 
         @SerializedName("carbs")
-        Float carbs;
+        Integer carbs;
 
         @SerializedName("glucose")
         BigDecimal glucose;
@@ -212,11 +212,11 @@ public interface TreatmentsEndpoints {
             this.insulin = insulin;
         }
 
-        public Float getDuration() {
+        public Integer getDuration() {
             return duration;
         }
 
-        public void setDuration(Float duration) {
+        public void setDuration(Integer duration) {
             this.duration = duration;
         }
 
@@ -228,19 +228,19 @@ public interface TreatmentsEndpoints {
             this.absolute = absolute;
         }
 
-        public Float getPercent() {
+        public Integer getPercent() {
             return percent;
         }
 
-        public void setPercent(Float percent) {
+        public void setPercent(Integer percent) {
             this.percent = percent;
         }
 
-        public Float getRelative() {
+        public Integer getRelative() {
             return relative;
         }
 
-        public void setRelative(Float relative) {
+        public void setRelative(Integer relative) {
             this.relative = relative;
         }
 
@@ -252,11 +252,11 @@ public interface TreatmentsEndpoints {
             this.preBolus = preBolus;
         }
 
-        public Float getCarbs() {
+        public Integer getCarbs() {
             return carbs;
         }
 
-        public void setCarbs(Float carbs) {
+        public void setCarbs(Integer carbs) {
             this.carbs = carbs;
         }
 

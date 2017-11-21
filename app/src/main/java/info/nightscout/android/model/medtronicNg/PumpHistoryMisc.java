@@ -2,14 +2,10 @@ package info.nightscout.android.model.medtronicNg;
 
 import android.util.Log;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
-import info.nightscout.api.EntriesEndpoints;
 import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
@@ -22,30 +18,31 @@ import io.realm.annotations.Index;
  * Created by John on 26.10.17.
  */
 
-public class PumpHistoryMisc extends RealmObject implements PumpHistory {
+public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface {
     @Ignore
     private static final String TAG = PumpHistoryMisc.class.getSimpleName();
 
     @Index
     private Date eventDate;
-    @Index
-    private Date eventEndDate; // event deleted when this is stale
 
+    @Index
     private boolean uploadREQ = false;
     private boolean uploadACK = false;
+
     private boolean xdripREQ = false;
     private boolean xdripACK = false;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
-    private int eventRTC;
-    private int eventOFFSET;
+    @Index
+    private int itemRTC;
+    private int itemOFFSET;
 
     private int item; // change sensor = 1, change battery = 2, change cannula = 3
     private int lifetime;
 
     @Override
-    public List Nightscout() {
+    public List nightscout() {
         List list = new ArrayList();
 
         TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
@@ -78,59 +75,38 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistory {
         return list;
     }
 
-    public static void stale(Realm realm, Date date) {
-        final RealmResults results = realm.where(PumpHistoryMisc.class)
-                .lessThan("eventDate", date)
-                .findAll();
-        if (results.size() > 0) {
-            Log.d(TAG, "deleting " + results.size() + " records from realm");
-            realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    results.deleteAllFromRealm();
-                }
-            });
-        }
-    }
-
-    public static void records(Realm realm) {
-        DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
-        final RealmResults<PumpHistoryMisc> results = realm.where(PumpHistoryMisc.class)
-                .findAllSorted("eventDate", Sort.ASCENDING);
-        Log.d(TAG, "records: " + results.size() + (results.size() > 0 ? " start: " + dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
-    }
-
     public static void item(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
                                    int item) {
 
         PumpHistoryMisc object = realm.where(PumpHistoryMisc.class)
                 .equalTo("item", item)
-                .equalTo("eventRTC", eventRTC)
+                .equalTo("itemRTC", eventRTC)
                 .findFirst();
         if (object == null) {
             Log.d(TAG, "*new*" + " item: " + item);
             object = realm.createObject(PumpHistoryMisc.class);
             object.setEventDate(eventDate);
-            object.setEventEndDate(eventDate);
             object.setKey("MISC" + String.format("%08X", eventRTC));
-            object.setEventRTC(eventRTC);
-            object.setEventOFFSET(eventOFFSET);
+            object.setItemRTC(eventRTC);
+            object.setItemOFFSET(eventOFFSET);
             object.setItem(item);
-            if (item == 1 || item == 2 || item == 3)
-                object.setUploadREQ(true);
-        }
+            object.setUploadREQ(true);
 
-        // lifetime for items
-        RealmResults<PumpHistoryMisc> results = realm.where(PumpHistoryMisc.class)
-                .equalTo("item", item)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-        for (PumpHistoryMisc each : results) {
-            if (each.getLifetime() == 0) {
-                int lifetime = (int) ((object.getEventDate().getTime() - each.getEventDate().getTime()) / 60000L);
-                each.setLifetime(lifetime);
-                each.setUploadREQ(true);
+            // lifetime for items
+            RealmResults<PumpHistoryMisc> results = realm.where(PumpHistoryMisc.class)
+                    .equalTo("item", item)
+                    .findAllSorted("eventDate", Sort.DESCENDING);
+            if (results.size() > 1) {
+                for (int i = 1; i < results.size(); i++) {
+                    int lifetime = (int) ((results.get(i - 1).getEventDate().getTime() - results.get(i).getEventDate().getTime()) / 60000L);
+                    // lifetime may need updating due to new datapoint
+                    if (results.get(i).getLifetime() != lifetime) {
+                        results.get(i).setLifetime(lifetime);
+                        results.get(i).setUploadREQ(true);
+                    }
+                }
             }
-            object = each;
+
         }
     }
 
@@ -142,16 +118,6 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistory {
     @Override
     public void setEventDate(Date eventDate) {
         this.eventDate = eventDate;
-    }
-
-    @Override
-    public Date getEventEndDate() {
-        return eventEndDate;
-    }
-
-    @Override
-    public void setEventEndDate(Date eventEndDate) {
-        this.eventEndDate = eventEndDate;
     }
 
     @Override
@@ -204,20 +170,20 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistory {
         this.key = key;
     }
 
-    public int getEventRTC() {
-        return eventRTC;
+    public int getItemRTC() {
+        return itemRTC;
     }
 
-    public void setEventRTC(int eventRTC) {
-        this.eventRTC = eventRTC;
+    public void setItemRTC(int itemRTC) {
+        this.itemRTC = itemRTC;
     }
 
-    public int getEventOFFSET() {
-        return eventOFFSET;
+    public int getItemOFFSET() {
+        return itemOFFSET;
     }
 
-    public void setEventOFFSET(int eventOFFSET) {
-        this.eventOFFSET = eventOFFSET;
+    public void setItemOFFSET(int itemOFFSET) {
+        this.itemOFFSET = itemOFFSET;
     }
 
     public int getItem() {

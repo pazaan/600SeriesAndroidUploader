@@ -91,7 +91,7 @@ public class StatusNotification {
                 .setContentIntent(pendingIntent);
 //                .setContent(remoteViews)
 //                .setChannelId(CHANNEL_ID);
-//                .setTicker("600 Series Nightscout Uploader");
+//                .setTicker("600 Series nightscout Uploader");
     }
 
     public void updateNotification(long nextpoll) {
@@ -131,7 +131,7 @@ public class StatusNotification {
         }
         else
             sgv = "No SGV available";
-
+/*
         RealmResults<PumpStatusEvent> cgmresults1 = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))
                 .equalTo("validBGL", true)
@@ -165,6 +165,7 @@ public class StatusNotification {
                     cal = "Calibrate now!";
             }
         }
+*/
 
         RealmResults<PumpStatusEvent> cgmresults4 = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (12 * 60 * 60 * 1000)))

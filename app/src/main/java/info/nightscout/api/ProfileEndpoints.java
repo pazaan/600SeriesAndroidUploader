@@ -15,7 +15,6 @@ package info.nightscout.api;
         import retrofit2.http.Headers;
         import retrofit2.http.POST;
         import retrofit2.http.Path;
-        import retrofit2.http.Query;
 
 /**
  * Created by John on 7.11.17.
@@ -275,7 +274,7 @@ public interface ProfileEndpoints {
             return basal;
         }
 
-        public void setBasal(List basal) {
+        public void setBasal(List<TimePeriod> basal) {
             this.basal = basal;
         }
 
@@ -283,7 +282,7 @@ public interface ProfileEndpoints {
             return carbratio;
         }
 
-        public void setCarbratio(List carbratio) {
+        public void setCarbratio(List<TimePeriod> carbratio) {
             this.carbratio = carbratio;
         }
 
@@ -291,7 +290,7 @@ public interface ProfileEndpoints {
             return sens;
         }
 
-        public void setSens(List sens) {
+        public void setSens(List<TimePeriod> sens) {
             this.sens = sens;
         }
 
@@ -299,7 +298,7 @@ public interface ProfileEndpoints {
             return target_low;
         }
 
-        public void setTarget_low(List target_low) {
+        public void setTarget_low(List<TimePeriod> target_low) {
             this.target_low = target_low;
         }
 
@@ -307,7 +306,7 @@ public interface ProfileEndpoints {
             return target_high;
         }
 
-        public void setTarget_high(List target_high) {
+        public void setTarget_high(List<TimePeriod> target_high) {
             this.target_high = target_high;
         }
 

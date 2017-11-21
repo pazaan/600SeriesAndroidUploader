@@ -29,7 +29,7 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
     public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
         byte[] payload;
 
-        clearMessage(mDevice, 100, mPumpSession);
+        clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
         sendMessage(mDevice);
 
         payload = readMessage_0x81(mDevice);
@@ -40,7 +40,7 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
         // CNL death with a timeout on close seen after this!
         if (payload.length != 0x27) {
             MedtronicCnlService.cnlChannelNegotiateError++;
-            clearMessage(mDevice, 2000);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response");
             throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
         }
@@ -49,7 +49,7 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
         // Read the 0x80
         payload = readMessage(mDevice);
         if(payload[0x12] != (byte) 0x80) {
-            clearMessage(mDevice, 2000);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             Log.e(TAG, "Invalid message received for negotiateChannel 0x80 response");
             throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x80 response");
         }

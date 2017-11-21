@@ -2,19 +2,14 @@ package info.nightscout.android.model.medtronicNg;
 
 import android.util.Log;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.api.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
-import io.realm.RealmResults;
-import io.realm.Sort;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
@@ -22,17 +17,17 @@ import io.realm.annotations.Index;
  * Created by John on 26.10.17.
  */
 
-public class PumpHistoryBolus extends RealmObject implements PumpHistory {
+public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterface {
     @Ignore
     private static final String TAG = PumpHistoryBolus.class.getSimpleName();
 
     @Index
     private Date eventDate;
-    @Index
-    private Date eventEndDate; // event deleted when this is stale
 
+    @Index
     private boolean uploadREQ = false;
     private boolean uploadACK = false;
+
     private boolean xdripREQ = false;
     private boolean xdripACK = false;
 
@@ -52,24 +47,28 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
     private int squareDeliveredDuration;
     private double activeInsulin;
 
-    private boolean programmed = false;
+    @Index
     private int programmedRTC;
     private int programmedOFFSET;
     private Date programmedDate;
+    private boolean programmed = false;
 
-    private boolean normalDelivered = false;
+    @Index
     private int normalDeliveredRTC;
     private int normalDeliveredOFFSET;
     private Date normalDeliveredDate;
+    private boolean normalDelivered = false;
 
-    private boolean squareDelivered = false;
+    @Index
     private int squareDeliveredRTC;
     private int squareDeliveredOFFSET;
     private Date squareDeliveredDate;
+    private boolean squareDelivered = false;
 
-    private boolean estimate = false;
+    @Index
     private int estimateRTC;
     private int estimateOFFSET;
+    private boolean estimate = false;
 
     private int bgUnits;
     private int carbUnits;
@@ -89,7 +88,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
     private boolean estimateModifiedByUser;
 
     @Override
-    public List Nightscout() {
+    public List nightscout() {
         List list = new ArrayList();
 
         TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
@@ -99,7 +98,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
 
         String notes = "";
         treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
+        treatment.setCreated_at(programmedDate);
 
         if (!PumpHistoryParser.BOLUS_PRESET.BOLUS_PRESET_0.equals(bolusPreset)) {
             notes += "[" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BOLUS_PRESET.convert(bolusPreset).name()).getText() + "] ";
@@ -111,21 +110,21 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
         } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
             treatment.setEventType("Combo Bolus");
             treatment.setEnteredinsulin(String.valueOf(squareProgrammedAmount));
-            treatment.setDuration((float) squareProgrammedDuration);
+            treatment.setDuration(squareProgrammedDuration);
             treatment.setSplitNow("0");
             treatment.setSplitExt("100");
-            treatment.setRelative((float) 2);
+            treatment.setRelative(2);
             notes += "Square Bolus: " + squareProgrammedAmount + "U, duration " + squareProgrammedDuration + " minutes";
         } else if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(bolusType)) {
             treatment.setEventType("Combo Bolus");
             treatment.setEnteredinsulin(String.valueOf(normalProgrammedAmount + squareProgrammedAmount));
-            treatment.setDuration((float) squareProgrammedDuration);
+            treatment.setDuration(squareProgrammedDuration);
             treatment.setInsulin((float) normalProgrammedAmount);
             int splitNow = (int) (normalProgrammedAmount * (100 / (normalProgrammedAmount + squareProgrammedAmount)));
             int splitExt = 100 - splitNow;
             treatment.setSplitNow(String.valueOf(splitNow));
             treatment.setSplitExt(String.valueOf(splitExt));
-            treatment.setRelative((float) 2);
+            treatment.setRelative(2);
             notes += "Dual Bolus: normal " + normalProgrammedAmount + "U, square " + squareProgrammedAmount + "U, duration " + squareProgrammedDuration + " minutes";
         } else {
             treatment.setEventType("Note");
@@ -137,28 +136,28 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
             notes += " * cancelled, delivered " + normalDeliveredAmount + "U";
         } else if (squareDelivered && squareProgrammedAmount != squareDeliveredAmount) {
             treatment.setEnteredinsulin(String.valueOf(normalDeliveredAmount + squareDeliveredAmount));
-            treatment.setDuration((float) squareDeliveredDuration);
+            treatment.setDuration(squareDeliveredDuration);
             treatment.setInsulin((float) normalDeliveredAmount);
             int splitNow = (int) (normalDeliveredAmount * (100 / (normalDeliveredAmount + squareDeliveredAmount)));
             int splitExt = 100 - splitNow;
             treatment.setSplitNow(String.valueOf(splitNow));
             treatment.setSplitExt(String.valueOf(splitExt));
-            treatment.setRelative((float) 2);
+            treatment.setRelative(2);
             notes += " * ended before expected duration, square delivered " + squareDeliveredAmount + "U in " + squareDeliveredDuration + " minutes";
         }
 
         if (estimate) {
             treatment.setEventType("Meal Bolus");
-            treatment.setCarbs((float) carbInput);
-            if (notes != "") notes += "  ";
+            treatment.setCarbs((int) carbInput);
+            if (!notes.equals("")) notes += "  ";
             notes += "WIZ:"
-                    + " carb " + carbInput + "G = " + foodEstimate + "U"
-                    + ", target " + lowBgTarget + "-" + highBgTarget + " = " + correctionEstimate + "U"
-                    + ", iob " + iob + " = " + iobAdjustment + "U"
-                    + " (ratio " + carbRatio + ", isf " + isf + ")";
+                    + " carb " + (int) carbInput + "G / " + foodEstimate + "U"
+                    + ", target " + lowBgTarget + "-" + highBgTarget + " / " + correctionEstimate + "U"
+                    + ", iob " + iob + " / " + iobAdjustment + "U"
+                    + " (ratio " + (int) carbRatio + ":1, isf " + isf + ":1)";
         }
 
-        // Nightscout does not have a square bolus type so a combo type is used but due to no normal bolus part
+        // nightscout does not have a square bolus type so a combo type is used but due to no normal bolus part
         // there is no tag shown in the main graph, a note is sent to NS to compensate for this
         if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
             TreatmentsEndpoints.Treatment note = new TreatmentsEndpoints.Treatment();
@@ -167,34 +166,12 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
             list.add(note);
             note.setEventType("Note");
             note.setKey600(key+"NOTE");
-            note.setCreated_at(eventDate);
+            note.setCreated_at(programmedDate);
             note.setNotes(notes);
         } else
             treatment.setNotes(notes);
 
         return list;
-    }
-
-    public static void stale(Realm realm, Date date) {
-        final RealmResults results = realm.where(PumpHistoryBolus.class)
-                .lessThan("eventDate", date)
-                .findAll();
-        if (results.size() > 0) {
-            Log.d(TAG, "deleting " + results.size() + " records from realm");
-            realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    results.deleteAllFromRealm();
-                }
-            });
-        }
-    }
-
-    public static void records(Realm realm) {
-        DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
-        final RealmResults<PumpHistoryBolus> results = realm.where(PumpHistoryBolus.class)
-                .findAllSorted("eventDate", Sort.ASCENDING);
-        Log.d(TAG, "records: " + results.size() + (results.size() > 0 ? " start: "+ dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
     }
 
     public static void bolus(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
@@ -234,7 +211,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
                 object = realm.where(PumpHistoryBolus.class)
                         .equalTo("bolusRef", -1)
                         .equalTo("estimate", true)
-                        .greaterThan("estimateRTC", eventRTC - 1 * 60)
+                        .greaterThan("estimateRTC", eventRTC - 60)
                         .findFirst();
             }
             if (object == null) {
@@ -243,8 +220,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
             } else {
                 Log.d(TAG, "*update*" + " Ref: " + bolusRef + " estimate found, add bolus event");
             }
-            object.setEventDate(new Date(eventDate.getTime() - 12 * 60 * 60 * 1000));
-            object.setEventEndDate(new Date(eventDate.getTime() + 12 * 60 * 60 * 1000));
+            object.setEventDate(eventDate);
             object.setBolusType(bolusType);
             object.setBolusRef(bolusRef);
             object.setBolusSource(bolusSource);
@@ -266,7 +242,6 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
         }
         if (normalDelivered && !object.isNormalDelivered()) {
             Log.d(TAG, "*update*" + " Ref: " + bolusRef + " update bolus event normal delivered");
-            if (PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.equals(bolusType)) object.setEventEndDate(eventDate);
             object.setNormalDelivered(true);
             object.setNormalDeliveredDate(eventDate);
             object.setNormalDeliveredRTC(eventRTC);
@@ -276,7 +251,6 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
         }
         if (squareDelivered && !object.isSquareDelivered()) {
             Log.d(TAG, "*update*" + " Ref: " + bolusRef + " update bolus event square delivered");
-            object.setEventEndDate(eventDate);
             object.setSquareDelivered(true);
             object.setSquareDeliveredDate(eventDate);
             object.setSquareDeliveredRTC(eventRTC);
@@ -321,7 +295,6 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
                 Log.d(TAG, "*new*" + " Ref: n/a create new bolus event *estimate*");
                 object = realm.createObject(PumpHistoryBolus.class);
                 object.setEventDate(eventDate);
-                object.setEventEndDate(new Date(eventDate.getTime() + 12 * 60 * 60 * 1000));
             } else {
                 Log.d(TAG, "*update*" + " Ref: " + object.getBolusRef() + " adding estimate to bolus event");
             }
@@ -355,16 +328,6 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistory {
     @Override
     public void setEventDate(Date eventDate) {
         this.eventDate = eventDate;
-    }
-
-    @Override
-    public Date getEventEndDate() {
-        return eventEndDate;
-    }
-
-    @Override
-    public void setEventEndDate(Date eventEndDate) {
-        this.eventEndDate = eventEndDate;
     }
 
     @Override

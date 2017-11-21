@@ -9,8 +9,6 @@ import android.util.Log;
 
 import java.util.Date;
 
-import info.nightscout.android.utils.ConfigurationStore;
-
 /**
  * Created by lgoedhart on 14/07/2016.
  */
