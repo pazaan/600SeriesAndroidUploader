@@ -464,8 +464,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             // due to the possibility of a late sensor-pump sgv send, the retry after 90 seconds will handle the history if needed
                             // also skip if pump battery is low and interval times are different
 
-                            if (!pumpRecord.isOldSgvWhenNewExpected() ||
-                                    !(PumpBatteryError > 0 && dataStore.getLowBatPollInterval() != dataStore.getPollInterval())) {
+                            if (!pumpRecord.isOldSgvWhenNewExpected() &&
+                                    !(PumpBatteryError > 0 && dataStore.getLowBatPollInterval() > POLL_PERIOD_MS)) {
 
                                 if (dataStore.isRequestProfile()) {
                                     pumpHistoryHandler.profile(cnlReader);
