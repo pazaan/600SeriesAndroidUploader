@@ -19,6 +19,9 @@ public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessa
 
     @Override
     public DeviceInfoResponseCommandMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
+
+        clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
+
         sendMessage(mDevice);
 
         if (millis > 0) {

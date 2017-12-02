@@ -8,7 +8,9 @@ import java.util.Date;
 import java.util.List;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
+import info.nightscout.android.model.store.DataStore;
 import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.api.UploadItem;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -17,7 +19,7 @@ import io.realm.annotations.Index;
 import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
 
 /**
- * Created by John on 26.10.17.
+ * Created by Pogman on 26.10.17.
  */
 
 public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
@@ -56,35 +58,39 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     private int calibrationTarget;
 
     @Override
-    public List nightscout() {
-        List list = new ArrayList();
+    public List nightscout(DataStore dataStore) {
+        List<UploadItem> uploadItems = new ArrayList<>();
 
-        TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
-        list.add("treatment");
-        list.add(uploadACK ? "update" : "new");
-        list.add(treatment);
+        if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableFingerBG()) {
 
-        BigDecimal bgl;
-        String units;
-        if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits)) {
-            bgl = new BigDecimal(bg).setScale(0);
-            units = "mg/dl";
-        } else {
-            bgl = new BigDecimal(bg / MMOLXLFACTOR).setScale(1, BigDecimal.ROUND_HALF_UP);
-            units = "mmol";
+            UploadItem uploadItem = new UploadItem();
+            uploadItems.add(uploadItem);
+            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
+
+            BigDecimal bgl;
+            String units;
+            if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits)) {
+                bgl = new BigDecimal(bg);
+                units = "mg/dl";
+            } else {
+                bgl = new BigDecimal(bg / MMOLXLFACTOR).setScale(1, BigDecimal.ROUND_HALF_UP);
+                units = "mmol";
+            }
+            treatment.setKey600(key);
+            treatment.setCreated_at(bgDate);
+            treatment.setEventType("BG Check");
+            treatment.setGlucoseType("Finger");
+            treatment.setGlucose(bgl);
+            treatment.setUnits(units);
+
+            if (calibration && dataStore.isNsEnableCalibrationInfo()) {
+                long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
+                treatment.setNotes("CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)");
+                uploadItem.update();
+            }
         }
-        treatment.setKey600(key);
-        treatment.setCreated_at(bgDate);
-        treatment.setEventType("BG Check");
-        treatment.setGlucoseType("Finger");
-        treatment.setGlucose(bgl);
-        treatment.setUnits(units);
-        if (calibration) {
-            long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
-            treatment.setNotes("CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)");
-        }
 
-        return list;
+        return uploadItems;
     }
 
     public static void bg(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,

@@ -12,7 +12,6 @@ import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
-import info.nightscout.android.medtronic.service.MedtronicCnlService;
 import info.nightscout.android.utils.HexDump;
 
 /**
@@ -38,11 +37,16 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
         Log.d(TAG, "negotiateChannel: Reading 0x81 message");
 
         // CNL death with a timeout on close seen after this!
+        // usually seen as a 0x81 response with a payload length = 0x21 / byte 0x1B = 0x05 and no internal payload
+        // 0x05 = CNL error code? but what error and how to recover?
+        // 0x05 = CommandAction.PUMP_REQUEST, does this relate somehow?
+        // ReadInfoRequestMessage issues this 0x05 cmd as called by cnlReader.requestReadInfo() and right before a channel negotiate
+        // note: errors here and then timeout on close and ongoing timeout on following polls
         if (payload.length != 0x27) {
-            MedtronicCnlService.cnlChannelNegotiateError++;
-            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-            Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response");
-            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
+            //clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+            Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
+//            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
+            throw new IOException("negotiateChannel 0x81 response * " + HexDump.toHexString(payload));
         }
 
         Log.d(TAG, "negotiateChannel: Reading 0x80 message");

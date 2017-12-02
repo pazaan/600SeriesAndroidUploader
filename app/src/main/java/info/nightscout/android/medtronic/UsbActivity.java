@@ -11,7 +11,7 @@ import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.service.MasterService;
 
 /**
- * Created by John on 8.9.17.
+ * Created by Pogman on 8.9.17.
  */
 
 // UsbActivity is being used to intercept OS intents for Usb so that we can have permissions be excepted permanently for defaults

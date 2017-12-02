@@ -6,7 +6,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
 /**
- * Created by John on 6.10.17.
+ * Created by Pogman on 6.10.17.
  */
 
 public class ReadHistoryResponseMessage extends MedtronicSendMessageResponseMessage {

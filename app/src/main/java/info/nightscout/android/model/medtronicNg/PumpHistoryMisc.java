@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.model.store.DataStore;
 import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.api.UploadItem;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.RealmResults;
@@ -15,7 +17,7 @@ import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
 /**
- * Created by John on 26.10.17.
+ * Created by Pogman on 26.10.17.
  */
 
 public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface {
@@ -42,37 +44,39 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
     private int lifetime;
 
     @Override
-    public List nightscout() {
-        List list = new ArrayList();
+    public List nightscout(DataStore dataStore) {
+        List<UploadItem> uploadItems = new ArrayList<>();
 
-        TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
-        list.add("treatment");
-        list.add(uploadACK ? "update" : "new");
-        list.add(treatment);
+        if (dataStore.isNsEnableTreatments()) {
+            String type = null;
+            String notes = "";
 
-        treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
+            if (item == 1 && dataStore.isNsEnableSensorChange()) {
+                type = "Sensor Start";
+                notes += "Sensor changed";
+            } else if (item == 2 && dataStore.isNsEnableBatteryChange()) {
+                type = "Note";
+                notes += "Pump battery changed";
+            } else if (item == 3 && dataStore.isNsEnableReservoirChange()) {
+                type = "Site Change";
+                notes += "Reservoir changed";
+            }
+            if (lifetime > 0 && dataStore.isNsEnableLifetimes())
+                notes += " (lifetime " + (lifetime / 1440) + " days " + ((lifetime % 1440) / 60) + " hours)";
 
-        String notes = "";
+            if (type != null) {
+                UploadItem uploadItem = new UploadItem();
+                uploadItems.add(uploadItem);
+                TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
 
-        if (item == 1) {
-            treatment.setEventType("Sensor Start");
-            notes += "Sensor changed";
-        } else if (item == 2) {
-            treatment.setEventType("Note");
-            notes += "Pump battery changed";
-        } else if (item == 3) {
-            treatment.setEventType("Site Change");
-            notes += "Reservoir changed";
-        } else {
-            treatment.setEventType("Note");
-            notes += "Unknown event";
+                treatment.setKey600(key);
+                treatment.setCreated_at(eventDate);
+                treatment.setEventType(type);
+                treatment.setNotes(notes);
+            }
         }
 
-        if (lifetime > 0) notes += " (lifetime " + (lifetime / 1440) + " days " + ((lifetime % 1440) / 60) + " hours)";
-        treatment.setNotes(notes);
-
-        return list;
+        return uploadItems;
     }
 
     public static void item(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,

@@ -1,11 +1,13 @@
 package info.nightscout.android.xdrip_plus;
 
-import android.app.IntentService;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -28,73 +30,98 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
+import static info.nightscout.android.utils.ToolKit.getWakeLock;
+import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
+
 /**
  * Created by jamorham on 17/11/2016.
  */
 
 
-public class XDripPlusUploadIntentService extends IntentService {
+public class XDripPlusUploadService extends Service {
+    private static final String TAG = XDripPlusUploadService.class.getSimpleName();
 
-    private static final String TAG = XDripPlusUploadIntentService.class.getSimpleName();
+    private Context mContext;
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
-    Context mContext;
 
-    public XDripPlusUploadIntentService() {
-        super(XDripPlusUploadIntentService.class.getName());
+    @Override
+    public IBinder onBind(Intent intent) {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "onCreate called");
 
-        Log.i(TAG, "onCreate called");
         mContext = this.getBaseContext();
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
-        Log.d(TAG, "onHandleIntent called");
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy called");
+    }
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-        Boolean enableXdripPlusUpload = prefs.getBoolean(getString(R.string.preference_enable_xdrip_plus), false);
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.i(TAG, "Received start id " + startId + "  : " + intent);
 
-        if (enableXdripPlusUpload) {
+        if (intent != null) new Upload().start();
 
-            String device = "NA";
+        return START_NOT_STICKY;
+    }
 
-            Realm mRealm = Realm.getDefaultInstance();
+    private class Upload extends Thread {
+        public void run() {
 
-            Realm historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+            PowerManager.WakeLock wl = getWakeLock(TAG, 60000);
 
-            RealmResults<PumpHistoryCGM> history_records = historyRealm
-                    .where(PumpHistoryCGM.class)
-                    .equalTo("xdrip", false)
-                    .notEqualTo("sgv", 0)
-                    .findAllSorted("eventDate", Sort.ASCENDING);
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+            Boolean enableXdripPlusUpload = prefs.getBoolean(getString(R.string.preference_enable_xdrip_plus), false);
 
-            RealmResults<PumpStatusEvent> records = mRealm
-                    .where(PumpStatusEvent.class)
-                    .findAllSorted("eventDate", Sort.DESCENDING);
+            if (enableXdripPlusUpload) {
 
-            if (records.size() > 0) {
-                device = records.first().getDeviceName();
-                doXDripUploadStatus(records.first());
-            }
+                String device = "NA";
 
-            if (history_records.size() > 0) {
-                historyRealm.beginTransaction();
-                for (PumpHistoryCGM history_record : history_records) {
-                    doXDripUploadCGM(history_record, device);
-                    history_record.setXdrip(true);
+                Realm mRealm = Realm.getDefaultInstance();
+
+                Realm historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+
+                RealmResults<PumpHistoryCGM> history_records = historyRealm
+                        .where(PumpHistoryCGM.class)
+                        .equalTo("xdrip", false)
+                        .notEqualTo("sgv", 0)
+                        .findAllSorted("eventDate", Sort.DESCENDING);
+
+                RealmResults<PumpStatusEvent> records = mRealm
+                        .where(PumpStatusEvent.class)
+                        .findAllSorted("eventDate", Sort.DESCENDING);
+
+                if (records.size() > 0) {
+                    device = records.first().getDeviceName();
+                    doXDripUploadStatus(records.first());
                 }
-                historyRealm.commitTransaction();
+
+                int limit = 500;
+
+                if (history_records.size() > 0) {
+                    historyRealm.beginTransaction();
+                    for (PumpHistoryCGM history_record : history_records) {
+                        doXDripUploadCGM(history_record, device);
+                        history_record.setXdrip(true);
+                        if (--limit == 0) break;
+                    }
+                    historyRealm.commitTransaction();
+                }
+
+                historyRealm.close();
+                mRealm.close();
             }
 
-            historyRealm.close();
-            mRealm.close();
+            releaseWakeLock(wl);
+            stopSelf();
         }
-
-        XDripPlusUploadReceiver.completeWakefulIntent(intent);
     }
 
     private void doXDripUploadCGM(PumpHistoryCGM record, String device) {

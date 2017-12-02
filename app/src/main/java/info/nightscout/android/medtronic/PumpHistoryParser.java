@@ -26,7 +26,7 @@ import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 import static info.nightscout.android.utils.ToolKit.readString;
 
 /**
- * Created by John on 7.11.17.
+ * Created by Pogman on 7.11.17.
  */
 
 public class PumpHistoryParser {
@@ -62,7 +62,7 @@ public class PumpHistoryParser {
         this.pumpRTC = pumpRTC;
         this.pumpOFFSET = pumpOFFSET;
         this.pumpClockDifference = pumpClockDifference;
-        this.pumpDRIFT = 4.0 / (24 * 60 * 60 * 1);
+        this.pumpDRIFT = 4.0 / (24 * 60 * 60);
 
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
@@ -76,7 +76,7 @@ public class PumpHistoryParser {
 
         while (index < eventData.length) {
 
-            eventType = EventType.convert(read8toUInt(eventData, index + 0x00));
+            eventType = EventType.convert(read8toUInt(eventData, index));
             eventSize = read8toUInt(eventData, index + 0x02);
             eventRTC = read32BEtoInt(eventData, index + 0x03);
             eventOFFSET = read32BEtoInt(eventData, index + 0x07);
@@ -155,8 +155,7 @@ public class PumpHistoryParser {
         historyRealm.close();
 
         // event date range returned by pump as it is usually more then requested
-        Date[] range = {eventOldest == 0 ? null : new Date(eventOldest), eventNewest == 0 ? null : new Date(eventNewest)};
-        return range;
+        return new Date[]{eventOldest == 0 ? null : new Date(eventOldest), eventNewest == 0 ? null : new Date(eventNewest)};
     }
 
     private void SENSOR_GLUCOSE_READINGS_EXTENDED() {
@@ -166,9 +165,9 @@ public class PumpHistoryParser {
         int pos = index + 15;
         for (int i = 0; i < numberOfReadings; i++) {
 
-            int sgv = read16BEtoUInt(eventData, pos + 0) & 0x03FF;
+            int sgv = read16BEtoUInt(eventData, pos) & 0x03FF;
             double isig = read16BEtoUInt(eventData, pos + 2) / 100.0;
-            double vctr = (((eventData[pos + 0] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF) / 100.0;
+            double vctr = (((eventData[pos] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF) / 100.0;
             double rateOfChange = read16BEtoInt(eventData, pos + 5) / 100.0;
             byte sensorStatus = eventData[pos + 7];
             byte readingStatus = eventData[pos + 8];
@@ -276,7 +275,7 @@ public class PumpHistoryParser {
         int squareDeliveredDuration = read16BEtoUInt(eventData, index + 0x18);
         double activeInsulin = read32BEtoInt(eventData, index + 0x1A) / 10000.0;
         PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
-                BOLUS_TYPE.SQUARE_WAVE.get(), true, false, false,
+                BOLUS_TYPE.SQUARE_WAVE.get(), false, false, true,
                 bolusRef,
                 bolusSource,
                 presetBolusNumber,
@@ -317,7 +316,7 @@ public class PumpHistoryParser {
         int squareDeliveredDuration = read16BEtoUInt(eventData, index + 0x1D);
         double activeInsulin = read32BEtoInt(eventData, index + 0x1F) / 10000.0;
         PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
-                BOLUS_TYPE.DUAL_WAVE.get(), false, bolusPart == 1 ? true : false, bolusPart == 2 ? true : false,
+                BOLUS_TYPE.DUAL_WAVE.get(), false, bolusPart == 1, bolusPart == 2,
                 bolusRef,
                 bolusSource,
                 presetBolusNumber,
@@ -463,7 +462,7 @@ public class PumpHistoryParser {
 
         while (index < eventData.length && event < 10000) {
 
-            eventType = EventType.convert(read8toUInt(eventData, index + 0x00));
+            eventType = EventType.convert(read8toUInt(eventData, index));
             eventSize = read8toUInt(eventData, index + 0x02);
 
             eventRTC = read32BEtoInt(eventData, index + 0x03);
@@ -632,9 +631,9 @@ public class PumpHistoryParser {
 
                     Date sgtimestamp = MessageUtils.decodeDateTime(eventRTC & 0xFFFFFFFFL - (i * minutesBetweenReadings * 60), eventOFFSET);
 
-                    int sg = read16BEtoUInt(eventData, pos + 0) & 0x03FF;
+                    int sg = read16BEtoUInt(eventData, pos) & 0x03FF;
                     double isig = read16BEtoUInt(eventData, pos + 2) / 100.0;
-                    double vctr = (((eventData[pos + 0] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF) / 100.0;
+                    double vctr = (((eventData[pos] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF) / 100.0;
                     double rateOfChange = read16BEtoInt(eventData, pos + 5) / 100.0;
                     int sensorStatus = read8toUInt(eventData, pos + 7);
                     int readingStatus = read8toUInt(eventData, pos + 8);
@@ -669,7 +668,7 @@ public class PumpHistoryParser {
                 result += " Units: " + units + " Segments: " + numberOfSegments;
                 int pos = index + 0x0D;
                 for (int i = 0; i < numberOfSegments; i++) {
-                    int start = read8toUInt(eventData, pos + 0) * 30;
+                    int start = read8toUInt(eventData, pos) * 30;
                     double amount = read16BEtoUInt(eventData, pos + 1) / (units == 0 ? 1.0 : 10.0);
                     String time = (start / 60 < 10 ? "0" : "") +  start / 60 + (start % 60 < 30 ? ":00" : ":30");
                     result += " ["  + time + " " + amount + "]";
@@ -683,7 +682,7 @@ public class PumpHistoryParser {
                 result += " Units: " + units + " Segments: " + numberOfSegments;
                 int pos = index + 0x0D;
                 for (int i = 0; i < numberOfSegments; i++) {
-                    int start = read8toUInt(eventData, pos + 0) * 30;
+                    int start = read8toUInt(eventData, pos) * 30;
                     double amount = read32BEtoULong(eventData, pos + 1) / (units == 0 ? 10.0 : 1000.0);
                     String time = (start / 60 < 10 ? "0" : "") +  start / 60 + (start % 60 < 30 ? ":00" : ":30");
                     result += " ["  + time + " " + amount + "]";
@@ -697,7 +696,7 @@ public class PumpHistoryParser {
                 result += " Units: " + units + " Segments: " + numberOfSegments;
                 int pos = index + 0x0D;
                 for (int i = 0; i < numberOfSegments; i++) {
-                    int start = read8toUInt(eventData, pos + 0) * 30;
+                    int start = read8toUInt(eventData, pos) * 30;
                     double high = read16BEtoUInt(eventData, pos + 1) / (units == 0 ? 1.0 : 10.0);
                     double low = read16BEtoUInt(eventData, pos + 3) / (units == 0 ? 1.0 : 10.0);
                     String time = (start / 60 < 10 ? "0" : "") +  start / 60 + (start % 60 < 30 ? ":00" : ":30");
@@ -712,7 +711,7 @@ public class PumpHistoryParser {
                 result += " Pattern: " + pPatternNumber + " Segments: " + numberOfSegments;
                 int pos = index + 0x0D;
                 for (int i = 0; i < numberOfSegments; i++) {
-                    double rate = read32BEtoULong(eventData, pos + 0) / 10000.0;
+                    double rate = read32BEtoULong(eventData, pos) / 10000.0;
                     int start = read8toUInt(eventData, pos + 4) * 30;
                     String time = (start / 60 < 10 ? "0" : "") +  start / 60 + (start % 60 < 30 ? ":00" : ":30");
                     result += " [" + time + " " + rate + "U]";
@@ -723,10 +722,9 @@ public class PumpHistoryParser {
                 int oldPatternNumber = read8toUInt(eventData, index + 0x0B);
                 int newPatternNumber = read8toUInt(eventData, index + 0x0C);
                 result += " oldPatternNumber:" + oldPatternNumber + " newPatternNumber:" + newPatternNumber;
-
-            } else {
-                //result += HexDump.dumpHexString(eventData, index + 0x0B, eventSize - 0x0B);
             }
+
+            //else result += HexDump.dumpHexString(eventData, index + 0x0B, eventSize - 0x0B);
 
             if (eventType != EventType.PLGM_CONTROLLER_STATE
                     && eventType != EventType.ALARM_NOTIFICATION
@@ -1361,25 +1359,3 @@ public class PumpHistoryParser {
     }
 
 }
-
-/*
-
-  static get BG_CONTEXT() {
-    return {
-      BG_READING_RECEIVED: 0,
-      USER_ACCEPTED_REMOTE_BG: 1,
-      USER_REJECTED_REMOTE_BG: 2,
-      REMOTE_BG_ACCEPTANCE_SCREEN_TIMEOUT: 3,
-      BG_SI_PASS_RESULT_RECD_FRM_GST: 4,
-      BG_SI_FAIL_RESULT_RECD_FRM_GST: 5,
-      BG_SENT_FOR_CALIB: 6,
-      USER_REJECTED_SENSOR_CALIB: 7,
-      ENTERED_IN_BG_ENTRY: 8,
-      ENTERED_IN_MEAL_WIZARD: 9,
-      ENTERED_IN_BOLUS_WIZRD: 10,
-      ENTERED_IN_SENSOR_CALIB: 11,
-      ENTERED_AS_BG_MARKER: 12,
-    };
-  }
-
-*/

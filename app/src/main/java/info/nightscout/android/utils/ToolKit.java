@@ -7,7 +7,7 @@ import android.util.Log;
 import info.nightscout.android.UploaderApplication;
 
 /**
- * Created by John on 26.9.17.
+ * Created by Pogman on 26.9.17.
  */
 
 public class ToolKit {

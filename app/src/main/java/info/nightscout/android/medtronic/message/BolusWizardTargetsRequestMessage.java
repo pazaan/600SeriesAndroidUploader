@@ -10,7 +10,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
 /**
- * Created by John on 8.11.17.
+ * Created by Pogman on 8.11.17.
  */
 
 public class BolusWizardTargetsRequestMessage extends MedtronicSendMessageRequestMessage<BolusWizardTargetsResponseMessage> {

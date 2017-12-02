@@ -7,14 +7,16 @@ import java.util.Date;
 import java.util.List;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
+import info.nightscout.android.model.store.DataStore;
 import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.api.UploadItem;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
 /**
- * Created by John on 26.10.17.
+ * Created by Pogman on 26.10.17.
  */
 
 public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterface {
@@ -88,90 +90,100 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
     private boolean estimateModifiedByUser;
 
     @Override
-    public List nightscout() {
-        List list = new ArrayList();
+    public List nightscout(DataStore dataStore) {
+        List<UploadItem> uploadItems = new ArrayList<>();
 
-        TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
-        list.add("treatment");
-        list.add(uploadACK ? "update" : "new");
-        list.add(treatment);
+        if (dataStore.isNsEnableTreatments()) {
 
-        String notes = "";
-        treatment.setKey600(key);
-        treatment.setCreated_at(programmedDate);
+            UploadItem uploadItem = new UploadItem();
+            uploadItems.add(uploadItem);
+            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
 
-        if (!PumpHistoryParser.BOLUS_PRESET.BOLUS_PRESET_0.equals(bolusPreset)) {
-            notes += "[" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BOLUS_PRESET.convert(bolusPreset).name()).getText() + "] ";
+            String notes = "";
+            treatment.setKey600(key);
+            treatment.setCreated_at(programmedDate);
+
+            if (!PumpHistoryParser.BOLUS_PRESET.BOLUS_PRESET_0.equals(bolusPreset)) {
+                notes += "[" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BOLUS_PRESET.convert(bolusPreset).name()).getText() + "] ";
+            }
+
+            if (PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.equals(bolusType)) {
+                treatment.setEventType("Bolus");
+                treatment.setInsulin((float) normalProgrammedAmount);
+
+            } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
+                treatment.setEventType("Combo Bolus");
+                treatment.setEnteredinsulin(String.valueOf(squareProgrammedAmount));
+                treatment.setDuration(squareProgrammedDuration);
+                treatment.setSplitNow("0");
+                treatment.setSplitExt("100");
+                treatment.setRelative(2);
+                notes += "Square Bolus: " + squareProgrammedAmount + "U, duration " + squareProgrammedDuration + " minutes";
+
+            } else if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(bolusType)) {
+                treatment.setEventType("Combo Bolus");
+                treatment.setEnteredinsulin(String.valueOf(normalProgrammedAmount + squareProgrammedAmount));
+                treatment.setDuration(squareProgrammedDuration);
+                treatment.setInsulin((float) normalProgrammedAmount);
+                int splitNow = (int) (normalProgrammedAmount * (100 / (normalProgrammedAmount + squareProgrammedAmount)));
+                int splitExt = 100 - splitNow;
+                treatment.setSplitNow(String.valueOf(splitNow));
+                treatment.setSplitExt(String.valueOf(splitExt));
+                treatment.setRelative(2);
+                notes += "Dual Bolus: normal " + normalProgrammedAmount + "U, square " + squareProgrammedAmount + "U, duration " + squareProgrammedDuration + " minutes";
+
+            } else {
+                treatment.setEventType("Note");
+                notes = "Unknown event";
+            }
+
+            if (normalDelivered && normalProgrammedAmount != normalDeliveredAmount) {
+                treatment.setInsulin((float) normalDeliveredAmount);
+                if (PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.equals(bolusType))
+                    notes += "Normal Bolus: " + normalProgrammedAmount + "U";
+                notes += " * cancelled, delivered " + normalDeliveredAmount + "U";
+                uploadItem.update();
+
+            } else if (squareDelivered && squareProgrammedAmount != squareDeliveredAmount) {
+                treatment.setEnteredinsulin(String.valueOf(normalDeliveredAmount + squareDeliveredAmount));
+                treatment.setDuration(squareDeliveredDuration);
+                treatment.setInsulin((float) normalDeliveredAmount);
+                int splitNow = (int) (normalDeliveredAmount * (100 / (normalDeliveredAmount + squareDeliveredAmount)));
+                int splitExt = 100 - splitNow;
+                treatment.setSplitNow(String.valueOf(splitNow));
+                treatment.setSplitExt(String.valueOf(splitExt));
+                treatment.setRelative(2);
+                notes += " * ended before expected duration, square delivered " + squareDeliveredAmount + "U in " + squareDeliveredDuration + " minutes";
+                uploadItem.update();
+            }
+
+            if (estimate) {
+                treatment.setEventType("Meal Bolus");
+                treatment.setCarbs((int) carbInput);
+                if (!notes.equals("")) notes += "  ";
+                notes += "WIZ:"
+                        + " carb " + (int) carbInput + "G : " + foodEstimate + "U"
+                        + ", target " + lowBgTarget + "-" + highBgTarget + " : " + correctionEstimate + "U"
+                        + ", iob " + iob + " : " + iobAdjustment + "U"
+                        + " (ratio " + (int) carbRatio + "/u, isf " + isf + "/u)";
+            }
+
+            // nightscout does not have a square bolus type so a combo type is used but due to no normal bolus part
+            // there is no tag shown in the main graph, a note is sent to NS to compensate for this
+            if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
+                UploadItem uploadItem2 = new UploadItem();
+                uploadItems.add(uploadItem2);
+                TreatmentsEndpoints.Treatment treatment2 = uploadItem2.treatment();
+                uploadItem2.mode(uploadItem.getMode());
+                treatment2.setEventType("Note");
+                treatment2.setKey600(key + "NOTE");
+                treatment2.setCreated_at(programmedDate);
+                treatment2.setNotes(notes);
+            } else
+                treatment.setNotes(notes);
         }
 
-        if (PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.equals(bolusType)) {
-            treatment.setEventType("Bolus");
-            treatment.setInsulin((float) normalProgrammedAmount);
-        } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
-            treatment.setEventType("Combo Bolus");
-            treatment.setEnteredinsulin(String.valueOf(squareProgrammedAmount));
-            treatment.setDuration(squareProgrammedDuration);
-            treatment.setSplitNow("0");
-            treatment.setSplitExt("100");
-            treatment.setRelative(2);
-            notes += "Square Bolus: " + squareProgrammedAmount + "U, duration " + squareProgrammedDuration + " minutes";
-        } else if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(bolusType)) {
-            treatment.setEventType("Combo Bolus");
-            treatment.setEnteredinsulin(String.valueOf(normalProgrammedAmount + squareProgrammedAmount));
-            treatment.setDuration(squareProgrammedDuration);
-            treatment.setInsulin((float) normalProgrammedAmount);
-            int splitNow = (int) (normalProgrammedAmount * (100 / (normalProgrammedAmount + squareProgrammedAmount)));
-            int splitExt = 100 - splitNow;
-            treatment.setSplitNow(String.valueOf(splitNow));
-            treatment.setSplitExt(String.valueOf(splitExt));
-            treatment.setRelative(2);
-            notes += "Dual Bolus: normal " + normalProgrammedAmount + "U, square " + squareProgrammedAmount + "U, duration " + squareProgrammedDuration + " minutes";
-        } else {
-            treatment.setEventType("Note");
-            notes = "Unknown event";
-        }
-
-        if (normalDelivered && normalProgrammedAmount != normalDeliveredAmount) {
-            treatment.setInsulin((float) normalDeliveredAmount);
-            notes += " * cancelled, delivered " + normalDeliveredAmount + "U";
-        } else if (squareDelivered && squareProgrammedAmount != squareDeliveredAmount) {
-            treatment.setEnteredinsulin(String.valueOf(normalDeliveredAmount + squareDeliveredAmount));
-            treatment.setDuration(squareDeliveredDuration);
-            treatment.setInsulin((float) normalDeliveredAmount);
-            int splitNow = (int) (normalDeliveredAmount * (100 / (normalDeliveredAmount + squareDeliveredAmount)));
-            int splitExt = 100 - splitNow;
-            treatment.setSplitNow(String.valueOf(splitNow));
-            treatment.setSplitExt(String.valueOf(splitExt));
-            treatment.setRelative(2);
-            notes += " * ended before expected duration, square delivered " + squareDeliveredAmount + "U in " + squareDeliveredDuration + " minutes";
-        }
-
-        if (estimate) {
-            treatment.setEventType("Meal Bolus");
-            treatment.setCarbs((int) carbInput);
-            if (!notes.equals("")) notes += "  ";
-            notes += "WIZ:"
-                    + " carb " + (int) carbInput + "G / " + foodEstimate + "U"
-                    + ", target " + lowBgTarget + "-" + highBgTarget + " / " + correctionEstimate + "U"
-                    + ", iob " + iob + " / " + iobAdjustment + "U"
-                    + " (ratio " + (int) carbRatio + ":1, isf " + isf + ":1)";
-        }
-
-        // nightscout does not have a square bolus type so a combo type is used but due to no normal bolus part
-        // there is no tag shown in the main graph, a note is sent to NS to compensate for this
-        if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
-            TreatmentsEndpoints.Treatment note = new TreatmentsEndpoints.Treatment();
-            list.add("treatment");
-            list.add(uploadACK ? "update" : "new");
-            list.add(note);
-            note.setEventType("Note");
-            note.setKey600(key+"NOTE");
-            note.setCreated_at(programmedDate);
-            note.setNotes(notes);
-        } else
-            treatment.setNotes(notes);
-
-        return list;
+        return uploadItems;
     }
 
     public static void bolus(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,

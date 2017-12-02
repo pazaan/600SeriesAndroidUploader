@@ -21,8 +21,7 @@ public class PumpBasalPatternRequestMessage extends MedtronicSendMessageRequestM
     }
 
     protected static byte[] buildPayload(byte patternNumber) {
-        byte[] payload = {patternNumber};
-        return payload;
+        return new byte[]{patternNumber};
     }
 
     public PumpBasalPatternResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {

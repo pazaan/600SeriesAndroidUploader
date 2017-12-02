@@ -13,7 +13,7 @@ import static info.nightscout.android.utils.ToolKit.read8toUInt;
 import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
- * Created by John on 8.11.17.
+ * Created by Pogman on 8.11.17.
  */
 
 public class BolusWizardSensitivityResponseMessage extends MedtronicSendMessageResponseMessage {
@@ -46,7 +46,7 @@ public class BolusWizardSensitivityResponseMessage extends MedtronicSendMessageR
         Log.d(TAG, "Targets: Items: " + items);
 
         for (int i = 0; i < items; i++) {
-            isf_mgdl = read16BEtoUInt(sensitivity, index + 0x00);
+            isf_mgdl = read16BEtoUInt(sensitivity, index);
             isf_mmol = read16BEtoUInt(sensitivity, index + 0x02) / 10.0;
             time = read8toUInt(sensitivity, index + 0x04) * 30;
             Log.d(TAG, "TimePeriod: " + (i + 1) + " isf_mgdl: " + isf_mgdl + " isf_mmol: " + isf_mmol + " Time: " + time / 60 + "h" + time % 60 + "m");

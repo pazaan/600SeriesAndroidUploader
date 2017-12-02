@@ -17,7 +17,7 @@ package info.nightscout.api;
         import retrofit2.http.Path;
 
 /**
- * Created by John on 7.11.17.
+ * Created by Pogman on 7.11.17.
  */
 
 public interface ProfileEndpoints {

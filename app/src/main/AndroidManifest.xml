@@ -17,8 +17,6 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
-<!--
--->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- allow to disable battery optimization -->
     <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
@@ -41,15 +39,6 @@
             android:persistableMode="persistNever"
             android:configChanges="uiMode"
             android:screenOrientation="portrait">
-            <!--
-            <intent-filter android:icon="@drawable/ic_launcher">
-                <category android:name="android.intent.category.DEFAULT" />
-                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
-            </intent-filter>
-            <meta-data
-                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
-                android:resource="@xml/device_filter" />
-                -->
         </activity>
         <activity
             android:name=".settings.SettingsActivity"
@@ -85,12 +74,12 @@
         </activity>
 
         <service
-            android:name=".upload.nightscout.NightscoutUploadIntentService"
+            android:name=".upload.nightscout.NightscoutUploadService"
             android:icon="@drawable/ic_launcher"
             android:stopWithTask="false"
             />
         <service
-            android:name=".xdrip_plus.XDripPlusUploadIntentService"
+            android:name=".xdrip_plus.XDripPlusUploadService"
             android:icon="@drawable/ic_launcher"
             android:stopWithTask="false"
             />
@@ -108,18 +97,11 @@
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"
             />
-        <receiver android:name=".upload.nightscout.NightscoutUploadReceiver"
-            />
-        <receiver android:name=".xdrip_plus.XDripPlusUploadReceiver"
-            />
-<!--
--->
         <receiver android:name=".utils.AutoStart">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
         <receiver android:name=".medtronic.service.MedtronicCnlShutdownReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.ACTION_SHUTDOWN" />

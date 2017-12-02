@@ -1,6 +1,5 @@
 package info.nightscout.android.medtronic.service;
 
-import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -12,7 +11,6 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.BatteryManager;
-import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
@@ -25,68 +23,49 @@ import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.MainActivity;
 import info.nightscout.android.medtronic.StatusNotification;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.upload.nightscout.NightscoutUploadReceiver;
-import info.nightscout.android.utils.DataStore;
-import info.nightscout.android.utils.StatusMessage;
-import info.nightscout.android.xdrip_plus.XDripPlusUploadReceiver;
+import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.medtronic.UserLogMessage;
+import info.nightscout.android.upload.nightscout.NightscoutUploadService;
+import info.nightscout.android.xdrip_plus.XDripPlusUploadService;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
+import static info.nightscout.android.model.store.UserLog.Icons.ICON_HELP;
+import static info.nightscout.android.model.store.UserLog.Icons.ICON_INFO;
+import static info.nightscout.android.model.store.UserLog.Icons.ICON_WARN;
 
 /**
- * Created by John on 13.9.17.
+ * Created by Pogman on 13.9.17.
  */
 
 public class MasterService extends Service {
     private static final String TAG = MasterService.class.getSimpleName();
 
-    // TODO - use a message type and insert icon as part of ui status message handling
-    public static final String ICON_WARN = "{ion_alert_circled} ";
-    public static final String ICON_BGL = "{ion_waterdrop} ";
-    public static final String ICON_USB = "{ion_usb} ";
-    public static final String ICON_INFO = "{ion_information_circled} ";
-    public static final String ICON_HELP = "{ion_ios_lightbulb} ";
-    public static final String ICON_SETTING = "{ion_android_settings} ";
-    public static final String ICON_HEART = "{ion_heart} ";
-    public static final String ICON_LOW = "{ion_battery_low} ";
-    public static final String ICON_FULL = "{ion_battery_full} ";
-    public static final String ICON_CGM = "{ion_ios_pulse_strong} ";
-    public static final String ICON_SUSPEND = "{ion_pause} ";
-    public static final String ICON_RESUME = "{ion_play} ";
-    public static final String ICON_BOLUS = "{ion_skip_forward} ";
-    public static final String ICON_BASAL = "{ion_skip_forward} ";
-    public static final String ICON_CHANGE = "{ion_android_hand} ";
-//    public static final String ICON_REFRESH = "{ion_android_sync} ";
-//    public static final String ICON_REFRESH = "{ion_ios_refresh_outline} ";
-    public static final String ICON_REFRESH = "{ion_loop} ";
-    public static final String ICON_BELL = "{ion_android_notifications} ";
-    public static final String ICON_NOTE = "{ion_clipboard} ";
-
     public static final int USB_DISCONNECT_NOFICATION_ID = 1;
     public static final int SERVICE_NOTIFICATION_ID = 2;
 
     private Context mContext;
-    private Realm realm;
 
+    private Realm realm;
+    private Realm storeRealm;
     private DataStore dataStore;
 
     private MasterServiceReceiver masterServiceReceiver = new MasterServiceReceiver();
-    private StatusMessageReceiver statusMessageReceiver = new StatusMessageReceiver();
+    private UserLogMessageReceiver userLogMessageReceiver = new UserLogMessageReceiver();
     private BatteryReceiver batteryReceiver = new BatteryReceiver();
     private UsbReceiver usbReceiver = new UsbReceiver();
 
-    private StatusMessage statusMessage = StatusMessage.getInstance();
+    private UserLogMessage userLogMessage = UserLogMessage.getInstance();
     private StatusNotification statusNotification = StatusNotification.getInstance();
 
     private static int uploaderBatteryLevel = 0;
     private static boolean serviceActive = true;
-
-    private static boolean serviceStarted = false;
 
     public static boolean commsActive = false;
     public static boolean noteError = false;
@@ -105,9 +84,8 @@ public class MasterService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
         Log.i(TAG, "onCreate called");
-        //statusMessage.add(TAG + " onCreate called");
+        //userLogMessage.add(TAG + " onCreate called");
 
         mContext = this.getBaseContext();
 
@@ -118,12 +96,11 @@ public class MasterService extends Service {
         masterServiceIntentFilter.addAction(Constants.ACTION_READ_NOW);
         masterServiceIntentFilter.addAction(Constants.ACTION_READ_PROFILE);
         masterServiceIntentFilter.addAction(Constants.ACTION_TEST);
-        //masterServiceIntentFilter.addAction(MedtronicCnlService.Constants.ACTION_STATUS_MESSAGE);
         registerReceiver(masterServiceReceiver, masterServiceIntentFilter);
 
         registerReceiver(
-                statusMessageReceiver,
-                new IntentFilter(Constants.ACTION_STATUS_MESSAGE));
+                userLogMessageReceiver,
+                new IntentFilter(Constants.ACTION_USERLOG_MESSAGE));
 
         IntentFilter batteryIntentFilter = new IntentFilter();
         batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
@@ -142,23 +119,23 @@ public class MasterService extends Service {
         MedtronicCnlAlarmManager.setContext(mContext);
 
         realm = Realm.getDefaultInstance();
-        dataStore = realm.where(DataStore.class).findFirst();
+        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        dataStore = storeRealm.where(DataStore.class).findFirst();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-
         Log.d(TAG, "onDestroy called");
-        //statusMessage.add(TAG + " onDestroy called");
 
         statusNotification.endNotification();
 
         MedtronicCnlAlarmManager.cancelAlarm();
 
+        if (!storeRealm.isClosed()) storeRealm.close();
         if (!realm.isClosed()) realm.close();
 
-        unregisterReceiver(statusMessageReceiver);
+        unregisterReceiver(userLogMessageReceiver);
         unregisterReceiver(usbReceiver);
         unregisterReceiver(batteryReceiver);
         unregisterReceiver(masterServiceReceiver);
@@ -167,19 +144,17 @@ public class MasterService extends Service {
     @Override
     public void onTaskRemoved(Intent intent) {
         Log.i(TAG, "onTaskRemoved called");
-        //statusMessage.add(TAG + " onTaskRemoved");
     }
 
     @Override
     public void onLowMemory() {
         Log.i(TAG, "onLowMemory called");
-        //statusMessage.add(TAG + " onLowMemory");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Received start id " + startId + ": " + intent);
-        //statusMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
+        //userLogMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
 /*
         if (intent == null) {
             // do nothing and return
@@ -190,7 +165,7 @@ public class MasterService extends Service {
 
         if (intent != null || startId == 1) {
             Log.i(TAG, "service start");
-            statusMessage.add(TAG + " service start");
+            userLogMessage.add(TAG + " service start");
 
             Intent notificationIntent = new Intent(this, MainActivity.class);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -214,7 +189,7 @@ public class MasterService extends Service {
 */
         if (intent == null || startId == 1) {
             Log.i(TAG, "service start");
-            //statusMessage.add(TAG + " service start");
+            //userLogMessage.add(TAG + " service start");
 
             // * use the status note for this
             Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -281,7 +256,7 @@ public class MasterService extends Service {
                 MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000);
 
             } else if (Constants.ACTION_READ_PROFILE.equals(action)) {
-                realm.executeTransaction(new Realm.Transaction() {
+                storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(Realm realm) {
                         dataStore.setRequestProfile(true);
@@ -321,15 +296,20 @@ public class MasterService extends Service {
         statusNotification.updateNotification(start);
 
         if (start - now > 10 * 1000)
-            statusMessage.add("Next poll due at: " + dateFormatter.format(start));
+            userLogMessage.add("Next poll due at: " + dateFormatter.format(start));
     }
 
-    private class StatusMessageReceiver extends BroadcastReceiver {
+    private void uploadPollResults() {
+        startService(new Intent(this, XDripPlusUploadService.class));
+        startService(new Intent(this, NightscoutUploadService.class));
+    }
+
+    private class UserLogMessageReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             String message = intent.getStringExtra(Constants.EXTENDED_DATA);
             Log.i(TAG, "Message Receiver: " + message);
-            statusMessage.add(message);
+            userLogMessage.add(message);
         }
     }
 
@@ -361,10 +341,10 @@ public class MasterService extends Service {
                 // received from OS
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 Log.d(TAG, "USB plugged in");
-                statusMessage.add(ICON_INFO + "Contour Next Link plugged in.");
+                userLogMessage.add(ICON_INFO + "Contour Next Link plugged in.");
                 clearDisconnectionNotification();
 
-                realm.executeTransaction(new Realm.Transaction() {
+                storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(Realm realm) {
                         dataStore.clearAllCommsErrors();
@@ -379,14 +359,14 @@ public class MasterService extends Service {
 
                 } else {
                     Log.d(TAG, "No permission for USB. Waiting.");
-                    statusMessage.add(ICON_INFO + "Waiting for USB permission.");
+                    userLogMessage.add(ICON_INFO + "Waiting for USB permission.");
                 }
 
                 // received from OS
             } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
                 Log.d(TAG, "USB unplugged");
                 showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
-                statusMessage.add(ICON_WARN + "USB error. Contour Next Link unplugged.");
+                userLogMessage.add(ICON_WARN + "USB error. Contour Next Link unplugged.");
 
                 MedtronicCnlAlarmManager.cancelAlarm();
 
@@ -397,8 +377,8 @@ public class MasterService extends Service {
                 // received from CnlService
             } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
                 Log.d(TAG, "No permission to read the USB device.");
-                statusMessage.add(ICON_WARN + "No permission to read the USB device.");
-                statusMessage.add(ICON_HELP + "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
+                userLogMessage.add(ICON_WARN + "No permission to read the USB device.");
+                userLogMessage.add(ICON_HELP + "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
 
                 MedtronicCnlAlarmManager.cancelAlarm();
 
@@ -451,7 +431,7 @@ public class MasterService extends Service {
     }
 
     public final class Constants {
-        public static final String ACTION_STATUS_MESSAGE = "info.nightscout.android.medtronic.STATUS_MESSAGE";
+        public static final String ACTION_USERLOG_MESSAGE = "info.nightscout.android.medtronic.STATUS_MESSAGE";
         public static final String ACTION_CNL_COMMS_ACTIVE = "info.nightscout.android.medtronic.CNL_COMMS_ACTIVE";
         public static final String ACTION_CNL_COMMS_FINISHED = "info.nightscout.android.medtronic.CNL_COMMS_FINISHED";
         public static final String ACTION_STOP_SERVICE = "info.nightscout.android.medtronic.STOP_SERVICE";
@@ -471,38 +451,5 @@ public class MasterService extends Service {
         public static final String ACTION_UPDATE_STATUS = "info.nightscout.android.medtronic.UPDATE_STATUS";
 
         public static final String EXTENDED_DATA = "info.nightscout.android.medtronic.DATA";
-    }
-
-    // reliable wake alarm manager wake up for all android versions
-    public static void wakeUpIntent(Context context, long wakeTime, PendingIntent pendingIntent) {
-        final AlarmManager alarm = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, wakeTime, pendingIntent);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            alarm.setExact(AlarmManager.RTC_WAKEUP, wakeTime, pendingIntent);
-        } else
-            alarm.set(AlarmManager.RTC_WAKEUP, wakeTime, pendingIntent);
-    }
-
-    private void uploadPollResults() {
-        sendToXDrip();
-        uploadToNightscout();
-    }
-
-    private void sendToXDrip() {
-        final Intent receiverIntent = new Intent(this, XDripPlusUploadReceiver.class);
-        final long timestamp = System.currentTimeMillis() + 100L; //500L
-        final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
-        Log.d(TAG, "Scheduling xDrip+ send");
-        wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
-    }
-
-    private void uploadToNightscout() {
-        // TODO - set status if offline or nightscout not reachable
-        Intent receiverIntent = new Intent(this, NightscoutUploadReceiver.class);
-        final long timestamp = System.currentTimeMillis() + 200L; //1000L
-        final PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) timestamp, receiverIntent, PendingIntent.FLAG_ONE_SHOT);
-        Log.d(TAG, "Scheduling nightscout upload");
-        wakeUpIntent(getApplicationContext(), timestamp, pendingIntent);
     }
 }

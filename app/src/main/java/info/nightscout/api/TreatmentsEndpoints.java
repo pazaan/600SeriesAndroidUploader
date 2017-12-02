@@ -19,7 +19,7 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 /**
- * Created by John on 3.11.17.
+ * Created by Pogman on 3.11.17.
  */
 
 public interface TreatmentsEndpoints {
@@ -275,20 +275,52 @@ public interface TreatmentsEndpoints {
         private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
     }
 
+    // find treatment using key
     @GET("/api/v1/treatments.json")
-    Call<List<Treatment>> checkKey(@Query("find[created_at][$gte]") String date, @Query("find[key600]") String key);
+    Call<List<Treatment>> checkKey(@Query("find[created_at][$gte]") String date,
+                                   @Query("find[key600]") String key);
 
+    // find treatments using date range
+    @GET("/api/v1/treatments.json")
+    Call<List<Treatment>> findDateRangeCount(@Query("find[created_at][$gte]") String from,
+                                          @Query("find[created_at][$lte]") String to,
+                                          @Query("count") String count);
+
+    // find non-keyed treatments exclude by eventType
+    @GET("/api/v1/treatments.json")
+    Call<List<Treatment>> findCleanupItems(@Query("find[created_at][$gte]") String from,
+                                             @Query("find[created_at][$lte]") String to,
+                                             @Query("find[eventType][$ne]") String type,
+                                             @Query("find[key600][$not][$exists]") String empty,
+                                             @Query("count") String count);
+
+    // delete using id
     @DELETE("/api/v1/treatments/{id}")
     Call<ResponseBody> deleteID(@Path("id") String id);
 
+
+    /*
+    @DELETE("/api/v1/treatments")
+    Call<ResponseBody> deleteDateRangeNoKey(@Query("find[created_at][$gte]") String from,
+                                            @Query("find[created_at][$lte]") String to,
+                                            @Query("find[key600][$not][$exists]") String empty);
+
+    @DELETE("/api/v1/treatments")
+    Call<ResponseBody> deleteDateRangeNotTypeNoKey(@Query("find[created_at][$gte]") String from,
+                                                   @Query("find[created_at][$lte]") String to,
+                                                   @Query("find[eventType][$ne]") String type,
+                                                   @Query("find[key600][$not][$exists]") String empty);
+*/
     @Headers({
             "Accept: application/json",
             "Content-type: application/json"
     })
 
+    // post single treatment
     @POST("/api/v1/treatments")
     Call<ResponseBody> sendTreatment(@Body Treatment treatment);
 
+    // post bulk treatments
     @POST("/api/v1/treatments")
     Call<ResponseBody> sendTreatments(@Body List<Treatment> treatments);
 }

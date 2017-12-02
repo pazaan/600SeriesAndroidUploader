@@ -5,14 +5,16 @@ import java.util.Date;
 import java.util.List;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
+import info.nightscout.android.model.store.DataStore;
 import info.nightscout.api.EntriesEndpoints;
+import info.nightscout.api.UploadItem;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
 /**
- * Created by John on 19.10.17.
+ * Created by Pogman on 19.10.17.
  */
 
 public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface {
@@ -39,7 +41,9 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     private int cgmRTC;
     private int cgmOFFSET;
 
+    @Index
     private int sgv;
+
     private double isig;
     private double vctr;
     private double rateOfChange;
@@ -56,13 +60,12 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     private String cgmTrend; // only available when added via the status message
 
     @Override
-    public List nightscout() {
-        List list = new ArrayList();
+    public List nightscout(DataStore dataStore) {
+        List<UploadItem> uploadItems = new ArrayList<>();
 
-        EntriesEndpoints.Entry entry = new EntriesEndpoints.Entry();
-        list.add("entry");
-        list.add(uploadACK ? "update" : "new");
-        list.add(entry);
+        UploadItem uploadItem = new UploadItem();
+        uploadItems.add(uploadItem);
+        EntriesEndpoints.Entry entry = uploadItem.ack(uploadACK).entry();
 
         entry.setKey600(key);
         entry.setType("sgv");
@@ -72,7 +75,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
         entry.setSgv(sgv);
         if (cgmTrend != null) entry.setDirection(PumpHistoryParser.TextEN.valueOf("NS_TREND_" + cgmTrend).getText());
 
-        return list;
+        return uploadItems;
     }
 
     public static void event(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,

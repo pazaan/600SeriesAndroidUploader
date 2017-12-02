@@ -22,8 +22,8 @@ import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
 import info.nightscout.android.model.medtronicNg.PumpHistorySettings;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.utils.DataStore;
-import info.nightscout.android.utils.StatusStore;
+import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.model.store.UserLog;
 import io.fabric.sdk.android.Fabric;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
@@ -37,6 +37,7 @@ public class UploaderApplication extends Application {
     private static final String TAG = UploaderApplication.class.getSimpleName();
     private static Context context;
     private static RealmConfiguration storeConfiguration;
+    private static RealmConfiguration userLogConfiguration;
     private static RealmConfiguration historyConfiguration;
 
     private static long startupRealtime;
@@ -79,27 +80,33 @@ public class UploaderApplication extends Application {
         Realm.setDefaultConfiguration(realmConfiguration);
 
         storeConfiguration = new RealmConfiguration.Builder()
-                .name("storerealm.realm")
+                .name("store.realm")
                 .modules(new StoreModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
 
+        userLogConfiguration = new RealmConfiguration.Builder()
+                .name("userlog.realm")
+                .modules(new UserLogModule())
+                .deleteRealmIfMigrationNeeded()
+                .build();
+
         historyConfiguration = new RealmConfiguration.Builder()
-                .name("historyrealm.realm")
+                .name("history.realm")
                 .modules(new HistoryModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
 
-        Realm realm = Realm.getDefaultInstance();
-        if (realm.where(DataStore.class).findFirst() == null) {
-            realm.executeTransaction(new Realm.Transaction() {
+        Realm storeRealm = Realm.getInstance(storeConfiguration);
+        if (storeRealm.where(DataStore.class).findFirst() == null) {
+            storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     realm.createObject(DataStore.class);
                 }
             });
         }
-        realm.close();
+        storeRealm.close();
 
     }
 
@@ -128,6 +135,10 @@ public class UploaderApplication extends Application {
         return storeConfiguration;
     }
 
+    public static RealmConfiguration getUserLogConfiguration() {
+        return userLogConfiguration;
+    }
+
     public static RealmConfiguration getHistoryConfiguration() {
         return historyConfiguration;
     }
@@ -136,14 +147,18 @@ public class UploaderApplication extends Application {
             ContourNextLinkInfo.class,
             PumpInfo.class,
             PumpStatusEvent.class,
-            DataStore.class
     })
     private class MainModule {}
 
     @RealmModule(classes = {
-            StatusStore.class
+            DataStore.class
     })
     private class StoreModule {}
+
+    @RealmModule(classes = {
+            UserLog.class
+    })
+    private class UserLogModule {}
 
     @RealmModule(classes = {
             PumpHistorySegment.class,

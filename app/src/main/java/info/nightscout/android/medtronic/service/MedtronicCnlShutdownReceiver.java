@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.util.Log;
 
 /**
- * Created by John on 1.10.17.
+ * Created by Pogman on 1.10.17.
  */
 
 public class MedtronicCnlShutdownReceiver extends BroadcastReceiver {

@@ -32,6 +32,9 @@ public abstract class ContourNextLinkRequestMessage<T> extends ContourNextLinkMe
     }
 
     public T send(UsbHidDriver mDevice, int millis) throws UnexpectedMessageException, EncryptionException, TimeoutException, ChecksumException, IOException {
+
+        clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
+
         sendMessage(mDevice);
         if (millis > 0) {
             try {

@@ -41,15 +41,17 @@
             android:entries="@array/poll_interval"
             android:entryValues="@array/poll_interval_millis"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="Display">
-    <ListPreference
-        android:key="chartZoom"
-        android:defaultValue="3"
-        android:title="@string/preferences_chart_interval"
-        android:summary="%s"
-        android:entries="@array/chart_zoom"
-        android:entryValues="@array/chart_zoom_hours"/>
+        <ListPreference
+            android:key="chartZoom"
+            android:defaultValue="3"
+            android:title="@string/preferences_chart_interval"
+            android:summary="%s"
+            android:entries="@array/chart_zoom"
+            android:entryValues="@array/chart_zoom_hours"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="Sharing">
         <CheckBoxPreference
             android:disableDependentsState="false"
@@ -70,10 +72,80 @@
             android:dialogTitle="Enter your Nightscout API secret"
             android:key="@string/preference_api_secret"
             android:title="API Secret"/>
-        <CheckBoxPreference android:title="Treatments"
-            android:key="EnableTreatmentsUpload"
+
+        <PreferenceScreen
+            android:title="Advanced Nightscout Settings"
             android:dependency="@string/preference_enable_rest_upload"
-            android:summary="Enable upload of treatments to Nightscout"/>
+            android:persistent="false">
+
+            <PreferenceCategory android:title="Advanced Nightscout Settings">
+                <CheckBoxPreference android:title="Treatments"
+                    android:key="nsEnableTreatments"
+                    android:defaultValue="true"
+                    android:summary="Enable upload of treatments to Nightscout"/>
+                <CheckBoxPreference android:title="History Sync"
+                    android:key="nsEnableHistorySync"
+                    android:defaultValue="false"
+                    android:summary="Enable upload of past historical data to Nightscout. Backfill days as set in advanced system settings for CGM and PUMP history (note: this will clear and refresh data where needed)"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="BG Readings">
+                <CheckBoxPreference android:title="Finger BG"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableFingerBG"
+                    android:defaultValue="true"
+                    android:summary="Send finger BG readings to Nightscout"/>
+                <CheckBoxPreference android:title="Calibration Info"
+                    android:dependency="nsEnableFingerBG"
+                    android:key="nsEnableCalibrationInfo"
+                    android:defaultValue="false"
+                    android:summary="Add factor and benchmark time to BG readings used for calibration"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Consumables">
+                <CheckBoxPreference android:title="Sensor Change"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableSensorChange"
+                    android:defaultValue="true"
+                    android:summary="Send sensor changes to Nightscout"/>
+                <CheckBoxPreference android:title="Reservoir Change"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableReservoirChange"
+                    android:defaultValue="true"
+                    android:summary="Send reservoir changes to Nightscout"/>
+                <CheckBoxPreference android:title="Pump Battery Change"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableBatteryChange"
+                    android:defaultValue="true"
+                    android:summary="Send pump battery changes to Nightscout"/>
+                <CheckBoxPreference android:title="Estimate Lifetimes"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableLifetimes"
+                    android:defaultValue="false"
+                    android:summary="Add lifetime estimate to pump consumables"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Profiles">
+                <CheckBoxPreference android:title="Enable Profile Upload"
+                    android:key="nsEnableProfileUpload"
+                    android:defaultValue="true"
+                    android:summary="Upload profiles to Nightscout with basal patterns, carb ratios, sensitivity and targets"/>
+                <CheckBoxPreference android:title="Basal Pattern Change"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnablePatternChange"
+                    android:defaultValue="true"
+                    android:summary="Send basal pattern changes to Nightscout"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="CGM">
+                <CheckBoxPreference android:title="Insert BG as CGM"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableInsertBGasCGM"
+                    android:defaultValue="false"
+                    android:summary="Use last BG reading and insert into CGM chart when no CGM is in use"/>
+            </PreferenceCategory>
+        </PreferenceScreen>
+
         <Preference android:title="scan NS-Autoconfig QR-Code"
             android:key="scanButton"
             android:dependency="@string/preference_enable_rest_upload"
@@ -83,6 +155,96 @@
             android:summary="Enable local broadcast of data to xDrip+"
             android:title="Send to xDrip+"/>
     </PreferenceCategory>
+
+    <PreferenceCategory android:title="System">
+        <PreferenceScreen
+            android:title="Advanced System Settings"
+            android:persistent="false">
+            <PreferenceCategory android:title="Advanced System Settings">
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="History Sync">
+                <CheckBoxPreference android:title="Enable CGM History"
+                    android:key="sysEnableCgmHistory"
+                    android:defaultValue="true"
+                    android:summary="Backfill missed CGM data"/>
+                <ListPreference
+                    android:dependency="sysEnableCgmHistory"
+                    android:key="sysCgmHistoryDays"
+                    android:defaultValue="7"
+                    android:title="CGM history backfill period"
+                    android:summary="%s"
+                    android:entries="@array/cgm_history"
+                    android:entryValues="@array/cgm_history_days"/>
+                <CheckBoxPreference android:title="Enable PUMP History"
+                    android:key="sysEnablePumpHistory"
+                    android:defaultValue="true"
+                    android:summary="Used for nightscout treatments"/>
+                <ListPreference
+                    android:dependency="sysEnablePumpHistory"
+                    android:key="sysPumpHistoryDays"
+                    android:defaultValue="7"
+                    android:title="PUMP history backfill period"
+                    android:summary="%s"
+                    android:entries="@array/pump_history"
+                    android:entryValues="@array/pump_history_days"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Radio">
+                <info.nightscout.android.utils.CustomSwitchPreference
+                    android:disableDependentsState="false"
+                    android:key="sysEnableClashProtect"
+                    android:defaultValue="true"
+                    android:summaryOff="No protection, always run a poll request"
+                    android:summaryOn="Delay a poll request when pump is expecting sensor communication"
+                    android:switchTextOff="off"
+                    android:switchTextOn="on"
+                    android:title="Radio clash protection"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Timing">
+                <info.nightscout.android.utils.CustomSwitchPreference
+                    android:disableDependentsState="false"
+                    android:key="sysEnableWait500ms"
+                    android:defaultValue="false"
+                    android:summaryOff="No wait time"
+                    android:summaryOn="Wait 500ms per send request"
+                    android:switchTextOff="off"
+                    android:switchTextOn="on"
+                    android:title="Control / Passthrough"/>
+            </PreferenceCategory>
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            android:title="Debug Settings"
+            android:persistent="false">
+            <PreferenceCategory android:title="Debug">
+                <SwitchPreference
+                    android:defaultValue="true"
+                    android:key="@string/preferences_enable_crashlytics"
+                    android:summary="Send crash errors to developer"
+                    android:title="Crash Reporting" />
+                <SwitchPreference
+                    android:defaultValue="true"
+                    android:key="@string/preferences_enable_answers"
+                    android:summary="Sends usage data to the developer to help develop a better app."
+                    android:title="Share usage data" />
+                <SwitchPreference
+                    android:defaultValue="false"
+                    android:key="@string/preferences_enable_remote_logcat"
+                    android:summary="Allow the developer to debug your app. Only enable if asked to by the support team."
+                    android:title="Remote Debugging" />
+                <ListPreference
+                    android:defaultValue="1"
+                    android:key="logLevel"
+                    android:summary="%s"
+                    android:title="Logging Level"
+                    android:entries="@array/levelList"
+                    android:entryValues="@array/calib_types_values" />
+            </PreferenceCategory>
+        </PreferenceScreen>
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="Disclaimer">
         <SwitchPreference
             android:disableDependentsState="false"
@@ -97,30 +259,5 @@
         <Preference
             android:key="version"
             android:title="@string/versionName" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Debug">
-        <SwitchPreference
-            android:defaultValue="true"
-            android:key="@string/preferences_enable_crashlytics"
-            android:summary="Send crash errors to developer"
-            android:title="Crash Reporting" />
-        <SwitchPreference
-            android:defaultValue="true"
-            android:key="@string/preferences_enable_answers"
-            android:summary="Sends usage data to the developer to help develop a better app."
-            android:title="Share usage data" />
-        <SwitchPreference
-            android:defaultValue="false"
-            android:key="@string/preferences_enable_remote_logcat"
-            android:summary="Allow the developer to debug your app. Only enable if asked to by the support team."
-            android:title="Remote Debugging" />
-        <ListPreference
-            android:defaultValue="1"
-            android:disableDependentsState="false"
-            android:entries="@array/levelList"
-            android:entryValues="@array/calib_types_values"
-            android:key="logLevel"
-            android:summary="Select item from array"
-            android:title="Logging Level" />
     </PreferenceCategory>
 </PreferenceScreen>

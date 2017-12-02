@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.TimeZone;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
+import info.nightscout.android.model.store.DataStore;
 import info.nightscout.api.ProfileEndpoints;
 import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.api.UploadItem;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -21,7 +23,7 @@ import static info.nightscout.android.utils.ToolKit.read32BEtoULong;
 import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
- * Created by John on 7.11.17.
+ * Created by Pogman on 7.11.17.
  */
 
 public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterface {
@@ -60,15 +62,14 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
     private byte[] targets;
 
     @Override
-    public List nightscout() {
-        List list = new ArrayList();
+    public List nightscout(DataStore dataStore) {
+        List<UploadItem> uploadItems = new ArrayList<>();
 
-        if (profileSwitch) {
+        if (profileSwitch && dataStore.isNsEnableTreatments() && dataStore.isNsEnablePatternChange()) {
 
-            TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
-            list.add("treatment");
-            list.add(uploadACK ? "update" : "new");
-            list.add(treatment);
+            UploadItem uploadItem = new UploadItem();
+            uploadItems.add(uploadItem);
+            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
 
             treatment.setKey600(key);
             treatment.setCreated_at(eventDate);
@@ -80,36 +81,38 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             treatment.setProfile(newName);
             treatment.setNotes("Changed profile from " + oldName + " to " + newName);
 
-        } else if (profileDefine) {
+        } else if (profileDefine && dataStore.isNsEnableProfileUpload()) {
 
-            TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
-            list.add("treatment");
-            list.add(uploadACK ? "update" : "new");
-            list.add(treatment);
+            UploadItem uploadItem = new UploadItem();
+            uploadItems.add(uploadItem);
+            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
 
             treatment.setKey600(key);
             treatment.setCreated_at(eventDate);
             treatment.setEventType("Note");
             treatment.setNotes("Profile updated");
 
-            ProfileEndpoints.Profile profile = new ProfileEndpoints.Profile();
-            list.add("profile");
-            list.add(uploadACK ? "update" : "new");
-            list.add(profile);
+            UploadItem uploadItem2 = new UploadItem();
+            uploadItems.add(uploadItem2);
+            ProfileEndpoints.Profile profile = uploadItem2.ack(uploadACK).profile();
 
             TimeZone tz = TimeZone.getDefault();
-            Date startdate = new Date(eventDate.getTime() - 90 * 24 * 60 * 60000L) ; // active from date
+            Date startdate = new Date(eventDate.getTime()); // - 90 * 24 * 60 * 60000L) ; // active from date
             String timezone = tz.getID();  // (Time Zone) - time zone local to the patient. Should be set.
             String units = "mmol"; // (Profile Units) - blood glucose units used in the profile, either "mgdl" or "mmol"   ??? get from uploader or NS ???
-            String carbshr = "20"; // (Carbs per Hour) - The number of carbs that are processed per hour          ??? set as 30/35 as an general average for now ???
-            String dia = "3"; // (Insulin duration) - value should be the duration of insulin action to use in calculating how much insulin is left active. Defaults to 3 hours.
+            String carbshr = "20"; // (Carbs per Hour) - The number of carbs that are processed per hour. Default 20.
+            String dia = "3"; // (Insulin duration) - value should be the duration of insulin action to use in calculating how much insulin is left active. Default 3 hours.
             String delay = "20"; // NS default value - delay from action to activation for insulin?
+
+            if (dataStore.isMmolxl())
+                units = "mmol";
+            else
+                units = "mgdl";
 
             profile.setKey600(key);
             profile.setCreated_at(eventDate);
             profile.setStartDate(startdate);
             profile.setMills("" + startdate.getTime());
-//            profile.setStartDate("1970-01-01T00:00:00");
 
             profile.setDefaultProfile("Basal 1");
             profile.setUnits(units);
@@ -138,7 +141,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             store.setSickday(bp.makeProfile());
         }
 
-        return list;
+        return uploadItems;
     }
 
     private class BasalProfile {
@@ -175,7 +178,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         }
 
         private List<ProfileEndpoints.TimePeriod> parseBasalPattern() {
-            List<ProfileEndpoints.TimePeriod> basalpattern = new ArrayList();
+            List<ProfileEndpoints.TimePeriod> basalpattern = new ArrayList<>();
 
             int pattern = read8toUInt(basalPatterns, index++);
             int items = read8toUInt(basalPatterns, index++);
@@ -197,10 +200,10 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         }
 
         private void parseCarbRatios() {
-            carbratio = new ArrayList();
+            carbratio = new ArrayList<>();
             int index = 0;
             int rate1;
-            int rate2;
+            //int rate2;
             int time;
 
             int items = read8toUInt(carbRatios, index++);
@@ -208,8 +211,8 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
                 carbratio.add(addPeriod(0, "0"));
             else {
                 for (int i = 0; i < items; i++) {
-                    rate1 = read32BEtoInt(carbRatios, index + 0) / 10;
-                    rate2 = read32BEtoInt(carbRatios, index + 4);
+                    rate1 = read32BEtoInt(carbRatios, index) / 10;
+                    //rate2 = read32BEtoInt(carbRatios, index + 4);
                     time = read8toUInt(carbRatios, index + 8) * 30;
                     carbratio.add(addPeriod(time, "" + rate1));
                     index += 9;
@@ -218,7 +221,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         }
 
         private void parseSensitivity() {
-            sens = new ArrayList();
+            sens = new ArrayList<>();
             int index = 0;
             int isf_mgdl;
             double isf_mmol;
@@ -229,7 +232,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
                 sens.add(addPeriod(0, "0"));
             else {
                 for (int i = 0; i < items; i++) {
-                    isf_mgdl = read16BEtoUInt(sensitivity, index + 0);
+                    isf_mgdl = read16BEtoUInt(sensitivity, index);
                     isf_mmol = read16BEtoUInt(sensitivity, index + 2) / 10.0;
                     time = read8toUInt(sensitivity, index + 4) * 30;
                     sens.add(addPeriod(time, "" + (units.equals("mgdl") ? isf_mgdl : isf_mmol)));
@@ -239,8 +242,8 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         }
 
         private void parseTargets() {
-            target_low = new ArrayList();
-            target_high = new ArrayList();
+            target_low = new ArrayList<>();
+            target_high = new ArrayList<>();
             int index = 0;
             int hi_mgdl;
             double hi_mmol;
@@ -254,7 +257,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
                 target_high.add(addPeriod(0, "0"));
             } else {
                 for (int i = 0; i < items; i++) {
-                    hi_mgdl = read16BEtoUInt(targets, index + 0);
+                    hi_mgdl = read16BEtoUInt(targets, index);
                     hi_mmol = read16BEtoUInt(targets, index + 2) / 10.0;
                     lo_mgdl = read16BEtoUInt(targets, index + 4);
                     lo_mmol = read16BEtoUInt(targets, index + 6) / 10.0;

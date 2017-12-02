@@ -46,7 +46,7 @@ public class PumpBasalPatternResponseMessage extends MedtronicSendMessageRespons
         Log.d(TAG, "Pattern: " + number + " Items: " + items);
 
         for (int i = 0; i < items; i++) {
-            rate = read32BEtoULong(basalPattern, index + 0x00) / 10000.0;
+            rate = read32BEtoULong(basalPattern, index) / 10000.0;
             time = read8toUInt(basalPattern, index + 0x04) * 30;
             Log.d(TAG, "TimePeriod: " + (i + 1) + " Rate: " + rate + " Time: " + time / 60 + "h" + time % 60 + "m");
             index += 5;

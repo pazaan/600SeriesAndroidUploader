@@ -3,10 +3,11 @@ package info.nightscout.android.model.medtronicNg;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.model.store.DataStore;
 import io.realm.RealmModel;
 
 /**
- * Created by John on 19.10.17.
+ * Created by Pogman on 19.10.17.
  */
 
 public interface PumpHistoryInterface extends RealmModel {
@@ -29,7 +30,5 @@ public interface PumpHistoryInterface extends RealmModel {
     String getKey();
     void setKey(String key);
 
-    List nightscout();
-
-    //void Xdrip();
+    List nightscout(DataStore dataStore);
 }

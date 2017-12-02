@@ -11,7 +11,7 @@ import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.service.MasterService;
 
 /**
- * Created by John on 4.9.17.
+ * Created by Pogman on 4.9.17.
  */
 
 public class AutoStart extends BroadcastReceiver {

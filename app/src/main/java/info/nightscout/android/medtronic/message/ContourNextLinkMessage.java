@@ -472,9 +472,8 @@ public abstract class ContourNextLinkMessage {
             }
 
             Log.d(TAG, "*** Request Missing Multipacket Segments, position: " + (packetNumber + 1) + ", missing: " + missing);
-            byte[] tupple = {(byte) (packetNumber >> 8), (byte) packetNumber, (byte) (missing >> 8), (byte) missing};
 
-            return tupple;
+            return new byte[]{(byte) (packetNumber >> 8), (byte) packetNumber, (byte) (missing >> 8), (byte) missing};
         }
     }
 

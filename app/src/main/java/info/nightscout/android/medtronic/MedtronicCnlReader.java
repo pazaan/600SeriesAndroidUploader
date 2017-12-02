@@ -56,14 +56,15 @@ public class MedtronicCnlReader {
     private static final String TAG = MedtronicCnlReader.class.getSimpleName();
 
     private static final byte[] RADIO_CHANNELS = {0x14, 0x11, 0x0e, 0x17, 0x1a};
-    private static final int SLEEP_MS = 500; //500;
 
     private UsbHidDriver mDevice;
 
     private MedtronicCnlSession mPumpSession = new MedtronicCnlSession();
     private String mStickSerial = null;
 
-    // provided by getPumpTime
+    private int cnlCommandMessageSleepMS = 0; // 500
+
+    // provided by getPumpTime - move this to pump session???
     private Date sessionDate;
     private int sessionRTC;
     private int sessionOFFSET;
@@ -97,6 +98,10 @@ public class MedtronicCnlReader {
         return sessionClockDifference;
     }
 
+    public void setCnlCommandMessageSleepMS(int cnlCommandMessageSleepMS) {
+        this.cnlCommandMessageSleepMS = cnlCommandMessageSleepMS;
+    }
+
     public void requestDeviceInfo()
             throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         DeviceInfoResponseCommandMessage response = new DeviceInfoRequestCommandMessage().send(mDevice);
@@ -121,9 +126,9 @@ public class MedtronicCnlReader {
             doRetry = false;
             try {
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.NAK)
-                        .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
+                        .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.EOT);
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.ENQ)
-                        .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                        .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
             } catch (UnexpectedMessageException e2) {
                 try {
                     new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice);
@@ -138,11 +143,11 @@ public class MedtronicCnlReader {
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin enterPasshtroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("1|")
-                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished enterPasshtroughMode");
     }
 
@@ -365,6 +370,12 @@ public class MedtronicCnlReader {
         int startRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
         int endRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
 
+        // safety check as pump doesn't like out of date requests
+        int maxRTC = sessionRTC;
+        int minRTC = maxRTC - ((90 * 24 * 60 * 60) - 3600);
+        if (startRTC > maxRTC) startRTC = maxRTC;
+        if (endRTC < minRTC) endRTC = minRTC;
+
         // TODO - this is a bit messy, need a better handler for fails and retrys
         ReadHistoryResponseMessage response = null;
         int unexpected = 0;
@@ -417,18 +428,18 @@ public class MedtronicCnlReader {
     public void endPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endPassthroughMode");
         new ContourNextLinkCommandMessage("W|")
-                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
-                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("0|")
-                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
+                .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         Log.d(TAG, "Finished endPassthroughMode");
     }
 
     public void endControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
         Log.d(TAG, "Begin endControlMode");
         new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
-                .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
+                .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
         Log.d(TAG, "Finished endControlMode");
     }
 
@@ -436,12 +447,12 @@ public class MedtronicCnlReader {
     public boolean resetCNL() {
         Log.d(TAG, "Begin resetCNL");
         boolean success = false;
-        int retry = 5;
+        int retry = 10;
 
         do {
             try {
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
-                        .send(mDevice, SLEEP_MS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
+                        .send(mDevice, 0, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
                 success = true;
             } catch (IOException | EncryptionException | ChecksumException | UnexpectedMessageException | TimeoutException e) { }
         } while (!success && --retry > 0);

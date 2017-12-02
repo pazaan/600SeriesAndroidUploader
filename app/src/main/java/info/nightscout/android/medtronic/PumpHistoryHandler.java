@@ -27,45 +27,48 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
 import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.utils.DataStore;
+import info.nightscout.android.model.store.DataStore;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-import static info.nightscout.android.medtronic.service.MasterService.ICON_REFRESH;
+import static info.nightscout.android.model.store.UserLog.Icons.ICON_REFRESH;
 
 /**
- * Created by John on 5.11.17.
+ * Created by Pogman on 5.11.17.
  */
 
 public class PumpHistoryHandler {
     private static final String TAG = PumpHistoryHandler.class.getSimpleName();
 
-    public final static long HISTORY_STALE_MS = 90 * 24 * 60 * 60000L;
-    public final static long HISTORY_SYNC_LIMITER_MS =  30 * 24 * 60 * 60000L;
-    public final static long HISTORY_REQUEST_LIMITER_MS =  1 * 24 * 60 * 60000L;
+    private final static long HISTORY_STALE_MS = 120 * 24 * 60 * 60000L;
+    private final static long HISTORY_REQUEST_LIMITER_MS =  36 * 60 * 60000L;
+    //private final static long HISTORY_SYNC_LIMITER_MS =  10 * 24 * 60 * 60000L;
 
-    public final static byte HISTORY_PUMP = 2;
-    public final static byte HISTORY_CGM = 3;
+    private final static byte HISTORY_PUMP = 2;
+    private final static byte HISTORY_CGM = 3;
 
     private Realm realm;
     private Realm historyRealm;
+    private Realm storeRealm;
     private DataStore dataStore;
 
     private List historyDB;
     private List<PumpHistoryInterface> uploadRecords;
 
-    DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
+    private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
     public PumpHistoryHandler() {
         Log.d(TAG,"initialise history handler");
 
         realm = Realm.getDefaultInstance();
-        dataStore = realm.where(DataStore.class).findFirst();
+        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        dataStore = storeRealm.where(DataStore.class).findFirst();
 
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
-        historyDB = new ArrayList();
+        // TODO - refactor, make type safe
+        historyDB = new ArrayList<>();
         historyDB.add("CGM");
         historyDB.add(400); // upload limiter
         historyDB.add(historyRealm.where(PumpHistoryCGM.class).findAll());
@@ -89,13 +92,14 @@ public class PumpHistoryHandler {
     public void close() {
         Log.d(TAG,"close history handler");
         if (realm != null && !realm.isClosed()) realm.close();
+        if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
         if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
     }
 
-    protected void sendStatus(String message) {
+    protected void userLogMessage(String message) {
         try {
             Intent intent =
-                    new Intent(MasterService.Constants.ACTION_STATUS_MESSAGE)
+                    new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
                             .putExtra(MasterService.Constants.EXTENDED_DATA, message);
             UploaderApplication.getAppContext().sendBroadcast(intent);
         } catch (Exception e) {
@@ -148,6 +152,14 @@ public class PumpHistoryHandler {
         int limit;
         int count;
 
+        Date limitDate;
+        if (dataStore.isNsEnableHistorySync()) {
+            limitDate = new Date(System.currentTimeMillis() - (180 * 24 * 60 * 60000L));
+        } else {
+            limitDate = dataStore.getNightscoutLimitDate();
+        }
+        Log.d(TAG, "Nightscout upload limitdate: " + dateFormatter.format(limitDate));
+
         uploadRecords = new ArrayList<>();
 
         Iterator iterator = historyDB.iterator();
@@ -157,7 +169,10 @@ public class PumpHistoryHandler {
             limit = (int) iterator.next();
             results = (RealmResults) iterator.next();
             count = 0;
-            for (PumpHistoryInterface record : results.where().equalTo("uploadREQ", true).findAllSorted("eventDate", Sort.DESCENDING)) {
+            for (PumpHistoryInterface record : results.where()
+                    .equalTo("uploadREQ", true)
+                    .greaterThanOrEqualTo("eventDate", limitDate)
+                    .findAllSorted("eventDate", Sort.DESCENDING)) {
                 if (++count <= limit) uploadRecords.add(record);
             }
             Log.d(TAG, type + " records to upload: " + count + " limit: " + limit);
@@ -181,13 +196,13 @@ public class PumpHistoryHandler {
 
     public void profile(MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
 
-        sendStatus("Reading pump basal patterns");
+        userLogMessage("Reading pump basal patterns");
         byte[] basalPatterns = cnlReader.getBasalPatterns();
-        sendStatus("Reading pump carb ratios");
+        userLogMessage("Reading pump carb ratios");
         byte[] carbRatios = cnlReader.getBolusWizardCarbRatios();
-        sendStatus("Reading pump sensitivity factors");
+        userLogMessage("Reading pump sensitivity factors");
         byte[] sensitivity = cnlReader.getBolusWizardSensitivity();
-        sendStatus("Reading pump hi-lo targets");
+        userLogMessage("Reading pump hi-lo targets");
         byte[] targets = cnlReader.getBolusWizardTargets();
 
         historyRealm.beginTransaction();
@@ -200,9 +215,11 @@ public class PumpHistoryHandler {
         );
 
         historyRealm.commitTransaction();
+
+        userLogMessage("Sending updated profile to Nightscout");
     }
 
-    public void cgm(PumpStatusEvent pumpRecord) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public void cgm(PumpStatusEvent pumpRecord) {
 
         boolean pullCGM = false;
 
@@ -219,7 +236,8 @@ public class PumpHistoryHandler {
             int offset = pumpRecord.getCgmOFFSET();
 
             // sgv is available do we need the backfill?
-            if (results.size() > 0 && date.getTime() - results.last().getEventDate().getTime() > 9 * 60 * 1000)
+            if (dataStore.isSysEnableCgmHistory()
+                    && results.size() > 0 && date.getTime() - results.last().getEventDate().getTime() > 9 * 60 * 1000)
                 pullCGM = true;
 
             historyRealm.beginTransaction();
@@ -233,9 +251,9 @@ public class PumpHistoryHandler {
         }
 
         if (pullCGM) {
-            sendStatus(ICON_REFRESH + "history: cgm backfill");
+            userLogMessage(ICON_REFRESH + "history: cgm backfill");
 
-            realm.executeTransaction(new Realm.Transaction() {
+            storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     dataStore.setRequestCgmHistory(true);
@@ -258,48 +276,48 @@ public class PumpHistoryHandler {
         if (pullCGM) {
 
             // clear the request flag now as segment marker will get added
-            realm.executeTransaction(new Realm.Transaction() {
+            storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     dataStore.setRequestCgmHistory(false);
                 }
             });
-            updateHistorySegments(cnlReader, historyRealm, oldest, newest, HISTORY_CGM, pullCGM, "CGM history: ");
+            if (dataStore.isSysEnableCgmHistory()) updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, true, "CGM history: ");
 
             // clear the request flag now as segment marker will get added
-            realm.executeTransaction(new Realm.Transaction() {
+            storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     dataStore.setRequestPumpHistory(false);
                 }
             });
-            updateHistorySegments(cnlReader, historyRealm, oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history: ");
+            if (dataStore.isSysEnablePumpHistory()) updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history: ");
 
         } else {
 
             // clear the request flag now as segment marker will get added
-            realm.executeTransaction(new Realm.Transaction() {
+            storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     dataStore.setRequestPumpHistory(false);
                 }
             });
-            updateHistorySegments(cnlReader, historyRealm, oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history: ");
+            if (dataStore.isSysEnablePumpHistory()) updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history: ");
 
             // clear the request flag now as segment marker will get added
-            realm.executeTransaction(new Realm.Transaction() {
+            storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     dataStore.setRequestCgmHistory(false);
                 }
             });
-            updateHistorySegments(cnlReader, historyRealm, oldest, newest, HISTORY_CGM, pullCGM, "CGM history: ");
+            if (dataStore.isSysEnableCgmHistory()) updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, false, "CGM history: ");
         }
 
         records();
     }
 
-    private void updateHistorySegments(MedtronicCnlReader cnlReader, final Realm historyRealm, final long oldest, final long newest, final byte historyType, boolean pullHistory, String historyTAG)
+    private void updateHistorySegments(MedtronicCnlReader cnlReader, int days, final long oldest, final long newest, final byte historyType, boolean pullHistory, String historyTAG)
             throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
 
         final RealmResults<PumpHistorySegment> segment = historyRealm
@@ -391,12 +409,21 @@ public class PumpHistoryHandler {
             long start = needFrom.getTime();
             long end = needTo.getTime();
 
+/*
             // sync limiter
             if (now - start > HISTORY_SYNC_LIMITER_MS)
                 start = now - HISTORY_SYNC_LIMITER_MS;
-
             if (end - start < 0) {
                 Log.d(TAG, historyTAG + "sync limit reached, min date: " + dateFormatter.format(now - HISTORY_SYNC_LIMITER_MS) + " max days: " + (HISTORY_SYNC_LIMITER_MS / (24 * 60 * 60000L)));
+                return;
+            }
+*/
+            // sync limiter
+            long daysMS = days * 24 * 60 * 60000L;
+            if (now - start > daysMS)
+                start = now - daysMS;
+            if (end - start < 0) {
+                Log.d(TAG, historyTAG + "sync limit reached, min date: " + dateFormatter.format(now - daysMS) + " max days: " + days);
                 return;
             }
 
@@ -405,15 +432,15 @@ public class PumpHistoryHandler {
                 start = end - HISTORY_REQUEST_LIMITER_MS;
 
             Log.d(TAG, historyTAG + "requested " + dateFormatter.format(start) + " - " + dateFormatter.format(end));
-            sendStatus(historyTAG + "requested \n      " + dateFormatter.format(start) + " - " + dateFormatter.format(end));
+            userLogMessage(historyTAG + "requested \n      " + dateFormatter.format(start) + " - " + dateFormatter.format(end));
 
             Date[] range = cnlReader.getHistory(start, end, historyType);
 
             Log.d(TAG, historyTAG + "received  " + (range[0] == null ? "null" : dateFormatter.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatter.format(range[1])));
-            sendStatus(historyTAG + "received \n      " + (range[0] == null ? "null" : dateFormatter.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatter.format(range[1])));
+            userLogMessage(historyTAG + "received \n      " + (range[0] == null ? "null" : dateFormatter.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatter.format(range[1])));
 
             final Date pulledFrom = range[0];
-            final Date pulledTo = range[1];
+            //final Date pulledTo = range[1];
 /*
             // update segment toDate as there may be more or less available then we requested
             if (pulledTo.getTime() > segment.get(0).getToDate().getTime()) {

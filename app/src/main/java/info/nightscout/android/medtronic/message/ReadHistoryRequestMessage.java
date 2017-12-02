@@ -27,7 +27,7 @@ import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
 import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
- * Created by John on 6.10.17.
+ * Created by Pogman on 6.10.17.
  */
 
 public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessage<ReadHistoryResponseMessage> {

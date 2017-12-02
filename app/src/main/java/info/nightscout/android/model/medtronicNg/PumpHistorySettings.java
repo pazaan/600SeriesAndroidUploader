@@ -2,17 +2,17 @@ package info.nightscout.android.model.medtronicNg;
 
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.model.store.DataStore;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
 /**
- * Created by John on 8.11.17.
+ * Created by Pogman on 8.11.17.
  */
 
 public class PumpHistorySettings extends RealmObject implements PumpHistoryInterface {
@@ -43,7 +43,7 @@ public class PumpHistorySettings extends RealmObject implements PumpHistoryInter
     private byte[] targets;
 
     @Override
-    public List nightscout() { return new ArrayList(); }
+    public List nightscout(DataStore dataStore) { return null; }
 
     public static void change(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
                             int eventType) {

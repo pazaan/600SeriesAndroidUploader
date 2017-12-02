@@ -57,8 +57,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         }
 
         public byte[] response() {
-            byte[] response = {(byte) (this.request >> 8), (byte) (this.request)};
-            return response;
+            return new byte[]{(byte) (this.request >> 8), (byte) (this.request)};
         }
     }
 

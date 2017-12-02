@@ -5,14 +5,16 @@ import java.util.Date;
 import io.realm.RealmObject;
 
 /**
- * Created by John on 23.10.17.
+ * Created by Pogman on 23.10.17.
  */
 
 public class PumpHistorySegment extends RealmObject {
     private Date fromDate;
     private Date toDate;
     private byte historyType;
-//    private byte xxx;
+
+//    private byte xxx; // test
+//    private byte xxx; // live
 
     public void addSegment(Date date, byte historyType) {
         this.historyType = historyType;

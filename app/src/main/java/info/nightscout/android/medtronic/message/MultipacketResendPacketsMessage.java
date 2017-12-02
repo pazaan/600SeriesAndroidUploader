@@ -10,7 +10,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 
 /**
- * Created by John on 10.10.17.
+ * Created by Pogman on 10.10.17.
  */
 
 public class MultipacketResendPacketsMessage extends MedtronicSendMessageRequestMessage {

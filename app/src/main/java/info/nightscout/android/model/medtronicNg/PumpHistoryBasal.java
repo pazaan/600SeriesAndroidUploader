@@ -7,14 +7,16 @@ import java.util.Date;
 import java.util.List;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
+import info.nightscout.android.model.store.DataStore;
 import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.api.UploadItem;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
 /**
- * Created by John on 26.10.17.
+ * Created by Pogman on 26.10.17.
  */
 
 public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterface {
@@ -60,60 +62,64 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
     private int resumeReason;
 
     @Override
-    public List nightscout() {
-        List list = new ArrayList();
+    public List nightscout(DataStore dataStore) {
+        List<UploadItem> uploadItems = new ArrayList<>();
 
-        TreatmentsEndpoints.Treatment treatment = new TreatmentsEndpoints.Treatment();
-        list.add("treatment");
-        list.add(uploadACK ? "update" : "new");
-        list.add(treatment);
+        if (dataStore.isNsEnableTreatments()) {
 
-        treatment.setKey600(key);
-        treatment.setEventType("Temp Basal");
-        String notes = "";
+            UploadItem uploadItem = new UploadItem();
+            uploadItems.add(uploadItem);
+            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
 
-        if (suspend) {
-            treatment.setCreated_at(programmedDate);
-            treatment.setDuration(duration);
-            treatment.setAbsolute((float) 0);
-            notes = PumpHistoryParser.TextEN.NS_SUSPEND.getText() + ": " +
-                    PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.SUSPEND_REASON.convert(suspendReason).name()).getText();
+            treatment.setKey600(key);
+            treatment.setEventType("Temp Basal");
+            String notes = "";
 
-        } else if (resume) {
-            treatment.setCreated_at(programmedDate);
-            treatment.setDuration(0);
-            notes = PumpHistoryParser.TextEN.NS_RESUME.getText() + ": " +
-                    PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.RESUME_REASON.convert(resumeReason).name()).getText();
-
-        } else {
-            treatment.setCreated_at(programmedDate);
-
-            notes += "Temp Basal:";
-
-            if (PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(type)) {
-                treatment.setPercent(percentageOfRate - 100);
-                notes += " " + percentageOfRate + "%";
-            } else {
-                treatment.setAbsolute((float) rate);
-                notes += " " + rate + "U";
-            }
-
-            notes += ", duration " + duration + " minutes";
-
-            if (!PumpHistoryParser.TEMP_BASAL_PRESET.TEMP_BASAL_PRESET_0.equals(preset))
-                notes += " [" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.TEMP_BASAL_PRESET.convert(preset).name()).getText() + "]";
-
-            if (!canceled) {
+            if (suspend) {
+                treatment.setCreated_at(programmedDate);
                 treatment.setDuration(duration);
+                treatment.setAbsolute((float) 0);
+                notes = PumpHistoryParser.TextEN.NS_SUSPEND.getText() + ": " +
+                        PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.SUSPEND_REASON.convert(suspendReason).name()).getText();
+
+            } else if (resume) {
+                treatment.setCreated_at(programmedDate);
+                treatment.setDuration(0);
+                notes = PumpHistoryParser.TextEN.NS_RESUME.getText() + ": " +
+                        PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.RESUME_REASON.convert(resumeReason).name()).getText();
+
             } else {
-                int minutes = (int) Math.ceil((completedRTC - programmedRTC) / 60);
-                treatment.setDuration(minutes);
-                notes += " * canceled, duration " + minutes + " minutes";
+                treatment.setCreated_at(programmedDate);
+
+                notes += "Temp Basal:";
+
+                if (PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(type)) {
+                    treatment.setPercent(percentageOfRate - 100);
+                    notes += " " + percentageOfRate + "%";
+                } else {
+                    treatment.setAbsolute((float) rate);
+                    notes += " " + rate + "U";
+                }
+
+                notes += ", duration " + duration + " minutes";
+
+                if (!PumpHistoryParser.TEMP_BASAL_PRESET.TEMP_BASAL_PRESET_0.equals(preset))
+                    notes += " [" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.TEMP_BASAL_PRESET.convert(preset).name()).getText() + "]";
+
+                if (!canceled) {
+                    treatment.setDuration(duration);
+                } else {
+                    int minutes = (int) Math.ceil((completedRTC - programmedRTC) / 60);
+                    treatment.setDuration(minutes);
+                    notes += " * canceled, duration " + minutes + " minutes";
+                    uploadItem.update();
+                }
             }
+
+            treatment.setNotes(notes);
         }
 
-        treatment.setNotes(notes);
-        return list;
+        return uploadItems;
     }
 
     public static void temp(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,

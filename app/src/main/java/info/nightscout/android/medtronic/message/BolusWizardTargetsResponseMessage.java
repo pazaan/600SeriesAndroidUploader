@@ -13,7 +13,7 @@ import static info.nightscout.android.utils.ToolKit.read8toUInt;
 import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
- * Created by John on 8.11.17.
+ * Created by Pogman on 8.11.17.
  */
 
 public class BolusWizardTargetsResponseMessage extends MedtronicSendMessageResponseMessage {
@@ -48,7 +48,7 @@ public class BolusWizardTargetsResponseMessage extends MedtronicSendMessageRespo
         Log.d(TAG, "Targets: Items: " + items);
 
         for (int i = 0; i < items; i++) {
-            hi_mgdl = read16BEtoUInt(targets, index + 0x00);
+            hi_mgdl = read16BEtoUInt(targets, index);
             hi_mmol = read16BEtoUInt(targets, index + 0x02) / 10.0;
             lo_mgdl = read16BEtoUInt(targets, index + 0x04);
             lo_mmol = read16BEtoUInt(targets, index + 0x06) / 10.0;

@@ -14,7 +14,7 @@ import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
 import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
- * Created by John on 8.11.17.
+ * Created by Pogman on 8.11.17.
  */
 
 public class BolusWizardCarbRatiosResponseMessage extends MedtronicSendMessageResponseMessage {
@@ -47,7 +47,7 @@ public class BolusWizardCarbRatiosResponseMessage extends MedtronicSendMessageRe
         Log.d(TAG, "Carb Ratios: Items: " + items);
 
         for (int i = 0; i < items; i++) {
-            rate1 = read32BEtoInt(carbRatios, index + 0x00) / 10.0;
+            rate1 = read32BEtoInt(carbRatios, index) / 10.0;
             rate2 = read32BEtoInt(carbRatios, index + 0x04) / 1.0;
             time = read8toUInt(carbRatios, index + 0x08) * 30;
             Log.d(TAG, "TimePeriod: " + (i + 1) + " Rate1: " + rate1 + " Rate2: " + rate2 + " Time: " + time / 60 + "h" + time % 60 + "m");
