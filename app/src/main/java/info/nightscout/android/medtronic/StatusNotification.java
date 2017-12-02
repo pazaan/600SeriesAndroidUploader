@@ -17,7 +17,6 @@ import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
-import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -49,6 +48,9 @@ public class StatusNotification {
     private Realm historyRealm;
     private DataStore dataStore;
 
+    private NOTIFICATION mode;
+    private long nextpoll;
+
     private StatusNotification() {
     }
 
@@ -60,7 +62,7 @@ public class StatusNotification {
         return instance;
     }
 
-    public void endNotification () {
+    public void endNotification() {
         Log.d(TAG, "endNotification called");
 
         if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
@@ -84,7 +86,7 @@ public class StatusNotification {
 
         mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        mNotificationBuilder = new  NotificationCompat.Builder(context)
+        mNotificationBuilder = new NotificationCompat.Builder(context)
                 .setContentTitle("600 Series Uploader")
                 .setSmallIcon(R.drawable.ic_notification)
                 .setVisibility(VISIBILITY_PUBLIC)
@@ -96,13 +98,24 @@ public class StatusNotification {
         dataStore = storeRealm.where(DataStore.class).findFirst();
     }
 
-    public void updateNotification(long nextpoll) {
+    public void updateNotification(NOTIFICATION mode) {
+        this.mode = mode;
+        updateNotification();
+    }
+
+    public void updateNotification(NOTIFICATION mode, long nextpoll) {
+        this.mode = mode;
+        this.nextpoll = nextpoll;
+        updateNotification();
+    }
+
+    private void updateNotification() {
         Log.d(TAG, "updateNotification called");
 
         long now = System.currentTimeMillis();
 
         String poll = "";
-        if (nextpoll > 0)
+        if (mode == NOTIFICATION.NORMAL && nextpoll > 0)
             poll = "Next " + dateFormatterFull.format(nextpoll);
 
         long sgvtime = now;
@@ -117,14 +130,13 @@ public class StatusNotification {
             sgv = "SGV " + strFormatSGV(sgvResults.first().getSgv());
             sgvtime = sgvResults.first().getCgmDate().getTime();
             if (sgvResults.size() > 1) {
-                int diff =  sgvResults.first().getSgv() - sgvResults.get(1).getSgv();
+                int diff = sgvResults.first().getSgv() - sgvResults.get(1).getSgv();
                 if (dataStore.isMmolxl())
-                    delta = "" + (diff > 0 ? "+" : "") + new BigDecimal(diff / MMOLXLFACTOR ).setScale(2, BigDecimal.ROUND_HALF_UP);
+                    delta = "" + (diff > 0 ? "+" : "") + new BigDecimal(diff / MMOLXLFACTOR).setScale(2, BigDecimal.ROUND_HALF_UP);
                 else
                     delta = "" + (diff > 0 ? "+" : "") + diff;
             }
-        }
-        else sgv = "No SGV available";
+        } else sgv = "No SGV available";
 
         String iob = iob();
         String basal = basal();
@@ -132,7 +144,7 @@ public class StatusNotification {
         String bg = lastBG();
         String calibration = calibration();
 
-        NotificationCompat.InboxStyle sub = new  NotificationCompat.InboxStyle()
+        NotificationCompat.InboxStyle sub = new NotificationCompat.InboxStyle()
                 .addLine(iob)
                 .addLine(basal)
                 .addLine(bg)
@@ -140,13 +152,12 @@ public class StatusNotification {
                 .setSummaryText((poll.equals("") ? "" : poll + "  ") + calibration);
 
 //        mNotificationBuilder.setProgress(0, 0, false);
-        if (MasterService.noteError)
+        if (mode == NOTIFICATION.ERROR)
             mNotificationBuilder.setSmallIcon(R.drawable.ic_error);
-        else if (MasterService.commsActive) {
+        else if (mode == NOTIFICATION.BUSY) {
 //            mNotificationBuilder.setProgress(0, 0, true);
             mNotificationBuilder.setSmallIcon(R.drawable.busy_anim);
-        }
-        else
+        } else
             mNotificationBuilder.setSmallIcon(R.drawable.ic_notification);
 
         mNotificationBuilder.setStyle(sub);
@@ -179,9 +190,9 @@ public class StatusNotification {
         String text = "";
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
-            .greaterThan("eventDate", new Date(now - (15 * 60000L)))
-            .equalTo("validCGM", true)
-            .findAllSorted("eventDate", Sort.DESCENDING);
+                .greaterThan("eventDate", new Date(now - (15 * 60000L)))
+                .equalTo("validCGM", true)
+                .findAllSorted("eventDate", Sort.DESCENDING);
 
         if (results.size() > 0) {
             text = "Calibration ";
@@ -259,7 +270,7 @@ public class StatusNotification {
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
         if (results.size() > 0) {
-            text = "Last BG: " + strFormatSGV(results.first().getBg()) + " at " + dateFormatterShort.format(results.first().getBgDate());
+            text = "BG: " + strFormatSGV(results.first().getBg()) + " at " + dateFormatterShort.format(results.first().getBgDate());
 
             /*
             results = results.where()
@@ -287,27 +298,33 @@ public class StatusNotification {
 
             if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(results.first().getBolusType())) {
                 if (results.first().isSquareDelivered())
-                    text = "Last Bolus: dual" + results.first().getNormalDeliveredAmount() + "/" + results.first().getSquareDeliveredAmount() + "u:" + results.first().getSquareDeliveredDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text = "Bolus: dual " + results.first().getNormalDeliveredAmount() + "/" + results.first().getSquareDeliveredAmount() + "u:" + results.first().getSquareDeliveredDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
                 else if (results.first().isNormalDelivered())
                     text = "Bolusing: dual " + results.first().getNormalDeliveredAmount() + "/" + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
                 else
-                    text = "Bolusing: dual " + results.first().getNormalProgrammedAmount() + "/" + results.first().getSquareProgrammedAmount() + "u:"+ results.first().getSquareProgrammedDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text = "Bolusing: dual " + results.first().getNormalProgrammedAmount() + "/" + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
 
             } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(results.first().getBolusType())) {
                 if (results.first().isSquareDelivered())
-                    text = "Last Bolus: square " + results.first().getSquareDeliveredAmount() + "u:" + results.first().getSquareDeliveredDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text = "Bolus: square " + results.first().getSquareDeliveredAmount() + "u:" + results.first().getSquareDeliveredDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
                 else
                     text = "Bolusing: square " + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
 
             } else {
                 if (results.first().isNormalDelivered())
-                    text = "Last Bolus: " + results.first().getNormalDeliveredAmount() + "u at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text = "Bolus: " + results.first().getNormalDeliveredAmount() + "u at " + dateFormatterShort.format(results.first().getProgrammedDate());
                 else
-                    text = "Bolusing: "  + results.first().getNormalProgrammedAmount() + "u at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text = "Bolusing: " + results.first().getNormalProgrammedAmount() + "u at " + dateFormatterShort.format(results.first().getProgrammedDate());
             }
 
         }
 
         return text;
+    }
+
+    public enum NOTIFICATION {
+        NORMAL,
+        BUSY,
+        ERROR,
     }
 }

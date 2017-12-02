@@ -311,9 +311,9 @@ public class NightScoutUpload {
                 if (record.getTransmitterBattery() > 80)
                     statusCGM = shorten ? "" : ":::: ";
                 else if (record.getTransmitterBattery() > 55)
-                    statusCGM = shorten ? "" : ":::.∙";
+                    statusCGM = shorten ? "" : ":::. ";
                 else if (record.getTransmitterBattery() > 30)
-                    statusCGM = shorten ? "" : "::..";
+                    statusCGM = shorten ? "" : "::.. ";
                 else if (record.getTransmitterBattery() > 10)
                     statusCGM = shorten ? "" : ":... ";
                 else

@@ -65,14 +65,11 @@ public class MasterService extends Service {
     private StatusNotification statusNotification = StatusNotification.getInstance();
 
     private static int uploaderBatteryLevel = 0;
-    private static boolean serviceActive = true;
-
-    public static boolean commsActive = false;
-    public static boolean noteError = false;
-
     public static int getUploaderBatteryLevel() {
         return uploaderBatteryLevel;
     }
+
+    private boolean serviceActive = true;
 
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
@@ -191,7 +188,6 @@ public class MasterService extends Service {
             Log.i(TAG, "service start");
             //userLogMessage.add(TAG + " service start");
 
-            // * use the status note for this
             Intent notificationIntent = new Intent(this, MainActivity.class);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
             Notification notification = new NotificationCompat.Builder(this)
@@ -204,8 +200,6 @@ public class MasterService extends Service {
             startForeground(SERVICE_NOTIFICATION_ID, notification);
 
             statusNotification.initNotification(mContext);
-
-            noteError = false;
 
             startCgmService();
 
@@ -222,7 +216,6 @@ public class MasterService extends Service {
             Log.d(TAG, "onReceive : " + action);
 
             if (Constants.ACTION_CNL_COMMS_FINISHED.equals(action)) {
-                commsActive = false;
 
                 if (serviceActive) {
                     Log.d(TAG, "onReceive : cnl comms finished");
@@ -233,13 +226,11 @@ public class MasterService extends Service {
 
                     if (nextpoll > 0) {
                         MedtronicCnlAlarmManager.setAlarm(nextpoll);
-                        noteError = false;
+                        statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, nextpoll);
                     } else {
                         MedtronicCnlAlarmManager.cancelAlarm();
-                        noteError = true;
+                        statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
                     }
-
-                    statusNotification.updateNotification(nextpoll);
 
                 } else {
                     Log.d(TAG, "onReceive : stopping master service");
@@ -249,7 +240,6 @@ public class MasterService extends Service {
             } else if (Constants.ACTION_STOP_SERVICE.equals(action)) {
                 MedtronicCnlAlarmManager.cancelAlarm();
                 serviceActive = false;
-//                if (!commsActive)
                 stopSelf();
 
             } else if (Constants.ACTION_READ_NOW.equals(action)) {
@@ -265,8 +255,7 @@ public class MasterService extends Service {
                 MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000);
 
             } else if (Constants.ACTION_CNL_COMMS_ACTIVE.equals(action)) {
-                commsActive = true;
-                statusNotification.updateNotification(0);
+                statusNotification.updateNotification(StatusNotification.NOTIFICATION.BUSY);
             }
 
         }
@@ -293,7 +282,7 @@ public class MasterService extends Service {
 
         if (start - now < delay) start = now + delay;
         MedtronicCnlAlarmManager.setAlarm(start);
-        statusNotification.updateNotification(start);
+        statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, start);
 
         if (start - now > 10 * 1000)
             userLogMessage.add("Next poll due at: " + dateFormatter.format(start));
@@ -332,9 +321,7 @@ public class MasterService extends Service {
             // received from UsbActivity via OS
             if (Constants.ACTION_HAS_USB_PERMISSION.equals(action)) {
 
-                noteError = false;
-                commsActive = false;
-                statusNotification.updateNotification(0);
+                statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
 
                 startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
 
@@ -353,9 +340,7 @@ public class MasterService extends Service {
 
                 if (hasUsbPermission()) {
 
-                    noteError = false;
-                    commsActive = false;
-                    statusNotification.updateNotification(0);
+                    statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
 
                 } else {
                     Log.d(TAG, "No permission for USB. Waiting.");
@@ -370,9 +355,7 @@ public class MasterService extends Service {
 
                 MedtronicCnlAlarmManager.cancelAlarm();
 
-                noteError = true;
-                commsActive = false;
-                statusNotification.updateNotification(0);
+                statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
 
                 // received from CnlService
             } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
@@ -382,9 +365,7 @@ public class MasterService extends Service {
 
                 MedtronicCnlAlarmManager.cancelAlarm();
 
-                noteError = true;
-                commsActive = false;
-                statusNotification.updateNotification(0);
+                statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
 
             }
         }

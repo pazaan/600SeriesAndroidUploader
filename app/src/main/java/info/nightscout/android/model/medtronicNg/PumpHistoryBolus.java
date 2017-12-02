@@ -37,9 +37,9 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
     private int bolusRef = -1;
 
-    int bolusType; // normal=0 square=1 dual=2
-    int bolusSource;
-    int bolusPreset;
+    private int bolusType; // normal=0 square=1 dual=2
+    private int bolusSource;
+    private int bolusPreset;
 
     private double normalProgrammedAmount;
     private double normalDeliveredAmount;
