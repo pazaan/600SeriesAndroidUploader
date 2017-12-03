@@ -130,6 +130,35 @@
                     android:key="nsEnableProfileUpload"
                     android:defaultValue="true"
                     android:summary="Upload profiles to Nightscout with basal patterns, carb ratios, sensitivity and targets"/>
+
+                <CheckBoxPreference android:title="Single Profile Group"
+                    android:dependency="nsEnableProfileUpload"
+                    android:key="nsEnableProfileSingle"
+                    android:defaultValue="false"
+                    android:summary="Only use a single profile group in nightscout (note: obsolete groups will be removed)"/>
+
+                <CheckBoxPreference android:title="Offset start date"
+                    android:dependency="nsEnableProfileUpload"
+                    android:key="nsEnableProfileOffset"
+                    android:defaultValue="false"
+                    android:summary="Uploaded profile will be valid from 12 months ago"/>
+
+                <ListPreference android:title="Default Pattern"
+                    android:dependency="nsEnableProfileUpload"
+                    android:key="nsProfileDefault"
+                    android:defaultValue="1"
+                    android:summary="%s"
+                    android:entries="@array/profile_default"
+                    android:entryValues="@array/profile_default_values"/>
+
+                <ListPreference android:title="Active Insulin Time"
+                    android:dependency="nsEnableProfileUpload"
+                    android:key="nsActiveInsulinTime"
+                    android:defaultValue="3"
+                    android:summary="%s"
+                    android:entries="@array/active_insulin_time"
+                    android:entryValues="@array/active_insulin_time_values"/>
+
                 <CheckBoxPreference android:title="Basal Pattern Change"
                     android:dependency="nsEnableTreatments"
                     android:key="nsEnablePatternChange"

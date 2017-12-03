@@ -68,4 +68,83 @@
         <item>90</item>
     </string-array>
 
+    <string-array name="profile_default">
+        <item>Basal 1</item>
+        <item>Basal 2</item>
+        <item>Basal 3</item>
+        <item>Basal 4</item>
+        <item>Basal 5</item>
+        <item>Workday</item>
+        <item>Day Off</item>
+        <item>Sick Day</item>
+    </string-array>
+
+    <string-array name="profile_default_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
+
+    <string-array name="active_insulin_time">
+        <item>2:00 hr</item>
+        <item>2:15 hr</item>
+        <item>2:30 hr</item>
+        <item>2:45 hr</item>
+        <item>3:00 hr</item>
+        <item>3:15 hr</item>
+        <item>3:30 hr</item>
+        <item>3:45 hr</item>
+        <item>4:00 hr</item>
+        <item>4:15 hr</item>
+        <item>4:30 hr</item>
+        <item>4:45 hr</item>
+        <item>5:00 hr</item>
+        <item>5:15 hr</item>
+        <item>5:30 hr</item>
+        <item>5:45 hr</item>
+        <item>6:00 hr</item>
+        <item>6:15 hr</item>
+        <item>6:30 hr</item>
+        <item>6:45 hr</item>
+        <item>7:00 hr</item>
+        <item>7:15 hr</item>
+        <item>7:30 hr</item>
+        <item>7:45 hr</item>
+        <item>8:00 hr</item>
+    </string-array>
+
+    <string-array name="active_insulin_time_values">
+        <item>2</item>
+        <item>2.25</item>
+        <item>2.5</item>
+        <item>2.75</item>
+        <item>3</item>
+        <item>3.25</item>
+        <item>3.5</item>
+        <item>3.75</item>
+        <item>4</item>
+        <item>4.25</item>
+        <item>4.5</item>
+        <item>4.75</item>
+        <item>5</item>
+        <item>5.25</item>
+        <item>5.5</item>
+        <item>5.75</item>
+        <item>6</item>
+        <item>6.25</item>
+        <item>6.5</item>
+        <item>6.75</item>
+        <item>7</item>
+        <item>7.25</item>
+        <item>7.5</item>
+        <item>7.75</item>
+        <item>8</item>
+    </string-array>
+
+
 </resources>

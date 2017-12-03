@@ -540,6 +540,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setNsEnableBatteryChange(sharedPreferences.getBoolean("nsEnableBatteryChange", true));
                 dataStore.setNsEnableLifetimes(sharedPreferences.getBoolean("nsEnableLifetimes", false));
                 dataStore.setNsEnableProfileUpload(sharedPreferences.getBoolean("nsEnableProfileUpload", true));
+                dataStore.setNsEnableProfileSingle(sharedPreferences.getBoolean("nsEnableProfileSingle", false));
+                dataStore.setNsEnableProfileOffset(sharedPreferences.getBoolean("nsEnableProfileOffset", false));
+                dataStore.setNsProfileDefault(Integer.parseInt(sharedPreferences.getString("nsProfileDefault", "1")));
+                dataStore.setNsActiveInsulinTime(Float.parseFloat(sharedPreferences.getString("nsActiveInsulinTime", "3")));
                 dataStore.setNsEnablePatternChange(sharedPreferences.getBoolean("nsEnablePatternChange", true));
                 dataStore.setNsEnableInsertBGasCGM(sharedPreferences.getBoolean("nsEnableInsertBGasCGM", false));
 

@@ -57,6 +57,10 @@ public class DataStore extends RealmObject {
     private boolean nsEnableBatteryChange;
     private boolean nsEnableLifetimes;
     private boolean nsEnableProfileUpload;
+    private boolean nsEnableProfileSingle;
+    private boolean nsEnableProfileOffset;
+    private int nsProfileDefault;
+    private float nsActiveInsulinTime;
     private boolean nsEnablePatternChange;
     private boolean nsEnableInsertBGasCGM;
 
@@ -357,6 +361,38 @@ public class DataStore extends RealmObject {
 
     public void setNsEnableProfileUpload(boolean nsEnableProfileUpload) {
         this.nsEnableProfileUpload = nsEnableProfileUpload;
+    }
+
+    public boolean isNsEnableProfileSingle() {
+        return nsEnableProfileSingle;
+    }
+
+    public void setNsEnableProfileSingle(boolean nsEnableProfileSingle) {
+        this.nsEnableProfileSingle = nsEnableProfileSingle;
+    }
+
+    public boolean isNsEnableProfileOffset() {
+        return nsEnableProfileOffset;
+    }
+
+    public void setNsEnableProfileOffset(boolean nsEnableProfileGroups) {
+        this.nsEnableProfileOffset = nsEnableProfileGroups;
+    }
+
+    public int getNsProfileDefault() {
+        return nsProfileDefault;
+    }
+
+    public void setNsProfileDefault(int nsProfileDefault) {
+        this.nsProfileDefault = nsProfileDefault;
+    }
+
+    public float getNsActiveInsulinTime() {
+        return nsActiveInsulinTime;
+    }
+
+    public void setNsActiveInsulinTime(float nsActiveInsulinTime) {
+        this.nsActiveInsulinTime = nsActiveInsulinTime;
     }
 
     public boolean isNsEnablePatternChange() {

@@ -207,33 +207,50 @@ public class NightScoutUpload {
                 String foundKey;
                 int count = 0;
 
-                for (ProfileEndpoints.Profile item : list) {
-                    foundKey = item.getKey600();
-                    if (foundKey != null && foundKey.equals(key)) count++;
-                }
+                if (dataStore.isNsEnableProfileSingle() && mode.equals("update") || mode.equals("check")) {
+                    Log.d(TAG, "single profile enabled, deleting obsolete profiles");
 
-                if (count > 0) {
-                    Log.d(TAG, "found " + count + " already in nightscout for KEY: " + key);
+                    for (ProfileEndpoints.Profile item : list) {
+                        foundID = item.get_id();
+                        Response<ResponseBody> responseBody = profileEndpoints.deleteID(foundID).execute();
+                        if (responseBody.isSuccessful()) {
+                            Log.d(TAG, "deleted this item! ID: " + foundID);
+                        } else {
+                            Log.d(TAG, "no DELETE response from nightscout site");
+                            return false;
+                        }
+                    }
 
-                    if (mode.equals("update") || mode.equals("delete") || count > 1) {
-                        for (ProfileEndpoints.Profile item : list) {
-                            foundKey = item.getKey600();
-                            if (foundKey != null && foundKey.equals(key)) {
-                                foundID = item.get_id();
-                                Response<ResponseBody> responseBody = profileEndpoints.deleteID(foundID).execute();
-                                if (responseBody.isSuccessful()) {
-                                    Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + foundID);
-                                } else {
-                                    Log.d(TAG, "no DELETE response from nightscout site");
-                                    return false;
+                } else {
+
+                    for (ProfileEndpoints.Profile item : list) {
+                        foundKey = item.getKey600();
+                        if (foundKey != null && foundKey.equals(key)) count++;
+                    }
+
+                    if (count > 0) {
+                        Log.d(TAG, "found " + count + " already in nightscout for KEY: " + key);
+
+                        if (mode.equals("update") || mode.equals("delete") || count > 1) {
+                            for (ProfileEndpoints.Profile item : list) {
+                                foundKey = item.getKey600();
+                                if (foundKey != null && foundKey.equals(key)) {
+                                    foundID = item.get_id();
+                                    Response<ResponseBody> responseBody = profileEndpoints.deleteID(foundID).execute();
+                                    if (responseBody.isSuccessful()) {
+                                        Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + foundID);
+                                    } else {
+                                        Log.d(TAG, "no DELETE response from nightscout site");
+                                        return false;
+                                    }
+                                    if (--count == 1) break;
                                 }
-                                if (--count == 1) break;
                             }
                         }
                     }
-                }
 
-                if (count > 0) return true;
+                    if (count > 0) return true;
+                }
             }
 
             if (mode.equals("update") || mode.equals("check")) {

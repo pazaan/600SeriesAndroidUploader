@@ -99,22 +99,22 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             TimeZone tz = TimeZone.getDefault();
             Date startdate = new Date(eventDate.getTime()); // - 90 * 24 * 60 * 60000L) ; // active from date
             String timezone = tz.getID();  // (Time Zone) - time zone local to the patient. Should be set.
-            String units = "mmol"; // (Profile Units) - blood glucose units used in the profile, either "mgdl" or "mmol"   ??? get from uploader or NS ???
+            String units = "mgdl"; // (Profile Units) - blood glucose units used in the profile, either "mgdl" or "mmol"   ??? get from uploader or NS ???
             String carbshr = "20"; // (Carbs per Hour) - The number of carbs that are processed per hour. Default 20.
-            String dia = "3"; // (Insulin duration) - value should be the duration of insulin action to use in calculating how much insulin is left active. Default 3 hours.
+            //String dia = "3"; // (Insulin duration) - value should be the duration of insulin action to use in calculating how much insulin is left active. Default 3 hours.
             String delay = "20"; // NS default value - delay from action to activation for insulin?
 
-            if (dataStore.isMmolxl())
-                units = "mmol";
-            else
-                units = "mgdl";
+            if (dataStore.isMmolxl()) units = "mmol";
+            if (dataStore.isNsEnableProfileOffset()) startdate = new Date(eventDate.getTime() - 365 * 24 * 60 * 60000L) ; // active from date
+            String dia = "" + dataStore.getNsActiveInsulinTime();
+            String profileDefault = PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BASAL_PATTERN.convert(dataStore.getNsProfileDefault()).name()).getText();
 
             profile.setKey600(key);
             profile.setCreated_at(eventDate);
             profile.setStartDate(startdate);
             profile.setMills("" + startdate.getTime());
 
-            profile.setDefaultProfile("Basal 1");
+            profile.setDefaultProfile(profileDefault);
             profile.setUnits(units);
 
             ProfileEndpoints.Store store = new ProfileEndpoints.Store(); // <-- BasalProfile x8 as named on Pump
