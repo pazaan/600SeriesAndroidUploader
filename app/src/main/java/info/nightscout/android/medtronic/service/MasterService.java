@@ -271,7 +271,7 @@ public class MasterService extends Service {
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
-                .equalTo("validCGM", true)
+                .equalTo("cgmActive", true)
                 .findAllSorted("cgmDate", Sort.DESCENDING);
 
         if (results.size() > 0) {

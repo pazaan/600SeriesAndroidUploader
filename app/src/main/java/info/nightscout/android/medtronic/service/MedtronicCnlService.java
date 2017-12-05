@@ -820,7 +820,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
         RealmResults<PumpStatusEvent> cgmresults = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
-                .equalTo("validCGM", true)
+                .equalTo("cgmActive", true)
                 .findAllSorted("cgmDate", Sort.DESCENDING);
         long timeLastCGM = 0;
         if (cgmresults.size() > 0) {
@@ -863,7 +863,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
         RealmResults<PumpStatusEvent> cgmresults = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
-                .equalTo("validCGM", true)
+                .equalTo("cgmActive", true)
                 .findAllSorted("cgmDate", Sort.DESCENDING);
 
         if (cgmresults.size() > 0) {

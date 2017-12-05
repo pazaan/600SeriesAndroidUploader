@@ -227,7 +227,7 @@ public class StatusNotification {
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(now - (15 * 60000L)))
-                .equalTo("validCGM", true)
+                .equalTo("cgmActive", true)
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
         if (results.size() > 0) {
