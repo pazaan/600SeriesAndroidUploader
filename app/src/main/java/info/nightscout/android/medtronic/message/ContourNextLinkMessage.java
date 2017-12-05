@@ -347,7 +347,8 @@ public abstract class ContourNextLinkMessage {
                 } else if (MedtronicSendMessageRequestMessage.MessageType.NAK_COMMAND.response(cmd)) {
                     Log.d(TAG, "*** NAK response" + HexDump.dumpHexString(decrypted));
                     clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS); // if multipacket was in progress we may need to clear 2 EHSM_SESSION(1) messages from pump
-                    throw new UnexpectedMessageException("Pump sent a NAK response" + tag);
+                    int nakcode = decrypted[4];
+                    throw new UnexpectedMessageException("Pump sent a NAK(" + nakcode +") response" + tag);
                     //fetchMoreData = false;
                 } else if (MedtronicSendMessageRequestMessage.MessageType.INITIATE_MULTIPACKET_TRANSFER.response(cmd)) {
                     multipacketSession = new MultipacketSession(decrypted);

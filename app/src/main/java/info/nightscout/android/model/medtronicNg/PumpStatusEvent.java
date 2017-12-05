@@ -76,7 +76,6 @@ public class PumpStatusEvent extends RealmObject {
     private float sensorRateOfChange;
 
     private boolean oldSgvWhenNewExpected = false;
-    private boolean validCGM = false;
     private boolean validSGV = false;
 
     @Index
@@ -236,14 +235,6 @@ public class PumpStatusEvent extends RealmObject {
 
     public void setValidSGV(boolean validSGV) {
         this.validSGV = validSGV;
-    }
-
-    public boolean isValidCGM() {
-        return validCGM;
-    }
-
-    public void setValidCGM(boolean validCGM) {
-        this.validCGM = validCGM;
     }
 
     public boolean isSuspended() {
@@ -616,7 +607,6 @@ public class PumpStatusEvent extends RealmObject {
                 ", calibrationDueMinutes=" + calibrationDueMinutes +
                 ", sensorRateOfChange=" + sensorRateOfChange +
                 ", oldSgvWhenNewExpected=" + oldSgvWhenNewExpected +
-                ", validCGM=" + validCGM +
                 ", validSGV=" + validSGV +
                 ", uploaded=" + uploaded +
                 '}';

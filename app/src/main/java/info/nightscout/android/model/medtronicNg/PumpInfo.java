@@ -12,7 +12,6 @@ public class PumpInfo extends RealmObject {
     private long pumpMac;
     private String deviceName;
     private byte lastRadioChannel;
-    private long lastQueryTS = 0;
     private RealmList<ContourNextLinkInfo> associatedCnls;
     private RealmList<PumpStatusEvent> pumpHistory = new RealmList<>();
 
@@ -58,13 +57,5 @@ public class PumpInfo extends RealmObject {
 
     public long getPumpSerial() {
         return pumpMac & 0xffffff;
-    }
-
-    public long getLastQueryTS() {
-        return lastQueryTS;
-    }
-
-    public void updateLastQueryTS() {
-        lastQueryTS = System.currentTimeMillis();
     }
 }

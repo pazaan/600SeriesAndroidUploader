@@ -221,13 +221,6 @@ public class PumpHistoryHandler {
 
     public void cgm(PumpStatusEvent pumpRecord) {
 
-        boolean pullCGM = false;
-
-        final RealmResults<PumpHistoryCGM> results = historyRealm
-                .where(PumpHistoryCGM.class)
-                .findAllSorted("eventDate", Sort.ASCENDING);
-        if (results.size() == 0) pullCGM = true;
-
         // push the current sgv from status (always have latest sgv available even if there are comms errors after this)
         if (pumpRecord.isValidSGV()) {
 
@@ -235,10 +228,22 @@ public class PumpHistoryHandler {
             int rtc = pumpRecord.getCgmRTC();
             int offset = pumpRecord.getCgmOFFSET();
 
+            final RealmResults<PumpHistoryCGM> results = historyRealm
+                    .where(PumpHistoryCGM.class)
+                    .findAllSorted("eventDate", Sort.ASCENDING);
+
             // sgv is available do we need the backfill?
             if (dataStore.isSysEnableCgmHistory()
-                    && results.size() > 0 && date.getTime() - results.last().getEventDate().getTime() > 9 * 60 * 1000)
-                pullCGM = true;
+                    && results.size() == 0
+                    || (results.size() > 0 && date.getTime() - results.last().getEventDate().getTime() > 9 * 60 * 1000)) {
+                userLogMessage(ICON_REFRESH + "history: cgm backfill");
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        dataStore.setRequestCgmHistory(true);
+                    }
+                });
+            }
 
             historyRealm.beginTransaction();
 
@@ -249,18 +254,6 @@ public class PumpHistoryHandler {
 
             historyRealm.commitTransaction();
         }
-
-        if (pullCGM) {
-            userLogMessage(ICON_REFRESH + "history: cgm backfill");
-
-            storeRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    dataStore.setRequestCgmHistory(true);
-                }
-            });
-        }
-
     }
 
     public void update(MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {

@@ -9,6 +9,7 @@ import java.util.List;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.android.model.store.DataStore;
+import info.nightscout.api.EntriesEndpoints;
 import info.nightscout.api.TreatmentsEndpoints;
 import info.nightscout.api.UploadItem;
 import io.realm.Realm;
@@ -88,6 +89,21 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                 treatment.setNotes("CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)");
                 uploadItem.update();
             }
+
+            // insert BG reading as CGM chart entry
+            if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsertBGasCGM()) {
+
+                UploadItem uploadItem1 = new UploadItem();
+                uploadItems.add(uploadItem1);
+                EntriesEndpoints.Entry entry = uploadItem1.ack(uploadACK).entry();
+
+                entry.setKey600(key + "CGM");
+                entry.setType("sgv");
+                entry.setDate(bgDate.getTime());
+                entry.setDateString(bgDate.toString());
+                entry.setSgv(bg);
+            }
+
         }
 
         return uploadItems;

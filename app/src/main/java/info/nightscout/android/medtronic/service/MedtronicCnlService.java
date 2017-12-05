@@ -288,10 +288,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     }
                 }
 
-                MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
+                final MedtronicCnlReader cnlReader = new MedtronicCnlReader(mHidDevice);
                 if (dataStore.isSysEnableWait500ms()) cnlReader.setCnlCommandMessageSleepMS(500);
-
-                realm.beginTransaction();
 
                 try {
                     userLogMessage("Connecting to Contour Next Link ");
@@ -301,14 +299,18 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     cnlReader.requestDeviceInfo();
 
                     // Is the device already configured?
-                    ContourNextLinkInfo info = realm
+                    if (realm.where(ContourNextLinkInfo.class).equalTo("serialNumber", cnlReader.getStickSerial()).findFirst() == null) {
+                        realm.executeTransaction(new Realm.Transaction() {
+                            @Override
+                            public void execute(Realm realm) {
+                                realm.createObject(ContourNextLinkInfo.class, cnlReader.getStickSerial());
+                            }
+                        });
+                    }
+                    final ContourNextLinkInfo info = realm
                             .where(ContourNextLinkInfo.class)
                             .equalTo("serialNumber", cnlReader.getStickSerial())
                             .findFirst();
-
-                    if (info == null) {
-                        info = realm.createObject(ContourNextLinkInfo.class, cnlReader.getStickSerial());
-                    }
 
                     cnlReader.getPumpSession().setStickSerial(info.getSerialNumber());
 
@@ -322,9 +324,13 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         cnlReader.requestReadInfo();
 
 // investigation: Negotiate Chan 0x81 empty response issue, always requesting key seems to stop this happening? why that?
+// negotiateChannel has more details
+/*
                         cnlReader.requestLinkKey();
                         info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
                         String key = info.getKey();
+*/
+
 /*
                         // always get LinkKey on startup to handle re-paired CNL-PUMP key changes
                         String key = null;
@@ -338,22 +344,26 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             key = info.getKey();
                         }
 */
-                        cnlReader.getPumpSession().setKey(MessageUtils.hexStringToByteArray(key));
+ //                       cnlReader.getPumpSession().setKey(MessageUtils.hexStringToByteArray(key));
 
-                        long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
+                        final long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
                         Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xffffff));
-                        PumpInfo activePump = realm
+
+                        // Is activePump already configured?
+                        if (realm.where(PumpInfo.class).equalTo("pumpMac", pumpMAC).findFirst() == null) {
+                            realm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(Realm realm) {
+                                    realm.createObject(PumpInfo.class, pumpMAC);
+                                }
+                            });
+                        }
+                        final PumpInfo activePump = realm
                                 .where(PumpInfo.class)
                                 .equalTo("pumpMac", pumpMAC)
                                 .findFirst();
 
-                        if (activePump == null) {
-                            activePump = realm.createObject(PumpInfo.class, pumpMAC);
-                        }
-
-                        activePump.updateLastQueryTS();
-
-                        byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
+                        final byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                         if (radioChannel == 0) {
                             userLogMessage(ICON_WARN + "Could not communicate with the pump. Is it nearby?");
                             Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
@@ -372,15 +382,16 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 CommsSignalError++;
                             else if (CommsSignalError > 0) CommsSignalError--;
 
-                            activePump.setLastRadioChannel(radioChannel);
                             userLogMessage(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                             Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
 
-                            // read pump status
-                            PumpStatusEvent pumpRecord = realm.createObject(PumpStatusEvent.class);
+                            cnlReader.requestLinkKey();
+                            //info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
 
-                            String deviceName = String.format("medtronic-600://%s", cnlReader.getStickSerial());
-                            activePump.setDeviceName(deviceName);
+                            // read pump status
+                            final PumpStatusEvent pumpRecord = new PumpStatusEvent();
+
+                            final String deviceName = String.format("medtronic-600://%s", cnlReader.getStickSerial());
 
                             // TODO - this should not be necessary. We should reverse lookup the device name from PumpInfo
                             pumpRecord.setDeviceName(deviceName);
@@ -397,8 +408,16 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             cnlReader.updatePumpStatus(pumpRecord);
 
                             validatePumpRecord(pumpRecord, activePump);
-                            activePump.getPumpHistory().add(pumpRecord);
-                            realm.commitTransaction();
+
+                            // write completed record to storage
+                            realm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(Realm realm) {
+                                    activePump.setLastRadioChannel(radioChannel);
+                                    activePump.setDeviceName(deviceName);
+                                    activePump.getPumpHistory().add(pumpRecord);
+                                }
+                            });
 
                             CommsSuccess++;
                             CommsError = 0;
@@ -464,7 +483,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             // due to the possibility of a late sensor-pump sgv send, the retry after 90 seconds will handle the history if needed
                             // also skip if pump battery is low and interval times are different
 
-                            // TODO - if low battery mode should we run a backfill after a time? 30/60 minutes? user log for history being unavailable?
+                            // TODO - if low battery mode should we run a backfill after a time? 30/60 minutes? user log message for history being unavailable?
 
                             if (!pumpRecord.isOldSgvWhenNewExpected() &&
                                     !(PumpBatteryError > 0 && dataStore.getLowBatPollInterval() > POLL_PERIOD_MS)) {
@@ -541,11 +560,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + "CNL reset successful.");
                 } finally {
                     shutdownProtect = false;
-
-                    if (realm.isInTransaction()) {
-                        // If we didn't commit the transaction, we've run into an error. Let's roll it back
-                        realm.cancelTransaction();
-                    }
 
                     // temporary debug use
                     //if (cnlClear > 0 || cnl0x81 > 0) userLogMessage("*** cnlClear=" + cnlClear + " cnl0x81=" + cnl0x81);
@@ -643,11 +657,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     }
 
     private void validatePumpRecord(PumpStatusEvent pumpRecord, PumpInfo activePump) {
-
-        // validate that this contains a new CGM record
-        if (pumpRecord.isCgmActive()) {
-            pumpRecord.setValidCGM(true);
-        }
 
         // validate that this contains a new SGV record
         if (pumpRecord.isCgmActive()) {
