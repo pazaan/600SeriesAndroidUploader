@@ -20,6 +20,8 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.medtronic.service.MedtronicCnlService;
 import info.nightscout.android.utils.HexDump;
 
+import static info.nightscout.android.utils.ToolKit.read16BEtoInt;
+import static info.nightscout.android.utils.ToolKit.read16BEtoShort;
 import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
 import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
@@ -31,7 +33,7 @@ public abstract class ContourNextLinkMessage {
 
     public static final int CLEAR_TIMEOUT_MS = 500;
     public static final int ERROR_CLEAR_TIMEOUT_MS = 2000;
-    public static final int PRESEND_CLEAR_TIMEOUT_MS = 100;
+    public static final int PRESEND_CLEAR_TIMEOUT_MS = 50; //100;
 
     public static final int READ_TIMEOUT_MS = 10000;
     public static final int CNL_READ_TIMEOUT_MS = 2000;
@@ -251,8 +253,8 @@ public abstract class ContourNextLinkMessage {
         byte[] payload;
         byte medtronicSequenceNumber = pumpSession.getMedtronicSequenceNumber();
 
-        // extra safety check and delay, CNL is not happy when we miss incomming messages
-        // the short delay also helps with state readiness
+        // extra safety check and delay, CNL is not happy when we miss incoming messages
+        // the short delay may also help with state readiness
         clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
 
         sendMessage(mDevice);
@@ -347,8 +349,9 @@ public abstract class ContourNextLinkMessage {
                 } else if (MedtronicSendMessageRequestMessage.MessageType.NAK_COMMAND.response(cmd)) {
                     Log.d(TAG, "*** NAK response" + HexDump.dumpHexString(decrypted));
                     clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS); // if multipacket was in progress we may need to clear 2 EHSM_SESSION(1) messages from pump
-                    int nakcode = decrypted[4];
-                    throw new UnexpectedMessageException("Pump sent a NAK(" + nakcode +") response" + tag);
+                    short nakcmd = read16BEtoShort(decrypted, 3);
+                    byte nakcode = decrypted[5];
+                    throw new UnexpectedMessageException("Pump sent a NAK(" + String.format("%02X", nakcmd) + ":" + String.format("%02X", nakcode) + ") response" + tag);
                     //fetchMoreData = false;
                 } else if (MedtronicSendMessageRequestMessage.MessageType.INITIATE_MULTIPACKET_TRANSFER.response(cmd)) {
                     multipacketSession = new MultipacketSession(decrypted);
@@ -509,7 +512,8 @@ public abstract class ContourNextLinkMessage {
     // {NGP55_PAYLOAD}
     public static final int RESPONSE_SEQUENCE = 0x0000; // UInt8
     public static final int RESPONSE_COMMAND = 0x0001; // UInt16BE
-    public static final int RESPONSE_PAYLOAD = 0x0004; // data
+//    public static final int RESPONSE_PAYLOAD = 0x0004; // data
+    public static final int RESPONSE_PAYLOAD = 0x0003; // data
     public static final int RESPONSE_CRC = -0x0002; // UInt16BE
 
     // returns the dycrypted response payload only

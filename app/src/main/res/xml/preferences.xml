@@ -100,6 +100,11 @@
                     android:key="nsEnableCalibrationInfo"
                     android:defaultValue="false"
                     android:summary="Add factor and benchmark time to BG readings used for calibration"/>
+                <CheckBoxPreference android:title="Available Now"
+                    android:dependency="nsEnableCalibrationInfo"
+                    android:key="nsEnableCalibrationInfoNow"
+                    android:defaultValue="false"
+                    android:summary="Retrieve calibration info as soon as available (increases history retrieval frequency)"/>
             </PreferenceCategory>
 
             <PreferenceCategory android:title="Consumables">
@@ -229,6 +234,53 @@
                     android:switchTextOff="off"
                     android:switchTextOn="on"
                     android:title="Radio clash protection"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Polling">
+                <info.nightscout.android.utils.CustomSwitchPreference
+                    android:disableDependentsState="false"
+                    android:key="sysEnablePollOverride"
+                    android:defaultValue="false"
+                    android:summaryOff="Use system defaults for all poll timing"
+                    android:summaryOn="A poll will trigger based on the expected sensor event time plus a conditional state period (warning: changing these settings can lead to radio clashes and extended lost sensor periods)"
+                    android:switchTextOff="off"
+                    android:switchTextOn="on"
+                    android:title="Poll timing"/>
+                <ListPreference android:title="Grace Period"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollGracePeriod"
+                    android:defaultValue="30000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+                <ListPreference android:title="Recovery Period"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollRecoveryPeriod"
+                    android:defaultValue="90000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+                <ListPreference android:title="Warmup Period"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollWarmupPeriod"
+                    android:defaultValue="90000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+                <ListPreference android:title="Error Retry"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollErrorRetry"
+                    android:defaultValue="90000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+                <ListPreference android:title="Old SGV Retry"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollOldSgvRetry"
+                    android:defaultValue="90000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
             </PreferenceCategory>
 
             <PreferenceCategory android:title="Timing">

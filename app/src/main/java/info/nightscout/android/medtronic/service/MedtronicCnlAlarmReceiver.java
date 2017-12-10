@@ -19,10 +19,7 @@ public class MedtronicCnlAlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(final Context context, Intent intent) {
-        // Start the IntentService
         Log.d(TAG, "Received broadcast message at " + new Date(System.currentTimeMillis()));
-
-        context.sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_ACTIVE));
 
         context.startService(new Intent(context, MedtronicCnlService.class)
                 .setAction(MasterService.Constants.ACTION_CNL_READPUMP)

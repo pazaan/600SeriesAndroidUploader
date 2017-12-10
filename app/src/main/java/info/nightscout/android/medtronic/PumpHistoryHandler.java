@@ -235,7 +235,7 @@ public class PumpHistoryHandler {
             // sgv is available do we need the backfill?
             if (dataStore.isSysEnableCgmHistory()
                     && results.size() == 0
-                    || (results.size() > 0 && date.getTime() - results.last().getEventDate().getTime() > 9 * 60 * 1000)) {
+                    || (results.size() > 0 && date.getTime() - results.last().getEventDate().getTime() > 9 * 60 * 1000L)) {
                 userLogMessage(ICON_REFRESH + "history: cgm backfill");
                 storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override

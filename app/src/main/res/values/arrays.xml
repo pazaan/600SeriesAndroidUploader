@@ -146,5 +146,50 @@
         <item>8</item>
     </string-array>
 
+    <string-array name="poll_period">
+        <item>10 seconds</item>
+        <item>15 seconds</item>
+        <item>20 seconds</item>
+        <item>25 seconds</item>
+        <item>30 seconds</item>
+        <item>35 seconds</item>
+        <item>40 seconds</item>
+        <item>45 seconds</item>
+        <item>50 seconds</item>
+        <item>55 seconds</item>
+        <item>60 seconds</item>
+        <item>70 seconds</item>
+        <item>80 seconds</item>
+        <item>90 seconds</item>
+        <item>100 seconds</item>
+        <item>110 seconds</item>
+        <item>120 seconds</item>
+        <item>130 seconds</item>
+        <item>140 seconds</item>
+        <item>150 seconds</item>
+    </string-array>
+
+    <string-array name="poll_period_values">
+        <item>10000</item>
+        <item>15000</item>
+        <item>20000</item>
+        <item>25000</item>
+        <item>30000</item>
+        <item>35000</item>
+        <item>40000</item>
+        <item>45000</item>
+        <item>50000</item>
+        <item>55000</item>
+        <item>60000</item>
+        <item>70000</item>
+        <item>80000</item>
+        <item>90000</item>
+        <item>100000</item>
+        <item>110000</item>
+        <item>120000</item>
+        <item>130000</item>
+        <item>140000</item>
+        <item>150000</item>
+    </string-array>
 
 </resources>

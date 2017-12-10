@@ -29,9 +29,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     private boolean uploadACK = false;
 
     private boolean xdripREQ = false;
-    private boolean xdripACK = false;
-
-    private boolean xdrip = false; // TODO - refactor xdrip service
+    private boolean xdripACK = false; // TODO - refactor xdrip service
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -215,8 +213,6 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
         this.xdripACK = xdripACK;
     }
 
-
-
     public int getCgmRTC() {
         return cgmRTC;
     }
@@ -239,14 +235,6 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
     public void setHistory(boolean history) {
         this.history = history;
-    }
-
-    public boolean isXdrip() {
-        return xdrip;
-    }
-
-    public void setXdrip(boolean xdrip) {
-        this.xdrip = xdrip;
     }
 
     public int getSgv() {

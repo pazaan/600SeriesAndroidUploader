@@ -267,7 +267,11 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         // CGM time
         pumpRecord.setCgmRTC(cgmRTC);
         pumpRecord.setCgmOFFSET(cgmOFFSET);
-        pumpRecord.setCgmDate(new Date(cgmDate.getTime() - pumpRecord.getClockDifference()));
+        //pumpRecord.setCgmDate(new Date(cgmDate.getTime() - pumpRecord.getClockDifference()));
+
+        // Date using cgmRTC + eventOFFSET as pump clock may have changed
+        Date cgmEventDate = MessageUtils.decodeDateTime(cgmRTC & 0xFFFFFFFFL, pumpRecord.getEventOFFSET());
+        pumpRecord.setCgmDate(new Date(cgmEventDate.getTime() - pumpRecord.getClockDifference()));
 
         // CGM SGV data
         pumpRecord.setSgv(sgv);
@@ -285,7 +289,11 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         pumpRecord.setAlert(alert);
         pumpRecord.setAlertRTC(cgmRTC);
         pumpRecord.setAlertOFFSET(cgmOFFSET);
-        pumpRecord.setAlertDate(new Date(alertDate.getTime() - pumpRecord.getClockDifference()));
+        //pumpRecord.setAlertDate(new Date(alertDate.getTime() - pumpRecord.getClockDifference()));
+
+        // Date using alertRTC + eventOFFSET as pump clock may have changed
+        Date alertEventDate = MessageUtils.decodeDateTime(alertRTC & 0xFFFFFFFFL, pumpRecord.getEventOFFSET());
+        pumpRecord.setAlertDate(new Date(alertEventDate.getTime() - pumpRecord.getClockDifference()));
 
         // Now bolusing
         pumpRecord.setBolusingDelivered(bolusingDelivered);
@@ -294,9 +302,9 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Last bolus
         pumpRecord.setLastBolusAmount(lastBolusAmount);
+        pumpRecord.setLastBolusReference(lastBolusReference);
         pumpRecord.setLastBolusPumpDate(lastBolusDate);
         pumpRecord.setLastBolusDate(new Date(lastBolusDate.getTime() - pumpRecord.getClockDifference()));
-        pumpRecord.setLastBolusReference(lastBolusReference);
 
         // Calibration
         pumpRecord.setCalibrationDueMinutes(calibrationDueMinutes);

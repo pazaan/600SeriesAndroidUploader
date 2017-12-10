@@ -42,6 +42,7 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
         // 0x05 = CommandAction.PUMP_REQUEST, does this relate somehow?
         // ReadInfoRequestMessage issues this 0x05 cmd as called by cnlReader.requestReadInfo() and right before a channel negotiate
         // note: errors here and then timeout on close and ongoing timeout on following polls
+        // unqualified fix: running requestLinkKey each poll seems to stop this happening!
         if (payload.length != 0x27) {
             //clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
@@ -61,35 +62,6 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
         return this.getResponse(payload);
     }
 
-    /*
-        @Override
-    public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-
-        clearMessage(mDevice, 100, mPumpSession);
-        sendMessage(mDevice);
-
-        // Don't care what the 0x81 response message is at this stage
-        Log.d(TAG, "negotiateChannel: Reading 0x81 message");
-        if (readMessage_0x81(mDevice).length != 0x27) {
-            Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response");
-            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x81 response");
-        }
-
-        Log.d(TAG, "negotiateChannel: Reading 0x80 message");
-        // Read the 0x80
-        byte[] payload = readMessage(mDevice);
-        if(payload[0x12] != (byte) 0x80) {
-            Log.e(TAG, "Invalid message received for negotiateChannel 0x80 response");
-            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x80 response");
-        }
-
-        // Clear unexpected incoming messages
-//        clearMessage(mDevice);
-
-        return this.getResponse(payload);
-    }
-
-     */
     @Override
     protected ChannelNegotiateResponseMessage getResponse(byte[] payload) throws ChecksumException, EncryptionException, IOException {
         return new ChannelNegotiateResponseMessage(mPumpSession, payload);

@@ -9,10 +9,6 @@ public class DataStore extends RealmObject {
     @Index
     private long timestamp;
 
-    //private int xxx;
-
-    private Date uploaderStartDate;
-
     // do not send cgm/pump backfill data prior to this date
     // used to stop overwriting older NS entries
     // user option to override (we clear old data from NS to stop multiple entries and refresh using keys)
@@ -46,12 +42,19 @@ public class DataStore extends RealmObject {
     private boolean sysEnablePumpHistory;
     private int sysPumpHistoryDays;
     private boolean sysEnableClashProtect;
+    private boolean sysEnablePollOverride;
+    private long sysPollGracePeriod;
+    private long sysPollRecoveryPeriod;
+    private long sysPollWarmupPeriod;
+    private long sysPollErrorRetry;
+    private long sysPollOldSgvRetry;
     private boolean sysEnableWait500ms;
 
     private boolean nsEnableTreatments;
     private boolean nsEnableHistorySync;
     private boolean nsEnableFingerBG;
     private boolean nsEnableCalibrationInfo;
+    private boolean nsEnableCalibrationInfoNow;
     private boolean nsEnableSensorChange;
     private boolean nsEnableReservoirChange;
     private boolean nsEnableBatteryChange;
@@ -66,11 +69,6 @@ public class DataStore extends RealmObject {
 
     public DataStore() {
         this.timestamp = new Date().getTime();
-        this.uploaderStartDate = new Date();
-    }
-
-    public Date getUploaderStartDate() {
-        return uploaderStartDate;
     }
 
     public Date getNightscoutLimitDate() {
@@ -283,6 +281,54 @@ public class DataStore extends RealmObject {
         this.sysEnableClashProtect = sysEnableClashProtect;
     }
 
+    public boolean isSysEnablePollOverride() {
+        return sysEnablePollOverride;
+    }
+
+    public void setSysEnablePollOverride(boolean sysEnablePollOverride) {
+        this.sysEnablePollOverride = sysEnablePollOverride;
+    }
+
+    public long getSysPollGracePeriod() {
+        return sysPollGracePeriod;
+    }
+
+    public void setSysPollGracePeriod(long sysPollGracePeriod) {
+        this.sysPollGracePeriod = sysPollGracePeriod;
+    }
+
+    public long getSysPollRecoveryPeriod() {
+        return sysPollRecoveryPeriod;
+    }
+
+    public void setSysPollRecoveryPeriod(long sysPollRecoveryPeriod) {
+        this.sysPollRecoveryPeriod = sysPollRecoveryPeriod;
+    }
+
+    public long getSysPollWarmupPeriod() {
+        return sysPollWarmupPeriod;
+    }
+
+    public void setSysPollWarmupPeriod(long sysPollWarmupPeriod) {
+        this.sysPollWarmupPeriod = sysPollWarmupPeriod;
+    }
+
+    public long getSysPollErrorRetry() {
+        return sysPollErrorRetry;
+    }
+
+    public void setSysPollErrorRetry(long sysPollErrorRetry) {
+        this.sysPollErrorRetry = sysPollErrorRetry;
+    }
+
+    public long getSysPollOldSgvRetry() {
+        return sysPollOldSgvRetry;
+    }
+
+    public void setSysPollOldSgvRetry(long sysPollOldSgvRetry) {
+        this.sysPollOldSgvRetry = sysPollOldSgvRetry;
+    }
+
     public boolean isSysEnableWait500ms() {
         return sysEnableWait500ms;
     }
@@ -321,6 +367,14 @@ public class DataStore extends RealmObject {
 
     public void setNsEnableCalibrationInfo(boolean nsEnableCalibrationInfo) {
         this.nsEnableCalibrationInfo = nsEnableCalibrationInfo;
+    }
+
+    public boolean isNsEnableCalibrationInfoNow() {
+        return nsEnableCalibrationInfoNow;
+    }
+
+    public void setNsEnableCalibrationInfoNow(boolean nsEnableCalibrationInfoNow) {
+        this.nsEnableCalibrationInfoNow = nsEnableCalibrationInfoNow;
     }
 
     public boolean isNsEnableSensorChange() {

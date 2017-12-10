@@ -36,6 +36,11 @@ import io.realm.RealmResults;
 import io.realm.Sort;
 
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
+import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_GRACE_PERIOD_MS;
+import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_PERIOD_MS;
+import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_PRE_GRACE_PERIOD_MS;
+import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_RECOVERY_PERIOD_MS;
+import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_WARMUP_PERIOD_MS;
 import static info.nightscout.android.model.store.UserLog.Icons.ICON_HELP;
 import static info.nightscout.android.model.store.UserLog.Icons.ICON_INFO;
 import static info.nightscout.android.model.store.UserLog.Icons.ICON_WARN;
@@ -152,38 +157,7 @@ public class MasterService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Received start id " + startId + ": " + intent);
         //userLogMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
-/*
-        if (intent == null) {
-            // do nothing and return
-            return START_STICKY;
-        }
-        // null = service or process was killed
-        // startId = 1 first start
 
-        if (intent != null || startId == 1) {
-            Log.i(TAG, "service start");
-            userLogMessage.add(TAG + " service start");
-
-            Intent notificationIntent = new Intent(this, MainActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-            Notification notification = new NotificationCompat.Builder(this)
-                    .setContentTitle("600 Series Uploader")
-                    .setSmallIcon(R.drawable.ic_notification)
-                    .setVisibility(VISIBILITY_PUBLIC)
-                    .setContentIntent(pendingIntent)
-                    .setTicker("600 Series nightscout Uploader")
-                    .build();
-            startForeground(SERVICE_NOTIFICATION_ID, notification);
-
-            statusNotification.initNotification(mContext);
-
-            noteError = false;
-
-            startCgmService();
-
-            serviceActive = true;
-        }
-*/
         if (intent == null || startId == 1) {
             Log.i(TAG, "service start");
             //userLogMessage.add(TAG + " service start");
@@ -195,7 +169,6 @@ public class MasterService extends Service {
                     .setSmallIcon(R.drawable.ic_notification)
                     .setVisibility(VISIBILITY_PUBLIC)
                     .setContentIntent(pendingIntent)
-                    .setTicker("600 Series nightscout Uploader")
                     .build();
             startForeground(SERVICE_NOTIFICATION_ID, notification);
 
@@ -243,7 +216,7 @@ public class MasterService extends Service {
                 stopSelf();
 
             } else if (Constants.ACTION_READ_NOW.equals(action)) {
-                MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000);
+                MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000L);
 
             } else if (Constants.ACTION_READ_PROFILE.equals(action)) {
                 storeRealm.executeTransaction(new Realm.Transaction() {
@@ -252,7 +225,7 @@ public class MasterService extends Service {
                         dataStore.setRequestProfile(true);
                     }
                 });
-                MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000);
+                MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000L);
 
             } else if (Constants.ACTION_CNL_COMMS_ACTIVE.equals(action)) {
                 statusNotification.updateNotification(StatusNotification.NOTIFICATION.BUSY);
@@ -262,30 +235,72 @@ public class MasterService extends Service {
     }
 
     private void startCgmService() {
-        startCgmServiceDelayed(0);
+        startCgmServiceDelayed(1000L);
     }
 
     private void startCgmServiceDelayed(long delay) {
         long now = System.currentTimeMillis();
-        long start = now + 1000;
-
-        RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
-                .equalTo("cgmActive", true)
-                .findAllSorted("cgmDate", Sort.DESCENDING);
-
-        if (results.size() > 0) {
-            long timeLastCGM = results.first().getCgmDate().getTime();
-            if (now - timeLastCGM < MedtronicCnlService.POLL_GRACE_PERIOD_MS + MedtronicCnlService.POLL_PERIOD_MS)
-                start = timeLastCGM + MedtronicCnlService.POLL_GRACE_PERIOD_MS + MedtronicCnlService.POLL_PERIOD_MS;
-        }
+        long start = nextPollTime();
 
         if (start - now < delay) start = now + delay;
         MedtronicCnlAlarmManager.setAlarm(start);
         statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, start);
 
-        if (start - now > 10 * 1000)
+        if (start - now > 10000L)
             userLogMessage.add("Next poll due at: " + dateFormatter.format(start));
+    }
+
+    private long nextPollTime() {
+
+        long now = System.currentTimeMillis();
+
+        long lastRecievedEventTime;
+        long lastActualEventTime;
+        long nextExpectedEventTime;
+        long nextRequestedPollTime;
+
+        RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
+                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000L)))
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        RealmResults<PumpStatusEvent> cgmresults = results.where()
+                .equalTo("cgmActive", true)
+                .findAllSorted("cgmDate", Sort.DESCENDING);
+
+        long pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollGracePeriod() : POLL_GRACE_PERIOD_MS;
+
+        if (cgmresults.size() > 0) {
+
+            lastRecievedEventTime = cgmresults.first().getCgmDate().getTime();
+
+            // normalise last received cgm time to current time window
+            lastActualEventTime = lastRecievedEventTime + (((now - lastRecievedEventTime) / POLL_PERIOD_MS) * POLL_PERIOD_MS);
+
+            // check if pump has lost sensor
+            if (now - lastRecievedEventTime <= 60 * 60000L
+                    && cgmresults.first().getCgmRTC() != results.first().getCgmRTC())
+                pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollRecoveryPeriod() : POLL_RECOVERY_PERIOD_MS;
+
+                // check if sensor is in warmup phase
+            else if (now - lastRecievedEventTime <= 120 * 60000L
+                    && cgmresults.first().isCgmWarmUp())
+                pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollWarmupPeriod() : POLL_WARMUP_PERIOD_MS;
+
+            nextExpectedEventTime = lastActualEventTime + POLL_PERIOD_MS;
+
+            if (nextExpectedEventTime - lastRecievedEventTime > POLL_PERIOD_MS
+                && now < nextExpectedEventTime - POLL_PRE_GRACE_PERIOD_MS)
+                nextRequestedPollTime = now;
+            else
+                nextRequestedPollTime = lastActualEventTime + POLL_PERIOD_MS + pollOffset;
+
+            return nextRequestedPollTime;
+
+        } else {
+
+            // no cgm event available to sync with
+            return now;
+        }
     }
 
     private void uploadPollResults() {

@@ -11,7 +11,7 @@ public class UserLogMessage {
     private static final String TAG = UserLogMessage.class.getSimpleName();
     private static UserLogMessage instance;
 
-    private static final int STALE_MS = 72 * 60 * 60 * 1000;
+    private static final long STALE_MS = 72 * 60 * 60 * 1000L;
 
     private UserLogMessage() {
     }

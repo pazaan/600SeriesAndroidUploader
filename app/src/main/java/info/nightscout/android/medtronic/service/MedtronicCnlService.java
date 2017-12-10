@@ -26,7 +26,6 @@ import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.medtronic.message.ContourNextLinkCommandMessage;
-import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -51,14 +50,21 @@ public class MedtronicCnlService extends Service {
     public final static int USB_PID = 0x6210;
     public final static long USB_WARMUP_TIME_MS = 5000L;
 
+    // Poll intervals
     public final static long POLL_PERIOD_MS = 300000L;
     public final static long LOW_BATTERY_POLL_PERIOD_MS = 900000L;
     // Number of additional seconds to wait after the next expected CGM poll, so that we don't interfere with CGM radio comms.
-    public final static long POLL_GRACE_PERIOD_MS = 30000L; //30000
+    public final static long POLL_GRACE_PERIOD_MS = 30000L;
     // Number of seconds before the next expected CGM poll that we will allow uploader comms to start
-    public final static long POLL_PRE_GRACE_PERIOD_MS = 30000; //45000L;
-    // cgm n/a events to trigger anti clash poll timing
-    public final static int POLL_ANTI_CLASH = 1; //3
+    public final static long POLL_PRE_GRACE_PERIOD_MS = 30000L;
+    // Extended grace period after a lost sensor
+    public final static long POLL_RECOVERY_PERIOD_MS = 90000L;
+    // Extended grace period during sensor warmup
+    public final static long POLL_WARMUP_PERIOD_MS = 90000L;
+    // Retry after comms errors
+    public final static long POLL_ERROR_RETRY_MS = 90000L;
+    // Retry after old sgv received from pump
+    public final static long POLL_OLDSGV_RETRY_MS = 90000L;
 
     // show warning message after repeated errors
     private final static int ERROR_COMMS_AT = 3;
@@ -67,7 +73,7 @@ public class MedtronicCnlService extends Service {
     private final static int ERROR_PUMPLOSTSENSOR_AT = 6;
     private final static int ERROR_PUMPBATTERY_AT = 1;
     private final static int ERROR_PUMPCLOCK_AT = 8;
-    private final static int ERROR_PUMPCLOCK_MS = 10 * 60 * 1000;
+    private final static long ERROR_PUMPCLOCK_MS = 10 * 60 * 1000L;
 
     private Context mContext;
     private static UsbHidDriver mHidDevice;
@@ -176,7 +182,7 @@ public class MedtronicCnlService extends Service {
                 Log.d(TAG, "device is shutting down, pull the emergency brake!");
 
                 long now = System.currentTimeMillis();
-                while (shutdownProtect && (System.currentTimeMillis() - now) < 1000) {
+                while (shutdownProtect && (System.currentTimeMillis() - now) < 1000L) {
                     Log.d(TAG, "shutdownProtect");
                     readPump.interrupt();
                     try {
@@ -252,8 +258,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             PowerManager.WakeLock wl = getWakeLock(TAG, 60000);
 
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_ACTIVE));
+
             long timePollStarted = System.currentTimeMillis();
-//            long nextpoll = timePollStarted + POLL_GRACE_PERIOD_MS;
             long nextpoll = 0;
 
             // note: Realm use only in this thread!
@@ -284,7 +291,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         nextpoll = due;
                         return;
                     } else {
-                        userLogMessage("Pump is expecting sensor communication. Radio clash protection is not enabled.");
+                        userLogMessage("Pump is expecting sensor communication. Poll due in " + ((due - System.currentTimeMillis()) / 1000L) + " seconds");
+                        userLogMessage(ICON_SETTING + "Radio clash protection is disabled.");
                     }
                 }
 
@@ -322,29 +330,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         cnlReader.openConnection();
 
                         cnlReader.requestReadInfo();
-
-// investigation: Negotiate Chan 0x81 empty response issue, always requesting key seems to stop this happening? why that?
-// negotiateChannel has more details
-/*
-                        cnlReader.requestLinkKey();
-                        info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
-                        String key = info.getKey();
-*/
-
-/*
-                        // always get LinkKey on startup to handle re-paired CNL-PUMP key changes
-                        String key = null;
-                        if (CommsSuccess > 0) {
-                            key = info.getKey();
-                        }
-                        if (key == null) {
-                            cnlReader.requestLinkKey();
-
-                            info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
-                            key = info.getKey();
-                        }
-*/
- //                       cnlReader.getPumpSession().setKey(MessageUtils.hexStringToByteArray(key));
 
                         final long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
                         Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xffffff));
@@ -385,6 +370,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             userLogMessage(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                             Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
 
+                            // investigation: Negotiate Chan 0x81 empty response issue, always requesting key seems to stop this happening? why that?
+                            // negotiateChannel has more details
                             cnlReader.requestLinkKey();
                             //info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
 
@@ -452,7 +439,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                         userLogMessage(ICON_CGM + "old SGV event received");
                                         // pump may have missed sensor transmission or be delayed in posting to status message
                                         // in most cases the next scheduled poll will have latest sgv, occasionally it is available this period after a delay
-                                        pollInterval = 90000L;
+                                        pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollOldSgvRetry() : POLL_OLDSGV_RETRY_MS;
                                     }
                                 }
 
@@ -483,7 +470,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             // due to the possibility of a late sensor-pump sgv send, the retry after 90 seconds will handle the history if needed
                             // also skip if pump battery is low and interval times are different
 
-                            // TODO - if low battery mode should we run a backfill after a time? 30/60 minutes? user log message for history being unavailable?
+                            // TODO - if in low battery mode should we run a backfill after a time? 30/60 minutes?
 
                             if (!pumpRecord.isOldSgvWhenNewExpected() &&
                                     !(PumpBatteryError > 0 && dataStore.getLowBatPollInterval() > POLL_PERIOD_MS)) {
@@ -504,12 +491,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                     } catch (UnexpectedMessageException e) {
                         CommsError++;
-                        pollInterval = 90000L; // retry once during this poll period, this allows for transient radio noise
+                        pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollErrorRetry() : POLL_ERROR_RETRY_MS;
                         Log.e(TAG, "Unexpected Message", e);
                         userLogMessage(ICON_WARN + "Communication Error: " + e.getMessage());
                     } catch (TimeoutException e) {
                         CommsError++;
-                        pollInterval = 90000L; // retry once during this poll period, this allows for transient radio noise
+                        pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollErrorRetry() : POLL_ERROR_RETRY_MS;
                         Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
                         userLogMessage(ICON_WARN + "Timeout Error: " + e.getMessage());
                     } catch (ChecksumException e) {
@@ -600,9 +587,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
         if (PumpBatteryError >= ERROR_PUMPBATTERY_AT) {
             PumpBatteryError = 0;
-            userLogMessage(ICON_WARN + "Warning: pump battery low");
-            if (dataStore.getLowBatPollInterval() != dataStore.getPollInterval())
+            if (dataStore.getLowBatPollInterval() > POLL_PERIOD_MS) {
+                userLogMessage(ICON_WARN + "Warning: pump battery low. Poll interval increased, history and backfill processing disabled.");
                 userLogMessage(ICON_SETTING + "Low battery poll interval: " + (dataStore.getLowBatPollInterval() / 60000) + " minutes");
+            } else {
+                userLogMessage(ICON_WARN + "Warning: pump battery low");
+            }
         }
 
         if (Math.abs(pumpClockDifference) > ERROR_PUMPCLOCK_MS)
@@ -660,7 +650,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
         // validate that this contains a new SGV record
         if (pumpRecord.isCgmActive()) {
-            if (pumpRecord.getEventRTC() - pumpRecord.getCgmRTC() > (POLL_PERIOD_MS + (POLL_GRACE_PERIOD_MS / 2)) / 1000)
+            if (pumpRecord.getEventRTC() - pumpRecord.getCgmRTC() > (POLL_PERIOD_MS + 10000) / 1000)
                 pumpRecord.setOldSgvWhenNewExpected(true);
             else if (!pumpRecord.isCgmWarmUp() && pumpRecord.getSgv() > 0 &&
                     activePump.getPumpHistory().where().equalTo("cgmRTC", pumpRecord.getCgmRTC()).findAll().size() == 0)
@@ -698,7 +688,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 // suspend/resume?
                 if (results.first().isSuspended() != results.get(1).isSuspended()) {
-                    userLogMessage(info + (results.first().isSuspended() ? "pump suspend" : "pump resume"));
+                    userLogMessage(info + (results.first().isSuspended() ? "basal suspend" : "basal resume"));
                     historyNeeded = true;
                 }
 
@@ -712,7 +702,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (!results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
                     int diff = results.get(1).getTempBasalMinutesRemaining() - ageMinutes;
                     if (diff < -5 || diff > 5) {
-                        userLogMessage(info + "temp ended early");
+                        userLogMessage(info + "temp ended");
                         historyNeeded = true;
                     }
                 }
@@ -721,7 +711,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
                     int diff = results.get(1).getTempBasalMinutesRemaining() - results.first().getTempBasalMinutesRemaining() - ageMinutes;
                     if (diff < -5 || diff > 5) {
-                        userLogMessage(info + "temp basal extended");
+                        userLogMessage(info + "temp extended");
                         historyNeeded = true;
                     }
                 }
@@ -733,7 +723,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         // was dual ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
                         if (diff < -5 || diff > 5) {
-                            userLogMessage(info + "dual ended early");
+                            userLogMessage(info + "dual ended");
                             historyNeeded = true;
                         }
                     }
@@ -742,7 +732,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         // was square ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
                         if (diff < -5 || diff > 5) {
-                            userLogMessage(info + "square ended early");
+                            userLogMessage(info + "square ended");
                             historyNeeded = true;
                         }
                     }
@@ -761,7 +751,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     // was dual ended before expected duration?
                     int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
                     if (diff < -5 || diff > 5) {
-                        userLogMessage(info + "dual ended early");
+                        userLogMessage(info + "dual ended");
                         historyNeeded = true;
                     }
                 }
@@ -783,14 +773,31 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     historyNeeded = true;
                 }
 
-                if (results.first().getReservoirAmount() > results.get(1).getReservoirAmount()) {
-                    userLogMessage(info + "reservoir changed");
+                // calibration factor info available?
+                if (dataStore.isNsEnableCalibrationInfo() && dataStore.isNsEnableCalibrationInfoNow()
+                        && (results.first().isCgmCalibrationComplete() && !results.get(1).isCgmCalibrationComplete())) {
+                    userLogMessage(info + "calibration info");
                     historyNeeded = true;
                 }
 
-                if (results.first().getBatteryPercentage() > results.get(1).getBatteryPercentage()) {
-                    userLogMessage(info + "battery changed");
-                    historyNeeded = true;
+                // reservoir/battery changes need to pull history after pump has resumed
+                // to ensure that we don't miss the resume entry in the history
+                if (results.first().getActiveBasalPattern() != 0) {
+
+                    if (results.first().getReservoirAmount() > results.get(1).getReservoirAmount()) {
+                        userLogMessage(info + "reservoir changed");
+                        historyNeeded = true;
+                    }
+
+                    if (results.first().getBatteryPercentage() > results.get(1).getBatteryPercentage()) {
+                        userLogMessage(info + "battery changed");
+                        historyNeeded = true;
+                    }
+
+                    if (!historyNeeded && results.get(1).getActiveBasalPattern() == 0) {
+                        userLogMessage(info + "pattern resume");
+                        historyNeeded = true;
+                    }
                 }
 
                 if (results.first().isCgmWarmUp()) {
@@ -808,71 +815,104 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         return historyNeeded;
     }
 
-    // pollInterval: default = POLL_PERIOD_MS (time to pump cgm reading)
-    //
-    // Can be requested at a shorter or longer interval, used to request a retry before next expected cgm data or to extend poll times due to low pump battery.
-    // Requests the next poll based on the actual time last cgm data was available on the pump and adding the interval
-    // if this time is already stale then the next actual cgm time will be used
-    // Any poll time request that falls within the pre-grace/grace period will be pushed to the next safe time slot
 
-    private long requestPollTime(long lastPoll, long pollInterval) {
-        boolean isWarmup = false;
+    private long requestPollTime(long lastPollTime, long pollInterval) {
 
-        RealmResults<PumpStatusEvent> cgmresults = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
-                .equalTo("cgmActive", true)
-                .findAllSorted("cgmDate", Sort.DESCENDING);
-        long timeLastCGM = 0;
-        if (cgmresults.size() > 0) {
-            timeLastCGM = cgmresults.first().getCgmDate().getTime();
-            isWarmup = cgmresults.first().isCgmWarmUp();
-        }
+        long sysPollNoCgmPeriod = 15000L;
 
         long now = System.currentTimeMillis();
-        long lastActualPollTime = lastPoll;
-        if (timeLastCGM > 0)
-            lastActualPollTime = timeLastCGM + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((now - timeLastCGM + POLL_GRACE_PERIOD_MS) / POLL_PERIOD_MS));
-        long nextActualPollTime = lastActualPollTime + POLL_PERIOD_MS;
-        long nextRequestedPollTime = lastActualPollTime + pollInterval;
 
-        // check if requested poll is stale
-        if (nextRequestedPollTime - now < 10 * 1000)
-            nextRequestedPollTime = nextActualPollTime;
+        long lastRecievedEventTime;
+        long lastActualEventTime;
+        long nextExpectedEventTime;
+        long nextRequestedPollTime;
 
-        // extended unavailable cgm may be due to clash with the current polling time
-        // while we wait for a cgm event, polling is auto adjusted by offsetting the next poll based on miss count
+        RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
+                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000L)))
+                .findAllSorted("eventDate", Sort.DESCENDING);
 
-        if (timeLastCGM == 0)
-            nextRequestedPollTime += 15 * 1000; // push poll time forward to avoid potential clash when no previous poll time available to sync with
-        else if (isWarmup)
-            nextRequestedPollTime += 60 * 1000; // in warmup sensor-pump comms need larger grace period
-        else if (PumpCgmNA >= POLL_ANTI_CLASH)
-            nextRequestedPollTime += (((PumpCgmNA - POLL_ANTI_CLASH) % 3) + 2) * 30 * 1000; // adjust poll time in 30 second steps to avoid potential poll clash (adjustment: poll+30s / poll+60s / poll+90s)
+        RealmResults<PumpStatusEvent> cgmresults = results.where()
+                .equalTo("cgmActive", true)
+                .findAllSorted("cgmDate", Sort.DESCENDING);
 
-        // check if requested poll time is too close to next actual poll time
-        if (nextRequestedPollTime > nextActualPollTime - POLL_GRACE_PERIOD_MS - POLL_PRE_GRACE_PERIOD_MS
-                && nextRequestedPollTime < nextActualPollTime) {
-            nextRequestedPollTime = nextActualPollTime;
+        long pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollGracePeriod() : POLL_GRACE_PERIOD_MS;
+
+        if (cgmresults.size() > 0) {
+
+            lastRecievedEventTime = cgmresults.first().getCgmDate().getTime();
+
+            // normalise last received cgm time to current time window
+            lastActualEventTime = lastRecievedEventTime + (((now - lastRecievedEventTime) / POLL_PERIOD_MS) * POLL_PERIOD_MS);
+
+            // check if pump has lost sensor
+            if (now - lastRecievedEventTime <= 60 * 60000L
+                    && cgmresults.first().getCgmRTC() != results.first().getCgmRTC())
+                pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollRecoveryPeriod() : POLL_RECOVERY_PERIOD_MS;
+
+            // check if sensor is in warmup phase
+            else if (now - lastRecievedEventTime <= 120 * 60000L
+                    && cgmresults.first().isCgmWarmUp())
+                pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollWarmupPeriod() : POLL_WARMUP_PERIOD_MS;
+
+            nextExpectedEventTime = lastActualEventTime + POLL_PERIOD_MS;
+            nextRequestedPollTime = lastActualEventTime + pollInterval + pollOffset;
+
+            // check if request is already stale
+            if (nextRequestedPollTime < now)
+                nextRequestedPollTime = nextExpectedEventTime + pollOffset;
+
+        } else {
+
+            // no cgm event available to sync with
+            nextRequestedPollTime = lastPollTime + pollInterval + sysPollNoCgmPeriod;
         }
 
         return nextRequestedPollTime;
     }
 
     private long checkPollTime() {
+
+        long now = System.currentTimeMillis();
+
+        long lastRecievedEventTime;
+        long lastActualEventTime;
+
         long due = 0;
 
-        RealmResults<PumpStatusEvent> cgmresults = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000)))
+        RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
+                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000L)))
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        RealmResults<PumpStatusEvent> cgmresults = results.where()
                 .equalTo("cgmActive", true)
                 .findAllSorted("cgmDate", Sort.DESCENDING);
 
+        long pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollGracePeriod() : POLL_GRACE_PERIOD_MS;
+
         if (cgmresults.size() > 0) {
-            long now = System.currentTimeMillis();
-            long timeLastCGM = cgmresults.first().getCgmDate().getTime();
-            long timePollExpected = timeLastCGM + POLL_PERIOD_MS + POLL_GRACE_PERIOD_MS + (POLL_PERIOD_MS * ((now - 1000L - (timeLastCGM + POLL_GRACE_PERIOD_MS)) / POLL_PERIOD_MS));
-            // avoid polling when too close to sensor-pump comms
-            if (((timePollExpected - now) > 5000L) && ((timePollExpected - now) < (POLL_PRE_GRACE_PERIOD_MS + POLL_GRACE_PERIOD_MS)))
-                due = timePollExpected;
+
+            lastRecievedEventTime = cgmresults.first().getCgmDate().getTime();
+
+            // normalise last received cgm time to current time window
+            lastActualEventTime = lastRecievedEventTime + (((now - lastRecievedEventTime) / POLL_PERIOD_MS) * POLL_PERIOD_MS);
+
+            // check if pump has lost sensor
+            if (now - lastRecievedEventTime <= 60 * 60000L
+                    && cgmresults.first().getCgmRTC() != results.first().getCgmRTC())
+                pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollRecoveryPeriod() : POLL_RECOVERY_PERIOD_MS;
+
+                // check if sensor is in warmup phase
+            else if (now - lastRecievedEventTime <= 120 * 60000L
+                    && cgmresults.first().isCgmWarmUp())
+                pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollWarmupPeriod() : POLL_WARMUP_PERIOD_MS;
+
+            // post expected event check
+            if (now < lastActualEventTime + pollOffset - 5000L)
+                due = lastActualEventTime + pollOffset;
+
+                // pre expected event check
+            else if (now > lastActualEventTime + POLL_PERIOD_MS - POLL_PRE_GRACE_PERIOD_MS)
+                due = lastActualEventTime + POLL_PERIOD_MS + pollOffset;
         }
 
         return due;

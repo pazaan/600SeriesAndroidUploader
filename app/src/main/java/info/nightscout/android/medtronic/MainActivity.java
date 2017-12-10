@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
         if (!prefs.getBoolean(getString(R.string.preference_eula_accepted), false)) {
-            stopCgmService();
+            stopMasterService();
         }
 
         copyPrefsToDataStore(prefs);
@@ -235,7 +235,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         } else if (drawerItem.equals(itemStopCollecting)) {
                             statusFinish();
                             mEnableCgmService = false;
-                            stopCgmService();
+                            stopMasterService();
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
                             // It was triggered by user so start reading of data now and not based on last poll.
@@ -306,7 +306,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getViewport().setMaxY(120);
         mChart.getViewport().setXAxisBoundsManual(true);
         final long now = System.currentTimeMillis(),
-                left = now - chartZoom * 60 * 60 * 1000;
+                left = now - chartZoom * 60 * 60 * 1000L;
 
         mChart.getViewport().setMaxX(now);
         mChart.getViewport().setMinX(left);
@@ -327,7 +327,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 if (!mChart.getSeries().isEmpty() && !mChart.getSeries().get(0).isEmpty()) {
                     double rightX = mChart.getSeries().get(0).getHighestValueX();
                     mChart.getViewport().setMaxX(rightX);
-                    mChart.getViewport().setMinX(rightX - chartZoom * 60 * 60 * 1000);
+                    mChart.getViewport().setMinX(rightX - chartZoom * 60 * 60 * 1000L);
                 }
                 hasZoomedChart = false;
                 return true;
@@ -398,7 +398,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (!mRealm.isClosed()) mRealm.close();
 
         if (!mEnableCgmService) {
-            stopCgmService();
+            stopMasterService();
         }
     }
 
@@ -407,7 +407,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "onPostCreate called");
         super.onPostCreate(savedInstanceState);
         statusStartup();
-        startCgmService();
+        startMasterService();
     }
 
     @Override
@@ -475,8 +475,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private void startCgmService() {
-        Log.i(TAG, "startCgmService called");
+    private void startMasterService() {
+        Log.i(TAG, "startMasterService called");
 
         if (!mEnableCgmService) {
             return;
@@ -486,8 +486,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         startService(new Intent(this, MasterService.class));
     }
 
-    private void stopCgmService() {
-        Log.i(TAG, "stopCgmService called");
+    private void stopMasterService() {
+        Log.i(TAG, "stopMasterService called");
         prefs.edit().putBoolean("EnableCgmService", false).commit();
         sendBroadcast(new Intent(MasterService.Constants.ACTION_STOP_SERVICE));
     }
@@ -497,10 +497,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (key.equals(getString(R.string.preference_eula_accepted))) {
             if (!sharedPreferences.getBoolean(getString(R.string.preference_eula_accepted), false)) {
                 mEnableCgmService = false;
-                stopCgmService();
+                stopMasterService();
             } else {
                 mEnableCgmService = true;
-                startCgmService();
+                startMasterService();
             }
         } else if (key.equals("chartZoom")) {
             chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
@@ -528,13 +528,21 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setSysCgmHistoryDays(Integer.parseInt(sharedPreferences.getString("sysCgmHistoryDays", "7")));
                 dataStore.setSysEnablePumpHistory(sharedPreferences.getBoolean("sysEnablePumpHistory", true));
                 dataStore.setSysPumpHistoryDays(Integer.parseInt(sharedPreferences.getString("sysPumpHistoryDays", "7")));
+
                 dataStore.setSysEnableClashProtect(sharedPreferences.getBoolean("sysEnableClashProtect", true));
+                dataStore.setSysEnablePollOverride(sharedPreferences.getBoolean("sysEnablePollOverride", false));
+                dataStore.setSysPollGracePeriod(Long.parseLong(sharedPreferences.getString("sysPollGracePeriod", "30000")));
+                dataStore.setSysPollRecoveryPeriod(Long.parseLong(sharedPreferences.getString("sysPollRecoveryPeriod", "90000")));
+                dataStore.setSysPollWarmupPeriod(Long.parseLong(sharedPreferences.getString("sysPollWarmupPeriod", "90000")));
+                dataStore.setSysPollErrorRetry(Long.parseLong(sharedPreferences.getString("sysPollErrorRetry", "90000")));
+                dataStore.setSysPollOldSgvRetry(Long.parseLong(sharedPreferences.getString("sysPollOldSgvRetry", "90000")));
                 dataStore.setSysEnableWait500ms(sharedPreferences.getBoolean("sysEnableWait500ms", false));
 
                 dataStore.setNsEnableTreatments(sharedPreferences.getBoolean("nsEnableTreatments", true));
                 dataStore.setNsEnableHistorySync(sharedPreferences.getBoolean("nsEnableHistorySync", false));
                 dataStore.setNsEnableFingerBG(sharedPreferences.getBoolean("nsEnableFingerBG", true));
                 dataStore.setNsEnableCalibrationInfo(sharedPreferences.getBoolean("nsEnableCalibrationInfo", false));
+                dataStore.setNsEnableCalibrationInfoNow(sharedPreferences.getBoolean("nsEnableCalibrationInfoNow", false));
                 dataStore.setNsEnableSensorChange(sharedPreferences.getBoolean("nsEnableSensorChange", true));
                 dataStore.setNsEnableReservoirChange(sharedPreferences.getBoolean("nsEnableReservoirChange", true));
                 dataStore.setNsEnableBatteryChange(sharedPreferences.getBoolean("nsEnableBatteryChange", true));
@@ -794,7 +802,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (results.size() > 0) {
             long timeLastSGV = results.last().getEventDate().getTime();
             results = results.where()
-                    .greaterThan("eventDate", new Date(timeLastSGV - 1000 * 60 * 60 * 24))
+                    .greaterThan("eventDate", new Date(timeLastSGV - 24 * 60 * 60 * 1000L))
                     .findAllSorted("eventDate", Sort.ASCENDING);
         }
 
@@ -809,7 +817,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         int size = results.size();
         if (size == 0) {
             final long now = System.currentTimeMillis(),
-                    left = now - chartZoom * 60 * 60 * 1000;
+                    left = now - chartZoom * 60 * 60 * 1000L;
 
             mChart.getViewport().setXAxisBoundsManual(true);
             mChart.getViewport().setMaxX(now);
@@ -827,8 +835,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         // calc X & Y chart bounds with readable stepping for mmol & ml/dl
         // X needs offsetting as graphview will not always show points near edges
-        long minX = (((timeLastSGV + 150000 - (chartZoom * 60 * 60 * 1000)) / 60000) * 60000);
-        long maxX = timeLastSGV + 90000;
+        long minX = (((timeLastSGV + 150000L - (chartZoom * 60 * 60 * 1000L)) / 60000L) * 60000L);
+        long maxX = timeLastSGV + 90000L;
 
         RealmResults<PumpHistoryCGM> minmaxY = results.where()
                 .greaterThan("eventDate",  new Date(minX))
@@ -964,7 +972,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         viewPosition++; // move the view pointer when not on first page to keep aligned
                 } else {
                     Log.d(TAG, "UserLogView listener reset!!!");
-                    viewPosition = 0;
+                    changeUserLogViewRecent();
+                    return;
                 }
 
                 buildUserLogView();

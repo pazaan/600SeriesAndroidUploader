@@ -18,6 +18,7 @@ import java.util.Locale;
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
+import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -42,6 +43,8 @@ public class StatusNotification {
     private static final int COLOR_SGV_RED = 0x00C04040;
     private static final int COLOR_SGV_YELLOW = 0x00C0C000;
     private static final int COLOR_SGV_GREEN = 0x0040A040;
+
+    private static final String TEXT_AT_TIME = " at ";
 
     private static StatusNotification instance;
 
@@ -143,21 +146,23 @@ public class StatusNotification {
             sgvTime = results.first().getEventDate().getTime();
             sgvAge = (now - sgvTime) / 60000L;
 
-            if (sgvAge < 20 && results.size() > 1) {
+            if (results.size() > 1 && mode != NOTIFICATION.ERROR) {
                 long deltaTime = (sgvTime - results.get(1).getEventDate().getTime()) / 60000L;
-                if (deltaTime <= 15) {
+                if (sgvAge < 60 && deltaTime < 30) {
                     int diff = results.first().getSgv() - results.get(1).getSgv();
                     if (dataStore.isMmolxl())
-                        delta = "Δ " + (diff > 0 ? "+" : "") + new BigDecimal(diff / MMOLXLFACTOR).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        delta += "Δ " + (diff > 0 ? "+" : "") + new BigDecimal(diff / MMOLXLFACTOR).setScale(2, BigDecimal.ROUND_HALF_UP);
                     else
-                        delta = "Δ " + (diff > 0 ? "+" : "") + diff;
+                        delta += "Δ " + (diff > 0 ? "+" : "") + diff;
+                    if (deltaTime > 6)
+                        delta += " " + deltaTime + "m";
                 }
             }
 
         } else sgv = "No SGV available";
 
         int color = COLOR_NO_DATA;
-        if (sgvAge >= 0 && sgvAge < 20) {
+        if (sgvAge >= 0 && sgvAge <= 15) {
                 if (sgvValue < 80)
                     color = COLOR_SGV_RED;
                 else if (sgvValue <= 180)
@@ -175,15 +180,24 @@ public class StatusNotification {
         String iob = iob();
         String basal = basal();
         String bolus = lastBolus();
+        String bolusing = bolusing();
         String bg = lastBG();
         String calibration = calibration();
+
+        String content = iob + "   " + calibration;
+        String summary = (poll.equals("") ? "" : poll + "  ") + calibration;
+        if (mode == NOTIFICATION.ERROR) {
+            content = "connection error";
+            summary = content;
+        }
 
         NotificationCompat.InboxStyle sub = new NotificationCompat.InboxStyle()
                 .addLine(iob)
                 .addLine(basal)
                 .addLine(bg)
                 .addLine(bolus)
-                .setSummaryText((poll.equals("") ? "" : poll + "  ") + calibration);
+                .addLine(bolusing)
+                .setSummaryText(summary);
 
 //        mNotificationBuilder.setProgress(0, 0, false);
         if (mode == NOTIFICATION.ERROR) {
@@ -200,7 +214,7 @@ public class StatusNotification {
         mNotificationBuilder.setColor(color);
 
         mNotificationBuilder.setContentTitle(sgv + "   " + delta);
-        mNotificationBuilder.setContentText(iob + "   " + calibration);
+        mNotificationBuilder.setContentText(content);
 
         mNotificationManager.notify(
                 SERVICE_NOTIFICATION_ID,
@@ -255,11 +269,29 @@ public class StatusNotification {
         String text = "";
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(now - (12 * 60 * 60000L)))
+                .greaterThan("eventDate", new Date(now - (4 * 60 * 60000L)))
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
         if (results.size() > 0) {
             text = "IOB " + results.first().getActiveInsulin() + "u";
+        }
+
+        return text;
+    }
+
+    private String bolusing() {
+        long now = System.currentTimeMillis();
+        String text = "";
+
+        RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
+                .greaterThan("eventDate", new Date(now - (60 * 60000L)))
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        if (results.size() > 0 && !results.first().isBolusingNormal()
+                && (results.first().isBolusingSquare() || results.first().isBolusingDual())) {
+            text += "Bolusing: " + results.first().getBolusingDelivered() + "u "
+                    + (results.first().getBolusingMinutesRemaining() >= 60 ? results.first().getBolusingMinutesRemaining() / 60 + "h" : "")
+                    + results.first().getBolusingMinutesRemaining() % 60 + "m remain";
         }
 
         return text;
@@ -276,7 +308,16 @@ public class StatusNotification {
         if (results.size() > 0) {
 
             if (results.first().isSuspended()) {
-                text += "Basal: 0.0u pump suspended";
+                text += "Basal: suspended";
+                RealmResults<PumpHistoryBasal> suspend = historyRealm.where(PumpHistoryBasal.class)
+                        .greaterThan("eventDate", new Date(now - (12 * 60 * 60000L)))
+                        .equalTo("suspend", true)
+                        .or()
+                        .equalTo("resume", true)
+                        .findAllSorted("eventDate", Sort.DESCENDING);
+                // check if most recent suspend is in history and show the start time
+                if (suspend.size() > 0 && suspend.first().isSuspend())
+                    text += TEXT_AT_TIME + dateFormatterShort.format(suspend.first().getEventDate());;
 
             } else if (results.first().isTempBasalActive()) {
                 float rate = results.first().getTempBasalRate();
@@ -296,7 +337,11 @@ public class StatusNotification {
                 text += rate + "u " + minutes + "m remain";
 
             } else {
-                text += PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BASAL_PATTERN.convert(results.first().getActiveBasalPattern()).name()).getText() + ": ";
+                int pattern = results.first().getActiveBasalPattern();
+                if (pattern != 0)
+                    text += PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BASAL_PATTERN.convert(pattern).name()).getText() + ": ";
+                else
+                    text += "Basal: ";
                 text += results.first().getBasalRate() + "u";
             }
 
@@ -314,16 +359,16 @@ public class StatusNotification {
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
         if (results.size() > 0) {
-            text = "BG: " + strFormatSGV(results.first().getBg()) + " at " + dateFormatterShort.format(results.first().getBgDate());
+            text = "BG: " + strFormatSGV(results.first().getBg()) + TEXT_AT_TIME + dateFormatterShort.format(results.first().getBgDate());
 
-            /*
-            results = results.where()
-                    .equalTo("calibration",true)
-                    .findAllSorted("eventDate", Sort.DESCENDING);
-            if (results.size() > 0) {
-                text += "   cal ⋊ " + results.first().getCalibrationFactor();
+            if (dataStore.isNsEnableCalibrationInfo()) {
+                results = results.where()
+                        .equalTo("calibrationFlag", true)
+                        .findAllSorted("eventDate", Sort.DESCENDING);
+                if (results.size() > 0 && results.first().isCalibration()) {
+                    text += "   Cal: ⋊ " + results.first().getCalibrationFactor();
+                }
             }
-            */
         }
 
         return text;
@@ -339,26 +384,26 @@ public class StatusNotification {
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
         if (results.size() > 0) {
-
+            text += "Bolus: ";
             if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(results.first().getBolusType())) {
                 if (results.first().isSquareDelivered())
-                    text = "Bolus: dual " + results.first().getNormalDeliveredAmount() + "/" + results.first().getSquareDeliveredAmount() + "u:" + results.first().getSquareDeliveredDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text += "dual " + results.first().getNormalDeliveredAmount() + "/" + results.first().getSquareDeliveredAmount() + "u:" + results.first().getSquareDeliveredDuration() + "m" + TEXT_AT_TIME + dateFormatterShort.format(results.first().getProgrammedDate());
                 else if (results.first().isNormalDelivered())
-                    text = "Bolus: dual " + results.first().getNormalDeliveredAmount() + "/" + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text += "dual " + results.first().getNormalDeliveredAmount() + "/" + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m" + TEXT_AT_TIME + dateFormatterShort.format(results.first().getProgrammedDate());
                 else
-                    text = "Bolus: dual " + results.first().getNormalProgrammedAmount() + "/" + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text += "dual " + results.first().getNormalProgrammedAmount() + "/" + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m" + TEXT_AT_TIME + dateFormatterShort.format(results.first().getProgrammedDate());
 
             } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(results.first().getBolusType())) {
                 if (results.first().isSquareDelivered())
-                    text = "Bolus: square " + results.first().getSquareDeliveredAmount() + "u:" + results.first().getSquareDeliveredDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text += "square " + results.first().getSquareDeliveredAmount() + "u:" + results.first().getSquareDeliveredDuration() + "m" + TEXT_AT_TIME + dateFormatterShort.format(results.first().getProgrammedDate());
                 else
-                    text = "Bolus: square " + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text += "square " + results.first().getSquareProgrammedAmount() + "u:" + results.first().getSquareProgrammedDuration() + "m" + TEXT_AT_TIME + dateFormatterShort.format(results.first().getProgrammedDate());
 
             } else {
                 if (results.first().isNormalDelivered())
-                    text = "Bolus: " + results.first().getNormalDeliveredAmount() + "u at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text += results.first().getNormalDeliveredAmount() + "u" + TEXT_AT_TIME + dateFormatterShort.format(results.first().getProgrammedDate());
                 else
-                    text = "Bolus: " + results.first().getNormalProgrammedAmount() + "u at " + dateFormatterShort.format(results.first().getProgrammedDate());
+                    text += results.first().getNormalProgrammedAmount() + "u" + TEXT_AT_TIME + dateFormatterShort.format(results.first().getProgrammedDate());
             }
 
         }

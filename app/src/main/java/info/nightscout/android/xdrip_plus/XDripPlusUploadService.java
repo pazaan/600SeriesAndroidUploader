@@ -90,7 +90,7 @@ public class XDripPlusUploadService extends Service {
 
                 RealmResults<PumpHistoryCGM> history_records = historyRealm
                         .where(PumpHistoryCGM.class)
-                        .equalTo("xdrip", false)
+                        .equalTo("xdripACK", false)
                         .notEqualTo("sgv", 0)
                         .findAllSorted("eventDate", Sort.DESCENDING);
 
@@ -109,7 +109,7 @@ public class XDripPlusUploadService extends Service {
                     historyRealm.beginTransaction();
                     for (PumpHistoryCGM history_record : history_records) {
                         doXDripUploadCGM(history_record, device);
-                        history_record.setXdrip(true);
+                        history_record.setXdripACK(true);
                         if (--limit == 0) break;
                     }
                     historyRealm.commitTransaction();
