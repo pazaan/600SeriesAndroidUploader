@@ -31,6 +31,7 @@ import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.upload.nightscout.NightscoutUploadService;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadService;
+import info.nightscout.urchin.Urchin;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -69,6 +70,8 @@ public class MasterService extends Service {
     private UserLogMessage userLogMessage = UserLogMessage.getInstance();
     private StatusNotification statusNotification = StatusNotification.getInstance();
 
+    private Urchin urchin;
+
     private static int uploaderBatteryLevel = 0;
     public static int getUploaderBatteryLevel() {
         return uploaderBatteryLevel;
@@ -97,7 +100,7 @@ public class MasterService extends Service {
         masterServiceIntentFilter.addAction(Constants.ACTION_STOP_SERVICE);
         masterServiceIntentFilter.addAction(Constants.ACTION_READ_NOW);
         masterServiceIntentFilter.addAction(Constants.ACTION_READ_PROFILE);
-        masterServiceIntentFilter.addAction(Constants.ACTION_TEST);
+        masterServiceIntentFilter.addAction(Constants.ACTION_URCHIN_UPDATE);
         registerReceiver(masterServiceReceiver, masterServiceIntentFilter);
 
         registerReceiver(
@@ -120,6 +123,8 @@ public class MasterService extends Service {
         // setup self handling alarm receiver
         MedtronicCnlAlarmManager.setContext(mContext);
 
+        urchin = new Urchin(mContext);
+
         realm = Realm.getDefaultInstance();
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
         dataStore = storeRealm.where(DataStore.class).findFirst();
@@ -129,6 +134,8 @@ public class MasterService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy called");
+
+        urchin.close();
 
         statusNotification.endNotification();
 
@@ -229,6 +236,9 @@ public class MasterService extends Service {
 
             } else if (Constants.ACTION_CNL_COMMS_ACTIVE.equals(action)) {
                 statusNotification.updateNotification(StatusNotification.NOTIFICATION.BUSY);
+
+            } else if (Constants.ACTION_URCHIN_UPDATE.equals(action)) {
+                urchin.update();
             }
 
         }
@@ -304,6 +314,9 @@ public class MasterService extends Service {
     }
 
     private void uploadPollResults() {
+
+        urchin.update();
+
         startService(new Intent(this, XDripPlusUploadService.class));
         startService(new Intent(this, NightscoutUploadService.class));
     }
@@ -433,6 +446,7 @@ public class MasterService extends Service {
         public static final String ACTION_STOP_SERVICE = "info.nightscout.android.medtronic.STOP_SERVICE";
         public static final String ACTION_READ_NOW = "info.nightscout.android.medtronic.READ_NOW";
         public static final String ACTION_READ_PROFILE = "info.nightscout.android.medtronic.READ_PROFILE";
+        public static final String ACTION_URCHIN_UPDATE = "info.nightscout.android.medtronic.URCHIN_UPDATE";
 
         public static final String ACTION_TEST = "info.nightscout.android.medtronic.TEST";
 

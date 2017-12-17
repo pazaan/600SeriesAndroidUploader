@@ -131,8 +131,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         setContentView(R.layout.activity_main);
 
-        PreferenceManager.getDefaultSharedPreferences(getBaseContext()).registerOnSharedPreferenceChangeListener(this);
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        prefs.registerOnSharedPreferenceChangeListener(this);
 
         if (!prefs.getBoolean(getString(R.string.preference_eula_accepted), false)) {
             stopMasterService();
@@ -507,10 +507,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             hasZoomedChart = false;
         } else {
             copyPrefsToDataStore(sharedPreferences);
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_URCHIN_UPDATE));
+
         }
     }
 
     public void copyPrefsToDataStore(final SharedPreferences sharedPreferences) {
+
+        // prefs that are in constant use, safe across threads and processes
 
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
@@ -524,6 +528,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         Long.toString(MedtronicCnlService.LOW_BATTERY_POLL_PERIOD_MS))));
                 dataStore.setDoublePollOnPumpAway(sharedPreferences.getBoolean("doublePollOnPumpAway", false));
 
+                // system
                 dataStore.setSysEnableCgmHistory(sharedPreferences.getBoolean("sysEnableCgmHistory", true));
                 dataStore.setSysCgmHistoryDays(Integer.parseInt(sharedPreferences.getString("sysCgmHistoryDays", "7")));
                 dataStore.setSysEnablePumpHistory(sharedPreferences.getBoolean("sysEnablePumpHistory", true));
@@ -538,6 +543,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setSysPollOldSgvRetry(Long.parseLong(sharedPreferences.getString("sysPollOldSgvRetry", "90000")));
                 dataStore.setSysEnableWait500ms(sharedPreferences.getBoolean("sysEnableWait500ms", false));
 
+                // nightscout
                 dataStore.setNsEnableTreatments(sharedPreferences.getBoolean("nsEnableTreatments", true));
                 dataStore.setNsEnableHistorySync(sharedPreferences.getBoolean("nsEnableHistorySync", false));
                 dataStore.setNsEnableFingerBG(sharedPreferences.getBoolean("nsEnableFingerBG", true));
@@ -554,6 +560,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setNsActiveInsulinTime(Float.parseFloat(sharedPreferences.getString("nsActiveInsulinTime", "3")));
                 dataStore.setNsEnablePatternChange(sharedPreferences.getBoolean("nsEnablePatternChange", true));
                 dataStore.setNsEnableInsertBGasCGM(sharedPreferences.getBoolean("nsEnableInsertBGasCGM", false));
+
+                // urchin
+                dataStore.setUrchinEnable(sharedPreferences.getBoolean("urchinEnable", false));
+                dataStore.setUrchinBasalPeriod(Integer.parseInt(sharedPreferences.getString("urchinBasalPeriod", "23")));
+                dataStore.setUrchinBasalScale(Integer.parseInt(sharedPreferences.getString("urchinBasalScale", "0")));
+                dataStore.setUrchinBasalPop(Integer.parseInt(sharedPreferences.getString("urchinBasalPop", "0")));
+                dataStore.setUrchinTimeStyle(Integer.parseInt(sharedPreferences.getString("urchinTimeStyle", "1")));
+                dataStore.setUrchinDurationStyle(Integer.parseInt(sharedPreferences.getString("urchinDurationStyle", "1")));
+                dataStore.setUrchinUnitsStyle(Integer.parseInt(sharedPreferences.getString("urchinUnitsStyle", "1")));
+                dataStore.setUrchinBatteyStyle(Integer.parseInt(sharedPreferences.getString("urchinBatteyStyle", "1")));
+                dataStore.setUrchinConcatenateStyle(Integer.parseInt(sharedPreferences.getString("urchinConcatenateStyle", "2")));
+                dataStore.setUrchinCustomText1(sharedPreferences.getString("urchinCustomText1", ""));
+                dataStore.setUrchinCustomText2(sharedPreferences.getString("urchinCustomText2", ""));
+
+                int count = 20;
+                byte[] urchinStatusLayout = new byte[count];
+                for (int i=0; i < count; i++) {
+                    urchinStatusLayout[i] = Byte.parseByte(sharedPreferences.getString("urchinStatusLayout" + (i + 1), "0"));
+                }
+                dataStore.setUrchinStatusLayout(urchinStatusLayout);
 
             }
         });

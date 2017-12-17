@@ -67,6 +67,19 @@ public class DataStore extends RealmObject {
     private boolean nsEnablePatternChange;
     private boolean nsEnableInsertBGasCGM;
 
+    private boolean urchinEnable;
+    private int urchinBasalPeriod;
+    private int urchinBasalScale;
+    private int urchinBasalPop;
+    private int urchinTimeStyle;
+    private int urchinDurationStyle;
+    private int urchinUnitsStyle;
+    private int urchinBatteyStyle;
+    private int urchinConcatenateStyle;
+    private String urchinCustomText1;
+    private String urchinCustomText2;
+    private byte[] urchinStatusLayout;
+
     public DataStore() {
         this.timestamp = new Date().getTime();
     }
@@ -463,5 +476,101 @@ public class DataStore extends RealmObject {
 
     public void setNsEnableInsertBGasCGM(boolean nsEnableInsertBGasCGM) {
         this.nsEnableInsertBGasCGM = nsEnableInsertBGasCGM;
+    }
+
+    public boolean isUrchinEnable() {
+        return urchinEnable;
+    }
+
+    public void setUrchinEnable(boolean urchinEnable) {
+        this.urchinEnable = urchinEnable;
+    }
+
+    public int getUrchinBasalPeriod() {
+        return urchinBasalPeriod;
+    }
+
+    public void setUrchinBasalPeriod(int urchinBasalPeriod) {
+        this.urchinBasalPeriod = urchinBasalPeriod;
+    }
+
+    public int getUrchinBasalScale() {
+        return urchinBasalScale;
+    }
+
+    public void setUrchinBasalScale(int urchinBasalScale) {
+        this.urchinBasalScale = urchinBasalScale;
+    }
+
+    public int getUrchinBasalPop() {
+        return urchinBasalPop;
+    }
+
+    public void setUrchinBasalPop(int urchinBasalPop) {
+        this.urchinBasalPop = urchinBasalPop;
+    }
+
+    public int getUrchinTimeStyle() {
+        return urchinTimeStyle;
+    }
+
+    public void setUrchinTimeStyle(int urchinTimeStyle) {
+        this.urchinTimeStyle = urchinTimeStyle;
+    }
+
+    public int getUrchinDurationStyle() {
+        return urchinDurationStyle;
+    }
+
+    public void setUrchinDurationStyle(int urchinDurationStyle) {
+        this.urchinDurationStyle = urchinDurationStyle;
+    }
+
+    public int getUrchinUnitsStyle() {
+        return urchinUnitsStyle;
+    }
+
+    public void setUrchinUnitsStyle(int urchinUnitsStyle) {
+        this.urchinUnitsStyle = urchinUnitsStyle;
+    }
+
+    public int getUrchinBatteyStyle() {
+        return urchinBatteyStyle;
+    }
+
+    public void setUrchinBatteyStyle(int urchinBatteyStyle) {
+        this.urchinBatteyStyle = urchinBatteyStyle;
+    }
+
+    public int getUrchinConcatenateStyle() {
+        return urchinConcatenateStyle;
+    }
+
+    public void setUrchinConcatenateStyle(int urchinConcatenateStyle) {
+        this.urchinConcatenateStyle = urchinConcatenateStyle;
+    }
+
+    public String getUrchinCustomText1() {
+        return urchinCustomText1;
+    }
+
+    public void setUrchinCustomText1(String urchinCustomText1) {
+        this.urchinCustomText1 = urchinCustomText1;
+    }
+
+    public String getUrchinCustomText2() {
+        return urchinCustomText2;
+    }
+
+    public void setUrchinCustomText2(String urchinCustomText2) {
+        this.urchinCustomText2 = urchinCustomText2;
+    }
+
+    public byte[] getUrchinStatusLayout() {
+        return urchinStatusLayout;
+    }
+
+    public void setUrchinStatusLayout(byte[] urchinStatusLayout) {
+        this.urchinStatusLayout = urchinStatusLayout;
     }
 }

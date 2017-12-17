@@ -55,9 +55,7 @@ public class UserLogMessage {
         userLogRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                RealmResults results = userLogRealm.where(UserLog.class)
-                        .findAll();
-                if (results.size() > 0) results.deleteAllFromRealm();
+                userLogRealm.deleteAll();
             }
         });
 

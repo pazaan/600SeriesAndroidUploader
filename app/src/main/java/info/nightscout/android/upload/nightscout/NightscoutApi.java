@@ -27,6 +27,6 @@ public interface NightscoutApi {
     @GET("/api/v1/status.json")
     Call<SiteStatus> getStatus();
 
-    @GET("/api/v1/experiments/test")
+    @GET("/api/v1/experiments/update")
     Call<LoginStatus> testLogin();
 }

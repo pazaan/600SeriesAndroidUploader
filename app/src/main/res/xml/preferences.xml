@@ -58,14 +58,14 @@
             android:key="@string/preference_enable_rest_upload"
             android:summary="Enable upload of data to Nightscout"
             android:title="REST API Upload"/>
-        <EditTextPreference
+        <info.nightscout.android.utils.EditTextPreferenceURL
             android:defaultValue="https://YOUR.NIGHTSCOUT.SITE"
             android:dependency="@string/preference_enable_rest_upload"
             android:dialogMessage="The hostname of your Nightscout site"
             android:dialogTitle="Enter Nightscout URL"
             android:key="@string/preference_nightscout_url"
             android:title="Nightscout URL"/>
-        <info.nightscout.android.utils.ValidatingEditTextPreference
+        <info.nightscout.android.utils.EditTextPreferenceSECRET
             android:defaultValue="YOURAPISECRET"
             android:dependency="@string/preference_enable_rest_upload"
             android:dialogMessage="Your Nightscout API secret"
@@ -184,10 +184,251 @@
             android:key="scanButton"
             android:dependency="@string/preference_enable_rest_upload"
             android:summary="Click here to scan QR-Code from http://nightscout.github.io/pages/configure/ using ZXing barcode scanner."/>
+
         <CheckBoxPreference
             android:key="@string/preference_enable_xdrip_plus"
             android:summary="Enable local broadcast of data to xDrip+"
             android:title="Send to xDrip+"/>
+
+        <PreferenceScreen
+            android:title="Urchin"
+            android:summary="Urchin watchface for Pebble"
+            android:persistent="false">
+
+            <PreferenceCategory android:title="Urchin Pebble Watchface">
+                <CheckBoxPreference android:title="Enable Urchin support"
+                    android:key="urchinEnable"
+                    android:defaultValue="false"
+                    android:summary="Local broadcast of data to Urchin allowing full offline viewing of SGV and extended Pump status information"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Basal Graph">
+                <Preference
+                    android:dependency="urchinEnable"
+                    android:key="pref_static_field_key"
+                    android:selectable="false"
+                    android:summary="Basal can be graphed with heights relative to the period selected and scaled to the value selected. A Square or Dual bolus can be popped to the height selected and shown on the basal graph when active."/>
+                <ListPreference android:title="Period"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBasalPeriod"
+                    android:summary="%s"
+                    android:defaultValue="11"
+                    android:entries="@array/urchin_basal_period"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Y-Scale"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBasalScale"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_basal_scale"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Y-Pop Square/Dual"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBasalPop"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_basal_scale"
+                    android:entryValues="@array/urchin_values"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Status Styles">
+                <ListPreference android:title="Time Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinTimeStyle"
+                    android:summary="%s"
+                    android:defaultValue="1"
+                    android:entries="@array/urchin_time"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Duration Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinDurationStyle"
+                    android:summary="%s"
+                    android:defaultValue="1"
+                    android:entries="@array/urchin_duration"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Units Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinUnitsStyle"
+                    android:summary="%s"
+                    android:defaultValue="1"
+                    android:entries="@array/urchin_units"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Battery Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBatteyStyle"
+                    android:summary="%s"
+                    android:defaultValue="1"
+                    android:entries="@array/urchin_battery"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Concatenate Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinConcatenateStyle"
+                    android:summary="%s"
+                    android:defaultValue="2"
+                    android:entries="@array/urchin_concatenate"
+                    android:entryValues="@array/urchin_values"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Custom Text">
+                <info.nightscout.android.utils.EditTextPreferenceURCHIN
+                    android:title="Custom Text 1"
+                    android:dependency="urchinEnable"
+                    android:key="urchinCustomText1"
+                    android:dialogMessage="Available characters:\n0-9 A-Z a-z\n°•·-`~!@#$&#37;^&#38;*()_+=[]\{}|;':&#34;,.&#47;&#60;&#62;?"
+                    android:dialogTitle="Enter Custom Text"/>
+                <info.nightscout.android.utils.EditTextPreferenceURCHIN
+                    android:title="Custom Text 2"
+                    android:dependency="urchinEnable"
+                    android:key="urchinCustomText2"
+                    android:dialogMessage="Available characters:\n0-9 A-Z a-z\n°•·-`~!@#$&#37;^&#38;*()_+=[]\{}|;':&#34;,.&#47;&#60;&#62;?"
+                    android:dialogTitle="Enter Custom Text"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Status Layout">
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout1"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout2"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout3"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout4"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout5"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout6"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout7"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout8"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout9"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout10"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout11"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout12"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout13"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout14"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout15"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout16"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout17"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout18"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout19"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout20"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+            </PreferenceCategory>
+
+        </PreferenceScreen>
+
     </PreferenceCategory>
 
     <PreferenceCategory android:title="System">

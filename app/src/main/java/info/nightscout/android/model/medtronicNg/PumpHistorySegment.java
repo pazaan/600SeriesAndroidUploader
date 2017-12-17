@@ -13,9 +13,6 @@ public class PumpHistorySegment extends RealmObject {
     private Date toDate;
     private byte historyType;
 
-//    private byte xxx; // test
-//    private byte xxx; // live
-
     public void addSegment(Date date, byte historyType) {
         this.historyType = historyType;
         this.fromDate = date;

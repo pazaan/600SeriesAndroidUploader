@@ -284,7 +284,7 @@ public class StatusNotification {
         String text = "";
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(now - (60 * 60000L)))
+                .greaterThan("eventDate", new Date(now - (12 * 60 * 60000L)))
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
         if (results.size() > 0 && !results.first().isBolusingNormal()
