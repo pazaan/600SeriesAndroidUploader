@@ -72,9 +72,10 @@ import io.realm.RealmResults;
 import io.realm.Sort;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_HEART;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_INFO;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_SETTING;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_HEART;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_SETTING;
+import static org.apache.commons.lang3.math.NumberUtils.toInt;
 
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -565,7 +566,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setUrchinEnable(sharedPreferences.getBoolean("urchinEnable", false));
                 dataStore.setUrchinBasalPeriod(Integer.parseInt(sharedPreferences.getString("urchinBasalPeriod", "23")));
                 dataStore.setUrchinBasalScale(Integer.parseInt(sharedPreferences.getString("urchinBasalScale", "0")));
-                dataStore.setUrchinBasalPop(Integer.parseInt(sharedPreferences.getString("urchinBasalPop", "0")));
+                dataStore.setUrchinBolusGraph(sharedPreferences.getBoolean("urchinBolusGraph", false));
+                dataStore.setUrchinBolusTags(sharedPreferences.getBoolean("urchinBolusTags", false));
+                dataStore.setUrchinBolusPop(Integer.parseInt(sharedPreferences.getString("urchinBolusPop", "0")));
                 dataStore.setUrchinTimeStyle(Integer.parseInt(sharedPreferences.getString("urchinTimeStyle", "1")));
                 dataStore.setUrchinDurationStyle(Integer.parseInt(sharedPreferences.getString("urchinDurationStyle", "1")));
                 dataStore.setUrchinUnitsStyle(Integer.parseInt(sharedPreferences.getString("urchinUnitsStyle", "1")));
@@ -1024,10 +1027,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (viewPosition == 0 && segment > FIRSTPAGE_SIZE) segment = FIRSTPAGE_SIZE;
         else if (segment > PAGE_SIZE) segment = PAGE_SIZE;
 
+        RealmResults<UserLog> ul = userLogResults;
         StringBuilder sb = new StringBuilder();
         if (segment > 0) {
             for (int index = viewPosition; index < viewPosition + segment; index++)
-                sb.insert(0, userLogResults.get(index) + (sb.length() > 0 ? "\n" : ""));
+                sb.insert(0, formatMessage(ul.get(index)) + (sb.length() > 0 ? "\n" : ""));
         }
         mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
 
@@ -1048,6 +1052,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         } else {
             mTextViewLogButtonTopRecent.setVisibility(View.GONE);
         }
+    }
+
+    private String formatMessage(UserLog userLog) {
+        DateFormat df = new SimpleDateFormat("E HH:mm:ss");
+        String split[] = userLog.getMessage().split("¦");
+        if (split.length == 2)
+            return df.format(userLog.getTimestamp()) + ": " + split[0] + strFormatSGV(toInt(split[1]));
+        else if (split.length == 3)
+            return df.format(userLog.getTimestamp()) + ": " + split[0] + strFormatSGV(toInt(split[1])) + split[2];
+        else
+            return df.format(userLog.getTimestamp()) + ": " + split[0];
     }
 
     private void changeUserLogViewOlder() {

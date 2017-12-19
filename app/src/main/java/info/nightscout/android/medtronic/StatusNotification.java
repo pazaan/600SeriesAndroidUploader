@@ -86,7 +86,6 @@ public class StatusNotification {
         }
 
         if (instance != null) instance = null;
-        return;
     }
 
     public void initNotification(Context context) {
@@ -317,7 +316,7 @@ public class StatusNotification {
                         .findAllSorted("eventDate", Sort.DESCENDING);
                 // check if most recent suspend is in history and show the start time
                 if (suspend.size() > 0 && suspend.first().isSuspend())
-                    text += TEXT_AT_TIME + dateFormatterShort.format(suspend.first().getEventDate());;
+                    text += TEXT_AT_TIME + dateFormatterShort.format(suspend.first().getEventDate());
 
             } else if (results.first().isTempBasalActive()) {
                 float rate = results.first().getTempBasalRate();

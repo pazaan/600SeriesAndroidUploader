@@ -207,12 +207,12 @@
                     android:dependency="urchinEnable"
                     android:key="pref_static_field_key"
                     android:selectable="false"
-                    android:summary="Basal can be graphed with heights relative to the period selected and scaled to the value selected. A Square or Dual bolus can be popped to the height selected and shown on the basal graph when active."/>
+                    android:summary="Basal can be graphed with heights relative to the period selected and scaled to the value selected."/>
                 <ListPreference android:title="Period"
                     android:dependency="urchinEnable"
                     android:key="urchinBasalPeriod"
                     android:summary="%s"
-                    android:defaultValue="11"
+                    android:defaultValue="23"
                     android:entries="@array/urchin_basal_period"
                     android:entryValues="@array/urchin_values"/>
                 <ListPreference android:title="Y-Scale"
@@ -222,9 +222,27 @@
                     android:defaultValue="0"
                     android:entries="@array/urchin_basal_scale"
                     android:entryValues="@array/urchin_values"/>
-                <ListPreference android:title="Y-Pop Square/Dual"
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Bolus Graph">
+                <CheckBoxPreference android:title="Enable bolus markers"
                     android:dependency="urchinEnable"
-                    android:key="urchinBasalPop"
+                    android:key="urchinBolusGraph"
+                    android:defaultValue="false"
+                    android:summary="Mark a bolus event on graph."/>
+                <CheckBoxPreference android:title="Enable bolus type tags"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBolusTags"
+                    android:defaultValue="false"
+                    android:summary="Square/Dual bolus tags in status text."/>
+                <Preference
+                    android:dependency="urchinEnable"
+                    android:key="pref_static_field_key"
+                    android:selectable="false"
+                    android:summary="A Square or Dual bolus can be popped to the height selected and shown on the basal graph during delivery period."/>
+                <ListPreference android:title="Square/Dual Y-Pop"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBolusPop"
                     android:summary="%s"
                     android:defaultValue="0"
                     android:entries="@array/urchin_basal_scale"

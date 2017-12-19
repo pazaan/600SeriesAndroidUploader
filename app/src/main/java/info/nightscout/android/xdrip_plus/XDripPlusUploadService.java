@@ -44,6 +44,8 @@ public class XDripPlusUploadService extends Service {
     private Context mContext;
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
 
+    private String device;
+
     @Override
     public IBinder onBind(Intent intent) {
         throw new UnsupportedOperationException("Not yet implemented");
@@ -75,20 +77,20 @@ public class XDripPlusUploadService extends Service {
     private class Upload extends Thread {
         public void run() {
 
-            PowerManager.WakeLock wl = getWakeLock(TAG, 60000);
+            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 60000);
 
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
             Boolean enableXdripPlusUpload = prefs.getBoolean(getString(R.string.preference_enable_xdrip_plus), false);
 
             if (enableXdripPlusUpload) {
 
-                String device = "NA";
+                device = "NA";
 
                 Realm mRealm = Realm.getDefaultInstance();
 
                 Realm historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
-                RealmResults<PumpHistoryCGM> history_records = historyRealm
+                final RealmResults<PumpHistoryCGM> history_records = historyRealm
                         .where(PumpHistoryCGM.class)
                         .equalTo("xdripACK", false)
                         .notEqualTo("sgv", 0)
@@ -103,16 +105,19 @@ public class XDripPlusUploadService extends Service {
                     doXDripUploadStatus(records.first());
                 }
 
-                int limit = 500;
-
                 if (history_records.size() > 0) {
-                    historyRealm.beginTransaction();
-                    for (PumpHistoryCGM history_record : history_records) {
-                        doXDripUploadCGM(history_record, device);
-                        history_record.setXdripACK(true);
-                        if (--limit == 0) break;
-                    }
-                    historyRealm.commitTransaction();
+                    historyRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(Realm realm) {
+
+                            int limit = 500;
+                            for (PumpHistoryCGM history_record : history_records) {
+                                doXDripUploadCGM(history_record, device);
+                                history_record.setXdripACK(true);
+                                if (--limit == 0) break;
+                            }
+                        }
+                    });
                 }
 
                 historyRealm.close();

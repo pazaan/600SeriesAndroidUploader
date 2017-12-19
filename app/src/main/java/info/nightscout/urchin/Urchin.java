@@ -60,7 +60,7 @@ public class Urchin {
 
     private long timeNow;
 
-    private int recency;
+    private long eventTime; // urchin recency = now - event time / 1000;
     private byte[] sgvs;
     private int sgv;
     private int trend;
@@ -130,9 +130,13 @@ public class Urchin {
 
     public void refresh() {
         Log.d(TAG, "sending data to Pebble");
-        ignoreACK = System.currentTimeMillis() + 2000L;
+
+        timeNow = System.currentTimeMillis();
+        ignoreACK = timeNow + 2000L;
 
         PebbleDictionary out = new PebbleDictionary();
+
+        int recency = (int) (timeNow - eventTime) / 1000;
 
         out.addInt32(KEY.msgType.ordinal(), MSG_TYPE.DATA.ordinal());
         out.addInt32(KEY.recency.ordinal(), recency);
@@ -144,7 +148,7 @@ public class Urchin {
         out.addString(KEY.statusText.ordinal(), text);
         out.addBytes(KEY.graphExtra.ordinal(), extra);
 
-        updateID++;
+        updateID += 13; // odd offset used to stop us syncing to urchin pebble JS ack
         updateID &= 0xFF;
         Log.d(TAG, "refresh: updateID = " + updateID);
 
@@ -193,7 +197,7 @@ public class Urchin {
                 lastActualEventTime = pumpStatusEvent.getEventDate().getTime();
         }
 
-        recency = (int) ((timeNow - lastActualEventTime) / 1000);
+        eventTime = lastActualEventTime;
 
         sgv = 0;
         delta = NO_DELTA_VALUE;
@@ -202,14 +206,18 @@ public class Urchin {
         if (sgvresults.size() > 0) {
             long age = (lastActualEventTime - sgvresults.first().getEventDate().getTime()) / 1000L;
 
-            if (age <= 60 * 60)
+            // don't show any sgv if older then 60mins
+            if (age < 61 * 60)
                 sgv = sgvresults.first().getSgv();
 
-            if (age <= 10 * 60) {
+            // don't show trend/delta if older then 10mins
+            if (age <= 11 * 60) {
                 if (sgvresults.first().getCgmTrend() != null)
                     trend = PumpStatusEvent.CGM_TREND.valueOf(sgvresults.first().getCgmTrend()).ordinal();
+
+                // don't show delta if older then 5 mins
                 if (sgvresults.size() > 1
-                        && sgvresults.get(0).getCgmRTC() - sgvresults.get(1).getCgmRTC() <= 5 * 60)
+                        && sgvresults.get(0).getCgmRTC() - sgvresults.get(1).getCgmRTC() < 6 * 60)
                     delta = sgvresults.get(0).getSgv() - sgvresults.get(1).getSgv();
             }
         }
@@ -223,7 +231,7 @@ public class Urchin {
 
         extra = graphBasal(lastActualEventTime - (TIME_STEP / 2));
         extra = graphBolus(lastActualEventTime - TIME_STEP, extra);
-        extra = graphPop(lastActualEventTime - TIME_STEP, extra);
+        extra = graphBolusPop(lastActualEventTime - TIME_STEP, extra);
 
         pumpStatusEvent = null;
         refresh();
@@ -366,41 +374,44 @@ public class Urchin {
 
     private byte[] graphBolus(long time, byte[] graph) {
 
-        RealmResults<PumpHistoryBolus> results = historyRealm.where(PumpHistoryBolus.class)
-                .greaterThan("eventDate", new Date(time - (GRAPH_MAX_SGV_COUNT * TIME_STEP)))
-                .equalTo("programmed", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+        if (dataStore.isUrchinBolusGraph()) {
 
-        Iterator<PumpHistoryBolus> iterator = results.iterator();
-        PumpHistoryBolus record = null;
+            RealmResults<PumpHistoryBolus> results = historyRealm.where(PumpHistoryBolus.class)
+                    .greaterThan("eventDate", new Date(time - (GRAPH_MAX_SGV_COUNT * TIME_STEP)))
+                    .equalTo("programmed", true)
+                    .findAllSorted("eventDate", Sort.DESCENDING);
 
-        int flag;
+            Iterator<PumpHistoryBolus> iterator = results.iterator();
+            PumpHistoryBolus record = null;
 
-        for (int i = 0; i < GRAPH_MAX_SGV_COUNT; i++) {
-            flag = 0;
+            int flag;
 
-            do {
-                if (record == null && iterator.hasNext()) record = iterator.next();
-                if (record != null && record.getProgrammedDate().getTime() < time + TIME_STEP) {
-                    if (record.getProgrammedDate().getTime() >= time) {
-                        flag = 1;
-                        record = null;
-                    }
-                    break;
-                } else record = null;
-            } while (iterator.hasNext());
+            for (int i = 0; i < GRAPH_MAX_SGV_COUNT; i++) {
+                flag = 0;
 
-            graph[i] = (byte) (graph[i] & 0xFE | flag);
+                do {
+                    if (record == null && iterator.hasNext()) record = iterator.next();
+                    if (record != null && record.getProgrammedDate().getTime() < time + TIME_STEP) {
+                        if (record.getProgrammedDate().getTime() >= time) {
+                            flag = 1;
+                            record = null;
+                        }
+                        break;
+                    } else record = null;
+                } while (iterator.hasNext());
 
-            time = time - TIME_STEP;
+                graph[i] = (byte) (graph[i] & 0xFE | flag);
+
+                time = time - TIME_STEP;
+            }
         }
 
         return graph;
     }
 
-    private byte[] graphPop(long time, byte[] graph) {
-        int basalPop = dataStore.getUrchinBasalPop() << 1;
-        if (basalPop > 0 ) {
+    private byte[] graphBolusPop(long time, byte[] graph) {
+        int bolusPop = dataStore.getUrchinBolusPop() << 1;
+        if (bolusPop > 0 ) {
 
             RealmResults<PumpHistoryBolus> results = historyRealm.where(PumpHistoryBolus.class)
                     .greaterThan("eventDate", new Date(time - (GRAPH_MAX_SGV_COUNT * TIME_STEP) - (8 * 60 * 60000L)))
@@ -428,7 +439,7 @@ public class Urchin {
                     record = null;
                 } while (iterator.hasNext());
 
-                if (flag) graph[i] = (byte) (graph[i] & 0x01 | basalPop);
+                if (flag) graph[i] = (byte) (graph[i] & 0x01 | bolusPop);
 
                 time = time - TIME_STEP;
             }
@@ -474,7 +485,7 @@ public class Urchin {
 
         if (results.size() > 0) {
             if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(results.first().getBolusType())) {
-                text += "D";
+                if (dataStore.isUrchinBolusTags()) text += "d";
                 if (results.first().isSquareDelivered())
                     insulin = results.first().getNormalDeliveredAmount() + results.first().getSquareDeliveredAmount();
                 else if (results.first().isNormalDelivered())
@@ -483,7 +494,7 @@ public class Urchin {
                     insulin = results.first().getNormalProgrammedAmount() + results.first().getSquareProgrammedAmount();
 
             } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(results.first().getBolusType())) {
-                text += "S";
+                if (dataStore.isUrchinBolusTags()) text += text += "s";
                 if (results.first().isSquareDelivered())
                     insulin = results.first().getSquareDeliveredAmount();
                 else
@@ -546,7 +557,7 @@ public class Urchin {
                         .findAllSorted("eventDate", Sort.DESCENDING);
                 // check if most recent suspend is in history and show the start time
                 if (suspend.size() > 0 && suspend.first().isSuspend())
-                    text = "S" + styleConcatenate() + styleTime(suspend.first().getEventDate().getTime());;
+                    text = "S" + styleConcatenate() + styleTime(suspend.first().getEventDate().getTime());
 
             } else if (pumpStatusEvent.isTempBasalActive()) {
                 float rate = pumpStatusEvent.getTempBasalRate();
@@ -580,7 +591,7 @@ public class Urchin {
                         .findAllSorted("eventDate", Sort.DESCENDING);
                 // check if most recent suspend is in history and show the start time
                 if (suspend.size() > 0 && suspend.first().isSuspend())
-                    text = "S" + styleConcatenate() + styleTime(suspend.first().getEventDate().getTime());;
+                    text = "S" + styleConcatenate() + styleTime(suspend.first().getEventDate().getTime());
 
             } else if (pumpStatusEvent.isTempBasalActive()) {
                 int minutes = pumpStatusEvent.getTempBasalMinutesRemaining();
@@ -594,7 +605,9 @@ public class Urchin {
     private String calibration() {
         String text = "";
 
-        if (pumpStatusEvent != null && pumpStatusEvent.getEventDate().getTime() >= timeNow - 15 *60000L) {
+        if (pumpStatusEvent != null
+                && pumpStatusEvent.getSgv() > 0
+                && pumpStatusEvent.getEventDate().getTime() >= timeNow - 15 *60000L) {
 
             text = "";
             if (pumpStatusEvent.isCgmCalibrating())
@@ -608,9 +621,11 @@ public class Urchin {
                 else if (timer > 0)
                     text += (timer >= 100 ? "2h" : timer % 100 + "m");
                 else
-                    text = "!!";
+                    text = "C!";
             }
-        }
+
+        } else
+            text ="!!";
 
         return text;
     }
@@ -950,7 +965,7 @@ public class Urchin {
                     new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
                             .putExtra(MasterService.Constants.EXTENDED_DATA, message);
             mContext.sendBroadcast(intent);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 }

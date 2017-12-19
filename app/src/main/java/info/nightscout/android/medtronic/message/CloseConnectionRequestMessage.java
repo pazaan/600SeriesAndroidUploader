@@ -27,7 +27,7 @@ public class CloseConnectionRequestMessage extends ContourNextLinkBinaryRequestM
         if (millis > 0) {
             try {
                 Thread.sleep(millis);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
 

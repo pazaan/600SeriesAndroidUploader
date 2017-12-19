@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
@@ -34,12 +35,12 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_CGM;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_HELP;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_INFO;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_REFRESH;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_SETTING;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_WARN;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_CGM;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_HELP;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_REFRESH;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_SETTING;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_WARN;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
 import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
@@ -65,6 +66,8 @@ public class MedtronicCnlService extends Service {
     public final static long POLL_ERROR_RETRY_MS = 90000L;
     // Retry after old sgv received from pump
     public final static long POLL_OLDSGV_RETRY_MS = 90000L;
+    // Ongoing cgm n/a events to trigger extra safe anti clash poll timing
+    public final static int POLL_ANTI_CLASH = 3;
 
     // show warning message after repeated errors
     private final static int ERROR_COMMS_AT = 3;
@@ -111,7 +114,7 @@ public class MedtronicCnlService extends Service {
                     new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
                             .putExtra(MasterService.Constants.EXTENDED_DATA, message);
             sendBroadcast(intent);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 
@@ -120,7 +123,7 @@ public class MedtronicCnlService extends Service {
             Intent intent =
                     new Intent(action);
             sendBroadcast(intent);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 
@@ -158,6 +161,18 @@ public class MedtronicCnlService extends Service {
     }
 
     @Override
+    public void onTaskRemoved(Intent intent) {
+        Log.i(TAG, "onTaskRemoved called");
+
+        // Protection for older Android versions (v4 and v5)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M  && readPump != null) {
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_FINISHED).putExtra("nextpoll", System.currentTimeMillis() + 30000L));
+            pullEmergencyBrake();
+        }
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Received start id " + startId + "  : " + intent);
 
@@ -177,33 +192,42 @@ public class MedtronicCnlService extends Service {
 
         } else if (MasterService.Constants.ACTION_CNL_SHUTDOWN.equals(action) && readPump != null) {
             // device is shutting down, pull the emergency brake!
-            // less then ideal but we need to stop CNL comms asap before android kills us while protecting comms that must complete to avoid a CNL E86 error
-            if (mHidDevice != null) {
-                Log.d(TAG, "device is shutting down, pull the emergency brake!");
-
-                long now = System.currentTimeMillis();
-                while (shutdownProtect && (System.currentTimeMillis() - now) < 1000L) {
-                    Log.d(TAG, "shutdownProtect");
-                    readPump.interrupt();
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) { }
-                }
-
-                try {
-                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
-                            .sendNoResponse(mHidDevice);
-                    Thread.sleep(10);
-                } catch (IOException | InterruptedException | EncryptionException | ChecksumException | UnexpectedMessageException | TimeoutException e) { }
-
-                mHidDevice.close();
-                mHidDevice = null;
-            }
-            stopSelf();
-            android.os.Process.killProcess(android.os.Process.myPid());
+            pullEmergencyBrake();
         }
 
         return START_NOT_STICKY;
+    }
+
+    private void pullEmergencyBrake() {
+
+        // less then ideal but we need to stop CNL comms asap before android kills us while protecting comms that must complete to avoid a CNL E86 error
+
+        if (mHidDevice != null) {
+            Log.d(TAG, "comms in progress, pull the emergency brake!");
+
+            long now = System.currentTimeMillis();
+            while (shutdownProtect && (System.currentTimeMillis() - now) < 1000L) {
+                Log.d(TAG, "shutdownProtect");
+                readPump.interrupt();
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException ignored) {
+                }
+            }
+
+            try {
+                new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
+                        .sendNoResponse(mHidDevice);
+                Thread.sleep(10);
+            } catch (IOException | InterruptedException | EncryptionException | ChecksumException | UnexpectedMessageException | TimeoutException ignored) {
+            }
+
+            mHidDevice.close();
+            mHidDevice = null;
+        }
+
+        stopSelf();
+        android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     private void readDataStore() {
@@ -256,7 +280,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         public void run() {
             Log.d(TAG, "readPump called");
 
-            PowerManager.WakeLock wl = getWakeLock(TAG, 60000);
+            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 60000);
 
             sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_ACTIVE));
 
@@ -268,7 +292,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
             dataStore = storeRealm.where(DataStore.class).findFirst();
 
-            pumpHistoryHandler = new PumpHistoryHandler();
+            pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
             readDataStore();
 
@@ -518,7 +542,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             cnlReader.endPassthroughMode();
                             shutdownProtect = false;
                             cnlReader.endControlMode();
-                        } catch (NoSuchAlgorithmException e) {
+                        } catch (NoSuchAlgorithmException ignored) {
                         }
                     }
                 } catch (IOException e) {
@@ -701,7 +725,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // was temp ended before expected duration?
                 if (!results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
                     int diff = results.get(1).getTempBasalMinutesRemaining() - ageMinutes;
-                    if (diff < -5 || diff > 5) {
+                    if (diff < -2 || diff > 2) {
                         userLogMessage(info + "temp ended");
                         historyNeeded = true;
                     }
@@ -710,7 +734,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // was a new temp started while one was in progress?
                 if (results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
                     int diff = results.get(1).getTempBasalMinutesRemaining() - results.first().getTempBasalMinutesRemaining() - ageMinutes;
-                    if (diff < -5 || diff > 5) {
+                    if (diff < -2 || diff > 2) {
                         userLogMessage(info + "temp extended");
                         historyNeeded = true;
                     }
@@ -722,7 +746,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                         // was dual ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                        if (diff < -5 || diff > 5) {
+                        if (diff < -2 || diff > 2) {
                             userLogMessage(info + "dual ended");
                             historyNeeded = true;
                         }
@@ -731,7 +755,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     else if (!results.first().isBolusingSquare() && results.get(1).isBolusingSquare() && !results.get(1).isBolusingNormal()) {
                         // was square ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                        if (diff < -5 || diff > 5) {
+                        if (diff < -2 || diff > 2) {
                             userLogMessage(info + "square ended");
                             historyNeeded = true;
                         }
@@ -750,7 +774,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 } else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                     // was dual ended before expected duration?
                     int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                    if (diff < -5 || diff > 5) {
+                    if (diff < -2 || diff > 2) {
                         userLogMessage(info + "dual ended");
                         historyNeeded = true;
                     }
@@ -846,8 +870,13 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             // check if pump has lost sensor
             if (now - lastRecievedEventTime <= 60 * 60000L
-                    && cgmresults.first().getCgmRTC() != results.first().getCgmRTC())
+                    && cgmresults.first().getCgmRTC() != results.first().getCgmRTC()) {
                 pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollRecoveryPeriod() : POLL_RECOVERY_PERIOD_MS;
+
+                // extended anti-clash protection used to make sure we don't lock into a time frame that stops pump receiving any sensor comms
+                if (PumpCgmNA >= POLL_ANTI_CLASH)
+                    pollOffset += (((PumpCgmNA - POLL_ANTI_CLASH) % 3)) * 15 * 1000L;
+            }
 
             // check if sensor is in warmup phase
             else if (now - lastRecievedEventTime <= 120 * 60000L

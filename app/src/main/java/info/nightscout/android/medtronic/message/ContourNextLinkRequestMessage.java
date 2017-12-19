@@ -40,7 +40,7 @@ public abstract class ContourNextLinkRequestMessage<T> extends ContourNextLinkMe
             try {
                 Log.d(TAG, "waiting " + millis +" ms");
                 Thread.sleep(millis);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
 
@@ -57,7 +57,7 @@ public abstract class ContourNextLinkRequestMessage<T> extends ContourNextLinkMe
             try {
                 Log.d(TAG, "waiting " + millis +" ms");
                 Thread.sleep(millis);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
 

@@ -37,14 +37,14 @@ import io.realm.RealmResults;
 import io.realm.Sort;
 
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_HELP;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_WARN;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_GRACE_PERIOD_MS;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_PERIOD_MS;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_PRE_GRACE_PERIOD_MS;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_RECOVERY_PERIOD_MS;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_WARMUP_PERIOD_MS;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_HELP;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_INFO;
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_WARN;
 
 /**
  * Created by Pogman on 13.9.17.
@@ -120,7 +120,6 @@ public class MasterService extends Service {
         usbIntentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
         registerReceiver(usbReceiver, usbIntentFilter);
 
-        // setup self handling alarm receiver
         MedtronicCnlAlarmManager.setContext(mContext);
 
         urchin = new Urchin(mContext);
@@ -128,6 +127,13 @@ public class MasterService extends Service {
         realm = Realm.getDefaultInstance();
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
         dataStore = storeRealm.where(DataStore.class).findFirst();
+
+        storeRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                dataStore.clearAllCommsErrors();
+            }
+        });
     }
 
     @Override

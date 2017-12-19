@@ -97,7 +97,7 @@
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"
             />
-        <receiver android:name=".utils.AutoStart">
+        <receiver android:name=".AutoStart">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>

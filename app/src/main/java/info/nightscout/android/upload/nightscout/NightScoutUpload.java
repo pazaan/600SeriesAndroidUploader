@@ -89,7 +89,7 @@ public class NightScoutUpload {
             Iterator<UploadItem> iterator = record.nightscout(dataStore).iterator();
             while (success && iterator.hasNext()) {
                 UploadItem uploadItem = iterator.next();
-                String mode = uploadItem.getMode();
+                UploadItem.MODE mode = uploadItem.getMode();
                 if (uploadItem.isEntry()) {
                     success = processEntry(mode, uploadItem.getEntry(), entries);
                 } else if (uploadItem.isTreatment()) {
@@ -118,7 +118,7 @@ public class NightScoutUpload {
         return success;
     }
 
-    private boolean processEntry(String mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
+    private boolean processEntry(UploadItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
 
         String key = entry.getKey600();
         Response<List<EntriesEndpoints.Entry>> response = entriesEndpoints.checkKey("2017", key).execute();
@@ -129,7 +129,7 @@ public class NightScoutUpload {
             if (count > 0) {
                 Log.d(TAG, "found " + list.size() + " already in nightscout for KEY: " + key);
 
-                if (mode.equals("update") || mode.equals("delete") || count > 1) {
+                if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1) {
                     Response<ResponseBody> responseBody = entriesEndpoints.deleteKey("2017", key).execute();
                     if (responseBody.isSuccessful()) {
                         Log.d(TAG, "deleted " + count + " with KEY: " + key);
@@ -140,7 +140,7 @@ public class NightScoutUpload {
                 } else return true;
             }
 
-            if (mode.equals("update") || mode.equals("check")) {
+            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
                 Log.d(TAG, "queued item for nightscout entries bulk upload, KEY: " + key);
                 entries.add(entry);
             }
@@ -153,7 +153,7 @@ public class NightScoutUpload {
         return true;
     }
 
-    private boolean processTreatment(String mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
+    private boolean processTreatment(UploadItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
 
         String key = treatment.getKey600();
         Response<List<TreatmentsEndpoints.Treatment>> response = treatmentsEndpoints.checkKey("2017", key).execute();
@@ -164,7 +164,7 @@ public class NightScoutUpload {
             if (count > 0) {
                 Log.d(TAG, "found " + list.size() + " already in nightscout for KEY: " + key);
 
-                while (count > 0 && (mode.equals("update") || mode.equals("delete") || count > 1)) {
+                while (count > 0 && (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1)) {
                     Response<ResponseBody> responseBody = treatmentsEndpoints.deleteID(list.get(count - 1).get_id()).execute();
                     if (responseBody.isSuccessful()) {
                         Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + list.get(count - 1).get_id());
@@ -178,7 +178,7 @@ public class NightScoutUpload {
                 if (count > 0) return true;
             }
 
-            if (mode.equals("update") || mode.equals("check")) {
+            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
                 Log.d(TAG, "queued item for nightscout treatments bulk upload, KEY: " + key);
                 treatments.add(treatment);
             }
@@ -191,7 +191,7 @@ public class NightScoutUpload {
         return true;
     }
 
-    private boolean processProfile(String mode, ProfileEndpoints.Profile profile) throws Exception {
+    private boolean processProfile(UploadItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
 
         String key = profile.getKey600();
         Response<List<ProfileEndpoints.Profile>> response = profileEndpoints.getProfiles().execute();
@@ -207,7 +207,7 @@ public class NightScoutUpload {
                 String foundKey;
                 int count = 0;
 
-                if (dataStore.isNsEnableProfileSingle() && mode.equals("update") || mode.equals("check")) {
+                if (dataStore.isNsEnableProfileSingle()) {
                     Log.d(TAG, "single profile enabled, deleting obsolete profiles");
 
                     for (ProfileEndpoints.Profile item : list) {
@@ -231,7 +231,7 @@ public class NightScoutUpload {
                     if (count > 0) {
                         Log.d(TAG, "found " + count + " already in nightscout for KEY: " + key);
 
-                        if (mode.equals("update") || mode.equals("delete") || count > 1) {
+                        if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1) {
                             for (ProfileEndpoints.Profile item : list) {
                                 foundKey = item.getKey600();
                                 if (foundKey != null && foundKey.equals(key)) {
@@ -253,7 +253,7 @@ public class NightScoutUpload {
                 }
             }
 
-            if (mode.equals("update") || mode.equals("check")) {
+            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
                 Log.d(TAG, "new item sending to nightscout profile, KEY: " + key);
                 Response<ResponseBody> responseBody = profileEndpoints.sendProfile(profile).execute();
                 if (!responseBody.isSuccessful()) {

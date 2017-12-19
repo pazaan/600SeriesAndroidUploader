@@ -70,7 +70,9 @@ public class DataStore extends RealmObject {
     private boolean urchinEnable;
     private int urchinBasalPeriod;
     private int urchinBasalScale;
-    private int urchinBasalPop;
+    private boolean urchinBolusGraph;
+    private boolean urchinBolusTags;
+    private int urchinBolusPop;
     private int urchinTimeStyle;
     private int urchinDurationStyle;
     private int urchinUnitsStyle;
@@ -205,10 +207,12 @@ public class DataStore extends RealmObject {
     }
 
     public void clearAllCommsErrors() {
+        this.PumpCgmNA = 0;
         this.CommsSuccess = 0;
         this.CommsError = 0;
         this.CommsConnectError = 0;
         this.CommsSignalError = 0;
+        this.CommsSgvSuccess = 0;
         this.PumpLostSensorError = 0;
         this.PumpClockError = 0;
         this.PumpBatteryError = 0;
@@ -502,12 +506,28 @@ public class DataStore extends RealmObject {
         this.urchinBasalScale = urchinBasalScale;
     }
 
-    public int getUrchinBasalPop() {
-        return urchinBasalPop;
+    public boolean isUrchinBolusGraph() {
+        return urchinBolusGraph;
     }
 
-    public void setUrchinBasalPop(int urchinBasalPop) {
-        this.urchinBasalPop = urchinBasalPop;
+    public void setUrchinBolusGraph(boolean urchinBolusGraph) {
+        this.urchinBolusGraph = urchinBolusGraph;
+    }
+
+    public boolean isUrchinBolusTags() {
+        return urchinBolusTags;
+    }
+
+    public void setUrchinBolusTags(boolean urchinBolusTags) {
+        this.urchinBolusTags = urchinBolusTags;
+    }
+
+    public int getUrchinBolusPop() {
+        return urchinBolusPop;
+    }
+
+    public void setUrchinBolusPop(int urchinBolusPop) {
+        this.urchinBolusPop = urchinBolusPop;
     }
 
     public int getUrchinTimeStyle() {

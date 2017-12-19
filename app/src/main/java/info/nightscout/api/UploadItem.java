@@ -10,30 +10,36 @@ public class UploadItem {
     private EntriesEndpoints.Entry entry;
     private ProfileEndpoints.Profile profile;
 
-    private String mode;
+    private MODE mode;
 
-    public UploadItem mode(String mode) {
+    public enum MODE {
+        CHECK,
+        UPDATE,
+        DELETE
+    }
+
+    public UploadItem mode(MODE mode) {
         this.mode = mode;
         return this;
     }
 
     public UploadItem ack(boolean uploadACK) {
-        mode = uploadACK ? "update" : "check";
+        mode = uploadACK ? MODE.UPDATE : MODE.CHECK;
         return this;
     }
 
     public UploadItem update() {
-        mode = "update";
+        mode = MODE.UPDATE;
         return this;
     }
 
     public UploadItem check() {
-        mode = "check";
+        mode = MODE.CHECK;
         return this;
     }
 
     public UploadItem delete() {
-        mode = "delete";
+        mode = MODE.DELETE;
         return this;
     }
 
@@ -76,8 +82,7 @@ public class UploadItem {
         return profile != null;
     }
 
-    public String getMode() {
+    public MODE getMode() {
         return mode;
     }
-
 }

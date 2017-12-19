@@ -21,7 +21,7 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import io.realm.Realm;
 import io.realm.RealmResults;
 
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_WARN;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_WARN;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
 import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
@@ -61,7 +61,7 @@ public class NightscoutUploadService extends Service {
     private class Upload extends Thread {
         public void run() {
 
-            PowerManager.WakeLock wl = getWakeLock(TAG, 60000);
+            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 60000);
 
             Realm mRealm = Realm.getDefaultInstance();
 
@@ -70,7 +70,7 @@ public class NightscoutUploadService extends Service {
                     .equalTo("uploaded", false)
                     .findAll();
 
-            PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler();
+            PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
             List<PumpHistoryInterface> records = pumpHistoryHandler.uploadREQ();
 
@@ -139,7 +139,7 @@ public class NightscoutUploadService extends Service {
                     new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
                             .putExtra(MasterService.Constants.EXTENDED_DATA, message);
             sendBroadcast(intent);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 }

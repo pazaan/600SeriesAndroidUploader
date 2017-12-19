@@ -7,7 +7,6 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
-import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.service.MasterService;
 
 /**
@@ -28,7 +27,7 @@ public class UsbActivity extends AppCompatActivity {
         // if CGM service has not been started then start the UI
         // else let the service know we have usb permission and to start/resume polling
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(UploaderApplication.getAppContext());
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if (!prefs.getBoolean("EnableCgmService", false)) {
             Log.d(TAG, "starting main activity");
             Intent intent = new Intent(this, MainActivity.class);

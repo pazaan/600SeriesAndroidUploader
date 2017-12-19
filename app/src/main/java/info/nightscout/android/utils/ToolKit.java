@@ -4,8 +4,6 @@ import android.content.Context;
 import android.os.PowerManager;
 import android.util.Log;
 
-import info.nightscout.android.UploaderApplication;
-
 /**
  * Created by Pogman on 26.9.17.
  */
@@ -15,8 +13,8 @@ public class ToolKit {
 
     private static final boolean debug_wakelocks = true;
 
-    public static PowerManager.WakeLock getWakeLock(final String name, int millis) {
-        final PowerManager pm = (PowerManager) UploaderApplication.getAppContext().getSystemService(Context.POWER_SERVICE);
+    public static PowerManager.WakeLock getWakeLock(Context context, final String name, int millis) {
+        final PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, name);
         wl.acquire(millis);
         if (debug_wakelocks) Log.d(TAG, "getWakeLock: " + name + " " + wl.toString());

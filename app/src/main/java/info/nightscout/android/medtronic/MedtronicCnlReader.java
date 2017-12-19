@@ -132,7 +132,7 @@ public class MedtronicCnlReader {
             } catch (UnexpectedMessageException e2) {
                 try {
                     new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice);
-                } catch (IOException e) {}
+                } catch (IOException ignored) {}
                 finally {
                     doRetry = true;
                 }
@@ -220,36 +220,14 @@ public class MedtronicCnlReader {
     public Date getPumpTime() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getPumpTime");
 
-        // TODO - this is a bit messy, need a better handler for fails and retrys
-        PumpTimeResponseMessage response = null;
-        int unexpected = 0;
-        int timeout = 0;
-        do {
-            try {
-                response = new PumpTimeRequestMessage(mPumpSession).send(mDevice);
-                unexpected = 0;
-                timeout = 0;
-            } catch (UnexpectedMessageException e) {
-                Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
-                if (e.getMessage().contains("0x81 response was empty") || e.getMessage().contains("NAK")) {
-                    throw new UnexpectedMessageException(e.getMessage());
-                }
-                if (++unexpected >= 5) {
-                    throw new UnexpectedMessageException("retry failed, " + e.getMessage());
-                }
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e1) {}
-            } catch (TimeoutException e) {
-                Log.e(TAG, "Attempt: " + (timeout + 1) + " TimeoutException: " + e.getMessage());
-                if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
-                    throw new TimeoutException(e.getMessage());
-                }
-                if (++timeout >= 3) {
-                    throw new TimeoutException("retry failed, " + e.getMessage());
-                }
+        Message message = new Message() {
+            @Override
+            PumpTimeResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                return new PumpTimeRequestMessage(mPumpSession).send(mDevice);
             }
-        } while (unexpected > 0 || timeout > 0);
+        };
+
+        PumpTimeResponseMessage response = (PumpTimeResponseMessage) message.execute();
 
         sessionRTC = response.getPumpTimeRTC();
         sessionOFFSET = response.getPumpTimeOFFSET();
@@ -263,36 +241,14 @@ public class MedtronicCnlReader {
     public PumpStatusEvent updatePumpStatus(PumpStatusEvent pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin updatePumpStatus");
 
-        // TODO - this is a bit messy, need a better handler for fails and retrys
-        PumpStatusResponseMessage response = null;
-        int unexpected = 0;
-        int timeout = 0;
-        do {
-            try {
-                response = new PumpStatusRequestMessage(mPumpSession).send(mDevice);
-                unexpected = 0;
-                timeout = 0;
-            } catch (UnexpectedMessageException e) {
-                Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
-                if (e.getMessage().contains("0x81 response was empty") || e.getMessage().contains("NAK")) {
-                    throw new UnexpectedMessageException(e.getMessage());
-                }
-                if (++unexpected >= 5) {
-                    throw new UnexpectedMessageException("retry failed, " + e.getMessage());
-                }
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e1) {}
-            } catch (TimeoutException e) {
-                Log.e(TAG, "Attempt: " + (timeout + 1) + " TimeoutException: " + e.getMessage());
-                if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
-                    throw new TimeoutException(e.getMessage());
-                }
-                if (++timeout >= 3) {
-                    throw new TimeoutException("retry failed, " + e.getMessage());
-                }
+        Message message = new Message() {
+            @Override
+            PumpStatusResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                return new PumpStatusRequestMessage(mPumpSession).send(mDevice);
             }
-        } while (unexpected > 0 || timeout > 0);
+        };
+
+        PumpStatusResponseMessage response = (PumpStatusResponseMessage) message.execute();
 
         response.updatePumpRecord(pumpRecord);
 
@@ -364,48 +320,29 @@ public class MedtronicCnlReader {
         Log.d(TAG, "Finished getHistory");
     }
 
-    public Date[] getHistory(long startTime, long endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public Date[] getHistory(long startTime, long endTime, final int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistory");
 
-        int startRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
-        int endRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
+        int reqStartRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
+        int reqEndRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
 
         // safety check as pump doesn't like out of date requests
         int maxRTC = sessionRTC;
         int minRTC = maxRTC - ((90 * 24 * 60 * 60) - 3600);
-        if (startRTC > maxRTC) startRTC = maxRTC;
-        if (endRTC < minRTC) endRTC = minRTC;
+        if (reqStartRTC > maxRTC) reqStartRTC = maxRTC;
+        if (reqEndRTC < minRTC) reqEndRTC = minRTC;
 
-        // TODO - this is a bit messy, need a better handler for fails and retrys
-        ReadHistoryResponseMessage response = null;
-        int unexpected = 0;
-        int timeout = 0;
-        do {
-            try {
-                response = new ReadHistoryRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
-                unexpected = 0;
-                timeout = 0;
-            } catch (UnexpectedMessageException e) {
-                Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
-                if (e.getMessage().contains("0x81 response was empty") || e.getMessage().contains("NAK")) {
-                    throw new UnexpectedMessageException(e.getMessage());
-                }
-                if (++unexpected >= 5) {
-                    throw new UnexpectedMessageException("retry failed, " + e.getMessage());
-                }
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e1) {}
-            } catch (TimeoutException e) {
-                Log.e(TAG, "Attempt: " + (timeout + 1) + " TimeoutException: " + e.getMessage());
-                if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
-                    throw new TimeoutException(e.getMessage());
-                }
-                if (++timeout >= 3) {
-                    throw new TimeoutException("retry failed, " + e.getMessage());
-                }
+        final int startRTC = reqStartRTC;
+        final int endRTC = reqEndRTC;
+
+        Message message = new Message() {
+            @Override
+            ReadHistoryResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                return new ReadHistoryRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
             }
-        } while (unexpected > 0 || timeout > 0);
+        };
+
+        ReadHistoryResponseMessage response = (ReadHistoryResponseMessage) message.execute();
 
         Date[] range = new PumpHistoryParser(response.getEventData()).process(sessionRTC, sessionOFFSET, sessionClockDifference);
 
@@ -454,11 +391,59 @@ public class MedtronicCnlReader {
                 new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
                         .send(mDevice, 0, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ENQ);
                 success = true;
-            } catch (IOException | EncryptionException | ChecksumException | UnexpectedMessageException | TimeoutException e) { }
+            } catch (IOException | EncryptionException | ChecksumException | UnexpectedMessageException | TimeoutException ignored) { }
         } while (!success && --retry > 0);
 
         Log.d(TAG, "Finished resetCNL");
         return success;
+    }
+
+    private class Message {
+
+        Object request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+            return null;
+        }
+
+        Object execute() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+
+            int unexpected = 0;
+            int timeout = 0;
+
+            Object response = null;
+
+            do {
+                try {
+                    response = request();
+                    unexpected = 0;
+                    timeout = 0;
+                } catch (UnexpectedMessageException e) {
+                    Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
+                    // needs to end immediately on these errors
+                    if (e.getMessage().contains("0x81 response was empty") || e.getMessage().contains("NAK")) {
+                        throw new UnexpectedMessageException(e.getMessage());
+                    }
+                    // retry (5x or around 30 seconds for attempts)
+                    if (++unexpected >= 5) {
+                        throw new UnexpectedMessageException("retry failed, " + e.getMessage());
+                    }
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ignored) {}
+                } catch (TimeoutException e) {
+                    Log.e(TAG, "Attempt: " + (timeout + 1) + " TimeoutException: " + e.getMessage());
+                    // needs to end immediately on these errors
+                    if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
+                        throw new TimeoutException(e.getMessage());
+                    }
+                    // retry (3x or around 30 seconds for attempts)
+                    if (++timeout >= 3) {
+                        throw new TimeoutException("retry failed, " + e.getMessage());
+                    }
+                }
+            } while (unexpected > 0 || timeout > 0);
+
+            return response;
+        }
     }
 
 }

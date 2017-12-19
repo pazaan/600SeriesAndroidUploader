@@ -1,5 +1,6 @@
 package info.nightscout.android.medtronic;
 
+import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
@@ -8,7 +9,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
@@ -32,7 +32,7 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-import static info.nightscout.android.model.store.UserLog.Icons.ICON_REFRESH;
+import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_REFRESH;
 
 /**
  * Created by Pogman on 5.11.17.
@@ -42,24 +42,28 @@ public class PumpHistoryHandler {
     private static final String TAG = PumpHistoryHandler.class.getSimpleName();
 
     private final static long HISTORY_STALE_MS = 120 * 24 * 60 * 60000L;
-    private final static long HISTORY_REQUEST_LIMITER_MS =  36 * 60 * 60000L;
+    private final static long HISTORY_REQUEST_LIMITER_MS = 36 * 60 * 60000L;
     //private final static long HISTORY_SYNC_LIMITER_MS =  10 * 24 * 60 * 60000L;
 
     private final static byte HISTORY_PUMP = 2;
     private final static byte HISTORY_CGM = 3;
+
+    private Context mContext;
 
     private Realm realm;
     private Realm historyRealm;
     private Realm storeRealm;
     private DataStore dataStore;
 
-    private List historyDB;
+    private List<DBitem> historyDB;
     private List<PumpHistoryInterface> uploadRecords;
 
     private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
-    public PumpHistoryHandler() {
-        Log.d(TAG,"initialise history handler");
+    public PumpHistoryHandler(Context context) {
+        Log.d(TAG, "initialise history handler");
+
+        mContext = context;
 
         realm = Realm.getDefaultInstance();
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
@@ -67,26 +71,25 @@ public class PumpHistoryHandler {
 
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
-        // TODO - refactor, make type safe
         historyDB = new ArrayList<>();
-        historyDB.add("CGM");
-        historyDB.add(400); // upload limiter
-        historyDB.add(historyRealm.where(PumpHistoryCGM.class).findAll());
-        historyDB.add("BOLUS");
-        historyDB.add(20); // upload limiter
-        historyDB.add(historyRealm.where(PumpHistoryBolus.class).findAll());
-        historyDB.add("BASAL");
-        historyDB.add(20); // upload limiter
-        historyDB.add(historyRealm.where(PumpHistoryBasal.class).findAll());
-        historyDB.add("BG");
-        historyDB.add(20); // upload limiter
-        historyDB.add(historyRealm.where(PumpHistoryBG.class).findAll());
-        historyDB.add("PROFILE");
-        historyDB.add(20); // upload limiter
-        historyDB.add(historyRealm.where(PumpHistoryProfile.class).findAll());
-        historyDB.add("MISC");
-        historyDB.add(20); // upload limiter
-        historyDB.add(historyRealm.where(PumpHistoryMisc.class).findAll());
+        historyDB.add(new DBitem("CGM", 400, historyRealm.where(PumpHistoryCGM.class).findAll()));
+        historyDB.add(new DBitem("BOLUS", 20, historyRealm.where(PumpHistoryBolus.class).findAll()));
+        historyDB.add(new DBitem("BASAL", 20, historyRealm.where(PumpHistoryBasal.class).findAll()));
+        historyDB.add(new DBitem("BG", 20, historyRealm.where(PumpHistoryBG.class).findAll()));
+        historyDB.add(new DBitem("PROFILE", 20, historyRealm.where(PumpHistoryProfile.class).findAll()));
+        historyDB.add(new DBitem("MISC", 20, historyRealm.where(PumpHistoryMisc.class).findAll()));
+    }
+
+    private class DBitem {
+        String name; // name for logging
+        int limiter; // upload limiter
+        RealmResults<PumpHistoryInterface> results;
+
+        DBitem (String name, int limiter, RealmResults results) {
+            this.name = name;
+            this.limiter = limiter;
+            this.results = results;
+        }
     }
 
     public void close() {
@@ -101,40 +104,27 @@ public class PumpHistoryHandler {
             Intent intent =
                     new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
                             .putExtra(MasterService.Constants.EXTENDED_DATA, message);
-            UploaderApplication.getAppContext().sendBroadcast(intent);
-        } catch (Exception e) {
+            mContext.sendBroadcast(intent);
+        } catch (Exception ignored) {
         }
     }
 
     public void records() {
-        RealmResults<PumpHistoryInterface> results;
-        String type;
-
-        Iterator iterator = historyDB.iterator();
-
-        while (iterator.hasNext()) {
-            type = (String) iterator.next();
-            iterator.next();
-            results = (RealmResults) iterator.next();
-            Log.d(TAG, type + " records: " + results.size() + (results.size() > 0 ? " start: " + dateFormatter.format(results.first().getEventDate()) + " end: " + dateFormatter.format(results.last().getEventDate()) : ""));
+        for (DBitem dBitem : historyDB) {
+            Log.d(TAG, dBitem.name + " records: " + dBitem.results.size() + (dBitem.results.size() > 0 ? " start: " + dateFormatter.format(dBitem.results.first().getEventDate()) + " end: " + dateFormatter.format(dBitem.results.last().getEventDate()) : ""));
         }
     }
 
     public void stale(Date oldest) {
-        RealmResults<PumpHistoryInterface> results;
-        String type;
         int count = 0;
 
-        Iterator iterator = historyDB.iterator();
+        for (DBitem dBitem : historyDB) {
 
-        while (iterator.hasNext()) {
-            type = (String) iterator.next();
-            iterator.next();
-            results = (RealmResults) iterator.next();
-            final RealmResults stale = results.where().lessThan("eventDate", oldest).findAll();
+            final RealmResults stale = dBitem.results.where().lessThan("eventDate", oldest).findAll();
+
             if (stale.size() > 0) {
-                Log.d(TAG, type + " deleting " + results.size() + " records from realm");
-                count += results.size();
+                Log.d(TAG, dBitem.name + " deleting " + stale.size() + " records from realm");
+                count += stale.size();
                 historyRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(Realm realm) {
@@ -147,9 +137,6 @@ public class PumpHistoryHandler {
     }
 
     public List uploadREQ() {
-        RealmResults<PumpHistoryInterface> results;
-        String type;
-        int limit;
         int count;
 
         Date limitDate;
@@ -162,20 +149,15 @@ public class PumpHistoryHandler {
 
         uploadRecords = new ArrayList<>();
 
-        Iterator iterator = historyDB.iterator();
-
-        while (iterator.hasNext()) {
-            type = (String) iterator.next();
-            limit = (int) iterator.next();
-            results = (RealmResults) iterator.next();
+        for (DBitem dBitem : historyDB) {
             count = 0;
-            for (PumpHistoryInterface record : results.where()
+            for (PumpHistoryInterface record : dBitem.results.where()
                     .equalTo("uploadREQ", true)
                     .greaterThanOrEqualTo("eventDate", limitDate)
                     .findAllSorted("eventDate", Sort.DESCENDING)) {
-                if (++count <= limit) uploadRecords.add(record);
+                if (++count <= dBitem.limiter) uploadRecords.add(record);
             }
-            Log.d(TAG, type + " records to upload: " + count + " limit: " + limit);
+            Log.d(TAG, dBitem.name + " records to upload: " + count + " limit: " + dBitem.limiter);
         }
 
         Log.d(TAG, "total records to upload: " + uploadRecords.size());
@@ -194,39 +176,40 @@ public class PumpHistoryHandler {
         });
     }
 
-    public void profile(MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public void profile(final MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
 
         userLogMessage("Reading pump basal patterns");
-        byte[] basalPatterns = cnlReader.getBasalPatterns();
+        final byte[] basalPatterns = cnlReader.getBasalPatterns();
         userLogMessage("Reading pump carb ratios");
-        byte[] carbRatios = cnlReader.getBolusWizardCarbRatios();
+        final byte[] carbRatios = cnlReader.getBolusWizardCarbRatios();
         userLogMessage("Reading pump sensitivity factors");
-        byte[] sensitivity = cnlReader.getBolusWizardSensitivity();
+        final byte[] sensitivity = cnlReader.getBolusWizardSensitivity();
         userLogMessage("Reading pump hi-lo targets");
-        byte[] targets = cnlReader.getBolusWizardTargets();
+        final byte[] targets = cnlReader.getBolusWizardTargets();
 
-        historyRealm.beginTransaction();
-
-        PumpHistoryProfile.profile(historyRealm, cnlReader.getSessionDate(), cnlReader.getSessionRTC(), cnlReader.getSessionOFFSET(),
-                basalPatterns,
-                carbRatios,
-                sensitivity,
-                targets
-        );
-
-        historyRealm.commitTransaction();
+        historyRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                PumpHistoryProfile.profile(historyRealm, cnlReader.getSessionDate(), cnlReader.getSessionRTC(), cnlReader.getSessionOFFSET(),
+                        basalPatterns,
+                        carbRatios,
+                        sensitivity,
+                        targets
+                );
+            }
+        });
 
         userLogMessage("Sending updated profile to Nightscout");
     }
 
-    public void cgm(PumpStatusEvent pumpRecord) {
+    public void cgm(final PumpStatusEvent pumpRecord) {
 
         // push the current sgv from status (always have latest sgv available even if there are comms errors after this)
         if (pumpRecord.isValidSGV()) {
 
-            Date date = pumpRecord.getCgmDate();
-            int rtc = pumpRecord.getCgmRTC();
-            int offset = pumpRecord.getCgmOFFSET();
+            final Date date = pumpRecord.getCgmDate();
+            final int rtc = pumpRecord.getCgmRTC();
+            final int offset = pumpRecord.getCgmOFFSET();
 
             final RealmResults<PumpHistoryCGM> results = historyRealm
                     .where(PumpHistoryCGM.class)
@@ -245,14 +228,15 @@ public class PumpHistoryHandler {
                 });
             }
 
-            historyRealm.beginTransaction();
-
-            PumpHistoryCGM.cgm(historyRealm, date, rtc, offset,
-                    pumpRecord.getSgv(),
-                    pumpRecord.getCgmTrendString()
-            );
-
-            historyRealm.commitTransaction();
+            historyRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    PumpHistoryCGM.cgm(historyRealm, date, rtc, offset,
+                            pumpRecord.getSgv(),
+                            pumpRecord.getCgmTrendString()
+                    );
+                }
+            });
         }
     }
 

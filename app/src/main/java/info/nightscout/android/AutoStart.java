@@ -1,4 +1,4 @@
-package info.nightscout.android.utils;
+package info.nightscout.android;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.service.MasterService;
 
 /**
@@ -21,12 +20,12 @@ public class AutoStart extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "Service auto starter, starting!");
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(UploaderApplication.getAppContext());
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
         if (prefs.getBoolean("EnableCgmService", false)) {
             Log.d(TAG, "starting master service");
 
-            UploaderApplication.getAppContext().startService(new Intent(UploaderApplication.getAppContext(), MasterService.class));
+            context.startService(new Intent(context, MasterService.class));
         }
     }
 }

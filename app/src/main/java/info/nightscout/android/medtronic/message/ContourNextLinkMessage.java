@@ -20,7 +20,6 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.medtronic.service.MedtronicCnlService;
 import info.nightscout.android.utils.HexDump;
 
-import static info.nightscout.android.utils.ToolKit.read16BEtoInt;
 import static info.nightscout.android.utils.ToolKit.read16BEtoShort;
 import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
 import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
@@ -33,7 +32,7 @@ public abstract class ContourNextLinkMessage {
 
     public static final int CLEAR_TIMEOUT_MS = 500;
     public static final int ERROR_CLEAR_TIMEOUT_MS = 2000;
-    public static final int PRESEND_CLEAR_TIMEOUT_MS = 50; //100;
+    public static final int PRESEND_CLEAR_TIMEOUT_MS = 100;
 
     public static final int READ_TIMEOUT_MS = 10000;
     public static final int CNL_READ_TIMEOUT_MS = 2000;

@@ -27,14 +27,14 @@ public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessa
         if (millis > 0) {
             try {
                 Thread.sleep(millis);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
         byte[] response1 = readMessage(mDevice);
         if (millis > 0) {
             try {
                 Thread.sleep(millis);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
         byte[] response2 = readMessage(mDevice);
