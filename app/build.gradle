@@ -51,8 +51,15 @@ def getBugfenderApiKey() {
     String bugfenderApiKey = System.getenv("BUGFENDER_API_KEY")
 
     if(bugfenderApiKey == null) {
-        logger.warn("Bugfender API key not set")
-        bugfenderApiKey = ""
+        File file = new File("app/bugfender.properties")
+        if (file.exists()) {
+            Properties properties = new Properties()
+            properties.load(new FileInputStream(file.getAbsolutePath().toString()))
+            bugfenderApiKey = properties.getProperty("apiKey", "")
+        } else {
+            logger.warn("Bugfender API key not set")
+            bugfenderApiKey = ""
+        }
     }
 
     return "\"" + bugfenderApiKey + "\""
@@ -73,7 +80,7 @@ android {
         minSdkVersion 14
         targetSdkVersion 25
         versionName generateVersionName()
-        versionCode generateVersionCode()
+        versionCode generateVersionCode() // FIXME - this forces a need for an online lookup and compile fails when offline
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
@@ -105,6 +112,9 @@ release {
 
 dependencies {
     compile files('libs/slf4j-api-1.7.2.jar')
+    compile files('libs/lzo-core-1.0.5.jar')
+
+    compile 'com.getpebble:pebblekit:4.0.1@aar'
 
     compile 'com.android.support:support-v13:25.3.1'
     compile 'com.android.support:design:25.3.1'
