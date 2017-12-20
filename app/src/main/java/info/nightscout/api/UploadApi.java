@@ -14,38 +14,23 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class UploadApi {
     private Retrofit retrofit;
-    private SgvEndpoints sgvEndpoints;
-    private MbgEndpoints mbgEndpoints;
-    private DeviceEndpoints deviceEndpoints;
-    private TreatmentEndpoints treatmentEndpoints;
-    private TempBasalRateEndpoints tempBasalRateEndpoints;
-    private TempBasalPercentEndpoints tempBasalPercentEndpoints;
-    private TempBasalCancelEndpoints tempBasalCancelEndpoints;
-    private NoteEndpoints noteEndpoints;
 
-    public SgvEndpoints getSgvEndpoints() {
-        return sgvEndpoints;
-    }
-    public MbgEndpoints getMbgEndpoints() {
-        return mbgEndpoints;
-    }
+    private DeviceEndpoints deviceEndpoints;
+    private ProfileEndpoints profileEndpoints;
+    private EntriesEndpoints entriesEndpoints;
+    private TreatmentsEndpoints treatmentsEndpoints;
+
     public DeviceEndpoints getDeviceEndpoints() {
         return deviceEndpoints;
     }
-    public TreatmentEndpoints getTreatmentEndpoints() {
-        return treatmentEndpoints;
+    public ProfileEndpoints getProfileEndpoints() {
+        return profileEndpoints;
     }
-    public TempBasalRateEndpoints getTempBasalRateEndpoints() {
-        return tempBasalRateEndpoints;
+    public EntriesEndpoints getEntriesEndpoints() {
+        return entriesEndpoints;
     }
-    public TempBasalPercentEndpoints getTempBasalPercentEndpoints() {
-        return tempBasalPercentEndpoints;
-    }
-    public TempBasalCancelEndpoints getTempBasalCancelEndpoints() {
-        return tempBasalCancelEndpoints;
-    }
-    public NoteEndpoints getNoteEndpoints() {
-        return noteEndpoints;
+    public TreatmentsEndpoints getTreatmentsEndpoints() {
+        return treatmentsEndpoints;
     }
 
     public UploadApi(String baseURL, String token) {
@@ -88,13 +73,9 @@ public class UploadApi {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        sgvEndpoints = retrofit.create(SgvEndpoints.class);
-        mbgEndpoints = retrofit.create(MbgEndpoints.class);
         deviceEndpoints = retrofit.create(DeviceEndpoints.class);
-        treatmentEndpoints = retrofit.create(TreatmentEndpoints.class);
-        tempBasalRateEndpoints = retrofit.create(TempBasalRateEndpoints.class);
-        tempBasalPercentEndpoints = retrofit.create(TempBasalPercentEndpoints.class);
-        tempBasalCancelEndpoints = retrofit.create(TempBasalCancelEndpoints.class);
-        noteEndpoints = retrofit.create(NoteEndpoints.class);
+        profileEndpoints = retrofit.create(ProfileEndpoints.class);
+        entriesEndpoints = retrofit.create(EntriesEndpoints.class);
+        treatmentsEndpoints = retrofit.create(TreatmentsEndpoints.class);
     }
 }

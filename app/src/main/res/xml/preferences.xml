@@ -41,48 +41,550 @@
             android:entries="@array/poll_interval"
             android:entryValues="@array/poll_interval_millis"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="Display">
-    <ListPreference
-        android:key="chartZoom"
-        android:defaultValue="3"
-        android:title="@string/preferences_chart_interval"
-        android:summary="%s"
-        android:entries="@array/chart_zoom"
-        android:entryValues="@array/chart_zoom_hours"/>
+        <ListPreference
+            android:key="chartZoom"
+            android:defaultValue="3"
+            android:title="@string/preferences_chart_interval"
+            android:summary="%s"
+            android:entries="@array/chart_zoom"
+            android:entryValues="@array/chart_zoom_hours"/>
     </PreferenceCategory>
+
     <PreferenceCategory android:title="Sharing">
         <CheckBoxPreference
             android:disableDependentsState="false"
             android:key="@string/preference_enable_rest_upload"
             android:summary="Enable upload of data to Nightscout"
             android:title="REST API Upload"/>
-        <EditTextPreference
+        <info.nightscout.android.utils.EditTextPreferenceURL
             android:defaultValue="https://YOUR.NIGHTSCOUT.SITE"
             android:dependency="@string/preference_enable_rest_upload"
             android:dialogMessage="The hostname of your Nightscout site"
             android:dialogTitle="Enter Nightscout URL"
             android:key="@string/preference_nightscout_url"
             android:title="Nightscout URL"/>
-        <info.nightscout.android.utils.ValidatingEditTextPreference
+        <info.nightscout.android.utils.EditTextPreferenceSECRET
             android:defaultValue="YOURAPISECRET"
             android:dependency="@string/preference_enable_rest_upload"
             android:dialogMessage="Your Nightscout API secret"
             android:dialogTitle="Enter your Nightscout API secret"
             android:key="@string/preference_api_secret"
             android:title="API Secret"/>
-        <CheckBoxPreference android:title="Treatments"
-            android:key="EnableTreatmentsUpload"
+
+        <PreferenceScreen
+            android:title="Advanced Nightscout Settings"
             android:dependency="@string/preference_enable_rest_upload"
-            android:summary="Enable upload of treatments to Nightscout"/>
+            android:persistent="false">
+
+            <PreferenceCategory android:title="Advanced Nightscout Settings">
+                <CheckBoxPreference android:title="Treatments"
+                    android:key="nsEnableTreatments"
+                    android:defaultValue="true"
+                    android:summary="Enable upload of treatments to Nightscout"/>
+                <CheckBoxPreference android:title="History Sync"
+                    android:key="nsEnableHistorySync"
+                    android:defaultValue="false"
+                    android:summary="Enable upload of past historical data to Nightscout. Backfill days as set in advanced system settings for CGM and PUMP history (note: this will clear and refresh data where needed)"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="BG Readings">
+                <CheckBoxPreference android:title="Finger BG"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableFingerBG"
+                    android:defaultValue="true"
+                    android:summary="Send finger BG readings to Nightscout"/>
+                <CheckBoxPreference android:title="Calibration Info"
+                    android:dependency="nsEnableFingerBG"
+                    android:key="nsEnableCalibrationInfo"
+                    android:defaultValue="false"
+                    android:summary="Add factor and benchmark time to BG readings used for calibration"/>
+                <CheckBoxPreference android:title="Available Now"
+                    android:dependency="nsEnableCalibrationInfo"
+                    android:key="nsEnableCalibrationInfoNow"
+                    android:defaultValue="false"
+                    android:summary="Retrieve calibration info as soon as available (increases history retrieval frequency)"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Consumables">
+                <CheckBoxPreference android:title="Sensor Change"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableSensorChange"
+                    android:defaultValue="true"
+                    android:summary="Send sensor changes to Nightscout"/>
+                <CheckBoxPreference android:title="Reservoir Change"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableReservoirChange"
+                    android:defaultValue="true"
+                    android:summary="Send reservoir changes to Nightscout"/>
+                <CheckBoxPreference android:title="Pump Battery Change"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableBatteryChange"
+                    android:defaultValue="true"
+                    android:summary="Send pump battery changes to Nightscout"/>
+                <CheckBoxPreference android:title="Estimate Lifetimes"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableLifetimes"
+                    android:defaultValue="false"
+                    android:summary="Add lifetime estimate to pump consumables"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Profiles">
+                <CheckBoxPreference android:title="Enable Profile Upload"
+                    android:key="nsEnableProfileUpload"
+                    android:defaultValue="true"
+                    android:summary="Upload profiles to Nightscout with basal patterns, carb ratios, sensitivity and targets"/>
+
+                <CheckBoxPreference android:title="Single Profile Group"
+                    android:dependency="nsEnableProfileUpload"
+                    android:key="nsEnableProfileSingle"
+                    android:defaultValue="false"
+                    android:summary="Only use a single profile group in nightscout (note: obsolete groups will be removed)"/>
+
+                <CheckBoxPreference android:title="Offset start date"
+                    android:dependency="nsEnableProfileUpload"
+                    android:key="nsEnableProfileOffset"
+                    android:defaultValue="false"
+                    android:summary="Uploaded profile will be valid from 12 months ago"/>
+
+                <ListPreference android:title="Default Pattern"
+                    android:dependency="nsEnableProfileUpload"
+                    android:key="nsProfileDefault"
+                    android:defaultValue="1"
+                    android:summary="%s"
+                    android:entries="@array/profile_default"
+                    android:entryValues="@array/profile_default_values"/>
+
+                <ListPreference android:title="Active Insulin Time"
+                    android:dependency="nsEnableProfileUpload"
+                    android:key="nsActiveInsulinTime"
+                    android:defaultValue="3"
+                    android:summary="%s"
+                    android:entries="@array/active_insulin_time"
+                    android:entryValues="@array/active_insulin_time_values"/>
+
+                <CheckBoxPreference android:title="Basal Pattern Change"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnablePatternChange"
+                    android:defaultValue="true"
+                    android:summary="Send basal pattern changes to Nightscout"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="CGM">
+                <CheckBoxPreference android:title="Insert BG as CGM"
+                    android:dependency="nsEnableTreatments"
+                    android:key="nsEnableInsertBGasCGM"
+                    android:defaultValue="false"
+                    android:summary="Insert BG readings into CGM chart (helps Nightscout to show treatments when no CGM is in use)"/>
+            </PreferenceCategory>
+        </PreferenceScreen>
+
         <Preference android:title="scan NS-Autoconfig QR-Code"
             android:key="scanButton"
             android:dependency="@string/preference_enable_rest_upload"
             android:summary="Click here to scan QR-Code from http://nightscout.github.io/pages/configure/ using ZXing barcode scanner."/>
+
         <CheckBoxPreference
             android:key="@string/preference_enable_xdrip_plus"
             android:summary="Enable local broadcast of data to xDrip+"
             android:title="Send to xDrip+"/>
+
+        <PreferenceScreen
+            android:title="Urchin"
+            android:summary="Urchin watchface for Pebble"
+            android:persistent="false">
+
+            <PreferenceCategory android:title="Urchin Pebble Watchface">
+                <CheckBoxPreference android:title="Enable Urchin support"
+                    android:key="urchinEnable"
+                    android:defaultValue="false"
+                    android:summary="Local broadcast of data to Urchin allowing full offline viewing of SGV and extended Pump status information"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Basal Graph">
+                <Preference
+                    android:dependency="urchinEnable"
+                    android:key="pref_static_field_key"
+                    android:selectable="false"
+                    android:summary="Basal can be graphed with heights relative to the period selected and scaled to the value selected."/>
+                <ListPreference android:title="Period"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBasalPeriod"
+                    android:summary="%s"
+                    android:defaultValue="23"
+                    android:entries="@array/urchin_basal_period"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Y-Scale"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBasalScale"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_basal_scale"
+                    android:entryValues="@array/urchin_values"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Bolus Graph">
+                <CheckBoxPreference android:title="Enable bolus markers"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBolusGraph"
+                    android:defaultValue="false"
+                    android:summary="Mark a bolus event on graph."/>
+                <CheckBoxPreference android:title="Enable bolus type tags"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBolusTags"
+                    android:defaultValue="false"
+                    android:summary="Square/Dual bolus tags in status text."/>
+                <Preference
+                    android:dependency="urchinEnable"
+                    android:key="pref_static_field_key"
+                    android:selectable="false"
+                    android:summary="A Square or Dual bolus can be popped to the height selected and shown on the basal graph during delivery period."/>
+                <ListPreference android:title="Square/Dual Y-Pop"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBolusPop"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_basal_scale"
+                    android:entryValues="@array/urchin_values"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Status Styles">
+                <ListPreference android:title="Time Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinTimeStyle"
+                    android:summary="%s"
+                    android:defaultValue="1"
+                    android:entries="@array/urchin_time"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Duration Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinDurationStyle"
+                    android:summary="%s"
+                    android:defaultValue="1"
+                    android:entries="@array/urchin_duration"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Units Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinUnitsStyle"
+                    android:summary="%s"
+                    android:defaultValue="1"
+                    android:entries="@array/urchin_units"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Battery Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinBatteyStyle"
+                    android:summary="%s"
+                    android:defaultValue="1"
+                    android:entries="@array/urchin_battery"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title="Concatenate Style"
+                    android:dependency="urchinEnable"
+                    android:key="urchinConcatenateStyle"
+                    android:summary="%s"
+                    android:defaultValue="2"
+                    android:entries="@array/urchin_concatenate"
+                    android:entryValues="@array/urchin_values"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Custom Text">
+                <info.nightscout.android.utils.EditTextPreferenceURCHIN
+                    android:title="Custom Text 1"
+                    android:dependency="urchinEnable"
+                    android:key="urchinCustomText1"
+                    android:dialogMessage="Available characters:\n0-9 A-Z a-z\n°•·-`~!@#$&#37;^&#38;*()_+=[]\{}|;':&#34;,.&#47;&#60;&#62;?"
+                    android:dialogTitle="Enter Custom Text"/>
+                <info.nightscout.android.utils.EditTextPreferenceURCHIN
+                    android:title="Custom Text 2"
+                    android:dependency="urchinEnable"
+                    android:key="urchinCustomText2"
+                    android:dialogMessage="Available characters:\n0-9 A-Z a-z\n°•·-`~!@#$&#37;^&#38;*()_+=[]\{}|;':&#34;,.&#47;&#60;&#62;?"
+                    android:dialogTitle="Enter Custom Text"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Status Layout">
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout1"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout2"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout3"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout4"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout5"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout6"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout7"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout8"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout9"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout10"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout11"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout12"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout13"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout14"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout15"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout16"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout17"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout18"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout19"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+                <ListPreference android:title=""
+                    android:dependency="urchinEnable"
+                    android:key="urchinStatusLayout20"
+                    android:summary="%s"
+                    android:defaultValue="0"
+                    android:entries="@array/urchin_status"
+                    android:entryValues="@array/urchin_values"/>
+            </PreferenceCategory>
+
+        </PreferenceScreen>
+
     </PreferenceCategory>
+
+    <PreferenceCategory android:title="System">
+        <PreferenceScreen
+            android:title="Advanced System Settings"
+            android:persistent="false">
+            <PreferenceCategory android:title="Advanced System Settings">
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="History Sync">
+                <CheckBoxPreference android:title="Enable CGM History"
+                    android:key="sysEnableCgmHistory"
+                    android:defaultValue="true"
+                    android:summary="Backfill missed CGM data"/>
+                <ListPreference
+                    android:dependency="sysEnableCgmHistory"
+                    android:key="sysCgmHistoryDays"
+                    android:defaultValue="7"
+                    android:title="CGM history backfill period"
+                    android:summary="%s"
+                    android:entries="@array/cgm_history"
+                    android:entryValues="@array/cgm_history_days"/>
+                <CheckBoxPreference android:title="Enable PUMP History"
+                    android:key="sysEnablePumpHistory"
+                    android:defaultValue="true"
+                    android:summary="Used for nightscout treatments"/>
+                <ListPreference
+                    android:dependency="sysEnablePumpHistory"
+                    android:key="sysPumpHistoryDays"
+                    android:defaultValue="7"
+                    android:title="PUMP history backfill period"
+                    android:summary="%s"
+                    android:entries="@array/pump_history"
+                    android:entryValues="@array/pump_history_days"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Radio">
+                <info.nightscout.android.utils.CustomSwitchPreference
+                    android:disableDependentsState="false"
+                    android:key="sysEnableClashProtect"
+                    android:defaultValue="true"
+                    android:summaryOff="No protection, always run a poll request"
+                    android:summaryOn="Delay a poll request when pump is expecting sensor communication"
+                    android:switchTextOff="off"
+                    android:switchTextOn="on"
+                    android:title="Radio clash protection"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Polling">
+                <info.nightscout.android.utils.CustomSwitchPreference
+                    android:disableDependentsState="false"
+                    android:key="sysEnablePollOverride"
+                    android:defaultValue="false"
+                    android:summaryOff="Use system defaults for all poll timing"
+                    android:summaryOn="A poll will trigger based on the expected sensor event time plus a conditional state period (warning: changing these settings can lead to radio clashes and extended lost sensor periods)"
+                    android:switchTextOff="off"
+                    android:switchTextOn="on"
+                    android:title="Poll timing"/>
+                <ListPreference android:title="Grace Period"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollGracePeriod"
+                    android:defaultValue="30000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+                <ListPreference android:title="Recovery Period"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollRecoveryPeriod"
+                    android:defaultValue="90000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+                <ListPreference android:title="Warmup Period"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollWarmupPeriod"
+                    android:defaultValue="90000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+                <ListPreference android:title="Error Retry"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollErrorRetry"
+                    android:defaultValue="90000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+                <ListPreference android:title="Old SGV Retry"
+                    android:dependency="sysEnablePollOverride"
+                    android:key="sysPollOldSgvRetry"
+                    android:defaultValue="90000"
+                    android:summary="%s"
+                    android:entries="@array/poll_period"
+                    android:entryValues="@array/poll_period_values"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="Timing">
+                <info.nightscout.android.utils.CustomSwitchPreference
+                    android:disableDependentsState="false"
+                    android:key="sysEnableWait500ms"
+                    android:defaultValue="false"
+                    android:summaryOff="No wait time"
+                    android:summaryOn="Wait 500ms per send request"
+                    android:switchTextOff="off"
+                    android:switchTextOn="on"
+                    android:title="Control / Passthrough"/>
+            </PreferenceCategory>
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            android:title="Debug Settings"
+            android:persistent="false">
+            <PreferenceCategory android:title="Debug">
+                <SwitchPreference
+                    android:defaultValue="true"
+                    android:key="@string/preferences_enable_crashlytics"
+                    android:summary="Send crash errors to developer"
+                    android:title="Crash Reporting" />
+                <SwitchPreference
+                    android:defaultValue="true"
+                    android:key="@string/preferences_enable_answers"
+                    android:summary="Sends usage data to the developer to help develop a better app."
+                    android:title="Share usage data" />
+                <SwitchPreference
+                    android:defaultValue="false"
+                    android:key="@string/preferences_enable_remote_logcat"
+                    android:summary="Allow the developer to debug your app. Only enable if asked to by the support team."
+                    android:title="Remote Debugging" />
+                <ListPreference
+                    android:defaultValue="1"
+                    android:key="logLevel"
+                    android:summary="%s"
+                    android:title="Logging Level"
+                    android:entries="@array/levelList"
+                    android:entryValues="@array/calib_types_values" />
+            </PreferenceCategory>
+        </PreferenceScreen>
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="Disclaimer">
         <SwitchPreference
             android:disableDependentsState="false"
@@ -97,30 +599,5 @@
         <Preference
             android:key="version"
             android:title="@string/versionName" />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Debug">
-        <SwitchPreference
-            android:defaultValue="true"
-            android:key="@string/preferences_enable_crashlytics"
-            android:summary="Send crash errors to developer"
-            android:title="Crash Reporting" />
-        <SwitchPreference
-            android:defaultValue="true"
-            android:key="@string/preferences_enable_answers"
-            android:summary="Sends usage data to the developer to help develop a better app."
-            android:title="Share usage data" />
-        <SwitchPreference
-            android:defaultValue="false"
-            android:key="@string/preferences_enable_remote_logcat"
-            android:summary="Allow the developer to debug your app. Only enable if asked to by the support team."
-            android:title="Remote Debugging" />
-        <ListPreference
-            android:defaultValue="1"
-            android:disableDependentsState="false"
-            android:entries="@array/levelList"
-            android:entryValues="@array/calib_types_values"
-            android:key="logLevel"
-            android:summary="Select item from array"
-            android:title="Logging Level" />
     </PreferenceCategory>
 </PreferenceScreen>

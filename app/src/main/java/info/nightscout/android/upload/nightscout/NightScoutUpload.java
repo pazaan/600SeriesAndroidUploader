@@ -1,293 +1,280 @@
 package info.nightscout.android.upload.nightscout;
 
+import android.support.annotation.NonNull;
+import android.util.Log;
+
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
-
-import android.support.annotation.NonNull;
-
-import info.nightscout.android.utils.ConfigurationStore;
-import info.nightscout.api.UploadApi;
-import info.nightscout.api.SgvEndpoints;
-import info.nightscout.api.SgvEndpoints.SgvEntry;
-import info.nightscout.api.MbgEndpoints;
-import info.nightscout.api.MbgEndpoints.MbgEntry;
-import info.nightscout.api.TreatmentEndpoints;
-import info.nightscout.api.TreatmentEndpoints.TreatmentEntry;
-import info.nightscout.api.TempBasalRateEndpoints.TempBasalRateEntry;
-import info.nightscout.api.TempBasalRateEndpoints;
-import info.nightscout.api.TempBasalPercentEndpoints;
-import info.nightscout.api.TempBasalPercentEndpoints.TempBasalPercentEntry;
-import info.nightscout.api.TempBasalCancelEndpoints;
-import info.nightscout.api.TempBasalCancelEndpoints.TempBasalCancelEntry;
-import info.nightscout.api.NoteEndpoints;
-import info.nightscout.api.NoteEndpoints.NoteEntry;
+import info.nightscout.android.model.store.DataStore;
 import info.nightscout.api.DeviceEndpoints;
 import info.nightscout.api.DeviceEndpoints.Iob;
 import info.nightscout.api.DeviceEndpoints.Battery;
 import info.nightscout.api.DeviceEndpoints.PumpStatus;
 import info.nightscout.api.DeviceEndpoints.PumpInfo;
 import info.nightscout.api.DeviceEndpoints.DeviceStatus;
+import info.nightscout.api.EntriesEndpoints;
+import info.nightscout.api.ProfileEndpoints;
+import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.api.UploadApi;
+import info.nightscout.api.UploadItem;
+import io.realm.Realm;
 import okhttp3.ResponseBody;
 import retrofit2.Response;
 
-import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
+/*
+Nightscout notes:
 
-class NightScoutUpload {
+Device - POST a single device status, POST does not support bulk upload (have not checked QUERY & GET & DELETE support)
+Entries - QUERY support, GET & POST & DELETE a single entry, POST & DELETE has bulk support
+Treatments - QUERY support, GET & POST & DELETE a single treatment, POST has bulk support
+Profile - no QUERY support, GET returns all profile sets, can POST & DELETE a single profile set, POST does not support bulk upload
 
-    private static final String TAG = NightscoutUploadIntentService.class.getSimpleName();
-    private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
-    private static final SimpleDateFormat NOTE_DATE_FORMAT = new SimpleDateFormat("E h:mm a", Locale.getDefault());
+*/
 
-    NightScoutUpload() {
+public class NightScoutUpload {
+    private static final String TAG = NightScoutUpload.class.getSimpleName();
 
-    }
+    private DeviceEndpoints deviceEndpoints;
+    private EntriesEndpoints entriesEndpoints;
+    private TreatmentsEndpoints treatmentsEndpoints;
+    private ProfileEndpoints profileEndpoints;
+
+    private Realm storeRealm;
+    private DataStore dataStore;
+
+    NightScoutUpload() {}
 
     boolean doRESTUpload(String url,
                          String secret,
-                         boolean treatments,
                          int uploaderBatteryLevel,
-                         List<PumpStatusEvent> records) throws Exception {
-        return isUploaded(records, url, secret, treatments, uploaderBatteryLevel);
+                         List<PumpStatusEvent> statusRecords,
+                         List<PumpHistoryInterface> records)
+            throws Exception {
+
+        UploadApi uploadApi = new UploadApi(url, formToken(secret));
+
+        deviceEndpoints = uploadApi.getDeviceEndpoints();
+        entriesEndpoints = uploadApi.getEntriesEndpoints();
+        treatmentsEndpoints = uploadApi.getTreatmentsEndpoints();
+        profileEndpoints = uploadApi.getProfileEndpoints();
+
+        return uploadStatus(statusRecords, uploaderBatteryLevel) && uploadEvents(records);
     }
 
-    private boolean isUploaded(List<PumpStatusEvent> records,
-                               String baseURL,
-                               String secret,
-                               boolean treatments,
-                               int uploaderBatteryLevel) throws Exception {
+    private boolean uploadEvents(List<PumpHistoryInterface> records) throws Exception {
 
-        UploadApi uploadApi = new UploadApi(baseURL, formToken(secret));
+        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        dataStore = storeRealm.where(DataStore.class).findFirst();
 
-        boolean eventsUploaded = uploadEvents(
-                uploadApi.getSgvEndpoints(),
-                uploadApi.getMbgEndpoints(),
-                uploadApi.getTreatmentEndpoints(),
-                uploadApi.getTempBasalRateEndpoints(),
-                uploadApi.getTempBasalPercentEndpoints(),
-                uploadApi.getTempBasalCancelEndpoints(),
-                uploadApi.getNoteEndpoints(),
-                records, treatments);
+        cleanupCheck();
 
-        boolean deviceStatusUploaded = uploadDeviceStatus(uploadApi.getDeviceEndpoints(),
-                uploaderBatteryLevel, records);
+        List<EntriesEndpoints.Entry> entries = new ArrayList<>();
+        List<TreatmentsEndpoints.Treatment> treatments = new ArrayList<>();
 
-        return eventsUploaded && deviceStatusUploaded;
-    }
+        boolean success = true;
 
-    private boolean uploadEvents(SgvEndpoints sgvEndpoints,
-                                 MbgEndpoints mbgEndpoints,
-                                 TreatmentEndpoints treatmentEndpoints,
-                                 TempBasalRateEndpoints tempBasalRateEndpoints,
-                                 TempBasalPercentEndpoints tempBasalPercentEndpoints,
-                                 TempBasalCancelEndpoints tempBasalCancelEndpoints,
-                                 NoteEndpoints noteEndpoints,
-                                 List<PumpStatusEvent> records,
-                                 boolean treatments) throws Exception {
+        for (PumpHistoryInterface record : records) {
 
-
-        List<SgvEntry> sgvEntries = new ArrayList<>();
-        List<MbgEntry> mbgEntries = new ArrayList<>();
-        List<TreatmentEntry> treatmentEntries = new ArrayList<>();
-        List<TempBasalRateEntry> tempBasalRateEntries = new ArrayList<>();
-        List<TempBasalPercentEntry> tempBasalPercentEntries = new ArrayList<>();
-        List<TempBasalCancelEntry> tempBasalCancelEntries = new ArrayList<>();
-        List<NoteEntry> noteEntries = new ArrayList<>();
-
-        for (PumpStatusEvent record : records) {
-
-            if (record.isValidSGV()) {
-                SgvEntry sgvEntry = new SgvEntry();
-                sgvEntry.setType("sgv");
-                sgvEntry.setDirection(EntriesSerializer.getDirectionStringStatus(record.getCgmTrend()));
-                sgvEntry.setDevice(record.getDeviceName());
-                sgvEntry.setSgv(record.getSgv());
-                sgvEntry.setDate(record.getCgmDate().getTime());
-                sgvEntry.setDateString(record.getCgmDate().toString());
-                sgvEntries.add(sgvEntry);
-            }
-
-            if (record.isValidBGL()) {
-
-                MbgEntry mbgEntry = new MbgEntry();
-                mbgEntry.setType("mbg");
-                mbgEntry.setDate(record.getEventDate().getTime());
-                mbgEntry.setDateString(record.getEventDate().toString());
-                mbgEntry.setDevice(record.getDeviceName());
-                mbgEntry.setMbg(record.getRecentBGL());
-                mbgEntries.add(mbgEntry);
-
-                // cgm offline or not in use (needed for NS to show bgl when no sgv data)
-                if (!record.isCgmActive() || record.isCgmWarmUp()) {
-                    ConfigurationStore configurationStore = ConfigurationStore.getInstance();
-                    BigDecimal bgl;
-                    String units;
-                    if (configurationStore.isMmolxl()) {
-                        bgl = new BigDecimal(record.getRecentBGL() / MMOLXLFACTOR).setScale(1, BigDecimal.ROUND_HALF_UP);
-                        units = "mmol";
-                    } else {
-                        bgl = new BigDecimal(record.getRecentBGL()).setScale(0);
-                        units = "mg/dl";
-                    }
-
-                    TreatmentEntry treatmentEntry = new TreatmentEntry();
-                    treatmentEntry.setCreatedAt(ISO8601_DATE_FORMAT.format(record.getEventDate()));
-                    treatmentEntry.setEventType("BG Check");
-                    treatmentEntry.setGlucoseType("Finger");
-                    treatmentEntry.setGlucose(bgl);
-                    treatmentEntry.setUnits(units);
-                    treatmentEntries.add(treatmentEntry);
+            Iterator<UploadItem> iterator = record.nightscout(dataStore).iterator();
+            while (success && iterator.hasNext()) {
+                UploadItem uploadItem = iterator.next();
+                UploadItem.MODE mode = uploadItem.getMode();
+                if (uploadItem.isEntry()) {
+                    success = processEntry(mode, uploadItem.getEntry(), entries);
+                } else if (uploadItem.isTreatment()) {
+                    success = processTreatment(mode, uploadItem.getTreatment(), treatments);
+                } else if (uploadItem.isProfile()) {
+                    success = processProfile(mode, uploadItem.getProfile());
                 }
             }
 
-            if (treatments) {
-
-                if (record.isValidBolus()) {
-
-                    if (record.isValidBolusDual()) {
-                        TreatmentEntry treatmentEntry = new TreatmentEntry();
-                        treatmentEntry.setCreatedAt(ISO8601_DATE_FORMAT.format(record.getLastBolusDate()));
-                        treatmentEntry.setEventType("Bolus");
-                        treatmentEntry.setInsulin(record.getLastBolusAmount());
-                        treatmentEntry.setNotes("Dual bolus normal part delivered: " + record.getLastBolusAmount() + "u");
-                        treatmentEntries.add(treatmentEntry);
-
-                    } else if (record.isValidBolusSquare()) {
-                        TreatmentEntry treatmentEntry = new TreatmentEntry();
-                        treatmentEntry.setCreatedAt(ISO8601_DATE_FORMAT.format(record.getLastBolusDate()));
-                        treatmentEntry.setEventType("Combo Bolus");
-                        treatmentEntry.setDuration(record.getLastBolusDuration());
-                        treatmentEntry.setSplitNow("0");
-                        treatmentEntry.setSplitExt("100");
-                        treatmentEntry.setRelative(2);
-                        treatmentEntry.setEnteredinsulin(String.valueOf(record.getLastBolusAmount()));
-                        treatmentEntries.add(treatmentEntry);
-
-                        noteEntries.add(new NoteEntry(
-                                "Announcement",
-                                ISO8601_DATE_FORMAT.format(record.getLastBolusDate().getTime() + (record.getLastBolusDuration() * 60 * 1000)),
-                                "Square bolus delivered: " + record.getLastBolusAmount() + "u Duration: " + record.getLastBolusDuration() + " minutes"
-                        ));
-
-                    } else {
-                        TreatmentEntry treatmentEntry = new TreatmentEntry();
-                        treatmentEntry.setCreatedAt(ISO8601_DATE_FORMAT.format(record.getLastBolusDate()));
-                        treatmentEntry.setEventType("Bolus");
-                        treatmentEntry.setInsulin(record.getLastBolusAmount());
-                        treatmentEntries.add(treatmentEntry);
-                    }
-                }
-
-                if (record.isValidTEMPBASAL()) {
-                    if (record.getTempBasalMinutesRemaining() > 0 && record.getTempBasalPercentage() > 0) {
-                        tempBasalPercentEntries.add(new TempBasalPercentEntry(
-                                ISO8601_DATE_FORMAT.format(record.getEventDate()),
-                                "Temp Basal started approx: " + NOTE_DATE_FORMAT.format(record.getTempBasalAfterDate()) + " - " + NOTE_DATE_FORMAT.format(record.getTempBasalBeforeDate()),
-                                record.getTempBasalMinutesRemaining(),
-                                record.getTempBasalPercentage() - 100
-                        ));
-                    } else if (record.getTempBasalMinutesRemaining() > 0) {
-                        tempBasalRateEntries.add(new TempBasalRateEntry(
-                                ISO8601_DATE_FORMAT.format(record.getEventDate()),
-                                "Temp Basal started approx: " + NOTE_DATE_FORMAT.format(record.getTempBasalAfterDate()) + " - " + NOTE_DATE_FORMAT.format(record.getTempBasalBeforeDate()),
-                                record.getTempBasalMinutesRemaining(),
-                                record.getTempBasalRate()
-                        ));
-                    } else {
-                        tempBasalCancelEntries.add(new TempBasalCancelEntry(
-                                ISO8601_DATE_FORMAT.format(record.getEventDate()),
-                                "Temp Basal stopped approx: " + NOTE_DATE_FORMAT.format(record.getTempBasalAfterDate()) + " - " + NOTE_DATE_FORMAT.format(record.getTempBasalBeforeDate())
-                        ));
-                    }
-                }
-
-                if (record.isValidSUSPEND()) {
-                    tempBasalRateEntries.add(new TempBasalRateEntry(
-                            ISO8601_DATE_FORMAT.format(record.getEventDate()),
-                            "Pump suspended insulin delivery approx: " + NOTE_DATE_FORMAT.format(record.getSuspendAfterDate()) + " - " + NOTE_DATE_FORMAT.format(record.getSuspendBeforeDate()),
-                            60,
-                            0
-                    ));
-                }
-                if (record.isValidSUSPENDOFF()) {
-                    tempBasalCancelEntries.add(new TempBasalCancelEntry(
-                            ISO8601_DATE_FORMAT.format(record.getEventDate()),
-                            "Pump resumed insulin delivery approx: " + NOTE_DATE_FORMAT.format(record.getSuspendAfterDate()) + " - " + NOTE_DATE_FORMAT.format(record.getSuspendBeforeDate())
-                    ));
-                }
-
-                if (record.isValidSAGE()) {
-                    noteEntries.add(new NoteEntry(
-                            "Sensor Start",
-                            ISO8601_DATE_FORMAT.format(record.getSageAfterDate().getTime() - (record.getSageAfterDate().getTime() - record.getSageBeforeDate().getTime()) / 2),
-                            "Sensor changed approx: " + NOTE_DATE_FORMAT.format(record.getSageAfterDate()) + " - " + NOTE_DATE_FORMAT.format(record.getSageBeforeDate())
-                    ));
-                }
-                if (record.isValidCAGE()) {
-                    noteEntries.add(new NoteEntry(
-                            "Site Change",
-                            ISO8601_DATE_FORMAT.format(record.getCageAfterDate().getTime() - (record.getCageAfterDate().getTime() - record.getCageBeforeDate().getTime()) / 2),
-                            "Reservoir changed approx: " + NOTE_DATE_FORMAT.format(record.getCageAfterDate()) + " - " + NOTE_DATE_FORMAT.format(record.getCageBeforeDate())
-                    ));
-                }
-                if (record.isValidBATTERY()) {
-                    noteEntries.add(new NoteEntry(
-                            "Note",
-                            ISO8601_DATE_FORMAT.format(record.getBatteryAfterDate().getTime() - (record.getBatteryAfterDate().getTime() - record.getBatteryBeforeDate().getTime()) / 2),
-                            "Pump battery changed approx: " + NOTE_DATE_FORMAT.format(record.getBatteryAfterDate()) + " - " + NOTE_DATE_FORMAT.format(record.getBatteryBeforeDate())
-                    ));
-                }
-
-            }
-
+            if (!success) break;
         }
 
-        boolean uploaded = true;
-        if (sgvEntries.size() > 0) {
-            Response<ResponseBody> result = sgvEndpoints.sendEntries(sgvEntries).execute();
-            uploaded = result.isSuccessful();
+        // bulk uploading for entries and treatments
+
+        if (success && entries.size() > 0) {
+            Response<ResponseBody> result = entriesEndpoints.sendEntries(entries).execute();
+            success = result.isSuccessful();
         }
-        if (mbgEntries.size() > 0) {
-            Response<ResponseBody> result = mbgEndpoints.sendEntries(mbgEntries).execute();
-            uploaded = uploaded && result.isSuccessful();
+        if (success && treatments.size() > 0) {
+            Response<ResponseBody> result = treatmentsEndpoints.sendTreatments(treatments).execute();
+            success = result.isSuccessful();
         }
-        if (treatmentEntries.size() > 0) {
-            Response<ResponseBody> result = treatmentEndpoints.sendEntries(treatmentEntries).execute();
-            uploaded = uploaded && result.isSuccessful();
-        }
-        if (tempBasalRateEntries.size() > 0) {
-            Response<ResponseBody> result = tempBasalRateEndpoints.sendEntries(tempBasalRateEntries).execute();
-            uploaded = uploaded && result.isSuccessful();
-        }
-        if (tempBasalPercentEntries.size() > 0) {
-            Response<ResponseBody> result = tempBasalPercentEndpoints.sendEntries(tempBasalPercentEntries).execute();
-            uploaded = uploaded && result.isSuccessful();
-        }
-        if (tempBasalCancelEntries.size() > 0) {
-            Response<ResponseBody> result = tempBasalCancelEndpoints.sendEntries(tempBasalCancelEntries).execute();
-            uploaded = uploaded && result.isSuccessful();
-        }
-        if (noteEntries.size() > 0) {
-            Response<ResponseBody> result = noteEndpoints.sendEntries(noteEntries).execute();
-            uploaded = uploaded && result.isSuccessful();
-        }
-        return uploaded;
+
+        storeRealm.close();
+
+        return success;
     }
 
-    private boolean uploadDeviceStatus(DeviceEndpoints deviceEndpoints,
-                                       int uploaderBatteryLevel,
-                                       List<PumpStatusEvent> records) throws Exception {
+    private boolean processEntry(UploadItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
 
+        String key = entry.getKey600();
+        Response<List<EntriesEndpoints.Entry>> response = entriesEndpoints.checkKey("2017", key).execute();
 
-        List<DeviceStatus> deviceEntries = new ArrayList<>();
+        if (response.isSuccessful()) {
+            List<EntriesEndpoints.Entry> list = response.body();
+            int count = list.size();
+            if (count > 0) {
+                Log.d(TAG, "found " + list.size() + " already in nightscout for KEY: " + key);
+
+                if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1) {
+                    Response<ResponseBody> responseBody = entriesEndpoints.deleteKey("2017", key).execute();
+                    if (responseBody.isSuccessful()) {
+                        Log.d(TAG, "deleted " + count + " with KEY: " + key);
+                    } else {
+                        Log.d(TAG, "no DELETE response from nightscout site");
+                        return false;
+                    }
+                } else return true;
+            }
+
+            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+                Log.d(TAG, "queued item for nightscout entries bulk upload, KEY: " + key);
+                entries.add(entry);
+            }
+
+        } else {
+            Log.d(TAG, "no response from nightscout site!");
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean processTreatment(UploadItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
+
+        String key = treatment.getKey600();
+        Response<List<TreatmentsEndpoints.Treatment>> response = treatmentsEndpoints.checkKey("2017", key).execute();
+
+        if (response.isSuccessful()) {
+            List<TreatmentsEndpoints.Treatment> list = response.body();
+            int count = list.size();
+            if (count > 0) {
+                Log.d(TAG, "found " + list.size() + " already in nightscout for KEY: " + key);
+
+                while (count > 0 && (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1)) {
+                    Response<ResponseBody> responseBody = treatmentsEndpoints.deleteID(list.get(count - 1).get_id()).execute();
+                    if (responseBody.isSuccessful()) {
+                        Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + list.get(count - 1).get_id());
+                    } else {
+                        Log.d(TAG, "no DELETE response from nightscout site");
+                        return false;
+                    }
+                    count--;
+                }
+
+                if (count > 0) return true;
+            }
+
+            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+                Log.d(TAG, "queued item for nightscout treatments bulk upload, KEY: " + key);
+                treatments.add(treatment);
+            }
+
+        } else {
+            Log.d(TAG, "no response from nightscout site!");
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean processProfile(UploadItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
+
+        String key = profile.getKey600();
+        Response<List<ProfileEndpoints.Profile>> response = profileEndpoints.getProfiles().execute();
+
+        if (response.isSuccessful()) {
+
+            List<ProfileEndpoints.Profile> list = response.body();
+
+            if (list.size() > 0) {
+                Log.d(TAG, "found " + list.size() + " profiles sets in nightscout");
+
+                String foundID;
+                String foundKey;
+                int count = 0;
+
+                if (dataStore.isNsEnableProfileSingle()) {
+                    Log.d(TAG, "single profile enabled, deleting obsolete profiles");
+
+                    for (ProfileEndpoints.Profile item : list) {
+                        foundID = item.get_id();
+                        Response<ResponseBody> responseBody = profileEndpoints.deleteID(foundID).execute();
+                        if (responseBody.isSuccessful()) {
+                            Log.d(TAG, "deleted this item! ID: " + foundID);
+                        } else {
+                            Log.d(TAG, "no DELETE response from nightscout site");
+                            return false;
+                        }
+                    }
+
+                } else {
+
+                    for (ProfileEndpoints.Profile item : list) {
+                        foundKey = item.getKey600();
+                        if (foundKey != null && foundKey.equals(key)) count++;
+                    }
+
+                    if (count > 0) {
+                        Log.d(TAG, "found " + count + " already in nightscout for KEY: " + key);
+
+                        if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1) {
+                            for (ProfileEndpoints.Profile item : list) {
+                                foundKey = item.getKey600();
+                                if (foundKey != null && foundKey.equals(key)) {
+                                    foundID = item.get_id();
+                                    Response<ResponseBody> responseBody = profileEndpoints.deleteID(foundID).execute();
+                                    if (responseBody.isSuccessful()) {
+                                        Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + foundID);
+                                    } else {
+                                        Log.d(TAG, "no DELETE response from nightscout site");
+                                        return false;
+                                    }
+                                    if (--count == 1) break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (count > 0) return true;
+                }
+            }
+
+            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+                Log.d(TAG, "new item sending to nightscout profile, KEY: " + key);
+                Response<ResponseBody> responseBody = profileEndpoints.sendProfile(profile).execute();
+                if (!responseBody.isSuccessful()) {
+                    Log.d(TAG, "no POST response from nightscout site");
+                    return false;
+                }
+            }
+
+        } else {
+            Log.d(TAG, "no response from nightscout site!");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
+
+    private boolean uploadStatus(List<PumpStatusEvent> records, int uploaderBatteryLevel) throws Exception {
+
+        List<DeviceEndpoints.DeviceStatus> deviceEntries = new ArrayList<>();
         for (PumpStatusEvent record : records) {
 
             Iob iob = new Iob(record.getEventDate(), record.getActiveInsulin());
@@ -349,9 +336,9 @@ class NightScoutUpload {
                 else
                     statusCGM = shorten ? "" : ".... ";
                 if (record.isCgmCalibrating())
-                    statusCGM += shorten ? "cal" : "calibrating";
+                    statusCGM += shorten ? "CAL" : "calibrating";
                 else if (record.isCgmCalibrationComplete())
-                    statusCGM += shorten ? "cal" : "cal.complete";
+                    statusCGM += shorten ? "CAL" : "cal.complete";
                 else {
                     if (record.isCgmWarmUp())
                         statusCGM += shorten ? "WU" : "warmup ";
@@ -395,6 +382,98 @@ class NightScoutUpload {
         }
 
         return uploaded;
+    }
+
+    private void cleanupCheck() throws Exception {
+
+        if (dataStore.isNsEnableHistorySync()) {
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+
+            long now = System.currentTimeMillis();
+
+            int cgmDays = dataStore.getSysCgmHistoryDays();
+            int pumpDays = dataStore.getSysPumpHistoryDays();
+
+            final long cgmFrom = now - cgmDays * (24 * 60 * 60000L);
+            final long pumpFrom = now - pumpDays * (24 * 60 * 60000L);
+
+            long cgmTo = dataStore.getNightscoutCgmCleanFrom();
+            long pumpTo = dataStore.getNightscoutPumpCleanFrom();
+
+            long limit = dataStore.getNightscoutLimitDate().getTime();
+
+            if (cgmTo == 0) cgmTo = limit;
+            if (pumpTo == 0) pumpTo = limit;
+
+            Log.d(TAG, "cleanup: limit date " + dateFormat.format(limit));
+
+            if (cgmFrom < cgmTo) {
+                Log.d(TAG, "cleanup: entries (cgm history) " + dateFormat.format(cgmFrom) + " to " + dateFormat.format(cgmTo));
+
+                Response<ResponseBody> responseBody = entriesEndpoints.deleteCleanupItems(
+                        "" + cgmFrom,
+                        "" + cgmTo,
+                        "").execute();
+                if (responseBody.isSuccessful()) {
+                    Log.d(TAG, "cleanup: bulk deleted entries");
+
+                    storeRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(Realm realm) {
+                            dataStore.setNightscoutCgmCleanFrom(cgmFrom);
+                        }
+                    });
+
+                } else {
+                    Log.d(TAG, "cleanup: no DELETE response from nightscout site");
+                }
+
+            }
+
+            if (pumpFrom < pumpTo) {
+                Log.d(TAG, "cleanup: treatments (pump history) " + dateFormat.format(pumpFrom) + " to " + dateFormat.format(pumpTo));
+
+                boolean finished = false;
+                boolean success = true;
+
+                while (!finished && success) {
+                    Response<List<TreatmentsEndpoints.Treatment>> response = treatmentsEndpoints.findCleanupItems(
+                            dateFormat.format(pumpFrom),
+                            dateFormat.format(pumpTo),
+                            "Note",
+                            "", "20").execute();
+
+                    if (response.isSuccessful()) {
+                        List<TreatmentsEndpoints.Treatment> list = response.body();
+                        int count = list.size();
+                        if (count > 0) {
+                            Log.d(TAG, "cleanup: found " + list.size());
+
+                            while (count > 0) {
+                                Response<ResponseBody> responseBody = treatmentsEndpoints.deleteID(list.get(count - 1).get_id()).execute();
+                                if (responseBody.isSuccessful()) {
+                                    Log.d(TAG, "cleanup: deleted this item! ID: " + list.get(count - 1).get_id());
+                                } else {
+                                    Log.d(TAG, "cleanup: no DELETE response from nightscout site");
+                                }
+                                count--;
+                            }
+                        } else finished = true;
+                    } else success = false;
+                }
+
+                if (success) {
+                    storeRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(Realm realm) {
+                            dataStore.setNightscoutPumpCleanFrom(pumpFrom);
+                        }
+                    });
+                }
+            }
+
+        }
     }
 
     @NonNull

@@ -10,13 +10,16 @@ import io.realm.annotations.Index;
  */
 public class PumpStatusEvent extends RealmObject {
     @Index
-    private Date eventDate; // The actual time of the this event (uploader device time)
-    private Date pumpDate; // The time on the pump at the time of the this event
-    private long pumpTimeOffset; // millis the pump is ahead
+    private Date eventDate; // The actual time (uploader) of the this event (pumptime event date)
+
+    @Index
+    private int eventRTC; // RTC of pumptime request (as there is no RTC for status message)
+    private int eventOFFSET; // OFFSET of pumptime request (as there is no OFFSET for status message)
+    private long clockDifference; // uploader-pump clock difference
 
     private String deviceName;
 
-    // Data from the Medtronic Pump Status message
+    // Data from the Medtronic Pump add message
 
     private byte pumpStatus;
     private byte cgmStatus;
@@ -32,6 +35,7 @@ public class PumpStatusEvent extends RealmObject {
     private boolean cgmException;
     private boolean cgmWarmUp;
     private byte activeBasalPattern;
+    private byte activeTempBasalPattern;
     private float basalRate;
     private float tempBasalRate;
     private short tempBasalPercentage;
@@ -41,56 +45,38 @@ public class PumpStatusEvent extends RealmObject {
     private float reservoirAmount;
     private short minutesOfInsulinRemaining; // 25h == "more than 1 day"
     private float activeInsulin;
+
     private int sgv;
+
     private Date cgmDate;
-    private Date cgmPumpDate;
+    private int cgmRTC;
+    private int cgmOFFSET;
     private byte cgmExceptionType;
     private boolean lowSuspendActive;
     private String cgmTrend;
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int recentBGL; // in mg/dL. 0 means no recent finger bg reading.
+
     private short alert;
     private Date alertDate;
-    private Date alertPumpDate;
+    private int alertRTC;
+    private int alertOFFSET;
+
     private float bolusingDelivered;
     private short bolusingMinutesRemaining;
-    private short bolusingReference;
+    private byte bolusingReference;
     private float lastBolusAmount;
     private Date lastBolusDate;
     private Date lastBolusPumpDate;
     private short lastBolusDuration;
-    private short lastBolusReference;
+    private byte lastBolusReference;
     private byte transmitterBattery;
     private byte transmitterControl;
     private short calibrationDueMinutes;
     private float sensorRateOfChange;
 
     private boolean oldSgvWhenNewExpected = false;
-
-    private boolean validPUMP = false;
-    private boolean validCGM = false;
     private boolean validSGV = false;
-    private boolean validBGL = false;
-    private boolean validBolus = false;
-    private boolean validBolusDual = false;
-    private boolean validBolusSquare = false;
-    private boolean validALERT = false;
-    private boolean validSUSPEND = false;
-    private boolean validSUSPENDOFF = false;
-    private Date suspendAfterDate;
-    private Date suspendBeforeDate;
-    private boolean validTEMPBASAL = false;
-    private Date tempBasalAfterDate;
-    private Date tempBasalBeforeDate;
-    private boolean validCAGE = false;
-    private Date cageAfterDate;
-    private Date cageBeforeDate;
-    private boolean validSAGE = false;
-    private Date sageAfterDate;
-    private Date sageBeforeDate;
-    private boolean validBATTERY = false;
-    private Date batteryAfterDate;
-    private Date batteryBeforeDate;
 
     @Index
     private boolean uploaded = false;
@@ -108,12 +94,28 @@ public class PumpStatusEvent extends RealmObject {
         return eventDate;
     }
 
-    public Date getPumpDate() {
-        return pumpDate;
+    public int getEventRTC() {
+        return eventRTC;
     }
 
-    public void setPumpDate(Date pumpDate) {
-        this.pumpDate = pumpDate;
+    public void setEventRTC(int eventRTC) {
+        this.eventRTC = eventRTC;
+    }
+
+    public int getEventOFFSET() {
+        return eventOFFSET;
+    }
+
+    public void setEventOFFSET(int eventOFFSET) {
+        this.eventOFFSET = eventOFFSET;
+    }
+
+    public long getClockDifference() {
+        return clockDifference;
+    }
+
+    public void setClockDifference(long clockDifference) {
+        this.clockDifference = clockDifference;
     }
 
     public String getDeviceName() {
@@ -122,6 +124,22 @@ public class PumpStatusEvent extends RealmObject {
 
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
+    }
+
+    public int getCgmRTC() {
+        return cgmRTC;
+    }
+
+    public void setCgmRTC(int cgmRTC) {
+        this.cgmRTC = cgmRTC;
+    }
+
+    public int getCgmOFFSET() {
+        return cgmOFFSET;
+    }
+
+    public void setCgmOFFSET(int cgmOFFSET) {
+        this.cgmOFFSET = cgmOFFSET;
     }
 
     public int getSgv() {
@@ -191,6 +209,9 @@ public class PumpStatusEvent extends RealmObject {
         this.recentBGL = recentBGL;
     }
 
+
+
+
     public boolean isUploaded() {
         return uploaded;
     }
@@ -198,6 +219,7 @@ public class PumpStatusEvent extends RealmObject {
     public void setUploaded(boolean uploaded) {
         this.uploaded = uploaded;
     }
+
 
     public boolean isOldSgvWhenNewExpected() {
         return oldSgvWhenNewExpected;
@@ -207,197 +229,12 @@ public class PumpStatusEvent extends RealmObject {
         this.oldSgvWhenNewExpected = oldSgvWhenNewExpected;
     }
 
-    public boolean isValidPUMP() {
-        return validPUMP;
-    }
-
-    public void setValidPUMP(boolean validPUMP) {
-        this.validPUMP = validPUMP;
-    }
-
-    public boolean isValidCGM() {
-        return validCGM;
-    }
-
-    public void setValidCGM(boolean validCGM) {
-        this.validCGM = validCGM;
-    }
-
     public boolean isValidSGV() {
         return validSGV;
     }
 
     public void setValidSGV(boolean validSGV) {
         this.validSGV = validSGV;
-    }
-
-    public boolean isValidBGL() {
-        return validBGL;
-    }
-
-    public void setValidBGL(boolean validBGL) {
-        this.validBGL = validBGL;
-    }
-
-    public boolean isValidBolus() {
-        return validBolus;
-    }
-
-    public void setValidBolus(boolean validBolus) {
-        this.validBolus = validBolus;
-    }
-
-    public boolean isValidBolusDual() {
-        return validBolusDual;
-    }
-
-    public void setValidBolusDual(boolean validBolusDual) {
-        this.validBolusDual = validBolusDual;
-    }
-
-    public boolean isValidBolusSquare() {
-        return validBolusSquare;
-    }
-
-    public void setValidBolusSquare(boolean validBolusSquare) {
-        this.validBolusSquare = validBolusSquare;
-    }
-
-    public boolean isValidALERT() {
-        return validALERT;
-    }
-
-    public void setValidALERT(boolean validALERT) {
-        this.validALERT = validALERT;
-    }
-
-    public boolean isValidSUSPEND() {
-        return validSUSPEND;
-    }
-
-    public void setValidSUSPEND(boolean validSUSPEND) {
-        this.validSUSPEND = validSUSPEND;
-    }
-
-    public boolean isValidSUSPENDOFF() {
-        return validSUSPENDOFF;
-    }
-
-    public void setValidSUSPENDOFF(boolean validSUSPENDOFF) {
-        this.validSUSPENDOFF = validSUSPENDOFF;
-    }
-
-    public Date getSuspendAfterDate() {
-        return suspendAfterDate;
-    }
-
-    public void setSuspendAfterDate(Date suspendAfterDate) {
-        this.suspendAfterDate = suspendAfterDate;
-    }
-
-    public Date getSuspendBeforeDate() {
-        return suspendBeforeDate;
-    }
-
-    public void setSuspendBeforeDate(Date suspendBeforeDate) {
-        this.suspendBeforeDate = suspendBeforeDate;
-    }
-
-
-    public boolean isValidTEMPBASAL() {
-        return validTEMPBASAL;
-    }
-
-    public void setValidTEMPBASAL(boolean validTEMPBASAL) {
-        this.validTEMPBASAL = validTEMPBASAL;
-    }
-
-    public Date getTempBasalAfterDate() {
-        return tempBasalAfterDate;
-    }
-
-    public void setTempBasalAfterDate(Date tempBasalAfterDate) {
-        this.tempBasalAfterDate = tempBasalAfterDate;
-    }
-
-    public Date getTempBasalBeforeDate() {
-        return tempBasalBeforeDate;
-    }
-
-    public void setTempBasalBeforeDate(Date tempBasalBeforeDate) {
-        this.tempBasalBeforeDate = tempBasalBeforeDate;
-    }
-
-    public boolean isValidCAGE() {
-        return validCAGE;
-    }
-
-    public void setValidCAGE(boolean validCAGE) {
-        this.validCAGE = validCAGE;
-    }
-
-    public Date getCageAfterDate() {
-        return cageAfterDate;
-    }
-
-    public void setCageAfterDate(Date cageAfterDate) {
-        this.cageAfterDate = cageAfterDate;
-    }
-
-    public Date getCageBeforeDate() {
-        return cageBeforeDate;
-    }
-
-    public void setCageBeforeDate(Date cageBeforeDate) {
-        this.cageBeforeDate = cageBeforeDate;
-    }
-
-    public boolean isValidSAGE() {
-        return validSAGE;
-    }
-
-    public void setValidSAGE(boolean validSAGE) {
-        this.validSAGE = validSAGE;
-    }
-
-    public Date getSageAfterDate() {
-        return sageAfterDate;
-    }
-
-    public void setSageAfterDate(Date sageAfterDate) {
-        this.sageAfterDate = sageAfterDate;
-    }
-
-    public Date getSageBeforeDate() {
-        return sageBeforeDate;
-    }
-
-    public void setSageBeforeDate(Date sageBeforeDate) {
-        this.sageBeforeDate = sageBeforeDate;
-    }
-
-    public boolean isValidBATTERY() {
-        return validBATTERY;
-    }
-
-    public void setValidBATTERY(boolean validBATTERY) {
-        this.validBATTERY = validBATTERY;
-    }
-
-    public Date getBatteryAfterDate() {
-        return batteryAfterDate;
-    }
-
-    public void setBatteryAfterDate(Date batteryAfterDate) {
-        this.batteryAfterDate = batteryAfterDate;
-    }
-
-    public Date getBatteryBeforeDate() {
-        return batteryBeforeDate;
-    }
-
-    public void setBatteryBeforeDate(Date batteryBeforeDate) {
-        this.batteryBeforeDate = batteryBeforeDate;
     }
 
     public boolean isSuspended() {
@@ -464,6 +301,14 @@ public class PumpStatusEvent extends RealmObject {
         this.activeBasalPattern = activeBasalPattern;
     }
 
+    public byte getActiveTempBasalPattern() {
+        return activeTempBasalPattern;
+    }
+
+    public void setActiveTempBasalPattern(byte activeTempBasalPattern) {
+        this.activeTempBasalPattern = activeTempBasalPattern;
+    }
+
     public float getBasalRate() {
         return basalRate;
     }
@@ -520,28 +365,12 @@ public class PumpStatusEvent extends RealmObject {
         this.cgmDate = cgmDate;
     }
 
-    public Date getCgmPumpDate() {
-        return cgmPumpDate;
-    }
-
-    public void setCgmPumpDate(Date cgmPumpDate) {
-        this.cgmPumpDate = cgmPumpDate;
-    }
-
     public boolean isLowSuspendActive() {
         return lowSuspendActive;
     }
 
     public void setLowSuspendActive(boolean lowSuspendActive) {
         this.lowSuspendActive = lowSuspendActive;
-    }
-
-    public long getPumpTimeOffset() {
-        return pumpTimeOffset;
-    }
-
-    public void setPumpTimeOffset(long pumpTimeOffset) {
-        this.pumpTimeOffset = pumpTimeOffset;
     }
 
     public int getPumpStatus() {
@@ -608,20 +437,28 @@ public class PumpStatusEvent extends RealmObject {
         this.alert = alert;
     }
 
+    public int getAlertRTC() {
+        return alertRTC;
+    }
+
+    public void setAlertRTC(int alertRTC) {
+        this.alertRTC = alertRTC;
+    }
+
+    public int getAlertOFFSET() {
+        return alertOFFSET;
+    }
+
+    public void setAlertOFFSET(int alertOFFSET) {
+        this.alertOFFSET = alertOFFSET;
+    }
+
     public Date getAlertDate() {
         return alertDate;
     }
 
     public void setAlertDate(Date alertDate) {
         this.alertDate = alertDate;
-    }
-
-    public Date getAlertPumpDate() {
-        return alertPumpDate;
-    }
-
-    public void setAlertPumpDate(Date alertPumpDate) {
-        this.alertPumpDate = alertPumpDate;
     }
 
     public float getBolusingDelivered() {
@@ -640,11 +477,11 @@ public class PumpStatusEvent extends RealmObject {
         this.bolusingMinutesRemaining = bolusingMinutesRemaining;
     }
 
-    public short getBolusingReference() {
+    public byte getBolusingReference() {
         return bolusingReference;
     }
 
-    public void setBolusingReference(short bolusingReference) {
+    public void setBolusingReference(byte bolusingReference) {
         this.bolusingReference = bolusingReference;
     }
 
@@ -672,11 +509,11 @@ public class PumpStatusEvent extends RealmObject {
         this.lastBolusPumpDate = lastBolusPumpDate;
     }
 
-    public short getLastBolusReference() {
+    public byte getLastBolusReference() {
         return lastBolusReference;
     }
 
-    public void setLastBolusReference(short lastBolusReference) {
+    public void setLastBolusReference(byte lastBolusReference) {
         this.lastBolusReference = lastBolusReference;
     }
 
@@ -724,8 +561,6 @@ public class PumpStatusEvent extends RealmObject {
     public String toString() {
         return "PumpStatusEvent{" +
                 "eventDate=" + eventDate +
-                ", pumpDate=" + pumpDate +
-                ", pumpTimeOffset=" + pumpTimeOffset +
                 ", deviceName='" + deviceName + '\'' +
                 ", pumpStatus=" + pumpStatus +
                 ", cgmStatus=" + cgmStatus +
@@ -752,7 +587,6 @@ public class PumpStatusEvent extends RealmObject {
                 ", activeInsulin=" + activeInsulin +
                 ", sgv=" + sgv +
                 ", cgmDate=" + cgmDate +
-                ", cgmPumpDate=" + cgmPumpDate +
                 ", cgmExceptionType=" + cgmExceptionType +
                 ", lowSuspendActive=" + lowSuspendActive +
                 ", cgmTrend='" + cgmTrend + '\'' +
@@ -760,7 +594,6 @@ public class PumpStatusEvent extends RealmObject {
                 ", recentBGL=" + recentBGL +
                 ", alert=" + alert +
                 ", alertDate=" + alertDate +
-                ", alertPumpDate=" + alertPumpDate +
                 ", bolusingDelivered=" + bolusingDelivered +
                 ", bolusingMinutesRemaining=" + bolusingMinutesRemaining +
                 ", bolusingReference=" + bolusingReference +
@@ -774,30 +607,7 @@ public class PumpStatusEvent extends RealmObject {
                 ", calibrationDueMinutes=" + calibrationDueMinutes +
                 ", sensorRateOfChange=" + sensorRateOfChange +
                 ", oldSgvWhenNewExpected=" + oldSgvWhenNewExpected +
-                ", validPUMP=" + validPUMP +
-                ", validCGM=" + validCGM +
                 ", validSGV=" + validSGV +
-                ", validBGL=" + validBGL +
-                ", validBolus=" + validBolus +
-                ", validBolusDual=" + validBolusDual +
-                ", validBolusSquare=" + validBolusSquare +
-                ", validALERT=" + validALERT +
-                ", validSUSPEND=" + validSUSPEND +
-                ", validSUSPENDOFF=" + validSUSPENDOFF +
-                ", suspendAfterDate=" + suspendAfterDate +
-                ", suspendBeforeDate=" + suspendBeforeDate +
-                ", validTEMPBASAL=" + validTEMPBASAL +
-                ", tempBasalAfterDate=" + tempBasalAfterDate +
-                ", tempBasalBeforeDate=" + tempBasalBeforeDate +
-                ", validCAGE=" + validCAGE +
-                ", cageAfterDate=" + cageAfterDate +
-                ", cageBeforeDate=" + cageBeforeDate +
-                ", validSAGE=" + validSAGE +
-                ", sageAfterDate=" + sageAfterDate +
-                ", sageBeforeDate=" + sageBeforeDate +
-                ", validBATTERY=" + validBATTERY +
-                ", batteryAfterDate=" + batteryAfterDate +
-                ", batteryBeforeDate=" + batteryBeforeDate +
                 ", uploaded=" + uploaded +
                 '}';
     }

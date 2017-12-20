@@ -35,4 +35,348 @@
         <item>12</item>
         <item>24</item>
     </string-array>
+
+    <string-array name="cgm_history">
+        <item>1 day</item>
+        <item>7 days</item>
+        <item>30 days</item>
+        <item>60 days</item>
+        <item>90 days</item>
+    </string-array>
+
+    <string-array name="cgm_history_days">
+        <item>1</item>
+        <item>7</item>
+        <item>30</item>
+        <item>60</item>
+        <item>90</item>
+    </string-array>
+
+    <string-array name="pump_history">
+        <item>1 day</item>
+        <item>7 days</item>
+        <item>30 days</item>
+        <item>60 days</item>
+        <item>90 days</item>
+    </string-array>
+
+    <string-array name="pump_history_days">
+        <item>1</item>
+        <item>7</item>
+        <item>30</item>
+        <item>60</item>
+        <item>90</item>
+    </string-array>
+
+    <string-array name="profile_default">
+        <item>Basal 1</item>
+        <item>Basal 2</item>
+        <item>Basal 3</item>
+        <item>Basal 4</item>
+        <item>Basal 5</item>
+        <item>Workday</item>
+        <item>Day Off</item>
+        <item>Sick Day</item>
+    </string-array>
+
+    <string-array name="profile_default_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
+
+    <string-array name="active_insulin_time">
+        <item>2:00 hr</item>
+        <item>2:15 hr</item>
+        <item>2:30 hr</item>
+        <item>2:45 hr</item>
+        <item>3:00 hr</item>
+        <item>3:15 hr</item>
+        <item>3:30 hr</item>
+        <item>3:45 hr</item>
+        <item>4:00 hr</item>
+        <item>4:15 hr</item>
+        <item>4:30 hr</item>
+        <item>4:45 hr</item>
+        <item>5:00 hr</item>
+        <item>5:15 hr</item>
+        <item>5:30 hr</item>
+        <item>5:45 hr</item>
+        <item>6:00 hr</item>
+        <item>6:15 hr</item>
+        <item>6:30 hr</item>
+        <item>6:45 hr</item>
+        <item>7:00 hr</item>
+        <item>7:15 hr</item>
+        <item>7:30 hr</item>
+        <item>7:45 hr</item>
+        <item>8:00 hr</item>
+    </string-array>
+
+    <string-array name="active_insulin_time_values">
+        <item>2</item>
+        <item>2.25</item>
+        <item>2.5</item>
+        <item>2.75</item>
+        <item>3</item>
+        <item>3.25</item>
+        <item>3.5</item>
+        <item>3.75</item>
+        <item>4</item>
+        <item>4.25</item>
+        <item>4.5</item>
+        <item>4.75</item>
+        <item>5</item>
+        <item>5.25</item>
+        <item>5.5</item>
+        <item>5.75</item>
+        <item>6</item>
+        <item>6.25</item>
+        <item>6.5</item>
+        <item>6.75</item>
+        <item>7</item>
+        <item>7.25</item>
+        <item>7.5</item>
+        <item>7.75</item>
+        <item>8</item>
+    </string-array>
+
+    <string-array name="poll_period">
+        <item>10 seconds</item>
+        <item>15 seconds</item>
+        <item>20 seconds</item>
+        <item>25 seconds</item>
+        <item>30 seconds</item>
+        <item>35 seconds</item>
+        <item>40 seconds</item>
+        <item>45 seconds</item>
+        <item>50 seconds</item>
+        <item>55 seconds</item>
+        <item>60 seconds</item>
+        <item>70 seconds</item>
+        <item>80 seconds</item>
+        <item>90 seconds</item>
+        <item>100 seconds</item>
+        <item>110 seconds</item>
+        <item>120 seconds</item>
+        <item>130 seconds</item>
+        <item>140 seconds</item>
+        <item>150 seconds</item>
+    </string-array>
+
+    <string-array name="poll_period_values">
+        <item>10000</item>
+        <item>15000</item>
+        <item>20000</item>
+        <item>25000</item>
+        <item>30000</item>
+        <item>35000</item>
+        <item>40000</item>
+        <item>45000</item>
+        <item>50000</item>
+        <item>55000</item>
+        <item>60000</item>
+        <item>70000</item>
+        <item>80000</item>
+        <item>90000</item>
+        <item>100000</item>
+        <item>110000</item>
+        <item>120000</item>
+        <item>130000</item>
+        <item>140000</item>
+        <item>150000</item>
+    </string-array>
+
+    <string-array name="urchin_basal_scale">
+        <item>off</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+        <item>17</item>
+        <item>18</item>
+        <item>19</item>
+        <item>20</item>
+        <item>21</item>
+        <item>22</item>
+        <item>23</item>
+        <item>24</item>
+        <item>25</item>
+        <item>26</item>
+        <item>27</item>
+        <item>28</item>
+        <item>29</item>
+        <item>30</item>
+        <item>31</item>
+    </string-array>
+
+    <string-array name="urchin_basal_period">
+        <item>1 hour</item>
+        <item>2 hours</item>
+        <item>3 hours</item>
+        <item>4 hours</item>
+        <item>5 hours</item>
+        <item>6 hours</item>
+        <item>7 hours</item>
+        <item>8 hours</item>
+        <item>9 hours</item>
+        <item>10 hours</item>
+        <item>11 hours</item>
+        <item>12 hours</item>
+        <item>13 hours</item>
+        <item>14 hours</item>
+        <item>15 hours</item>
+        <item>16 hours</item>
+        <item>17 hours</item>
+        <item>18 hours</item>
+        <item>19 hours</item>
+        <item>20 hours</item>
+        <item>21 hours</item>
+        <item>22 hours</item>
+        <item>23 hours</item>
+        <item>24 hours</item>
+    </string-array>
+
+    <string-array name="urchin_time">
+        <item>12 hour: \'7.45\'</item>
+        <item>12 hour a/p: \'7.45p\'</item>
+        <item>12 hour A/P: \'7.45P\'</item>
+        <item>12 hour am/pm: \'7.45pm\'</item>
+        <item>12 hour AM/PM: \'7.45PM\'</item>
+        <item>24 hour: \'19.45\'</item>
+    </string-array>
+
+    <string-array name="urchin_duration">
+        <item>minutes: \'115\'</item>
+        <item>minutes: \'115m\'</item>
+        <item>hours/mins: \'1h55\' \'45\'</item>
+        <item>hours/mins: \'1h55\' \'45m\'</item>
+        <item>hours/mins: \'1h55m\' \'45m\'</item>
+    </string-array>
+
+    <string-array name="urchin_battery">
+        <item>0-100</item>
+        <item>0-100&#65130;</item>
+        <item>0-99</item>
+        <item>0-99&#65130;</item>
+        <item>0-9</item>
+        <item>Hi-Lo</item>
+        <item>H-M-L</item>
+        <item>F-H-M-L-E</item>
+    </string-array>
+
+    <string-array name="urchin_units">
+        <item>none: \'2.5\'</item>
+        <item>u: \'2.5u\'</item>
+        <item>U: \'2.5U\'</item>
+    </string-array>
+
+    <string-array name="urchin_concatenate">
+        <item>none: \'2.5u1h15m\'</item>
+        <item>space: \'2.55u 1h15m\'</item>
+        <item>dot: \'2.5u·1h15m\'</item>
+        <item>bullet: \'2.5u•1h15m\'</item>
+        <item>dash: \'2.5u-1h15m\'</item>
+        <item>slash: \'2.5u/1h15m\'</item>
+        <item>slash: \'2.5u\\1h15m\'</item>
+        <item>line: \'2.5u|1h15m\'</item>
+    </string-array>
+
+    <string-array name="urchin_status">
+        <item>empty</item>
+        <item>Nextline</item>
+        <item>Separator: space</item>
+        <item>Separator: double space</item>
+        <item>Separator: \':\'</item>
+        <item>Separator: \' : \'</item>
+        <item>Separator: \'|\'</item>
+        <item>Separator: \' | \'</item>
+        <item>Separator: \'·\'</item>
+        <item>Separator: \'•\'</item>
+        <item>Separator: \'/\'</item>
+        <item>Separator: \'\\\'</item>
+        <item>Active Insulin: \'3.5u\'</item>
+        <item>Basal: \'0.85u\'</item>
+        <item>Basal State: \'T·1h10m\' \'S·5:15p\'</item>
+        <item>Basal / State: \'0.2u\' \'0.0u·1h10m\' \'S·5:15p\'</item>
+        <item>Last Bolus: \'3u·4:30p\'</item>
+        <item>Bolusing: \'>4.5u·1h35m\'</item>
+        <item>Last Bolus / Bolusing (dynamic)</item>
+        <item>Calibration: \'12h\'</item>
+        <item>Calibration / Last Bolus / Bolusing (dynamic)</item>
+        <item>Uploader Battery</item>
+        <item>Pump Battery</item>
+        <item>Transmitter Battery</item>
+        <item>Sensor Life: \'6d\' \'9h\'</item>
+        <item>Sensor Age: \'6d\'</item>
+        <item>Reservoir Age: \'46h\'</item>
+        <item>Pump Battery Age: \'6d\'</item>
+        <item>Reservoir Units: \'29u\'</item>
+        <item>Day: \'25\'</item>
+        <item>Day: \'Tue\'</item>
+        <item>Custom Text 1</item>
+        <item>Custom Text 2</item>
+    </string-array>
+
+    <string-array name="urchin_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+        <item>17</item>
+        <item>18</item>
+        <item>19</item>
+        <item>20</item>
+        <item>21</item>
+        <item>22</item>
+        <item>23</item>
+        <item>24</item>
+        <item>25</item>
+        <item>26</item>
+        <item>27</item>
+        <item>28</item>
+        <item>29</item>
+        <item>30</item>
+        <item>31</item>
+        <item>32</item>
+        <item>33</item>
+        <item>34</item>
+        <item>35</item>
+        <item>36</item>
+        <item>37</item>
+        <item>38</item>
+        <item>39</item>
+        <item>40</item>
+    </string-array>
+
 </resources>

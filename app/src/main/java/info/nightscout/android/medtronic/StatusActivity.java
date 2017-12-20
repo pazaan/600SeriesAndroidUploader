@@ -30,7 +30,7 @@ public class StatusActivity extends AppCompatActivity {
                             .sizeDp(24)
             );
             getSupportActionBar().setElevation(0);
-            getSupportActionBar().setTitle("Status");
+            getSupportActionBar().setTitle("add");
         }
     }
 

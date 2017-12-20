@@ -3,17 +3,19 @@ package info.nightscout.android.medtronic.message;
 import android.util.Log;
 
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Date;
 
-import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.utils.HexDump;
+
+import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoULong;
+import static info.nightscout.android.utils.ToolKit.read16BEtoShort;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
+import static info.nightscout.android.utils.ToolKit.read16BEtoULong;
 
 /**
  * Created by lgoedhart on 27/03/2016.
@@ -21,7 +23,7 @@ import info.nightscout.android.utils.HexDump;
 public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessage {
     private static final String TAG = PumpStatusResponseMessage.class.getSimpleName();
 
-    // Data from the Medtronic Pump Status message
+    // Data from the Medtronic Pump add message
 
     private byte pumpStatus;
     private byte cgmStatus;
@@ -37,6 +39,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private boolean cgmException;
     private boolean cgmWarmUp;
     private byte activeBasalPattern;
+    private byte activeTempBasalPattern;
     private float basalRate;
     private float tempBasalRate;
     private short tempBasalPercentage;
@@ -47,20 +50,28 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private short minutesOfInsulinRemaining; // 25h == "more than 1 day"
     private float activeInsulin;
     private int sgv;
+
     private Date cgmDate;
+    private int cgmRTC;
+    private int cgmOFFSET;
+
     private byte cgmExceptionType;
     private boolean lowSuspendActive;
     private PumpStatusEvent.CGM_TREND cgmTrend;
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int recentBGL; // in mg/dL. 0 means no recent finger bg reading.
     private short alert;
+
     private Date alertDate;
+    private int alertRTC;
+    private int alertOFFSET;
+
     private float bolusingDelivered;
     private short bolusingMinutesRemaining;
-    private short bolusingReference;
+    private byte bolusingReference;
     private float lastBolusAmount;
     private Date lastBolusDate;
-    private short lastBolusReference;
+    private byte lastBolusReference;
     private byte transmitterBattery;
     private byte transmitterControl;
     private short calibrationDueMinutes;
@@ -69,26 +80,14 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     protected PumpStatusResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
-        if (this.encode().length < (57 + 96)) {
-            // Invalid message. Don't try and parse it
-            // TODO - deal with this more elegantly
-            Log.e(TAG, "Invalid message received for updatePumpStatus");
-            throw new UnexpectedMessageException("Invalid message received for updatePumpStatus");
+        if (!MedtronicSendMessageRequestMessage.MessageType.READ_PUMP_STATUS.response(read16BEtoUInt(payload, 0x01))) {
+            Log.e(TAG, "Invalid message received for PumpTime");
+            throw new UnexpectedMessageException("Invalid message received for PumpStatus");
         }
 
-        byte bufferSize = (byte) (this.encode()[0x38] - 2); // TODO - getting the size should be part of the superclass.
-        ByteBuffer statusBuffer = ByteBuffer.allocate(bufferSize);
-        statusBuffer.order(ByteOrder.BIG_ENDIAN);
-        statusBuffer.put(this.encode(), 0x39, bufferSize);
-
-        if (BuildConfig.DEBUG) {
-            String outputString = HexDump.dumpHexString(statusBuffer.array());
-            Log.d(TAG, "PAYLOAD: " + outputString);
-        }
-
-        // Status Flags
-        pumpStatus = statusBuffer.get(0x03);
-        cgmStatus = statusBuffer.get(0x41);
+        // add Flags
+        pumpStatus = payload[0x03];
+        cgmStatus = payload[0x41];
 
         suspended = (pumpStatus & 0x01) != 0x00;
         bolusingNormal = (pumpStatus & 0x02) != 0x00;
@@ -102,46 +101,52 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         cgmException = (cgmStatus & 0x04) != 0x00;
 
         // Active basal pattern
-        activeBasalPattern = statusBuffer.get(0x1A);
+        byte pattern = payload[0x1A];
+        activeBasalPattern = (byte) (pattern & 0x0F);
+        activeTempBasalPattern = (byte) (pattern >> 4 & 0x0F);
 
         // Normal basal rate
-        long rawNormalBasal = statusBuffer.getInt(0x1B);
+        long rawNormalBasal = read32BEtoULong(payload, 0x1B);
         basalRate = new BigDecimal(rawNormalBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Temp basal rate
-        long rawTempBasal = statusBuffer.getInt(0x1F) & 0x0000000000FFFFFFL;
+        long rawTempBasal = read32BEtoULong(payload, 0x1F);
         tempBasalRate = new BigDecimal(rawTempBasal / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Temp basal percentage
-        tempBasalPercentage =  (short) (statusBuffer.get(0x23) & 0x00FF);
+        tempBasalPercentage =  (short) (payload[0x23] & 0x00FF);
 
         // Temp basal minutes remaining
-        tempBasalMinutesRemaining = (short) (statusBuffer.getShort(0x24) & 0x00FF);
+        tempBasalMinutesRemaining = (short) (read16BEtoShort(payload, 0x24) &  0x00FF);
 
         // Units of insulin delivered as basal today
-        long rawBasalUnitsDeliveredToday = statusBuffer.getInt(0x26) & 0x0000000000FFFFFFL;
+        long rawBasalUnitsDeliveredToday = read32BEtoULong(payload, 0x26);
         basalUnitsDeliveredToday = new BigDecimal(rawBasalUnitsDeliveredToday / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Pump battery percentage
-        batteryPercentage = statusBuffer.get(0x2A);
+        batteryPercentage = (short) (payload[0x2A] & 0x00FF);
 
         // Reservoir amount
-        long rawReservoirAmount = statusBuffer.getInt(0x2B) & 0x0000000000FFFFFFL;
+        long rawReservoirAmount = read32BEtoULong(payload, 0x2B);
         reservoirAmount = new BigDecimal(rawReservoirAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
         // Amount of insulin left in pump (in minutes)
-        byte insulinHours = statusBuffer.get(0x2F);
-        byte insulinMinutes = statusBuffer.get(0x30);
+        byte insulinHours = payload[0x2F];
+        byte insulinMinutes = payload[0x30];
         minutesOfInsulinRemaining = (short) ((insulinHours * 60) + insulinMinutes);
 
         // Active insulin
-        long rawActiveInsulin = statusBuffer.getInt(0x31) & 0x0000000000FFFFFFL;
+        long rawActiveInsulin = read32BEtoULong(payload, 0x31);
         activeInsulin = new BigDecimal(rawActiveInsulin / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
 
-        // CGM SGV
-        sgv = (statusBuffer.getShort(0x35) & 0x0000FFFF); // In mg/DL. 0x0000 = no CGM reading, 0x03NN = sensor exception
-        cgmDate = MessageUtils.decodeDateTime((long) statusBuffer.getInt(0x37) & 0x00000000FFFFFFFFL, (long) statusBuffer.getInt(0x3B));
+        // CGM time
+        cgmRTC = read32BEtoInt(payload, 0x37);
+        cgmOFFSET = read32BEtoInt(payload, 0x3B);
+        cgmDate = MessageUtils.decodeDateTime(cgmRTC & 0xFFFFFFFFL, cgmOFFSET);
         Log.d(TAG, "original cgm/sgv date: " + cgmDate);
+
+        // CGM SGV
+        sgv = read16BEtoUInt(payload, 0x35); // In mg/DL. 0x0000 = no CGM reading, 0x03NN = sensor exception
 
         if (sgv >= 0x0300) {
             cgmExceptionType = (byte) (sgv & 0x00FF);
@@ -150,43 +155,45 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             sgv = 0;
         } else {
             cgmExceptionType = 0;
-            cgmTrend = PumpStatusEvent.CGM_TREND.fromMessageByte((byte) (statusBuffer.get(0x40) & 0xF0)); // masked as low nibble can contain value when transmitter battery low
+            cgmTrend = PumpStatusEvent.CGM_TREND.fromMessageByte((byte) (payload[0x40] & 0xF0)); // masked as low nibble can contain value when transmitter battery low
             cgmWarmUp = false;
         }
 
         // Predictive low suspend
         // TODO - there is more status info in this byte other than just a boolean yes/no
         // noted: 0x01=high 0x04=before high 0x08=before low 0x0A=low 0x80=suspend 0x92=suspend low
-        lowSuspendActive = statusBuffer.get(0x3F) != 0;
+        lowSuspendActive = payload[0x3F] != 0;
 
         // Recent Bolus Wizard
-        recentBolusWizard = statusBuffer.get(0x48) != 0;
+        recentBolusWizard = payload[0x48] != 0;
 
         // Recent BGL
-        recentBGL = statusBuffer.getShort(0x49) & 0x0000FFFF; // In mg/DL
+        recentBGL = read16BEtoUInt(payload, 0x49); // In mg/DL
 
         // Active alert
-        alert = statusBuffer.getShort(0x4B);
-        alertDate = MessageUtils.decodeDateTime((long) statusBuffer.getInt(0x4D) & 0x00000000FFFFFFFFL, (long) statusBuffer.getInt(0x51));
+        alert = read16BEtoShort(payload, 0x4B);
+        alertRTC = read32BEtoInt(payload, 0x4D);
+        alertOFFSET = read32BEtoInt(payload, 0x51);
+        alertDate = MessageUtils.decodeDateTime(alertRTC & 0xFFFFFFFFL, alertOFFSET);
 
         // Now bolusing
-        long rawBolusingDelivered = statusBuffer.getInt(0x04) & 0x0000000000FFFFFFL;
+        long rawBolusingDelivered = read32BEtoULong(payload, 0x04);
         bolusingDelivered = new BigDecimal(rawBolusingDelivered / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
-        bolusingMinutesRemaining = statusBuffer.getShort(0x0C);
-        bolusingReference = statusBuffer.getShort(0x0E);
+        bolusingMinutesRemaining = read16BEtoShort(payload, 0x0C);
+        bolusingReference = payload[0x0E];
 
         // Last bolus
-        long rawLastBolusAmount = statusBuffer.getInt(0x10) & 0x0000000000FFFFFFL;
+        long rawLastBolusAmount = read32BEtoULong(payload, 0x10);
         lastBolusAmount = new BigDecimal(rawLastBolusAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
-        lastBolusDate = MessageUtils.decodeDateTime((long) statusBuffer.getInt(0x14) & 0x00000000FFFFFFFFL, 0);
-        lastBolusReference = statusBuffer.getShort(0x18);
+        lastBolusDate = MessageUtils.decodeDateTime(read32BEtoULong(payload, 0x14), 0);
+        lastBolusReference = payload[0x18];
 
         // Calibration
-        calibrationDueMinutes = statusBuffer.getShort(0x43);
+        calibrationDueMinutes = read16BEtoShort(payload, 0x43);
 
         // Transmitter
-        transmitterControl = statusBuffer.get(0x43);
-        transmitterBattery  = statusBuffer.get(0x45);
+        transmitterControl = payload[0x43];
+        transmitterBattery  = payload[0x45];
         // Normalise transmitter battery to percentage shown on pump sensor status screen
         if (transmitterBattery == 0x3F) transmitterBattery = 100;
         else if (transmitterBattery == 0x2B) transmitterBattery = 73;
@@ -196,7 +203,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         else transmitterBattery = 0;
 
         // Sensor
-        long rawSensorRateOfChange = statusBuffer.getShort(0x46);
+        long rawSensorRateOfChange = read16BEtoULong(payload, 0x46);
         sensorRateOfChange = new BigDecimal(rawSensorRateOfChange / 100f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
     }
 
@@ -207,7 +214,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
      */
     public void updatePumpRecord(PumpStatusEvent pumpRecord) {
 
-        // Status Flags
+        // add Flags
         pumpRecord.setPumpStatus(pumpStatus);
         pumpRecord.setCgmStatus(cgmStatus);
 
@@ -226,6 +233,9 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Active basal pattern
         pumpRecord.setActiveBasalPattern(activeBasalPattern);
+
+        // Active temp basal pattern
+        pumpRecord.setActiveTempBasalPattern(activeTempBasalPattern);
 
         // Normal basal rate
         pumpRecord.setBasalRate(basalRate);
@@ -254,10 +264,17 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         // Active insulin
         pumpRecord.setActiveInsulin(activeInsulin);
 
+        // CGM time
+        pumpRecord.setCgmRTC(cgmRTC);
+        pumpRecord.setCgmOFFSET(cgmOFFSET);
+        //pumpRecord.setCgmDate(new Date(cgmDate.getTime() - pumpRecord.getClockDifference()));
+
+        // Date using cgmRTC + eventOFFSET as pump clock may have changed
+        Date cgmEventDate = MessageUtils.decodeDateTime(cgmRTC & 0xFFFFFFFFL, pumpRecord.getEventOFFSET());
+        pumpRecord.setCgmDate(new Date(cgmEventDate.getTime() - pumpRecord.getClockDifference()));
+
         // CGM SGV data
         pumpRecord.setSgv(sgv);
-        pumpRecord.setCgmPumpDate(cgmDate);
-        pumpRecord.setCgmDate(new Date(cgmDate.getTime() - pumpRecord.getPumpTimeOffset()));
         pumpRecord.setCgmTrend(cgmTrend);
         pumpRecord.setCgmExceptionType(cgmExceptionType);
 
@@ -270,8 +287,13 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Active alert
         pumpRecord.setAlert(alert);
-        pumpRecord.setAlertPumpDate(alertDate);
-        pumpRecord.setAlertDate(new Date(alertDate.getTime() - pumpRecord.getPumpTimeOffset()));
+        pumpRecord.setAlertRTC(cgmRTC);
+        pumpRecord.setAlertOFFSET(cgmOFFSET);
+        //pumpRecord.setAlertDate(new Date(alertDate.getTime() - pumpRecord.getClockDifference()));
+
+        // Date using alertRTC + eventOFFSET as pump clock may have changed
+        Date alertEventDate = MessageUtils.decodeDateTime(alertRTC & 0xFFFFFFFFL, pumpRecord.getEventOFFSET());
+        pumpRecord.setAlertDate(new Date(alertEventDate.getTime() - pumpRecord.getClockDifference()));
 
         // Now bolusing
         pumpRecord.setBolusingDelivered(bolusingDelivered);
@@ -280,9 +302,9 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Last bolus
         pumpRecord.setLastBolusAmount(lastBolusAmount);
-        pumpRecord.setLastBolusPumpDate(lastBolusDate);
-        pumpRecord.setLastBolusDate(new Date(lastBolusDate.getTime() - pumpRecord.getPumpTimeOffset()));
         pumpRecord.setLastBolusReference(lastBolusReference);
+        pumpRecord.setLastBolusPumpDate(lastBolusDate);
+        pumpRecord.setLastBolusDate(new Date(lastBolusDate.getTime() - pumpRecord.getClockDifference()));
 
         // Calibration
         pumpRecord.setCalibrationDueMinutes(calibrationDueMinutes);
