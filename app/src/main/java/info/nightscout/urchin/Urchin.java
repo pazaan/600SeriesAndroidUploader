@@ -109,12 +109,23 @@ public class Urchin {
 
         mContext = context;
 
+        update();
+    }
+
+    private void openRealm() {
         realm = Realm.getDefaultInstance();
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
         dataStore = storeRealm.where(DataStore.class).findFirst();
+    }
 
-        update();
+    private void closeRealm() {
+        if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
+        if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
+        if (realm != null && !realm.isClosed()) realm.close();
+        historyRealm = null;
+        storeRealm = null;
+        realm = null;
     }
 
     public void close() {
@@ -123,9 +134,7 @@ public class Urchin {
         if (pebbleAckReceiver != null) mContext.unregisterReceiver(pebbleAckReceiver);
         pebbleAckReceiver = null;
 
-        if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
-        if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
-        if (realm != null && !realm.isClosed()) realm.close();
+        closeRealm();
     }
 
     public void refresh() {
@@ -158,83 +167,104 @@ public class Urchin {
     }
 
     public void update() {
+        openRealm();
+
         if (!dataStore.isUrchinEnable()) {
             Log.d(TAG, "update: urchin disabled");
             if (pebbleAckReceiver != null) mContext.unregisterReceiver(pebbleAckReceiver);
             pebbleAckReceiver = null;
-            return;
-        }
 
-        Log.d(TAG, "update: urchin enabled");
+        } else {
 
-        timeNow = System.currentTimeMillis();
-        ignoreACK = timeNow + 2000L;
+            Log.d(TAG, "update: urchin enabled");
 
-        RealmResults<PumpStatusEvent> pumpresults = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(timeNow - 24 * 60 * 1000L))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+            timeNow = System.currentTimeMillis();
+            ignoreACK = timeNow + 2000L;
 
-        RealmResults<PumpStatusEvent> cgmresults = pumpresults.where()
-                .equalTo("cgmActive", true)
-                .findAllSorted("cgmDate", Sort.DESCENDING);
+            RealmResults<PumpStatusEvent> pumpresults = realm.where(PumpStatusEvent.class)
+                    .greaterThan("eventDate", new Date(timeNow - 24 * 60 * 1000L))
+                    .findAllSorted("eventDate", Sort.DESCENDING);
 
-        RealmResults<PumpHistoryCGM> sgvresults = historyRealm.where(PumpHistoryCGM.class)
-                .notEqualTo("sgv", 0)
-                .greaterThan("eventDate", new Date(timeNow - 2 * 60 * 60000L))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+            RealmResults<PumpStatusEvent> cgmresults = pumpresults.where()
+                    .equalTo("cgmActive", true)
+                    .findAllSorted("cgmDate", Sort.DESCENDING);
 
-        long lastActualEventTime = 0;
+            RealmResults<PumpHistoryCGM> sgvresults = historyRealm.where(PumpHistoryCGM.class)
+                    .notEqualTo("sgv", 0)
+                    .greaterThan("eventDate", new Date(timeNow - 2 * 60 * 60000L))
+                    .findAllSorted("eventDate", Sort.DESCENDING);
 
-        if (cgmresults.size() > 0) {
-            long lastRecievedEventTime = cgmresults.first().getCgmDate().getTime();
-            // normalise last received cgm time to current time window
-            lastActualEventTime = lastRecievedEventTime + (((timeNow - lastRecievedEventTime) / POLL_PERIOD_MS) * POLL_PERIOD_MS);
-        }
+            long lastReceivedEventTime;
+            long lastReceivedCgmTime;
+            long lastActualCgmTime;
 
-        if (pumpresults.size() > 0) {
-            pumpStatusEvent = pumpresults.first();
-            if (lastActualEventTime == 0)
-                lastActualEventTime = pumpStatusEvent.getEventDate().getTime();
-        }
+            if (pumpresults.size() > 0) {
+                pumpStatusEvent = pumpresults.first();
+                lastReceivedEventTime = pumpStatusEvent.getEventDate().getTime();
 
-        eventTime = lastActualEventTime;
+                if (cgmresults.size() > 0) {
+                    lastReceivedCgmTime = cgmresults.first().getCgmDate().getTime();
+                    // normalise last received cgm time to current time window
+                    lastActualCgmTime = lastReceivedCgmTime + (((timeNow - lastReceivedCgmTime) / POLL_PERIOD_MS) * POLL_PERIOD_MS);
 
-        sgv = 0;
-        delta = NO_DELTA_VALUE;
-        trend = TREND.NONE.ordinal();
+                    // normalise last received pump event to cgm time window
+                    if (lastActualCgmTime > lastReceivedEventTime) {
+                        // no current event data from pump
+                        eventTime = lastReceivedEventTime - ((lastReceivedEventTime - lastReceivedCgmTime) % POLL_PERIOD_MS);
+                    } else {
+                        eventTime = lastActualCgmTime;
+                    }
 
-        if (sgvresults.size() > 0) {
-            long age = (lastActualEventTime - sgvresults.first().getEventDate().getTime()) / 1000L;
-
-            // don't show any sgv if older then 60mins
-            if (age < 61 * 60)
-                sgv = sgvresults.first().getSgv();
-
-            // don't show trend/delta if older then 10mins
-            if (age <= 11 * 60) {
-                if (sgvresults.first().getCgmTrend() != null)
-                    trend = PumpStatusEvent.CGM_TREND.valueOf(sgvresults.first().getCgmTrend()).ordinal();
-
-                // don't show delta if older then 5 mins
-                if (sgvresults.size() > 1
-                        && sgvresults.get(0).getCgmRTC() - sgvresults.get(1).getCgmRTC() < 6 * 60)
-                    delta = sgvresults.get(0).getSgv() - sgvresults.get(1).getSgv();
+                } else {
+                    // no cgm data
+                    eventTime = lastReceivedEventTime;
+                }
+            } else {
+                // no pump data
+                eventTime = timeNow - 24 * 60 * 60000L;
             }
+
+            sgv = 0;
+            delta = NO_DELTA_VALUE;
+            trend = TREND.NONE.ordinal();
+
+            if (sgvresults.size() > 0) {
+                long age = (eventTime - sgvresults.first().getEventDate().getTime()) / 1000L;
+
+                // don't show any sgv if older then 60mins
+                if (age < 61 * 60)
+                    sgv = sgvresults.first().getSgv();
+
+                // don't show trend/delta if older then 10mins
+                if (age < 11 * 60) {
+                    if (sgvresults.first().getCgmTrend() != null)
+                        trend = PumpStatusEvent.CGM_TREND.valueOf(sgvresults.first().getCgmTrend()).ordinal();
+
+                    // don't show delta if sgv period older then 5 mins
+                    if (sgvresults.size() > 1
+                            && sgvresults.get(0).getCgmRTC() - sgvresults.get(1).getCgmRTC() < 6 * 60)
+                        delta = sgvresults.get(0).getSgv() - sgvresults.get(1).getSgv();
+                }
+            }
+
+            text = buildStatusLayout();
+
+            if (text.length() > STATUS_BAR_MAX_LENGTH)
+                text = text.substring(0, STATUS_BAR_MAX_LENGTH);
+
+            sgvs = graphSgv(eventTime - (TIME_STEP / 2));
+
+            extra = graphBasal(eventTime - (TIME_STEP / 2));
+            extra = graphBolus(eventTime - TIME_STEP, extra);
+            extra = graphBolusPop(eventTime - TIME_STEP, extra);
+
+            // drop ref to Realm object
+            pumpStatusEvent = null;
+
+            refresh();
         }
 
-        text = buildStatusLayout();
-
-        if (text.length() > STATUS_BAR_MAX_LENGTH)
-            text = text.substring(0,255);
-
-        sgvs = graphSgv(lastActualEventTime - (TIME_STEP / 2));
-
-        extra = graphBasal(lastActualEventTime - (TIME_STEP / 2));
-        extra = graphBolus(lastActualEventTime - TIME_STEP, extra);
-        extra = graphBolusPop(lastActualEventTime - TIME_STEP, extra);
-
-        pumpStatusEvent = null;
-        refresh();
+        closeRealm();
     }
 
     private void messageReceiver() {
