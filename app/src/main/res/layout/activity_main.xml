@@ -120,10 +120,19 @@
 
     </LinearLayout>
 
-    <com.jjoe64.graphview.GraphView
+    <android.support.percent.PercentRelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:gravity="center_horizontal"
         android:layout_width="match_parent"
-        android:layout_height="100dip"
-        android:id="@+id/chart" />
+        android:layout_height="wrap_content">
+        <com.jjoe64.graphview.GraphView
+            app:layout_widthPercent="100%"
+            app:layout_aspectRatio="333%"
+            app:layout_marginTopPercent="0%"
+            app:layout_marginLeftPercent="0%"
+            android:id="@+id/chart"/>
+    </android.support.percent.PercentRelativeLayout>
 
     <ScrollView
         android:id="@+id/scrollView"

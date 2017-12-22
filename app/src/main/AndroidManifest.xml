@@ -29,7 +29,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!-- I have set screenOrientation to "portrait" to avoid the restart of AsyncTasks when you rotate the phone -->
         <!-- configChanges="uiMode" added to avoid restart of AsyncTasks when phone is plugged into charger/dock (for phones that can do usb otg & charging simultaneously -->
         <activity
             android:name=".medtronic.MainActivity"
@@ -37,8 +36,8 @@
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:persistableMode="persistNever"
-            android:configChanges="uiMode"
-            android:screenOrientation="portrait">
+            android:configChanges="uiMode">
+
         </activity>
         <activity
             android:name=".settings.SettingsActivity"
@@ -73,6 +72,14 @@
                 android:resource="@xml/device_filter" />
         </activity>
 
+        <activity
+            android:name=".AutoStartActivity"
+            android:icon="@drawable/ic_launcher"
+            android:theme = "@android:style/Theme.Translucent"
+            android:taskAffinity=""
+            android:label="@string/app_name">
+        </activity>
+
         <service
             android:name=".upload.nightscout.NightscoutUploadService"
             android:icon="@drawable/ic_launcher"
@@ -97,18 +104,20 @@
 
         <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"
             />
-        <receiver android:name=".AutoStart">
+        <receiver android:name=".AutoStartReceiver">
             <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
         <receiver android:name=".medtronic.service.MedtronicCnlShutdownReceiver">
             <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
                 <action android:name="android.intent.action.ACTION_SHUTDOWN" />
                 <action android:name="android.intent.action.QUICKBOOT_POWEROFF" />
             </intent-filter>
         </receiver>
-
     </application>
 
 </manifest>
