@@ -636,7 +636,7 @@ public class Urchin {
         String text = "";
 
         if (pumpStatusEvent != null
-                && pumpStatusEvent.getSgv() > 0
+                && pumpStatusEvent.isCgmActive()
                 && pumpStatusEvent.getEventDate().getTime() >= timeNow - 15 *60000L) {
 
             text = "";
