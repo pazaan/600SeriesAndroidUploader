@@ -77,14 +77,14 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
 
             if (suspend) {
                 treatment.setCreated_at(programmedDate);
-                treatment.setDuration(duration);
+                treatment.setDuration((float) duration);
                 treatment.setAbsolute((float) 0);
                 notes = PumpHistoryParser.TextEN.NS_SUSPEND.getText() + ": " +
                         PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.SUSPEND_REASON.convert(suspendReason).name()).getText();
 
             } else if (resume) {
                 treatment.setCreated_at(programmedDate);
-                treatment.setDuration(0);
+                treatment.setDuration((float) 0);
                 notes = PumpHistoryParser.TextEN.NS_RESUME.getText() + ": " +
                         PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.RESUME_REASON.convert(resumeReason).name()).getText();
 
@@ -94,7 +94,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                 notes += "Temp Basal:";
 
                 if (PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(type)) {
-                    treatment.setPercent(percentageOfRate - 100);
+                    treatment.setPercent((float) (percentageOfRate - 100));
                     notes += " " + percentageOfRate + "%";
                 } else {
                     treatment.setAbsolute((float) rate);
@@ -107,10 +107,10 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                     notes += " [" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.TEMP_BASAL_PRESET.convert(preset).name()).getText() + "]";
 
                 if (!canceled) {
-                    treatment.setDuration(duration);
+                    treatment.setDuration((float) duration);
                 } else {
                     int minutes = (int) Math.ceil((completedRTC - programmedRTC) / 60);
-                    treatment.setDuration(minutes);
+                    treatment.setDuration((float) minutes);
                     notes += " * canceled, duration " + minutes + " minutes";
                     uploadItem.update();
                 }

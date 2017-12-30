@@ -123,6 +123,7 @@ public class Urchin {
         if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
         if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
         if (realm != null && !realm.isClosed()) realm.close();
+        dataStore = null;
         historyRealm = null;
         storeRealm = null;
         realm = null;

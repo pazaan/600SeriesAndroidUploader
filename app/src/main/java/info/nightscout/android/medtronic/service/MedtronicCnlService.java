@@ -355,6 +355,11 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                         cnlReader.requestReadInfo();
 
+                        // investigation: Negotiate Chan 0x81 empty response issue, always requesting key seems to stop this happening? why that?
+                        // negotiateChannel has more details
+                        cnlReader.requestLinkKey();
+                        //info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
+
                         final long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
                         Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xffffff));
 
@@ -393,11 +398,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                             userLogMessage(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                             Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
-
-                            // investigation: Negotiate Chan 0x81 empty response issue, always requesting key seems to stop this happening? why that?
-                            // negotiateChannel has more details
-                            cnlReader.requestLinkKey();
-                            //info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
 
                             // read pump status
                             final PumpStatusEvent pumpRecord = new PumpStatusEvent();
@@ -517,20 +517,32 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         CommsError++;
                         pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollErrorRetry() : POLL_ERROR_RETRY_MS;
                         Log.e(TAG, "Unexpected Message", e);
-                        userLogMessage(ICON_WARN + "Communication Error: " + e.getMessage());
+                        if (dataStore.isDbgEnableExtendedErrors())
+                            userLogMessage(ICON_WARN + "Communication Error: " + e.getMessage());
+                        else
+                            userLogMessage(ICON_WARN + "Communication Error: busy/noisy");
                     } catch (TimeoutException e) {
                         CommsError++;
                         pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollErrorRetry() : POLL_ERROR_RETRY_MS;
                         Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
-                        userLogMessage(ICON_WARN + "Timeout Error: " + e.getMessage());
+                        if (dataStore.isDbgEnableExtendedErrors())
+                            userLogMessage(ICON_WARN + "Timeout Error: " + e.getMessage());
+                        else
+                            userLogMessage(ICON_WARN + "Timeout communicating with the pump.");
                     } catch (ChecksumException e) {
                         CommsError++;
                         Log.e(TAG, "Checksum error getting message from the Contour Next Link.", e);
-                        userLogMessage(ICON_WARN + "Checksum Error: " + e.getMessage());
+                        if (dataStore.isDbgEnableExtendedErrors())
+                            userLogMessage(ICON_WARN + "Checksum Error: " + e.getMessage());
+                        else
+                            userLogMessage(ICON_WARN + "Checksum error getting message from the Contour Next Link.");
                     } catch (EncryptionException e) {
                         CommsError++;
                         Log.e(TAG, "Error decrypting messages from Contour Next Link.", e);
-                        userLogMessage(ICON_WARN + "Decryption Error: " + e.getMessage());
+                        if (dataStore.isDbgEnableExtendedErrors())
+                            userLogMessage(ICON_WARN + "Decryption Error: " + e.getMessage());
+                        else
+                            userLogMessage(ICON_WARN + "Error decrypting messages from Contour Next Link.");
                     } catch (NoSuchAlgorithmException e) {
                         CommsError++;
                         Log.e(TAG, "Could not determine CNL HMAC", e);
@@ -548,8 +560,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 } catch (IOException e) {
                     CommsError++;
                     Log.e(TAG, "Error connecting to Contour Next Link.", e);
-                    userLogMessage(ICON_WARN + "Error connecting to Contour Next Link.");
-                    //userLogMessage(ICON_WARN + "Error connecting to Contour Next Link. " + e.getMessage());
+                    if (dataStore.isDbgEnableExtendedErrors())
+                        userLogMessage(ICON_WARN + "Error connecting to Contour Next Link: " + e.getMessage());
+                    else
+                        userLogMessage(ICON_WARN + "Error connecting to Contour Next Link.");
                     if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + "CNL reset successful.");
                 } catch (ChecksumException e) {
                     CommsError++;
@@ -567,7 +581,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 } catch (UnexpectedMessageException e) {
                     CommsError++;
                     Log.e(TAG, "Could not close connection.", e);
-                    userLogMessage(ICON_WARN + "Could not close connection: " + e.getMessage());
+                    if (dataStore.isDbgEnableExtendedErrors())
+                        userLogMessage(ICON_WARN + "Could not close connection: " + e.getMessage());
+                    else
+                        userLogMessage(ICON_WARN + "Could not close connection.");
                     if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + "CNL reset successful.");
                 } finally {
                     shutdownProtect = false;
@@ -576,8 +593,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     //if (cnlClear > 0 || cnl0x81 > 0) userLogMessage("*** cnlClear=" + cnlClear + " cnl0x81=" + cnl0x81);
 
                     nextpoll = requestPollTime(timePollStarted, pollInterval);
-//                    userLogMessage("Next poll due at: " + dateFormatter.format(nextpoll));
-                    userLogMessage("Next poll due at: " + dateFormatter.format(nextpoll) + " [" + (System.currentTimeMillis() - timePollStarted) + "ms]");
+                    if (dataStore.isDbgEnableExtendedErrors())
+                        userLogMessage("Next poll due at: " + dateFormatter.format(nextpoll) + " [" + (System.currentTimeMillis() - timePollStarted) + "ms]");
+                    else
+                        userLogMessage("Next poll due at: " + dateFormatter.format(nextpoll));
 
                     RemoveOutdatedRecords();
                 }

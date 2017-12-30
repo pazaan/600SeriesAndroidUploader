@@ -50,6 +50,9 @@ public class DataStore extends RealmObject {
     private long sysPollOldSgvRetry;
     private boolean sysEnableWait500ms;
 
+    private boolean dbgEnableExtendedErrors;
+    private boolean dbgEnableUploadErrors;
+
     private boolean nsEnableTreatments;
     private boolean nsEnableHistorySync;
     private boolean nsEnableFingerBG;
@@ -352,6 +355,22 @@ public class DataStore extends RealmObject {
 
     public void setSysEnableWait500ms(boolean sysEnableWait500ms) {
         this.sysEnableWait500ms = sysEnableWait500ms;
+    }
+
+    public boolean isDbgEnableExtendedErrors() {
+        return dbgEnableExtendedErrors;
+    }
+
+    public void setDbgEnableExtendedErrors(boolean dbgEnableExtendedErrors) {
+        this.dbgEnableExtendedErrors = dbgEnableExtendedErrors;
+    }
+
+    public boolean isDbgEnableUploadErrors() {
+        return dbgEnableUploadErrors;
+    }
+
+    public void setDbgEnableUploadErrors(boolean dbgEnableUploadErrors) {
+        this.dbgEnableUploadErrors = dbgEnableUploadErrors;
     }
 
     public boolean isNsEnableTreatments() {

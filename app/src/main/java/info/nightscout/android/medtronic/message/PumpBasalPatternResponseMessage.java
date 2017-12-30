@@ -29,7 +29,7 @@ public class PumpBasalPatternResponseMessage extends MedtronicSendMessageRespons
             throw new UnexpectedMessageException("Invalid message received for PumpBasalPattern");
         }
 
-        basalPattern = Arrays.copyOfRange(payload, 3, payload.length - 2);
+        basalPattern = Arrays.copyOfRange(payload, 3, payload.length);
     }
 
     public byte[] getBasalPattern() {
@@ -40,6 +40,8 @@ public class PumpBasalPatternResponseMessage extends MedtronicSendMessageRespons
         int index = 0;
         double rate;
         int time;
+
+        Log.d(TAG, "Pattern data size: " + basalPattern.length);
 
         int number = read8toUInt(basalPattern, index++);
         int items = read8toUInt(basalPattern, index++);

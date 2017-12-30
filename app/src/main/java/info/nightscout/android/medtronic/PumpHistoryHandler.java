@@ -414,7 +414,8 @@ public class PumpHistoryHandler {
             Date[] range = cnlReader.getHistory(start, end, historyType);
 
             Log.d(TAG, historyTAG + "received  " + (range[0] == null ? "null" : dateFormatter.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatter.format(range[1])));
-            userLogMessage(historyTAG + "received \n      " + (range[0] == null ? "null" : dateFormatter.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatter.format(range[1])));
+            if (dataStore.isDbgEnableExtendedErrors())
+                userLogMessage(historyTAG + "received \n      " + (range[0] == null ? "null" : dateFormatter.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatter.format(range[1])));
 
             final Date pulledFrom = range[0];
             //final Date pulledTo = range[1];

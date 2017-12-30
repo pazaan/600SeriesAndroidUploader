@@ -29,7 +29,7 @@ public class BolusWizardTargetsResponseMessage extends MedtronicSendMessageRespo
             throw new UnexpectedMessageException("Invalid message received for BolusWizardTargets");
         }
 
-        targets = Arrays.copyOfRange(payload, 5 ,payload.length - 2);
+        targets = Arrays.copyOfRange(payload, 5 ,payload.length);
     }
 
     public byte[] getTargets() {

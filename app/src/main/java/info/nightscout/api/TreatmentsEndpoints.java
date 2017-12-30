@@ -72,22 +72,22 @@ public interface TreatmentsEndpoints {
         Float insulin;
 
         @SerializedName("duration")
-        Integer duration;
+        Float duration;
 
         @SerializedName("absolute")
         Float absolute;
 
         @SerializedName("percent")
-        Integer percent;
+        Float percent;
 
         @SerializedName("relative")
-        Integer relative;
+        Float relative;
 
         @SerializedName("preBolus")
         Float preBolus;
 
         @SerializedName("carbs")
-        Integer carbs;
+        Float carbs;
 
         @SerializedName("glucose")
         BigDecimal glucose;
@@ -212,11 +212,11 @@ public interface TreatmentsEndpoints {
             this.insulin = insulin;
         }
 
-        public Integer getDuration() {
+        public Float getDuration() {
             return duration;
         }
 
-        public void setDuration(Integer duration) {
+        public void setDuration(Float duration) {
             this.duration = duration;
         }
 
@@ -228,19 +228,19 @@ public interface TreatmentsEndpoints {
             this.absolute = absolute;
         }
 
-        public Integer getPercent() {
+        public Float getPercent() {
             return percent;
         }
 
-        public void setPercent(Integer percent) {
+        public void setPercent(Float percent) {
             this.percent = percent;
         }
 
-        public Integer getRelative() {
+        public Float getRelative() {
             return relative;
         }
 
-        public void setRelative(Integer relative) {
+        public void setRelative(Float relative) {
             this.relative = relative;
         }
 
@@ -252,11 +252,11 @@ public interface TreatmentsEndpoints {
             this.preBolus = preBolus;
         }
 
-        public Integer getCarbs() {
+        public Float getCarbs() {
             return carbs;
         }
 
-        public void setCarbs(Integer carbs) {
+        public void setCarbs(Float carbs) {
             this.carbs = carbs;
         }
 
@@ -298,19 +298,6 @@ public interface TreatmentsEndpoints {
     @DELETE("/api/v1/treatments/{id}")
     Call<ResponseBody> deleteID(@Path("id") String id);
 
-
-    /*
-    @DELETE("/api/v1/treatments")
-    Call<ResponseBody> deleteDateRangeNoKey(@Query("find[created_at][$gte]") String from,
-                                            @Query("find[created_at][$lte]") String to,
-                                            @Query("find[key600][$not][$exists]") String empty);
-
-    @DELETE("/api/v1/treatments")
-    Call<ResponseBody> deleteDateRangeNotTypeNoKey(@Query("find[created_at][$gte]") String from,
-                                                   @Query("find[created_at][$lte]") String to,
-                                                   @Query("find[eventType][$ne]") String type,
-                                                   @Query("find[key600][$not][$exists]") String empty);
-*/
     @Headers({
             "Accept: application/json",
             "Content-type: application/json"
