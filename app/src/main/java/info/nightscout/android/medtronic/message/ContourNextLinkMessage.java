@@ -5,6 +5,7 @@ import android.util.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
 import javax.crypto.Cipher;
@@ -30,7 +31,7 @@ import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 public abstract class ContourNextLinkMessage {
     private static final String TAG = ContourNextLinkMessage.class.getSimpleName();
 
-    public static final int CLEAR_TIMEOUT_MS = 500;
+    public static final int CLEAR_TIMEOUT_MS = 1000; // note: 2000ms was used for v5.1
     public static final int ERROR_CLEAR_TIMEOUT_MS = 2000;
     public static final int PRESEND_CLEAR_TIMEOUT_MS = 100;
 
@@ -406,7 +407,8 @@ public abstract class ContourNextLinkMessage {
             }
         }
 
-        return (decrypted != null ? decrypted : payload);
+        // when returning non-multipacket decrypted data we need to trim the 2 byte checksum
+        return (decrypted != null ? Arrays.copyOfRange(decrypted, 0, decrypted.length - 2) : payload);
     }
 
     private class MultipacketSession {

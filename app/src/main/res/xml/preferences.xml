@@ -139,13 +139,13 @@
                 <CheckBoxPreference android:title="Single Profile Group"
                     android:dependency="nsEnableProfileUpload"
                     android:key="nsEnableProfileSingle"
-                    android:defaultValue="false"
+                    android:defaultValue="true"
                     android:summary="Only use a single profile group in nightscout (note: obsolete groups will be removed)"/>
 
                 <CheckBoxPreference android:title="Offset start date"
                     android:dependency="nsEnableProfileUpload"
                     android:key="nsEnableProfileOffset"
-                    android:defaultValue="false"
+                    android:defaultValue="true"
                     android:summary="Uploaded profile will be valid from 12 months ago"/>
 
                 <ListPreference android:title="Default Pattern"
@@ -581,6 +581,18 @@
                     android:title="Logging Level"
                     android:entries="@array/levelList"
                     android:entryValues="@array/calib_types_values" />
+            </PreferenceCategory>
+            <PreferenceCategory android:title="Userlog">
+                <SwitchPreference
+                    android:defaultValue="false"
+                    android:key="dbgEnableExtendedErrors"
+                    android:summary="Detailed errors and polling data shown in the userlog"
+                    android:title="Extended Errors" />
+                <SwitchPreference
+                    android:defaultValue="true"
+                    android:key="dbgEnableUploadErrors"
+                    android:summary="Report Nightscout uploading errors in the userlog"
+                    android:title="Upload Errors" />
             </PreferenceCategory>
         </PreferenceScreen>
     </PreferenceCategory>

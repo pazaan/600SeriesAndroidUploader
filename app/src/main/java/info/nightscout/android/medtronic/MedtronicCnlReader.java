@@ -266,6 +266,8 @@ public class MedtronicCnlReader {
             basalPatterns.write(response.getBasalPattern());
         }
 
+        Log.d(TAG, "Basal Pattern x8 data size: " + basalPatterns.size());
+
         Log.d(TAG, "Finished getBasalPatterns");
         return basalPatterns.toByteArray();
     }

@@ -106,13 +106,17 @@ public class NightscoutUploadService extends Service {
                                 }
                             });
 
-                        } else userLogMessage(ICON_WARN + "Uploading to nightscout was unsuccessful");
+                        } else {
+                            if (prefs.getBoolean("dbgEnableUploadErrors", true))
+                                userLogMessage(ICON_WARN + "Uploading to nightscout was unsuccessful");
+                        }
 
                         Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.size(), System.currentTimeMillis() - start));
                     }
                 } catch (Exception e) {
-                    userLogMessage(ICON_WARN + "Error uploading: " + e.getMessage());
                     Log.e(TAG, "ERROR uploading data!!!!!", e);
+                    if (prefs.getBoolean("dbgEnableUploadErrors", true))
+                        userLogMessage(ICON_WARN + "Error uploading: " + e.getMessage());
                 }
 
             } else {

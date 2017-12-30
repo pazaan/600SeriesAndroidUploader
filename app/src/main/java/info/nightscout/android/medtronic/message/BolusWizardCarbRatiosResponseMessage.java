@@ -30,7 +30,7 @@ public class BolusWizardCarbRatiosResponseMessage extends MedtronicSendMessageRe
             throw new UnexpectedMessageException("Invalid message received for BolusWizardCarbRatios");
         }
 
-        carbRatios = Arrays.copyOfRange(payload, 5, payload.length - 2);
+        carbRatios = Arrays.copyOfRange(payload, 5, payload.length);
     }
 
     public byte[] getCarbRatios() {

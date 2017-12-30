@@ -29,7 +29,7 @@ public class BolusWizardSensitivityResponseMessage extends MedtronicSendMessageR
             throw new UnexpectedMessageException("Invalid message received for BolusWizardSensitivity");
         }
 
-        sensitivity = Arrays.copyOfRange(payload, 5, payload.length - 2);
+        sensitivity = Arrays.copyOfRange(payload, 5, payload.length);
     }
 
     public byte[] getSensitivity() {

@@ -544,6 +544,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setSysPollOldSgvRetry(Long.parseLong(sharedPreferences.getString("sysPollOldSgvRetry", "90000")));
                 dataStore.setSysEnableWait500ms(sharedPreferences.getBoolean("sysEnableWait500ms", false));
 
+                // debug
+                dataStore.setDbgEnableExtendedErrors(sharedPreferences.getBoolean("dbgEnableExtendedErrors", false));
+                dataStore.setDbgEnableUploadErrors(sharedPreferences.getBoolean("dbgEnableUploadErrors", true));
+
                 // nightscout
                 dataStore.setNsEnableTreatments(sharedPreferences.getBoolean("nsEnableTreatments", true));
                 dataStore.setNsEnableHistorySync(sharedPreferences.getBoolean("nsEnableHistorySync", false));
@@ -555,8 +559,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setNsEnableBatteryChange(sharedPreferences.getBoolean("nsEnableBatteryChange", true));
                 dataStore.setNsEnableLifetimes(sharedPreferences.getBoolean("nsEnableLifetimes", false));
                 dataStore.setNsEnableProfileUpload(sharedPreferences.getBoolean("nsEnableProfileUpload", true));
-                dataStore.setNsEnableProfileSingle(sharedPreferences.getBoolean("nsEnableProfileSingle", false));
-                dataStore.setNsEnableProfileOffset(sharedPreferences.getBoolean("nsEnableProfileOffset", false));
+                dataStore.setNsEnableProfileSingle(sharedPreferences.getBoolean("nsEnableProfileSingle", true));
+                dataStore.setNsEnableProfileOffset(sharedPreferences.getBoolean("nsEnableProfileOffset", true));
                 dataStore.setNsProfileDefault(Integer.parseInt(sharedPreferences.getString("nsProfileDefault", "1")));
                 dataStore.setNsActiveInsulinTime(Float.parseFloat(sharedPreferences.getString("nsActiveInsulinTime", "3")));
                 dataStore.setNsEnablePatternChange(sharedPreferences.getBoolean("nsEnablePatternChange", true));

@@ -114,22 +114,22 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
                 treatment.setEventType("Combo Bolus");
                 treatment.setEnteredinsulin(String.valueOf(squareProgrammedAmount));
-                treatment.setDuration(squareProgrammedDuration);
+                treatment.setDuration((float) squareProgrammedDuration);
                 treatment.setSplitNow("0");
                 treatment.setSplitExt("100");
-                treatment.setRelative(2);
+                treatment.setRelative((float) 2);
                 notes += "Square Bolus: " + squareProgrammedAmount + "U, duration " + squareProgrammedDuration + " minutes";
 
             } else if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(bolusType)) {
                 treatment.setEventType("Combo Bolus");
                 treatment.setEnteredinsulin(String.valueOf(normalProgrammedAmount + squareProgrammedAmount));
-                treatment.setDuration(squareProgrammedDuration);
+                treatment.setDuration((float) squareProgrammedDuration);
                 treatment.setInsulin((float) normalProgrammedAmount);
                 int splitNow = (int) (normalProgrammedAmount * (100 / (normalProgrammedAmount + squareProgrammedAmount)));
                 int splitExt = 100 - splitNow;
                 treatment.setSplitNow(String.valueOf(splitNow));
                 treatment.setSplitExt(String.valueOf(splitExt));
-                treatment.setRelative(2);
+                treatment.setRelative((float) 2);
                 notes += "Dual Bolus: normal " + normalProgrammedAmount + "U, square " + squareProgrammedAmount + "U, duration " + squareProgrammedDuration + " minutes";
 
             } else {
@@ -146,25 +146,25 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
             } else if (squareDelivered && squareProgrammedAmount != squareDeliveredAmount) {
                 treatment.setEnteredinsulin(String.valueOf(normalDeliveredAmount + squareDeliveredAmount));
-                treatment.setDuration(squareDeliveredDuration);
+                treatment.setDuration((float) squareDeliveredDuration);
                 treatment.setInsulin((float) normalDeliveredAmount);
                 int splitNow = (int) (normalDeliveredAmount * (100 / (normalDeliveredAmount + squareDeliveredAmount)));
                 int splitExt = 100 - splitNow;
                 treatment.setSplitNow(String.valueOf(splitNow));
                 treatment.setSplitExt(String.valueOf(splitExt));
-                treatment.setRelative(2);
+                treatment.setRelative((float) 2);
                 notes += " * ended before expected duration, square delivered " + squareDeliveredAmount + "U in " + squareDeliveredDuration + " minutes";
                 uploadItem.update();
             }
 
             if (estimate) {
                 treatment.setEventType("Meal Bolus");
-                treatment.setCarbs((int) carbInput);
+                treatment.setCarbs((float) ((int) carbInput));
                 if (!notes.equals("")) notes += "  ";
                 notes += "WIZ:"
                         + " carb " + (int) carbInput + "G : " + foodEstimate + "U"
                         + ", target " + lowBgTarget + "-" + highBgTarget + " : " + correctionEstimate + "U"
-                        + ", iob " + iob + " : " + iobAdjustment + "U"
+                        + ", iob " + iob + " : " + (iobAdjustment > 0 ? "-" : "") + iobAdjustment + "U"
                         + " (ratio " + (int) carbRatio + "/u, isf " + isf + "/u)";
             }
 
