@@ -62,11 +62,11 @@ public class UploadApi {
                 .writeTimeout(60, TimeUnit.SECONDS);
 
         okHttpClient.addInterceptor(new AddAuthHeader(token));
-
+/*
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
         okHttpClient.addInterceptor(logging);
-
+*/
         retrofit = new Retrofit.Builder()
                 .baseUrl(baseURL)
                 .client(okHttpClient.build())

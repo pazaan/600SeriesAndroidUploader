@@ -334,9 +334,9 @@ public class PumpHistoryParser {
         int bgUnits = read8toUInt(eventData, index + 0x0B);
         int carbUnits = read8toUInt(eventData, index + 0x0C);
         double bgInput = read16BEtoUInt(eventData, index + 0x0D) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
-        double carbInput = read16BEtoUInt(eventData, index + 0x0F) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 10.0 : 1.0);
+        double carbInput = read16BEtoUInt(eventData, index + 0x0F) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 0.1 : 1.0);
         double isf = read16BEtoUInt(eventData, index + 0x11) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
-        double carbRatio = read32BEtoULong(eventData, index + 0x13) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 1000.0 : 10.0);
+        double carbRatio = read32BEtoULong(eventData, index + 0x13) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 100.0 : 10.0);
         double lowBgTarget = read16BEtoUInt(eventData, index + 0x17) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
         double highBgTarget = read16BEtoUInt(eventData, index + 0x19) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
         double correctionEstimate = read32BEtoLong(eventData, index + 0x1B) / 10000.0;
@@ -491,10 +491,10 @@ public class PumpHistoryParser {
             } else if (eventType == EventType.BOLUS_WIZARD_ESTIMATE) {
                 int bgUnits = read8toUInt(eventData, index + 0x0B);
                 int carbUnits = read8toUInt(eventData, index + 0x0C);
-                double bgInput = read16BEtoUInt(eventData, index + 0x0D) / (bgUnits == 1 ? 10.0 : 1.0);
+                double bgInput = read16BEtoUInt(eventData, index + 0x0D) / (bgUnits == 1 ? 0.1 : 1.0);
                 double carbInput = read16BEtoUInt(eventData, index + 0x0F) / (bgUnits == 1 ? 10.0 : 1.0);
                 double isf = read16BEtoUInt(eventData, index + 0x11) / (bgUnits == 1 ? 10.0 : 1.0);
-                double carbRatio = read32BEtoULong(eventData, index + 0x13) / (carbUnits == 1 ? 1000.0 : 10.0);
+                double carbRatio = read32BEtoULong(eventData, index + 0x13) / (carbUnits == 1 ? 100.0 : 10.0);
                 double lowBgTarget = read16BEtoUInt(eventData, index + 0x17) / (bgUnits == 1 ? 10.0 : 1.0);
                 double highBgTarget = read16BEtoUInt(eventData, index + 0x19) / (bgUnits == 1 ? 10.0 : 1.0);
                 double correctionEstimate = read32BEtoLong(eventData, index + 0x1B) / 10000.0;

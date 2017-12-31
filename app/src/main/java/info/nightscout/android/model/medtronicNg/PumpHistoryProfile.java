@@ -203,7 +203,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             carbratio = new ArrayList<>();
             int index = 0;
             int rate1;
-            //int rate2;
+            int rate2;
             int time;
 
             int items = read8toUInt(carbRatios, index++);
@@ -212,9 +212,9 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             else {
                 for (int i = 0; i < items; i++) {
                     rate1 = read32BEtoInt(carbRatios, index) / 10;
-                    //rate2 = read32BEtoInt(carbRatios, index + 4);
+                    rate2 = read32BEtoInt(carbRatios, index + 4) / 100;
                     time = read8toUInt(carbRatios, index + 8) * 30;
-                    carbratio.add(addPeriod(time, "" + rate1));
+                    carbratio.add(addPeriod(time, "" + (rate1 > 0 ? rate1 : rate2)));
                     index += 9;
                 }
             }

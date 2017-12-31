@@ -159,13 +159,22 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
             if (estimate) {
                 treatment.setEventType("Meal Bolus");
-                treatment.setCarbs((float) ((int) carbInput));
+                treatment.setCarbs((float) carbInput);
                 if (!notes.equals("")) notes += "  ";
-                notes += "WIZ:"
-                        + " carb " + (int) carbInput + "G : " + foodEstimate + "U"
-                        + ", target " + lowBgTarget + "-" + highBgTarget + " : " + correctionEstimate + "U"
-                        + ", iob " + iob + " : " + (iobAdjustment > 0 ? "-" : "") + iobAdjustment + "U"
-                        + " (ratio " + (int) carbRatio + "/u, isf " + isf + "/u)";
+                if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits)) {
+                    // for mg/dl remove the decimal placing ie. "123.0" = "123"
+                    notes += "WIZ:"
+                            + " carb " + (int) carbInput + "G : " + foodEstimate + "U"
+                            + ", target " + (int) lowBgTarget + "-" + (int) highBgTarget + " : " + correctionEstimate + "U"
+                            + ", iob " + iob + " : " + (iobAdjustment > 0 ? "-" : "") + iobAdjustment + "U"
+                            + " (ratio " + (int) carbRatio + "/u, isf " + (int) isf + "/u)";
+                } else {
+                    notes += "WIZ:"
+                            + " carb " + (int) carbInput + "G : " + foodEstimate + "U"
+                            + ", target " + lowBgTarget + "-" + highBgTarget + " : " + correctionEstimate + "U"
+                            + ", iob " + iob + " : " + (iobAdjustment > 0 ? "-" : "") + iobAdjustment + "U"
+                            + " (ratio " + (int) carbRatio + "/u, isf " + isf + "/u)";
+                }
             }
 
             // nightscout does not have a square bolus type so a combo type is used but due to no normal bolus part
