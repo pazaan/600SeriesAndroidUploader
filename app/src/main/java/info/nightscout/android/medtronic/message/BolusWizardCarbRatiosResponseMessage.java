@@ -41,6 +41,7 @@ public class BolusWizardCarbRatiosResponseMessage extends MedtronicSendMessageRe
         int index = 0;
         double rate1;
         double rate2;
+        double carb2;
         int time;
 
         int items = read8toUInt(carbRatios, index++);
@@ -49,8 +50,9 @@ public class BolusWizardCarbRatiosResponseMessage extends MedtronicSendMessageRe
         for (int i = 0; i < items; i++) {
             rate1 = read32BEtoInt(carbRatios, index) / 10.0; // Grams per One Unit Insulin
             rate2 = read32BEtoInt(carbRatios, index + 0x04) / 1000.0; // Units Insulin per One Exchange
+            carb2 = 15 / rate2; // One Exchange = 15 Grams Carb
             time = read8toUInt(carbRatios, index + 0x08) * 30;
-            Log.d(TAG, "TimePeriod: " + (i + 1) + " Rate1: " + rate1 + " Rate2: " + rate2 + " Time: " + time / 60 + "h" + time % 60 + "m");
+            Log.d(TAG, "TimePeriod: " + (i + 1) + " Rate1: " + rate1 + " Rate2: " + rate2 + " (as carb = " + carb2 + ") Time: " + time / 60 + "h" + time % 60 + "m");
             index += 9;
         }
     }
