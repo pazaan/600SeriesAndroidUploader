@@ -22,31 +22,31 @@ public interface EntriesEndpoints {
     class Entry {
 
         @SerializedName("_id")
-        String _id;
+        private String _id;
 
         @SerializedName("type")
-        String type;
+        private String type;
 
         @SerializedName("dateString")
-        String dateString;
+        private String dateString;
 
         @SerializedName("date")
-        Long date;
+        private Long date;
 
         @SerializedName("sgv")
-        Integer sgv;
+        private Integer sgv;
 
         @SerializedName("mbg")
-        Integer mbg;
+        private Integer mbg;
 
         @SerializedName("direction")
-        String direction;
+        private String direction;
 
         @SerializedName("device")
-        String device;
+        private String device;
 
         @SerializedName("key600")
-        String key600;
+        private String key600;
 
         public String get_id() {
             return _id;
@@ -141,8 +141,8 @@ public interface EntriesEndpoints {
     // bulk delete non-keyed entries
     @DELETE("/api/v1/entries/sgv.json")
     Call<ResponseBody> deleteCleanupItems(@Query("find[date][$gte]") String from,
-                                            @Query("find[date][$lte]") String to,
-                                            @Query("find[key600][$not][$exists]") String empty);
+                                          @Query("find[date][$lte]") String to,
+                                          @Query("find[key600][$not][$exists]") String empty);
 
     @Headers({
             "Accept: application/json",

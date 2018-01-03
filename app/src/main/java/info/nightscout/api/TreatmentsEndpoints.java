@@ -27,70 +27,70 @@ public interface TreatmentsEndpoints {
     class Treatment {
 
         @SerializedName("_id")
-        String _id;
+        private String _id;
 
         @SerializedName("key600")
-        String key600;
+        private String key600;
 
         @SerializedName("eventType")
-        String eventType;
+        private String eventType;
 
         @SerializedName("created_at")
-        String created_at;
+        private String created_at;
 
         @SerializedName("device")
-        String device;
+        private String device;
 
         @SerializedName("notes")
-        String notes;
+        private String notes;
 
         @SerializedName("enteredBy")
-        String enteredBy;
+        private String enteredBy;
 
         @SerializedName("reason")
-        String reason;
+        private String reason;
 
         @SerializedName("profile")
-        String profile;
+        private String profile;
 
         @SerializedName("enteredinsulin")
-        String enteredinsulin;
+        private String enteredinsulin;
 
         @SerializedName("splitNow")
-        String splitNow;
+        private String splitNow;
 
         @SerializedName("splitExt")
-        String splitExt;
+        private String splitExt;
 
         @SerializedName("units")
-        String units;
+        private String units;
 
         @SerializedName("glucoseType")
-        String glucoseType;
+        private String glucoseType;
 
         @SerializedName("insulin")
-        Float insulin;
+        private Float insulin;
 
         @SerializedName("duration")
-        Float duration;
+        private Float duration;
 
         @SerializedName("absolute")
-        Float absolute;
+        private Float absolute;
 
         @SerializedName("percent")
-        Float percent;
+        private Float percent;
 
         @SerializedName("relative")
-        Float relative;
+        private Float relative;
 
         @SerializedName("preBolus")
-        Float preBolus;
+        private Float preBolus;
 
         @SerializedName("carbs")
-        Float carbs;
+        private Float carbs;
 
         @SerializedName("glucose")
-        BigDecimal glucose;
+        private BigDecimal glucose;
 
         public String get_id() {
             return _id;
@@ -283,16 +283,16 @@ public interface TreatmentsEndpoints {
     // find treatments using date range
     @GET("/api/v1/treatments.json")
     Call<List<Treatment>> findDateRangeCount(@Query("find[created_at][$gte]") String from,
-                                          @Query("find[created_at][$lte]") String to,
-                                          @Query("count") String count);
+                                             @Query("find[created_at][$lte]") String to,
+                                             @Query("count") String count);
 
     // find non-keyed treatments exclude by eventType
     @GET("/api/v1/treatments.json")
     Call<List<Treatment>> findCleanupItems(@Query("find[created_at][$gte]") String from,
-                                             @Query("find[created_at][$lte]") String to,
-                                             @Query("find[eventType][$ne]") String type,
-                                             @Query("find[key600][$not][$exists]") String empty,
-                                             @Query("count") String count);
+                                           @Query("find[created_at][$lte]") String to,
+                                           @Query("find[eventType][$ne]") String type,
+                                           @Query("find[key600][$not][$exists]") String empty,
+                                           @Query("count") String count);
 
     // delete using id
     @DELETE("/api/v1/treatments/{id}")

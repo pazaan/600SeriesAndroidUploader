@@ -566,6 +566,33 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setNsEnablePatternChange(sharedPreferences.getBoolean("nsEnablePatternChange", true));
                 dataStore.setNsEnableInsertBGasCGM(sharedPreferences.getBoolean("nsEnableInsertBGasCGM", false));
 
+                // pattern and preset naming
+                dataStore.setNameBasalPattern1(sharedPreferences.getString("nameBasalPattern1", "Basal 1"));
+                dataStore.setNameBasalPattern1(sharedPreferences.getString("nameBasalPattern1", "Basal 1"));
+                dataStore.setNameBasalPattern2(sharedPreferences.getString("nameBasalPattern2", "Basal 2"));
+                dataStore.setNameBasalPattern3(sharedPreferences.getString("nameBasalPattern3", "Basal 3"));
+                dataStore.setNameBasalPattern4(sharedPreferences.getString("nameBasalPattern4", "Basal 4"));
+                dataStore.setNameBasalPattern5(sharedPreferences.getString("nameBasalPattern5", "Basal 5"));
+                dataStore.setNameBasalPattern6(sharedPreferences.getString("nameBasalPattern6", "Workday"));
+                dataStore.setNameBasalPattern7(sharedPreferences.getString("nameBasalPattern7", "Day Off"));
+                dataStore.setNameBasalPattern8(sharedPreferences.getString("nameBasalPattern8", "Sick Day"));
+                dataStore.setNameTempBasalPreset1(sharedPreferences.getString("nameTempBasalPreset1", "Temp 1"));
+                dataStore.setNameTempBasalPreset2(sharedPreferences.getString("nameTempBasalPreset2", "Temp 2"));
+                dataStore.setNameTempBasalPreset3(sharedPreferences.getString("nameTempBasalPreset3", "Temp 3"));
+                dataStore.setNameTempBasalPreset4(sharedPreferences.getString("nameTempBasalPreset4", "Temp 4"));
+                dataStore.setNameTempBasalPreset5(sharedPreferences.getString("nameTempBasalPreset5", "High Activity"));
+                dataStore.setNameTempBasalPreset6(sharedPreferences.getString("nameTempBasalPreset6", "Moderate Activity"));
+                dataStore.setNameTempBasalPreset7(sharedPreferences.getString("nameTempBasalPreset7", "Low Activity"));
+                dataStore.setNameTempBasalPreset8(sharedPreferences.getString("nameTempBasalPreset8", "Sick"));
+                dataStore.setNameBolusPreset1(sharedPreferences.getString("nameBolusPreset1", "Bolus 1"));
+                dataStore.setNameBolusPreset2(sharedPreferences.getString("nameBolusPreset2", "Bolus 2"));
+                dataStore.setNameBolusPreset3(sharedPreferences.getString("nameBolusPreset3", "Bolus 3"));
+                dataStore.setNameBolusPreset4(sharedPreferences.getString("nameBolusPreset4", "Bolus 4"));
+                dataStore.setNameBolusPreset5(sharedPreferences.getString("nameBolusPreset5", "Breakfast"));
+                dataStore.setNameBolusPreset6(sharedPreferences.getString("nameBolusPreset6", "Lunch"));
+                dataStore.setNameBolusPreset7(sharedPreferences.getString("nameBolusPreset7", "Dinner"));
+                dataStore.setNameBolusPreset8(sharedPreferences.getString("nameBolusPreset8", "Snack"));
+
                 // urchin
                 dataStore.setUrchinEnable(sharedPreferences.getBoolean("urchinEnable", false));
                 dataStore.setUrchinBasalPeriod(Integer.parseInt(sharedPreferences.getString("urchinBasalPeriod", "23")));

@@ -69,14 +69,14 @@
     </string-array>
 
     <string-array name="profile_default">
-        <item>Basal 1</item>
-        <item>Basal 2</item>
-        <item>Basal 3</item>
-        <item>Basal 4</item>
-        <item>Basal 5</item>
-        <item>Workday</item>
-        <item>Day Off</item>
-        <item>Sick Day</item>
+        <item>Pattern 1</item>
+        <item>Pattern 2</item>
+        <item>Pattern 3</item>
+        <item>Pattern 4</item>
+        <item>Pattern 5</item>
+        <item>Pattern 6</item>
+        <item>Pattern 7</item>
+        <item>Pattern 8</item>
     </string-array>
 
     <string-array name="profile_default_values">

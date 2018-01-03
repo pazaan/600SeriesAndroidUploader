@@ -105,7 +105,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setCreated_at(programmedDate);
 
             if (!PumpHistoryParser.BOLUS_PRESET.BOLUS_PRESET_0.equals(bolusPreset)) {
-                notes += "[" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BOLUS_PRESET.convert(bolusPreset).name()).getText() + "] ";
+                notes += "[" + dataStore.getNameBolusPreset(bolusPreset) + "] ";
             }
 
             if (PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.equals(bolusType)) {
