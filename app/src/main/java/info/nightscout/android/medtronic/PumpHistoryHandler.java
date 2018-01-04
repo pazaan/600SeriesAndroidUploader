@@ -200,6 +200,34 @@ public class PumpHistoryHandler {
         });
 
         userLogMessage("Sending updated profile to Nightscout");
+
+        // update NS historical treatments when pattern naming has changed
+
+        if (dataStore.isNameBasalPatternChanged() &&
+                (dataStore.isNsEnableProfileSingle() || dataStore.isNsEnableProfileOffset())) {
+
+            userLogMessage("Basal Pattern Names changed, updating pattern switch treatments in Nightscout");
+
+            final RealmResults<PumpHistoryProfile> results = historyRealm
+                    .where(PumpHistoryProfile.class)
+                    .equalTo("profileSwitch", true)
+                    .findAll();
+            historyRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    for (PumpHistoryProfile record : results) {
+                        record.setUploadREQ(true);
+                    }
+                }
+            });
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    dataStore.setNameBasalPatternChanged(false);
+                }
+            });
+        }
+
     }
 
     public void cgm(final PumpStatusEvent pumpRecord) {
@@ -312,7 +340,7 @@ public class PumpHistoryHandler {
                     historyRealm.createObject(PumpHistorySegment.class).addSegment(new Date(oldest), historyType);
                 }
             });
-        // store size changed
+            // store size changed
         } else if (segment.last().getFromDate().getTime() - oldest > 60 * 60000L) {
             Log.d(TAG, historyTAG + "store size has increased, adding segment");
             historyRealm.executeTransaction(new Realm.Transaction() {
@@ -321,7 +349,7 @@ public class PumpHistoryHandler {
                     historyRealm.createObject(PumpHistorySegment.class).addSegment(new Date(oldest), historyType);
                 }
             });
-        // update oldest segment
+            // update oldest segment
         } else {
             boolean checkNext = true;
             while (checkNext && segment.size() > 1) {

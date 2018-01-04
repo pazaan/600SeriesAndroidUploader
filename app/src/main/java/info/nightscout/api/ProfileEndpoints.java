@@ -1,20 +1,22 @@
 package info.nightscout.api;
 
-        import com.google.gson.annotations.SerializedName;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
-        import java.text.SimpleDateFormat;
-        import java.util.Date;
-        import java.util.List;
-        import java.util.Locale;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
-        import okhttp3.ResponseBody;
-        import retrofit2.Call;
-        import retrofit2.http.Body;
-        import retrofit2.http.DELETE;
-        import retrofit2.http.GET;
-        import retrofit2.http.Headers;
-        import retrofit2.http.POST;
-        import retrofit2.http.Path;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.http.Body;
+import retrofit2.http.DELETE;
+import retrofit2.http.GET;
+import retrofit2.http.Headers;
+import retrofit2.http.POST;
+import retrofit2.http.Path;
 
 /**
  * Created by Pogman on 7.11.17.
@@ -23,22 +25,39 @@ package info.nightscout.api;
 public interface ProfileEndpoints {
 
     class Profile {
+
         @SerializedName("_id")
-        String _id;
+        private String _id;
+
         @SerializedName("key600")
-        String key600;
+        private String key600;
+
         @SerializedName("defaultProfile")
-        String defaultProfile;
+        private String defaultProfile;
+
         @SerializedName("startDate")
-        String startDate;
+        private String startDate;
+
         @SerializedName("mills")
-        String mills;
+        private String mills;
+
         @SerializedName("units")
-        String units;
+        private String units;
+
         @SerializedName("created_at")
-        String created_at;
+        private String created_at;
+
         @SerializedName("store")
-        Store store;
+        @Expose
+        private Map<String, BasalProfile> basalProfileMap;
+
+        public Map<String, BasalProfile> getBasalProfileMap() {
+            return basalProfileMap;
+        }
+
+        public void setBasalProfileMap(Map<String, BasalProfile> basalProfileMap) {
+            this.basalProfileMap = basalProfileMap;
+        }
 
         public String get_id() {
             return _id;
@@ -96,14 +115,6 @@ public interface ProfileEndpoints {
             this.created_at = created_at;
         }
 
-        public Store getStore() {
-            return store;
-        }
-
-        public void setStore(Store store) {
-            this.store = store;
-        }
-
         public void setCreated_at(Date created_at) {
             this.created_at = ISO8601_DATE_FORMAT.format(created_at);
         }
@@ -115,112 +126,40 @@ public interface ProfileEndpoints {
         private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
     }
 
-    class Store {
-        @SerializedName("Basal 1")
-        BasalProfile basal1;
-        @SerializedName("Basal 2")
-        BasalProfile basal2;
-        @SerializedName("Basal 3")
-        BasalProfile basal3;
-        @SerializedName("Basal 4")
-        BasalProfile basal4;
-        @SerializedName("Basal 5")
-        BasalProfile basal5;
-        @SerializedName("Workday")
-        BasalProfile workday;
-        @SerializedName("Day Off")
-        BasalProfile dayoff;
-        @SerializedName("Sick Day")
-        BasalProfile sickday;
-
-        public BasalProfile getBasal1() {
-            return basal1;
-        }
-
-        public void setBasal1(BasalProfile basal1) {
-            this.basal1 = basal1;
-        }
-
-        public BasalProfile getBasal2() {
-            return basal2;
-        }
-
-        public void setBasal2(BasalProfile basal2) {
-            this.basal2 = basal2;
-        }
-
-        public BasalProfile getBasal3() {
-            return basal3;
-        }
-
-        public void setBasal3(BasalProfile basal3) {
-            this.basal3 = basal3;
-        }
-
-        public BasalProfile getBasal4() {
-            return basal4;
-        }
-
-        public void setBasal4(BasalProfile basal4) {
-            this.basal4 = basal4;
-        }
-
-        public BasalProfile getBasal5() {
-            return basal5;
-        }
-
-        public void setBasal5(BasalProfile basal5) {
-            this.basal5 = basal5;
-        }
-
-        public BasalProfile getWorkday() {
-            return workday;
-        }
-
-        public void setWorkday(BasalProfile workday) {
-            this.workday = workday;
-        }
-
-        public BasalProfile getDayoff() {
-            return dayoff;
-        }
-
-        public void setDayoff(BasalProfile dayoff) {
-            this.dayoff = dayoff;
-        }
-
-        public BasalProfile getSickday() {
-            return sickday;
-        }
-
-        public void setSickday(BasalProfile sickday) {
-            this.sickday = sickday;
-        }
-    }
-
     class BasalProfile {
+
         @SerializedName("startDate")
-        String startDate;
+        private String startDate;
+
         @SerializedName("timezone")
-        String timezone;
+        private String timezone;
+
         @SerializedName("units")
-        String units;
+        private String units;
+
         @SerializedName("carbs_hr")
-        String carbs_hr;
+        private String carbs_hr;
+
         @SerializedName("delay")
-        String delay;
+        private String delay;
+
         @SerializedName("dia")
-        String dia;
+        private String dia;
+
         @SerializedName("basal")
-        List<TimePeriod> basal;
+        private List<TimePeriod> basal;
+
         @SerializedName("carbratio")
         List<TimePeriod> carbratio;
+
         @SerializedName("sens")
-        List<TimePeriod> sens;
+        private List<TimePeriod> sens;
+
         @SerializedName("target_low")
-        List<TimePeriod> target_low;
+        private List<TimePeriod> target_low;
+
         @SerializedName("target_high")
-        List<TimePeriod> target_high;
+        private List<TimePeriod> target_high;
 
         public String getStartDate() {
             return startDate;
@@ -318,12 +257,15 @@ public interface ProfileEndpoints {
     }
 
     class TimePeriod {
+
         @SerializedName("time")
-        String time;
+        private String time;
+
         @SerializedName("value")
-        String value;
+        private String value;
+
         @SerializedName("timeAsSeconds")
-        String timeAsSeconds;
+        private String timeAsSeconds;
 
         public String getTime() {
             return time;

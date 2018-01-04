@@ -2,9 +2,12 @@ package info.nightscout.android.model.medtronicNg;
 
 import android.util.Log;
 
+import com.google.gson.internal.LinkedHashTreeMap;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
@@ -75,8 +78,8 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             treatment.setCreated_at(eventDate);
             treatment.setEventType("Profile Switch");
 
-            String oldName = PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BASAL_PATTERN.convert(oldPatternNumber).name()).getText();
-            String newName = PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BASAL_PATTERN.convert(newPatternNumber).name()).getText();
+            String oldName = dataStore.getNameBasalPattern(oldPatternNumber);
+            String newName = dataStore.getNameBasalPattern(newPatternNumber);
 
             treatment.setProfile(newName);
             treatment.setNotes("Changed profile from " + oldName + " to " + newName);
@@ -107,7 +110,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             if (dataStore.isMmolxl()) units = "mmol";
             if (dataStore.isNsEnableProfileOffset()) startdate = new Date(eventDate.getTime() - 365 * 24 * 60 * 60000L) ; // active from date
             String dia = "" + dataStore.getNsActiveInsulinTime();
-            String profileDefault = PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BASAL_PATTERN.convert(dataStore.getNsProfileDefault()).name()).getText();
+            String profileDefault = dataStore.getNameBasalPattern(dataStore.getNsProfileDefault());
 
             profile.setKey600(key);
             profile.setCreated_at(eventDate);
@@ -117,8 +120,8 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             profile.setDefaultProfile(profileDefault);
             profile.setUnits(units);
 
-            ProfileEndpoints.Store store = new ProfileEndpoints.Store(); // <-- BasalProfile x8 as named on Pump
-            profile.setStore(store);
+            Map<String, ProfileEndpoints.BasalProfile> basalProfileMap = new LinkedHashTreeMap<>();
+            profile.setBasalProfileMap(basalProfileMap);
 
             BasalProfile bp = new BasalProfile();
             bp.startdate = startdate;
@@ -131,14 +134,14 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             bp.parseSensitivity();
             bp.parseTargets();
 
-            store.setBasal1(bp.makeProfile());
-            store.setBasal2(bp.makeProfile());
-            store.setBasal3(bp.makeProfile());
-            store.setBasal4(bp.makeProfile());
-            store.setBasal5(bp.makeProfile());
-            store.setWorkday(bp.makeProfile());
-            store.setDayoff(bp.makeProfile());
-            store.setSickday(bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern1(), bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern2(), bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern3(), bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern4(), bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern5(), bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern6(), bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern7(), bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern8(), bp.makeProfile());
         }
 
         return uploadItems;
@@ -203,7 +206,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             carbratio = new ArrayList<>();
             int index = 0;
             int rate1;
-            //int rate2;
+            int rate2;
             int time;
 
             int items = read8toUInt(carbRatios, index++);
@@ -211,10 +214,12 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
                 carbratio.add(addPeriod(0, "0"));
             else {
                 for (int i = 0; i < items; i++) {
+                    // pump grams/unit rate
                     rate1 = read32BEtoInt(carbRatios, index) / 10;
-                    //rate2 = read32BEtoInt(carbRatios, index + 4);
+                    // pump units/exchange rate (converted by dividing into 15g, the standard amount of grams per exchange)
+                    rate2 = (int) (15 / ((double) (read32BEtoInt(carbRatios, index + 4)) / 1000.0));
                     time = read8toUInt(carbRatios, index + 8) * 30;
-                    carbratio.add(addPeriod(time, "" + rate1));
+                    carbratio.add(addPeriod(time, "" + (rate1 > 0 ? rate1 : rate2)));
                     index += 9;
                 }
             }

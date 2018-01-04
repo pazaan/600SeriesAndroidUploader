@@ -5,6 +5,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.android.model.store.DataStore;
@@ -104,7 +105,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setCreated_at(programmedDate);
 
             if (!PumpHistoryParser.BOLUS_PRESET.BOLUS_PRESET_0.equals(bolusPreset)) {
-                notes += "[" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BOLUS_PRESET.convert(bolusPreset).name()).getText() + "] ";
+                notes += "[" + dataStore.getNameBolusPreset(bolusPreset) + "] ";
             }
 
             if (PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.equals(bolusType)) {
@@ -158,19 +159,53 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             }
 
             if (estimate) {
-                treatment.setEventType("Meal Bolus");
-                treatment.setCarbs((float) ((int) carbInput));
+                // only change NS event type when dual/square (combo) is not in use
+                if (PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.equals(bolusType))
+                    treatment.setEventType("Meal Bolus");
+
+                // conversion for unit type
+                double carbInputAsGrams;
+                double carbRatioAsGrams;
+                if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits)) {
+                    carbInputAsGrams = 15 * carbInput;
+                    carbRatioAsGrams = 15 / carbRatio;
+                } else {
+                    carbInputAsGrams = carbInput;
+                    carbRatioAsGrams = carbRatio;
+                }
+
+                treatment.setCarbs((float) carbInputAsGrams);
+
                 if (!notes.equals("")) notes += "  ";
-                notes += "WIZ:"
-                        + " carb " + (int) carbInput + "G : " + foodEstimate + "U"
-                        + ", target " + lowBgTarget + "-" + highBgTarget + " : " + correctionEstimate + "U"
-                        + ", iob " + iob + " : " + (iobAdjustment > 0 ? "-" : "") + iobAdjustment + "U"
-                        + " (ratio " + (int) carbRatio + "/u, isf " + isf + "/u)";
+
+                // for mg/dl remove the decimal placing ie. "123.0" = "123"
+                if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits))
+                    notes += "WIZ: carb %.0fg : %.1fU, target %.0f-%.0f : %.1fU, iob %.1f : %.1fU (ratio %.0f/u, isf %.0f/u";
+                else
+                    notes += "WIZ: carb %.0fg : %.1fU, target %.1f-%.1f : %.1fU, iob %.1f : %.1fU (ratio %.0f/u, isf %.1f/u";
+
+                notes = String.format(Locale.getDefault(), notes,
+                        carbInputAsGrams,
+                        foodEstimate,
+                        lowBgTarget,
+                        highBgTarget,
+                        correctionEstimate,
+                        iob,
+                        iobAdjustment > 0 ? -iobAdjustment : iobAdjustment,
+                        carbRatioAsGrams,
+                        isf
+                );
+
+                if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits))
+                    notes += String.format(Locale.getDefault(), ", ex %.2fu/15g", carbRatio);
+
+                notes += ")";
             }
 
             // nightscout does not have a square bolus type so a combo type is used but due to no normal bolus part
             // there is no tag shown in the main graph, a note is sent to NS to compensate for this
-            if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
+            // only needed when no carbs / wizard in use
+            if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType) && carbInput == 0) {
                 UploadItem uploadItem2 = new UploadItem();
                 uploadItems.add(uploadItem2);
                 TreatmentsEndpoints.Treatment treatment2 = uploadItem2.treatment();

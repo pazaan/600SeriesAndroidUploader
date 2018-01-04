@@ -171,6 +171,182 @@
                     android:summary="Send basal pattern changes to Nightscout"/>
             </PreferenceCategory>
 
+            <PreferenceCategory android:title="Pattern and Preset Naming">
+                <PreferenceScreen
+                    android:title="Basal Patterns"
+                    android:persistent="false">
+                    <PreferenceCategory android:title="Basal Patterns">
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Pattern 1"
+                            android:key="nameBasalPattern1"
+                            android:defaultValue="Basal 1"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Pattern Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Pattern 2"
+                            android:key="nameBasalPattern2"
+                            android:defaultValue="Basal 2"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Pattern Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Pattern 3"
+                            android:key="nameBasalPattern3"
+                            android:defaultValue="Basal 3"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Pattern Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Pattern 4"
+                            android:key="nameBasalPattern4"
+                            android:defaultValue="Basal 4"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Pattern Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Pattern 5"
+                            android:key="nameBasalPattern5"
+                            android:defaultValue="Basal 5"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Pattern Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Pattern 6"
+                            android:key="nameBasalPattern6"
+                            android:defaultValue="Workday"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Pattern Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Pattern 7"
+                            android:key="nameBasalPattern7"
+                            android:defaultValue="Day Off"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Pattern Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Pattern 8"
+                            android:key="nameBasalPattern8"
+                            android:defaultValue="Sick Day"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Pattern Name"/>
+                    </PreferenceCategory>
+                </PreferenceScreen>
+
+                <PreferenceScreen
+                    android:title="Temp Basal Presets"
+                    android:persistent="false">
+                    <PreferenceCategory android:title="Temp Basal Presets">
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 1"
+                            android:key="nameTempBasalPreset1"
+                            android:defaultValue="Temp 1"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 2"
+                            android:key="nameTempBasalPreset2"
+                            android:defaultValue="Temp 2"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 3"
+                            android:key="nameTempBasalPreset3"
+                            android:defaultValue="Temp 3"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 4"
+                            android:key="nameTempBasalPreset4"
+                            android:defaultValue="Temp 4"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 5"
+                            android:key="nameTempBasalPreset5"
+                            android:defaultValue="High Activity"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 6"
+                            android:key="nameTempBasalPreset6"
+                            android:defaultValue="Moderate Activity"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 7"
+                            android:key="nameTempBasalPreset7"
+                            android:defaultValue="Low Activity"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 8"
+                            android:key="nameTempBasalPreset8"
+                            android:defaultValue="Sick"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                    </PreferenceCategory>
+                </PreferenceScreen>
+
+                <PreferenceScreen
+                    android:title="Bolus Presets"
+                    android:persistent="false">
+                    <PreferenceCategory android:title="Bolus Presets">
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 1"
+                            android:dependency="nsEnableProfileUpload"
+                            android:key="nameBolusPreset1"
+                            android:defaultValue="Bolus 1"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 2"
+                            android:dependency="nsEnableProfileUpload"
+                            android:key="nameBolusPreset2"
+                            android:defaultValue="Bolus 2"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 3"
+                            android:dependency="nsEnableProfileUpload"
+                            android:key="nameBolusPreset3"
+                            android:defaultValue="Bolus 3"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 4"
+                            android:dependency="nsEnableProfileUpload"
+                            android:key="nameBolusPreset4"
+                            android:defaultValue="Bolus 4"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 5"
+                            android:dependency="nsEnableProfileUpload"
+                            android:key="nameBolusPreset5"
+                            android:defaultValue="Breakfast"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 6"
+                            android:dependency="nsEnableProfileUpload"
+                            android:key="nameBolusPreset6"
+                            android:defaultValue="Lunch"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 7"
+                            android:dependency="nsEnableProfileUpload"
+                            android:key="nameBolusPreset7"
+                            android:defaultValue="Dinner"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                            android:title="Preset 8"
+                            android:dependency="nsEnableProfileUpload"
+                            android:key="nameBolusPreset8"
+                            android:defaultValue="Snack"
+                            android:dialogMessage=""
+                            android:dialogTitle="Enter Preset Name"/>
+                    </PreferenceCategory>
+                </PreferenceScreen>
+
+            </PreferenceCategory>
+
             <PreferenceCategory android:title="CGM">
                 <CheckBoxPreference android:title="Insert BG as CGM"
                     android:dependency="nsEnableTreatments"

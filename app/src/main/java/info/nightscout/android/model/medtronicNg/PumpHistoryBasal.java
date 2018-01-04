@@ -104,7 +104,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                 notes += ", duration " + duration + " minutes";
 
                 if (!PumpHistoryParser.TEMP_BASAL_PRESET.TEMP_BASAL_PRESET_0.equals(preset))
-                    notes += " [" + PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.TEMP_BASAL_PRESET.convert(preset).name()).getText() + "]";
+                    notes += " [" + dataStore.getNameTempBasalPreset(preset) + "]";
 
                 if (!canceled) {
                     treatment.setDuration((float) duration);
@@ -187,7 +187,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
     }
 
     public static void suspend(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                            int reason) {
+                               int reason) {
 
         PumpHistoryBasal object = realm.where(PumpHistoryBasal.class)
                 .equalTo("suspend", true)
@@ -209,7 +209,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
     }
 
     public static void resume(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                               int reason) {
+                              int reason) {
 
         PumpHistoryBasal object = realm.where(PumpHistoryBasal.class)
                 .equalTo("resume", true)
