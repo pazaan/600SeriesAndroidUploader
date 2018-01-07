@@ -250,13 +250,13 @@ public class PumpHistoryParser {
         if(bolusSource == BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.value) {
             // Synthesize Closed Loop Microboluses into Temp Basals
             PumpHistoryBasal.temp(historyRealm, eventDate, eventRTC, eventOFFSET,
-                    false,
-                    BOLUS_PRESET.NA.value,
-                    TEMP_BASAL_TYPE.ABSOLUTE.value,
-                    normalDeliveredAmount * 12, // Convert the 5 minute microbolus into an hourly basal rate,
-                    100,
-                    300000, // Assume 5 minutes for a micro-bolus,
-                    false);
+                false,
+                BOLUS_PRESET.NA.value,
+                TEMP_BASAL_TYPE.ABSOLUTE.value,
+                normalDeliveredAmount * 12, // Convert the 5 minute microbolus into an hourly basal rate,
+                100,
+                300000, // Assume 5 minutes for a micro-bolus,
+                false);
         } else {
             PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.NORMAL_BOLUS.get(), false, true, false,
