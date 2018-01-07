@@ -92,7 +92,7 @@ android {
         }
 
         debug {
-            ext.enableCrashlytics = false
+            ext.enableCrashlytics = file("fabric.properties").exists()
         }
     }
 

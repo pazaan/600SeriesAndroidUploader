@@ -60,7 +60,7 @@ public class UploaderApplication extends Application {
             Fabric.with(this, new Crashlytics());
         }
         if (prefs.getBoolean(getString(R.string.preferences_enable_answers), true)) {
-            Fabric.with(this, new Answers(), new Crashlytics());
+            Fabric.with(this, new Answers());
         }
 
         if (prefs.getBoolean(getString(R.string.preferences_enable_remote_logcat), false)) {
