@@ -769,7 +769,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         textViewTrend.setText(trendString);
         textViewTrend.setRotation(trendRotation);
 
-        ActionMenuItemView batIcon = findViewById(R.id.status_battery);
+        MenuItem batIcon = findViewById(R.id.status_battery);
         if (batIcon != null) {
             switch (battery) {
                 case 0:

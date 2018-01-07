@@ -132,7 +132,7 @@ dependencies {
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
 
     compile('com.crashlytics.sdk.android:crashlytics:2.8.0@aar') {
-        transitive = true;
+        transitive = true
     }
 
     // The version of okhttp3 *must* be the same as the version in AppUpdater
@@ -140,7 +140,7 @@ dependencies {
     compile 'com.squareup.okhttp3:logging-interceptor:3.6.0'
 
     compile('com.crashlytics.sdk.android:crashlytics:2.6.7@aar') {
-        transitive = true;
+        transitive = true
     }
     compile('com.mikepenz:materialdrawer:5.2.9@aar') {
         transitive = true
