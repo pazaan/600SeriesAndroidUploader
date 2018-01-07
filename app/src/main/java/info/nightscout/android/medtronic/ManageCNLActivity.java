@@ -37,7 +37,7 @@ public class ManageCNLActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_manage_cnl);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
 
         if (toolbar != null) {
             setSupportActionBar(toolbar);
@@ -63,7 +63,7 @@ public class ManageCNLActivity extends AppCompatActivity {
         CNLAdapter adapter = new CNLAdapter(list, this);
 
         //handle listview and assign adapter
-        ListView lView = (ListView) findViewById(R.id.cnl_list);
+        ListView lView = findViewById(R.id.cnl_list);
         lView.addHeaderView(getLayoutInflater().inflate(R.layout.manage_cnl_listview_header, null));
         lView.setEmptyView(findViewById(R.id.manage_cnl_listview_empty)); //getLayoutInflater().inflate(R.layout.manage_cnl_listview_empty, null));
         lView.setAdapter(adapter);
@@ -125,11 +125,11 @@ public class ManageCNLActivity extends AppCompatActivity {
             }
 
             //Handle TextView and display string from your list
-            TextView listItemText = (TextView) view.findViewById(R.id.cnl_mac);
+            TextView listItemText = view.findViewById(R.id.cnl_mac);
             listItemText.setText(list.get(position).getSerialNumber());
 
             //Handle buttons and add onClickListeners
-            Button deleteBtn = (Button) view.findViewById(R.id.delete_btn);
+            Button deleteBtn = view.findViewById(R.id.delete_btn);
 
             deleteBtn.setOnClickListener(new View.OnClickListener() {
                 @Override

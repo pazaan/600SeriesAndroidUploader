@@ -16,7 +16,7 @@ import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.view.menu.ActionMenuItemView;
+import android.support.v7.view.menu.MenuView;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateUtils;
 import android.util.DisplayMetrics;
@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             final String packageName = getPackageName();
             final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 
-            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+            if (pm != null && !pm.isIgnoringBatteryOptimizations(packageName)) {
                 Log.d(TAG, "Requesting ignore battery optimization");
                 try {
                     // ignoring battery optimizations required for constant connection
@@ -167,12 +167,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mEnableCgmService = Eula.show(this, prefs);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             getSupportActionBar().setElevation(0);
-            getSupportActionBar().setTitle("nightscout");
+            getSupportActionBar().setTitle("Nightscout");
         }
 
         final PrimaryDrawerItem itemSettings = new PrimaryDrawerItem()
@@ -260,10 +260,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 })
                 .build();
 
-        mTextViewLog = (TextView) findViewById(R.id.textview_log);
-        mScrollView = (ScrollView) findViewById(R.id.scrollView);
+        mTextViewLog = findViewById(R.id.textview_log);
+        mScrollView = findViewById(R.id.scrollView);
         mScrollView.setSmoothScrollingEnabled(true);
-        mTextViewLogButtonTop = (TextView) findViewById(R.id.button_log_top);
+        mTextViewLogButtonTop = findViewById(R.id.button_log_top);
         mTextViewLogButtonTop.setVisibility(View.GONE);
         mTextViewLogButtonTop.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -271,7 +271,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 changeUserLogViewOlder();
             }
         });
-        mTextViewLogButtonTopRecent = (TextView) findViewById(R.id.button_log_top_recent);
+        mTextViewLogButtonTopRecent = findViewById(R.id.button_log_top_recent);
         mTextViewLogButtonTopRecent.setVisibility(View.GONE);
         mTextViewLogButtonTopRecent.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -280,7 +280,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         });
 
-        mTextViewLogButtonBottom = (TextView) findViewById(R.id.button_log_bottom);
+        mTextViewLogButtonBottom = findViewById(R.id.button_log_bottom);
         mTextViewLogButtonBottom.setVisibility(View.GONE);
         mTextViewLogButtonBottom.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -288,7 +288,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 changeUserLogViewNewer();
             }
         });
-        mTextViewLogButtonBottomRecent = (TextView) findViewById(R.id.button_log_bottom_recent);
+        mTextViewLogButtonBottomRecent = findViewById(R.id.button_log_bottom_recent);
         mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
         mTextViewLogButtonBottomRecent.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -297,7 +297,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         });
 
-        mChart = (GraphView) findViewById(R.id.chart);
+        mChart = findViewById(R.id.chart);
 
         // disable scrolling at the moment
         mChart.getViewport().setScalable(false);
@@ -353,7 +353,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     }
                 }
         );
-
     }
 
     @Override
@@ -371,7 +370,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         super.onResume();
     }
 
-    protected void onPasue() {
+    protected void onPause() {
         Log.d(TAG, "onPause called");
         super.onPause();
     }
@@ -459,8 +458,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             userLogMessage.add(ICON_HEART + "nightscout 600 Series Uploader");
             userLogMessage.add(ICON_SETTING + "Poll interval: " + (dataStore.getPollInterval() / 60000) + " minutes");
             userLogMessage.add(ICON_SETTING + "Low battery poll interval: " + (dataStore.getLowBatPollInterval() / 60000) + " minutes");
-        } else {
-            // userLogMessage.add(ICON_HEART + "Welcome back :)");
         }
     }
 
@@ -469,7 +466,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void statusDestroy() {
-        //userLogMessage.add(ICON_INFO + "Shutting down UI");
         if (!prefs.getBoolean("EnableCgmService", false)) {
             userLogMessage.add(ICON_HEART + "Goodbye :)");
             userLogMessage.add("---------------------------------------------------");
@@ -698,15 +694,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         timeLastSGV = 0;
 
-        TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
-        TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
+        TextView textViewBg = findViewById(R.id.textview_bg);
+        TextView textViewUnits = findViewById(R.id.textview_units);
         if (dataStore.isMmolxl()) {
             textViewUnits.setText(R.string.text_unit_mmolxl);
         } else {
             textViewUnits.setText(R.string.text_unit_mgxdl);
         }
-        TextView textViewTrend = (TextView) findViewById(R.id.textview_trend);
-        TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
+        TextView textViewTrend = findViewById(R.id.textview_trend);
+        TextView textViewIOB = findViewById(R.id.textview_iob);
 
         String sgvString = "\u2014"; // &mdash;
         String trendString = "{ion_ios_minus_empty}";
@@ -769,7 +765,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         textViewTrend.setText(trendString);
         textViewTrend.setRotation(trendRotation);
 
-        ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
+        MenuView.ItemView batIcon = findViewById(R.id.status_battery);
         if (batIcon != null) {
             switch (battery) {
                 case 0:
@@ -807,7 +803,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             Log.d(TAG, "refreshDisplayRunnable");
             long nextRun = 60000L;
 
-            TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
+            TextView textViewBgTime = findViewById(R.id.textview_bg_time);
             String timeString = "never";
 
             if (timeLastSGV > 0) {
