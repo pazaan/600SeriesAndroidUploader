@@ -653,6 +653,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private RealmResults displayResults;
     private long timeLastSGV;
+    private int pumpBattery;
 
     private void startDisplay() {
         Log.d(TAG, "startDisplay");
@@ -693,6 +694,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
 
         timeLastSGV = 0;
+        pumpBattery = -1;
 
         TextView textViewBg = findViewById(R.id.textview_bg);
         TextView textViewUnits = findViewById(R.id.textview_units);
@@ -708,7 +710,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         String trendString = "{ion_ios_minus_empty}";
         int trendRotation = 0;
         float iob = 0;
-        int battery = 0;
 
         // most recent sgv status
         RealmResults<PumpStatusEvent> sgv_results =
@@ -753,46 +754,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         // most recent pump status
         RealmResults<PumpStatusEvent> pump_results =
                 mRealm.where(PumpStatusEvent.class)
+                        .greaterThan("eventDate", new Date(System.currentTimeMillis() - 60 * 60000L))
                         .findAllSorted("eventDate", Sort.ASCENDING);
 
         if (pump_results.size() > 0) {
             iob = pump_results.last().getActiveInsulin();
-            battery = pump_results.last().getBatteryPercentage();
+            pumpBattery = pump_results.last().getBatteryPercentage();
         }
 
         textViewBg.setText(sgvString);
         textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", iob));
         textViewTrend.setText(trendString);
         textViewTrend.setRotation(trendRotation);
-
-        MenuView.ItemView batIcon = findViewById(R.id.status_battery);
-        if (batIcon != null) {
-            switch (battery) {
-                case 0:
-                    batIcon.setTitle("0%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
-                    break;
-                case 25:
-                    batIcon.setTitle("25%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
-                    break;
-                case 50:
-                    batIcon.setTitle("50%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
-                    break;
-                case 75:
-                    batIcon.setTitle("75%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
-                    break;
-                case 100:
-                    batIcon.setTitle("100%");
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
-                    break;
-                default:
-                    batIcon.setTitle(getResources().getString(R.string.menu_name_status));
-                    batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
-            }
-        }
 
         mUiRefreshHandler.post(mUiRefreshRunnable);
     }
@@ -812,6 +785,39 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
 
             textViewBgTime.setText(timeString);
+
+            MenuView.ItemView batIcon = findViewById(R.id.status_battery);
+            if (batIcon != null) {
+                switch (pumpBattery) {
+                    case 0:
+                        batIcon.setTitle("0%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_0));
+                        break;
+                    case 25:
+                        batIcon.setTitle("25%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_25));
+                        break;
+                    case 50:
+                        batIcon.setTitle("50%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_50));
+                        break;
+                    case 75:
+                        batIcon.setTitle("75%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_75));
+                        break;
+                    case 100:
+                        batIcon.setTitle("100%");
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
+                        break;
+                    default:
+                        batIcon.setTitle(getResources().getString(R.string.menu_name_status));
+                        batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
+                }
+            } else {
+                // run again in 100ms if batIcon resource is not available yet
+                nextRun = 100L;
+            }
+
             // Run myself again in 60 (or less) seconds;
             mUiRefreshHandler.postDelayed(this, nextRun);
         }
