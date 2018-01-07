@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mEnableCgmService = Eula.show(this, prefs);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
@@ -260,10 +260,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 })
                 .build();
 
-        mTextViewLog = (TextView) findViewById(R.id.textview_log);
-        mScrollView = (ScrollView) findViewById(R.id.scrollView);
+        mTextViewLog = findViewById(R.id.textview_log);
+        mScrollView = findViewById(R.id.scrollView);
         mScrollView.setSmoothScrollingEnabled(true);
-        mTextViewLogButtonTop = (TextView) findViewById(R.id.button_log_top);
+        mTextViewLogButtonTop = findViewById(R.id.button_log_top);
         mTextViewLogButtonTop.setVisibility(View.GONE);
         mTextViewLogButtonTop.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -271,7 +271,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 changeUserLogViewOlder();
             }
         });
-        mTextViewLogButtonTopRecent = (TextView) findViewById(R.id.button_log_top_recent);
+        mTextViewLogButtonTopRecent = findViewById(R.id.button_log_top_recent);
         mTextViewLogButtonTopRecent.setVisibility(View.GONE);
         mTextViewLogButtonTopRecent.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -280,7 +280,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         });
 
-        mTextViewLogButtonBottom = (TextView) findViewById(R.id.button_log_bottom);
+        mTextViewLogButtonBottom = findViewById(R.id.button_log_bottom);
         mTextViewLogButtonBottom.setVisibility(View.GONE);
         mTextViewLogButtonBottom.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -288,7 +288,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 changeUserLogViewNewer();
             }
         });
-        mTextViewLogButtonBottomRecent = (TextView) findViewById(R.id.button_log_bottom_recent);
+        mTextViewLogButtonBottomRecent = findViewById(R.id.button_log_bottom_recent);
         mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
         mTextViewLogButtonBottomRecent.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -297,7 +297,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         });
 
-        mChart = (GraphView) findViewById(R.id.chart);
+        mChart = findViewById(R.id.chart);
 
         // disable scrolling at the moment
         mChart.getViewport().setScalable(false);
@@ -698,15 +698,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         timeLastSGV = 0;
 
-        TextView textViewBg = (TextView) findViewById(R.id.textview_bg);
-        TextView textViewUnits = (TextView) findViewById(R.id.textview_units);
+        TextView textViewBg = findViewById(R.id.textview_bg);
+        TextView textViewUnits = findViewById(R.id.textview_units);
         if (dataStore.isMmolxl()) {
             textViewUnits.setText(R.string.text_unit_mmolxl);
         } else {
             textViewUnits.setText(R.string.text_unit_mgxdl);
         }
-        TextView textViewTrend = (TextView) findViewById(R.id.textview_trend);
-        TextView textViewIOB = (TextView) findViewById(R.id.textview_iob);
+        TextView textViewTrend = findViewById(R.id.textview_trend);
+        TextView textViewIOB = findViewById(R.id.textview_iob);
 
         String sgvString = "\u2014"; // &mdash;
         String trendString = "{ion_ios_minus_empty}";
@@ -769,7 +769,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         textViewTrend.setText(trendString);
         textViewTrend.setRotation(trendRotation);
 
-        ActionMenuItemView batIcon = ((ActionMenuItemView) findViewById(R.id.status_battery));
+        ActionMenuItemView batIcon = findViewById(R.id.status_battery);
         if (batIcon != null) {
             switch (battery) {
                 case 0:
@@ -807,7 +807,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             Log.d(TAG, "refreshDisplayRunnable");
             long nextRun = 60000L;
 
-            TextView textViewBgTime = (TextView) findViewById(R.id.textview_bg_time);
+            TextView textViewBgTime = findViewById(R.id.textview_bg_time);
             String timeString = "never";
 
             if (timeLastSGV > 0) {
