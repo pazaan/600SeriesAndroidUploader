@@ -308,23 +308,23 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
         }
     }
 
-    public static void estimate(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                int bgUnits,
-                                int carbUnits,
-                                double bgInput,
-                                double carbInput,
-                                double isf,
-                                double carbRatio,
-                                double lowBgTarget,
-                                double highBgTarget,
-                                double correctionEstimate,
-                                double foodEstimate,
-                                double iob,
-                                double iobAdjustment,
-                                double bolusWizardEstimate,
-                                int bolusStepSize,
-                                boolean estimateModifiedByUser,
-                                double finalEstimate) {
+    public static void bolusWizardEstimate(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+                                           int bgUnits,
+                                           int carbUnits,
+                                           double bgInput,
+                                           double carbInput,
+                                           double isf,
+                                           double carbRatio,
+                                           double lowBgTarget,
+                                           double highBgTarget,
+                                           double correctionEstimate,
+                                           double foodEstimate,
+                                           double iob,
+                                           double iobAdjustment,
+                                           double bolusWizardEstimate,
+                                           int bolusStepSize,
+                                           boolean estimateModifiedByUser,
+                                           double finalEstimate) {
 
         PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
                 .equalTo("estimate", true)
@@ -366,6 +366,52 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object.setFinalEstimate(finalEstimate);
         }
     }
+
+    public static void mealWizardEstimate(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+                                           int bgUnits,
+                                           int carbUnits,
+                                           double bgInput,
+                                           double carbInput,
+                                           double carbRatio,
+                                           double correctionEstimate,
+                                           double foodEstimate,
+                                           double bolusWizardEstimate,
+                                           double finalEstimate) {
+
+        PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
+                .equalTo("estimate", true)
+                .equalTo("estimateRTC", eventRTC)
+                .findFirst();
+        if (object == null) {
+            object = realm.where(PumpHistoryBolus.class)
+                    .notEqualTo("bolusRef", -1)
+                    .equalTo("estimate", false)
+                    .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.BOLUS_WIZARD.get())
+                    .greaterThan("programmedRTC", eventRTC - 60)
+                    .lessThan("programmedRTC", eventRTC + 60)
+                    .findFirst();
+            if (object == null) {
+                Log.d(TAG, "*new*" + " Ref: n/a create new bolus event *estimate*");
+                object = realm.createObject(PumpHistoryBolus.class);
+                object.setEventDate(eventDate);
+            } else {
+                Log.d(TAG, "*update*" + " Ref: " + object.getBolusRef() + " adding estimate to bolus event");
+            }
+            object.setEstimate(true);
+            object.setEstimateRTC(eventRTC);
+            object.setEstimateOFFSET(eventOFFSET);
+            object.setBgUnits(bgUnits);
+            object.setCarbUnits(carbUnits);
+            object.setBgInput(bgInput);
+            object.setCarbInput(carbInput);
+            object.setCarbRatio(carbRatio);
+            object.setCorrectionEstimate(correctionEstimate);
+            object.setFoodEstimate(foodEstimate);
+            object.setBolusWizardEstimate(bolusWizardEstimate);
+            object.setFinalEstimate(finalEstimate);
+        }
+    }
+
 
     @Override
     public Date getEventDate() {

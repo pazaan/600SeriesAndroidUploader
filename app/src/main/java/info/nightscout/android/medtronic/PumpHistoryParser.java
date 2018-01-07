@@ -117,6 +117,9 @@ public class PumpHistoryParser {
                         case BOLUS_WIZARD_ESTIMATE:
                             BOLUS_WIZARD_ESTIMATE();
                             break;
+                        case MEAL_WIZARD_ESTIMATE:
+                            MEAL_WIZARD_ESTIMATE();
+                            break;
                         case TEMP_BASAL_PROGRAMMED:
                             TEMP_BASAL_PROGRAMMED();
                             break;
@@ -134,6 +137,9 @@ public class PumpHistoryParser {
                             break;
                         case BG_READING:
                             BG_READING();
+                            break;
+                        case CLOSED_LOOP_BG_READING:
+                            CLOSED_LOOP_BG_READING();
                             break;
                         case CALIBRATION_COMPLETE:
                             CALIBRATION_COMPLETE();
@@ -240,7 +246,19 @@ public class PumpHistoryParser {
         double normalProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
         double normalDeliveredAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
         double activeInsulin = read32BEtoInt(eventData, index + 0x16) / 10000.0;
-        PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
+
+        if(bolusSource == BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.value) {
+            // Synthesize Closed Loop Microboluses into Temp Basals
+            PumpHistoryBasal.temp(historyRealm, eventDate, eventRTC, eventOFFSET,
+                true,
+                BOLUS_PRESET.NA.value,
+                TEMP_BASAL_TYPE.ABSOLUTE.value,
+                normalDeliveredAmount * 12, // Convert the 5 minute microbolus into an hourly basal rate
+                100,
+                300000, // Assume 5 minutes for a micro-bolus
+                false);
+        } else {
+            PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.NORMAL_BOLUS.get(), false, true, false,
                 bolusRef,
                 bolusSource,
@@ -249,6 +267,7 @@ public class PumpHistoryParser {
                 0, 0,
                 0, 0,
                 activeInsulin);
+        }
     }
 
     private void SQUARE_BOLUS_PROGRAMMED() {
@@ -347,7 +366,7 @@ public class PumpHistoryParser {
         int bolusStepSize = read8toUInt(eventData, index + 0x2F);
         boolean estimateModifiedByUser = (read8toUInt(eventData, index + 0x30) & 1) == 1;
         double finalEstimate = read32BEtoInt(eventData, index + 0x31) / 10000.0;
-        PumpHistoryBolus.estimate(historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBolus.bolusWizardEstimate(historyRealm, eventDate, eventRTC, eventOFFSET,
                 bgUnits,
                 carbUnits,
                 bgInput,
@@ -363,6 +382,28 @@ public class PumpHistoryParser {
                 bolusWizardEstimate,
                 bolusStepSize,
                 estimateModifiedByUser,
+                finalEstimate);
+    }
+
+    private void MEAL_WIZARD_ESTIMATE() {
+        int bgUnits = read8toUInt(eventData, index + 0x0B) & 1;
+        int carbUnits = read8toUInt(eventData, index + 0x0B) & 2;
+        double bgInput = read16BEtoUInt(eventData, index + 0x0C) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
+        double carbInput = read16BEtoUInt(eventData, index + 0x0E) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 10.0 : 1.0);
+        double carbRatio = read32BEtoULong(eventData, index + 0x1C) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 1000.0 : 10.0);
+        double correctionEstimate = read32BEtoLong(eventData, index + 0x10) / 10000.0;
+        double foodEstimate = read32BEtoULong(eventData, index + 0x14) / 10000.0;
+        double bolusWizardEstimate = read32BEtoInt(eventData, index + 0x18) / 10000.0;
+        double finalEstimate = bolusWizardEstimate;
+        PumpHistoryBolus.mealWizardEstimate(historyRealm, eventDate, eventRTC, eventOFFSET,
+                bgUnits,
+                carbUnits,
+                bgInput,
+                carbInput,
+                carbRatio,
+                correctionEstimate,
+                foodEstimate,
+                bolusWizardEstimate,
                 finalEstimate);
     }
 
@@ -420,10 +461,10 @@ public class PumpHistoryParser {
     }
 
     private void BG_READING() {
-        boolean calibrationFlag = (eventData[index + 0x0B] & 0x02) == 2;
         int bg = read16BEtoUInt(eventData, index + 0x0C);
         byte bgUnits = (byte) (eventData[index + 0x0B] & 1);
         byte bgSource = eventData[index + 0x0E];
+        boolean calibrationFlag = ((eventData[index + 0x0B] & 0x02) == 2) || bgSource == BG_SOURCE.SENSOR_CAL.value;
         String serial = new StringBuffer(readString(eventData, index + 0x0F, eventSize - 0x0F)).reverse().toString();
         PumpHistoryBG.bg(historyRealm, eventDate, eventRTC, eventOFFSET,
                 calibrationFlag,
@@ -431,6 +472,21 @@ public class PumpHistoryParser {
                 bgUnits,
                 bgSource,
                 serial);
+    }
+
+    private void CLOSED_LOOP_BG_READING() {
+        BG_CONTEXT bgContext = BG_CONTEXT.convert(eventData[index + 0x16] & 248 >> 3);
+        boolean calibrationFlag = bgContext == BG_CONTEXT.BG_SENT_FOR_CALIB || bgContext == BG_CONTEXT.ENTERED_IN_SENSOR_CALIB;
+
+        int bg = read16BEtoUInt(eventData, index + 0x0B);
+        byte bgUnits = (byte) (eventData[index + 0x16] & 1);
+
+        PumpHistoryBG.bg(historyRealm, eventDate, eventRTC, eventOFFSET,
+                calibrationFlag,
+                bg,
+                bgUnits,
+                (byte) bgContext.value, // TODO - Should really pass native values, and convert them in PumpHistoryBG
+                "");
     }
 
     private void CALIBRATION_COMPLETE() {
@@ -928,6 +984,10 @@ public class PumpHistoryParser {
         BOLUS_WIZARD(1),
         EASY_BOLUS(2),
         PRESET_BOLUS(4),
+        CLOSED_LOOP_MICRO_BOLUS(5),
+        CLOSED_LOOP_BG_CORRECTION(6),
+        CLOSED_LOOP_FOOD_BOLUS(7),
+        CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS(8),
         NA(-1);
 
         private int value;
@@ -976,6 +1036,43 @@ public class PumpHistoryParser {
             for (BG_SOURCE bg_source : BG_SOURCE.values())
                 if (bg_source.value == value) return bg_source;
             return BG_SOURCE.NA;
+        }
+    }
+
+    public enum BG_CONTEXT {
+        BG_READING_RECEIVED(0),
+        USER_ACCEPTED_REMOTE_BG(1),
+        USER_REJECTED_REMOTE_BG(2),
+        REMOTE_BG_ACCEPTANCE_SCREEN_TIMEOUT(3),
+        BG_SI_PASS_RESULT_RECD_FRM_GST(4),
+        BG_SI_FAIL_RESULT_RECD_FRM_GST(5),
+        BG_SENT_FOR_CALIB(6),
+        USER_REJECTED_SENSOR_CALIB(7),
+        ENTERED_IN_BG_ENTRY(8),
+        ENTERED_IN_MEAL_WIZARD(9),
+        ENTERED_IN_BOLUS_WIZRD(10),
+        ENTERED_IN_SENSOR_CALIB(11),
+        ENTERED_AS_BG_MARKER(12),
+        NA(-1);
+
+        private int value;
+
+        BG_CONTEXT(int value) {
+            this.value = value;
+        }
+
+        public int get() {
+            return this.value;
+        }
+
+        public boolean equals(int value) {
+            return this.value == value;
+        }
+
+        public static BG_CONTEXT convert(int value) {
+            for (BG_CONTEXT bg_context : BG_CONTEXT.values())
+                if (bg_context.value == value) return bg_context;
+            return BG_CONTEXT.NA;
         }
     }
 
