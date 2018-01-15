@@ -193,14 +193,9 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
 
         // Transmitter
         transmitterControl = payload[0x43];
-        transmitterBattery  = payload[0x45];
+        transmitterBattery = payload[0x45];
         // Normalise transmitter battery to percentage shown on pump sensor status screen
-        if (transmitterBattery == 0x3F) transmitterBattery = 100;
-        else if (transmitterBattery == 0x2B) transmitterBattery = 73;
-        else if (transmitterBattery == 0x27) transmitterBattery = 47;
-        else if (transmitterBattery == 0x23) transmitterBattery = 20;
-        else if (transmitterBattery == 0x10) transmitterBattery = 0;
-        else transmitterBattery = 0;
+        transmitterBattery = (byte) (((transmitterBattery & 0x0F) * 100) / 15);
 
         // Sensor
         long rawSensorRateOfChange = read16BEtoULong(payload, 0x46);
