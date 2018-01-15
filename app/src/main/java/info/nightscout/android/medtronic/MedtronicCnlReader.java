@@ -38,6 +38,7 @@ import info.nightscout.android.medtronic.message.PumpStatusResponseMessage;
 import info.nightscout.android.medtronic.message.PumpTimeRequestMessage;
 import info.nightscout.android.medtronic.message.PumpTimeResponseMessage;
 import info.nightscout.android.medtronic.message.ReadHistoryInfoRequestMessage;
+import info.nightscout.android.medtronic.message.ReadHistoryInfoResponseMessage;
 import info.nightscout.android.medtronic.message.ReadHistoryRequestMessage;
 import info.nightscout.android.medtronic.message.ReadHistoryResponseMessage;
 import info.nightscout.android.medtronic.message.ReadInfoRequestMessage;
@@ -46,6 +47,7 @@ import info.nightscout.android.medtronic.message.RequestLinkKeyRequestMessage;
 import info.nightscout.android.medtronic.message.RequestLinkKeyResponseMessage;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import info.nightscout.android.utils.HexDump;
 
 import static info.nightscout.android.medtronic.message.ContourNextLinkMessage.CNL_READ_TIMEOUT_MS;
 
@@ -299,22 +301,23 @@ public class MedtronicCnlReader {
         return response.getSensitivity();
     }
 
-    public void getHistoryInfo(long startTime, long endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public ReadHistoryInfoResponseMessage getHistoryInfo(long startTime, long endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistoryInfo");
 
-        int startRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
-        int endRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
-        new ReadHistoryInfoRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
+        int startRTC = (int) MessageUtils.rtcFromTime(startTime, sessionOFFSET);
+        int endRTC = (int) MessageUtils.rtcFromTime(endTime, sessionOFFSET);
+        ReadHistoryInfoResponseMessage response = new ReadHistoryInfoRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
 
         Log.d(TAG, "Finished getHistoryInfo");
+
+        return response;
     }
 
     public void getHistoryLogcat(long startTime, long endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistory");
 
-        int startRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
-        int endRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
-        new ReadHistoryInfoRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
+        int startRTC = (int) MessageUtils.rtcFromTime(startTime, sessionOFFSET);
+        int endRTC = (int) MessageUtils.rtcFromTime(endTime, sessionOFFSET);
 
         ReadHistoryResponseMessage response = new ReadHistoryRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
         new PumpHistoryParser(response.getEventData()).logcat();
@@ -325,17 +328,33 @@ public class MedtronicCnlReader {
     public Date[] getHistory(long startTime, long endTime, final int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistory");
 
-        int reqStartRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
-        int reqEndRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
+        long maxRTC = sessionRTC & 0xFFFFFFFFL;
+        long minRTC = maxRTC - ((90 * 24 * 60 * 60) - 3600);
 
-        // safety check as pump doesn't like out of date requests
-        int maxRTC = sessionRTC;
-        int minRTC = maxRTC - ((90 * 24 * 60 * 60) - 3600);
-        if (reqStartRTC > maxRTC) reqStartRTC = maxRTC;
-        if (reqEndRTC < minRTC) reqEndRTC = minRTC;
+        // adjust min RTC to allow for a new pump with <90 days on the RTC clock
+        if (minRTC < 0x80000000L) minRTC = 0x80000000L;
 
-        final int startRTC = reqStartRTC;
-        final int endRTC = reqEndRTC;
+        long reqStartRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
+        long reqEndRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
+        Log.d (TAG, "getHistory: reqStartRTC=" + HexDump.toHexString(reqStartRTC) + " reqEndRTC=" + HexDump.toHexString(reqEndRTC));
+
+        // check RTC bounds as pump doesn't like out of range requests
+
+        if (reqEndRTC < minRTC || reqStartRTC > maxRTC) {
+            // out of RTC range, return start/end dates as processed period
+            return new Date[] {new Date(startTime), new Date(endTime)};
+        }
+
+        if (reqEndRTC > maxRTC) {
+            reqEndRTC = maxRTC;
+            endTime = sessionDate.getTime();
+        }
+
+        if (reqStartRTC < minRTC) reqStartRTC = minRTC;
+
+        final int startRTC = (int) reqStartRTC;
+        final int endRTC = (int) reqEndRTC;
+        Log.d (TAG, "getHistory: final startRTC=" + HexDump.toHexString(startRTC) + " endRTC=" + HexDump.toHexString(endRTC));
 
         Message message = new Message() {
             @Override
@@ -346,7 +365,7 @@ public class MedtronicCnlReader {
 
         ReadHistoryResponseMessage response = (ReadHistoryResponseMessage) message.execute();
 
-        Date[] range = new PumpHistoryParser(response.getEventData()).process(sessionRTC, sessionOFFSET, sessionClockDifference);
+        Date[] range = new PumpHistoryParser(response.getEventData()).process(sessionRTC, sessionOFFSET, sessionClockDifference, startTime, endTime);
 
         Log.d(TAG, "Finished getHistory");
         return range;

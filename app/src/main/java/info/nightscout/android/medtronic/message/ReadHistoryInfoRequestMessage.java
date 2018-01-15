@@ -26,7 +26,7 @@ public class ReadHistoryInfoRequestMessage extends MedtronicSendMessageRequestMe
         ByteBuffer payload = ByteBuffer.allocate(12);
         payload.order(ByteOrder.BIG_ENDIAN);
         payload.put(0x00, (byte) dataType);  // pump data = 0x02, sensor data = 0x03
-        payload.put(0x01, (byte) 0x04);
+        payload.put(0x01, (byte) 0x04);  // full history = 0x03, partial history = 0x04
         payload.putInt(0x02, startRTC);
         payload.putInt(0x06, endRTC);
         payload.put(0x0A, (byte) 0x00);

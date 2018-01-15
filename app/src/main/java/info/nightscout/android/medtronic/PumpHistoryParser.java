@@ -58,16 +58,24 @@ public class PumpHistoryParser {
 
     private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
-    public Date[] process(final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference) {
+    public Date[] process(final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference, long startTime, long endTime) {
+
+        eventOldest = startTime;
+        eventNewest = endTime;
+
+        parser(pumpRTC, pumpOFFSET, pumpClockDifference);
+
+        // event date range returned by pump as it is usually more then requested
+        return new Date[]{eventOldest == 0 ? null : new Date(eventOldest), eventNewest == 0 ? null : new Date(eventNewest)};
+    }
+
+    private void parser(final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference) {
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
         this.pumpRTC = pumpRTC;
         this.pumpOFFSET = pumpOFFSET;
         this.pumpClockDifference = pumpClockDifference;
         this.pumpDRIFT = 4.0 / (24 * 60 * 60);
-
-        eventOldest = 0;
-        eventNewest = 0;
 
         index = 0;
         event = 0;
@@ -163,9 +171,6 @@ public class PumpHistoryParser {
         });
 
         historyRealm.close();
-
-        // event date range returned by pump as it is usually more then requested
-        return new Date[]{eventOldest == 0 ? null : new Date(eventOldest), eventNewest == 0 ? null : new Date(eventNewest)};
     }
 
     private void SENSOR_GLUCOSE_READINGS_EXTENDED() {
@@ -250,23 +255,23 @@ public class PumpHistoryParser {
         if(bolusSource == BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.value) {
             // Synthesize Closed Loop Microboluses into Temp Basals
             PumpHistoryBasal.temp(historyRealm, eventDate, eventRTC, eventOFFSET,
-                false,
-                BOLUS_PRESET.NA.value,
-                TEMP_BASAL_TYPE.ABSOLUTE.value,
-                normalDeliveredAmount * 12, // Convert the 5 minute microbolus into an hourly basal rate,
-                100,
-                300000, // Assume 5 minutes for a micro-bolus,
-                false);
+                    false,
+                    BOLUS_PRESET.NA.value,
+                    TEMP_BASAL_TYPE.ABSOLUTE.value,
+                    normalDeliveredAmount * 12, // Convert the 5 minute microbolus into an hourly basal rate,
+                    100,
+                    300000, // Assume 5 minutes for a micro-bolus,
+                    false);
         } else {
             PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
-                BOLUS_TYPE.NORMAL_BOLUS.get(), false, true, false,
-                bolusRef,
-                bolusSource,
-                presetBolusNumber,
-                normalProgrammedAmount, normalDeliveredAmount,
-                0, 0,
-                0, 0,
-                activeInsulin);
+                    BOLUS_TYPE.NORMAL_BOLUS.get(), false, true, false,
+                    bolusRef,
+                    bolusSource,
+                    presetBolusNumber,
+                    normalProgrammedAmount, normalDeliveredAmount,
+                    0, 0,
+                    0, 0,
+                    activeInsulin);
         }
     }
 

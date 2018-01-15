@@ -445,16 +445,7 @@ public class PumpHistoryHandler {
             if (dataStore.isDbgEnableExtendedErrors())
                 userLogMessage(historyTAG + "received \n      " + (range[0] == null ? "null" : dateFormatter.format(range[0])) + " - " + (range[1] == null ? "null" : dateFormatter.format(range[1])));
 
-            Date pulledStart = range[0];
-
-            // if nothing was returned from the pump for the period requested
-            // update the segment markers using the requested start date so that the empty period is accounted for
-            if(pulledStart == null) {
-                Log.d(TAG, historyTAG + "no history for requested period");
-                pulledStart = new Date(start);
-            }
-
-            final Date pulledFrom = pulledStart;
+            final Date pulledFrom = range[0];
 
             if (pulledFrom.getTime() > segment.get(1).getToDate().getTime()) {
                 // update the segment fromDate, we still need more history for this segment
