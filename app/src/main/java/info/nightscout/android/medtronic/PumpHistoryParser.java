@@ -195,7 +195,7 @@ public class PumpHistoryParser {
 
             byte sensorException = 0;
 
-            if (sgv > 0x1FF) {
+            if (sgv >= 0x0300) {
                 sensorException = (byte) sgv;
                 sgv = 0;
             }
@@ -711,7 +711,7 @@ public class PumpHistoryParser {
 
                     int sensorException = 0;
 
-                    if (sg > 0x1FF) {
+                    if (sg >= 0x0300) {
                         sensorException = sg & 0x00FF;
                         sg = 0;
                         result += "\n! " + sgtimestamp;
