@@ -19,6 +19,8 @@ public class PumpStatusEvent extends RealmObject {
 
     private String deviceName;
 
+    private byte[] payload; // save the payload for data mining on the 670G
+
     // Data from the Medtronic Pump add message
 
     private byte pumpStatus;
@@ -84,6 +86,14 @@ public class PumpStatusEvent extends RealmObject {
     public PumpStatusEvent() {
         // The the eventDate to now.
         this.eventDate = new Date();
+    }
+
+    public byte[] getPayload() {
+        return payload;
+    }
+
+    public void setPayload(byte[] payload) {
+        this.payload = payload;
     }
 
     public void setEventDate(Date eventDate) {
@@ -373,7 +383,7 @@ public class PumpStatusEvent extends RealmObject {
         this.lowSuspendActive = lowSuspendActive;
     }
 
-    public int getPumpStatus() {
+    public byte getPumpStatus() {
         return pumpStatus;
     }
 
@@ -381,7 +391,7 @@ public class PumpStatusEvent extends RealmObject {
         this.pumpStatus = pumpStatus;
     }
 
-    public int getCgmStatus() {
+    public byte getCgmStatus() {
         return cgmStatus;
     }
 

@@ -252,6 +252,17 @@ public class PumpHistoryParser {
         double normalDeliveredAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
         double activeInsulin = read32BEtoInt(eventData, index + 0x16) / 10000.0;
 
+        PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
+                BOLUS_TYPE.NORMAL_BOLUS.get(), false, true, false,
+                bolusRef,
+                bolusSource,
+                presetBolusNumber,
+                normalProgrammedAmount, normalDeliveredAmount,
+                0, 0,
+                0, 0,
+                activeInsulin);
+
+        /* paz
         if(bolusSource == BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.value) {
             // Synthesize Closed Loop Microboluses into Temp Basals
             PumpHistoryBasal.temp(historyRealm, eventDate, eventRTC, eventOFFSET,
@@ -273,6 +284,7 @@ public class PumpHistoryParser {
                     0, 0,
                     activeInsulin);
         }
+        */
     }
 
     private void SQUARE_BOLUS_PROGRAMMED() {
@@ -392,6 +404,38 @@ public class PumpHistoryParser {
 
     private void MEAL_WIZARD_ESTIMATE() {
         int bgUnits = read8toUInt(eventData, index + 0x0B) & 1;
+        int carbUnits = (read8toUInt(eventData, index + 0x0B) & 2) >> 1;
+        int bolusStepSize = read8toUInt(eventData, index + 0x2F);
+        double bgInput = read16BEtoUInt(eventData, index + 0x0C) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
+        double carbInput = read16BEtoUInt(eventData, index + 0x0E) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 10.0 : 1.0);
+        double carbRatio = read32BEtoULong(eventData, index + 0x1C) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 1000.0 : 10.0);
+        double correctionEstimate = read32BEtoLong(eventData, index + 0x10) / 10000.0;
+        double foodEstimate = read32BEtoULong(eventData, index + 0x14) / 10000.0;
+        double bolusWizardEstimate = read32BEtoInt(eventData, index + 0x18) / 10000.0;
+        double finalEstimate = bolusWizardEstimate;
+
+        PumpHistoryBolus.bolusWizardEstimate(historyRealm, eventDate, eventRTC, eventOFFSET,
+                bgUnits,
+                carbUnits,
+                bgInput,
+                carbInput,
+                0,
+                carbRatio,
+                0,
+                0,
+                correctionEstimate,
+                foodEstimate,
+                0,
+                0,
+                bolusWizardEstimate,
+                bolusStepSize,
+                false,
+                finalEstimate);
+    }
+
+    /* paz
+    private void MEAL_WIZARD_ESTIMATE() {
+        int bgUnits = read8toUInt(eventData, index + 0x0B) & 1;
         int carbUnits = read8toUInt(eventData, index + 0x0B) & 2;
         double bgInput = read16BEtoUInt(eventData, index + 0x0C) / (bgUnits == BG_UNITS.MMOL_L.get() ? 10.0 : 1.0);
         double carbInput = read16BEtoUInt(eventData, index + 0x0E) / (carbUnits == CARB_UNITS.EXCHANGES.get() ? 10.0 : 1.0);
@@ -411,7 +455,7 @@ public class PumpHistoryParser {
                 bolusWizardEstimate,
                 finalEstimate);
     }
-
+*/
     private void TEMP_BASAL_PROGRAMMED() {
         int preset = read8toUInt(eventData, index + 0x0B);
         int type = read8toUInt(eventData, index + 0x0C);
@@ -479,6 +523,7 @@ public class PumpHistoryParser {
                 serial);
     }
 
+/* paz
     private void CLOSED_LOOP_BG_READING() {
         BG_CONTEXT bgContext = BG_CONTEXT.convert(eventData[index + 0x16] & 248 >> 3);
         boolean calibrationFlag = bgContext == BG_CONTEXT.BG_SENT_FOR_CALIB || bgContext == BG_CONTEXT.ENTERED_IN_SENSOR_CALIB;
@@ -492,6 +537,18 @@ public class PumpHistoryParser {
                 bgUnits,
                 (byte) bgContext.value, // TODO - Should really pass native values, and convert them in PumpHistoryBG
                 "");
+    }
+*/
+
+    private void CLOSED_LOOP_BG_READING() {
+        int bgContext = eventData[index + 0x16] & 248 >> 3;
+        int bg = read16BEtoUInt(eventData, index + 0x0B);
+        byte bgUnits = (byte) (eventData[index + 0x16] & 1);
+
+        PumpHistoryBG.bgcl(historyRealm, eventDate, eventRTC, eventOFFSET,
+                bgContext,
+                bg,
+                bgUnits);
     }
 
     private void CALIBRATION_COMPLETE() {

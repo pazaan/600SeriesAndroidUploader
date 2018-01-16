@@ -77,6 +77,8 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private short calibrationDueMinutes;
     private float sensorRateOfChange;
 
+    private byte[] payload; // save the payload for data mining on the 670G
+
     protected PumpStatusResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
@@ -84,6 +86,8 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             Log.e(TAG, "Invalid message received for PumpTime");
             throw new UnexpectedMessageException("Invalid message received for PumpStatus");
         }
+
+        this.payload = payload; // save the payload for data mining on the 670G
 
         // add Flags
         pumpStatus = payload[0x03];
@@ -208,6 +212,8 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
      * @param pumpRecord
      */
     public void updatePumpRecord(PumpStatusEvent pumpRecord) {
+
+        pumpRecord.setPayload(payload);  // save the payload for data mining on the 670G
 
         // add Flags
         pumpRecord.setPumpStatus(pumpStatus);

@@ -44,6 +44,9 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     private int bgOffset;
     private Date bgDate;
 
+    boolean bgcl;
+    int bgContext;
+
     byte bgUnits;
     byte bgSource;
 
@@ -88,6 +91,12 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                 long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
                 treatment.setNotes("CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)");
                 uploadItem.update();
+            }
+
+            if (bgcl) {
+                treatment.setNotes("[DEBUG: bgContext=" + bgContext + " rtc=" + String.format("%08X", bgRTC) + "]");
+            } else {
+                treatment.setNotes("[DEBUG: cal=" + calibrationFlag + "]");
             }
 
             // insert BG reading as CGM chart entry
@@ -179,6 +188,30 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             object.setCalibrationFactor(calFactor);
             object.setCalibrationTarget(bgTarget);
         }
+    }
+
+    public static void bgcl(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+                            int bgContext,
+                            int bg,
+                            byte bgUnits) {
+
+        PumpHistoryBG object = realm.where(PumpHistoryBG.class)
+                .equalTo("bgRTC", eventRTC)
+                .equalTo("bgContext", bgContext)
+                .findFirst();
+        if (object == null) {
+            Log.d(TAG, "*new*" + " bgcl");
+            object = realm.createObject(PumpHistoryBG.class);
+            object.setEventDate(eventDate);
+        }
+        object.setBgcl(true);
+        object.setBgDate(eventDate);
+        object.setBgRTC(eventRTC);
+        object.setBgOffset(eventOFFSET);
+        object.setBg(bg);
+        object.setBgUnits(bgUnits);
+        object.setKey("BGCL" + String.format("%08X", eventRTC));
+        object.setUploadREQ(true);
     }
 
     @Override
@@ -279,6 +312,22 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
 
     public void setBgSource(byte bgSource) {
         this.bgSource = bgSource;
+    }
+
+    public boolean isBgcl() {
+        return bgcl;
+    }
+
+    public void setBgcl(boolean bgcl) {
+        this.bgcl = bgcl;
+    }
+
+    public int getBgContext() {
+        return bgContext;
+    }
+
+    public void setBgContext(int bgContext) {
+        this.bgContext = bgContext;
     }
 
     public int getBg() {

@@ -31,6 +31,7 @@ import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.utils.HexDump;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -477,6 +478,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 }
                             }
 
+                            discovery670G_NS();
+
                             // history
 
                             pumpHistoryHandler.cgm(pumpRecord);
@@ -624,6 +627,83 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             readPump = null;
         } // thread end
+    }
+
+    private void discovery670G() {
+
+        RealmResults<PumpStatusEvent> results = realm
+                .where(PumpStatusEvent.class)
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        if (results.size() < 2) return;
+
+        byte[] payload = results.first().getPayload();
+
+        if ((payload[0x08] | payload[0x09] | payload[0x0A] | payload[0x0B]) > 0) {
+            userLogMessage("* 0x08: " + HexDump.toHexString(payload, 0x08, 4));
+        }
+
+        if ((payload[0x55] | payload[0x56] | payload[0x57]) > 0) {
+            userLogMessage("* 0x55: " + HexDump.toHexString(payload, 0x55, 3));
+        }
+
+        if ((payload[0x0F] | payload[0x19]) > 0) {
+            userLogMessage("* 0x0F: " + HexDump.toHexString(payload[0x0F]) + " 0x19: " + HexDump.toHexString(payload[0x19]));
+        }
+
+        byte status = results.first().getPumpStatus();
+
+        if ((status & 0x80) > 0) {
+            userLogMessage("* status: bit 7 set! " + HexDump.toHexString(status));
+        }
+
+    }
+
+    private void discovery670G_NS() {
+        long now = System.currentTimeMillis();
+
+        Date lastDate = pumpHistoryHandler.debugNoteLastDate();
+        if (lastDate != null && now - lastDate.getTime() < 30 * 60000L) return;
+
+        RealmResults<PumpStatusEvent> results = realm
+                .where(PumpStatusEvent.class)
+                .greaterThan("eventDate", new Date(now - 33 * 60000L))
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        if (results.size() < 1) return;
+
+        String note = "DEBUG:";
+        byte[] payload;
+        int i = 0;
+
+        for (PumpStatusEvent record : results) {
+            note += " [" + i + "] ";
+
+            byte status = record.getPumpStatus();
+
+            note += " ST:" + String.format(Locale.US,"%8s", Integer.toBinaryString(status)).replace(' ', '0')
+                    + " BP:" + record.getActiveBasalPattern() + "/" + record.getActiveTempBasalPattern()
+                    + " NB:" + HexDump.toHexString(record.getBolusingReference())
+                    + " LB:" + HexDump.toHexString(record.getLastBolusReference());
+
+            payload = record.getPayload();
+
+            if ((payload[0x08] | payload[0x09] | payload[0x0A] | payload[0x0B]) > 0) {
+                note += " 0x08: " + HexDump.toHexString(payload, 0x08, 4);
+            }
+
+            if ((payload[0x55] | payload[0x56] | payload[0x57]) > 0) {
+                note += " 0x55: " + HexDump.toHexString(payload, 0x55, 3);
+            }
+
+            if ((payload[0x0F] | payload[0x19]) > 0) {
+                note += " 0x0F: " + HexDump.toHexString(payload[0x0F]) + " 0x19: " + HexDump.toHexString(payload[0x19]);
+            }
+
+            i--;
+        }
+
+        pumpHistoryHandler.debugNote(new Date(now), note);
     }
 
     private void statusWarnings() {

@@ -22,6 +22,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
+import info.nightscout.android.model.medtronicNg.PumpHistoryDebug;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
 import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
@@ -78,6 +79,7 @@ public class PumpHistoryHandler {
         historyDB.add(new DBitem("BG", 20, historyRealm.where(PumpHistoryBG.class).findAll()));
         historyDB.add(new DBitem("PROFILE", 20, historyRealm.where(PumpHistoryProfile.class).findAll()));
         historyDB.add(new DBitem("MISC", 20, historyRealm.where(PumpHistoryMisc.class).findAll()));
+        historyDB.add(new DBitem("DEBUG", 20, historyRealm.where(PumpHistoryDebug.class).findAll()));
     }
 
     private class DBitem {
@@ -174,6 +176,23 @@ public class PumpHistoryHandler {
                 }
             }
         });
+    }
+
+    public void debugNote(final Date eventDate, final String note) {
+        historyRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                PumpHistoryDebug.note(historyRealm, eventDate, note);
+            }
+        });
+    }
+
+    public Date debugNoteLastDate() {
+        RealmResults<PumpHistoryDebug> results = historyRealm
+                .where(PumpHistoryDebug.class)
+                .findAllSorted("eventDate", Sort.DESCENDING);
+        if (results.size() > 0) return results.first().getEventDate();
+        return null;
     }
 
     public void profile(final MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
