@@ -13,6 +13,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
+import info.nightscout.android.model.medtronicNg.PumpHistoryMicroBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
 import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import io.realm.Realm;
@@ -252,15 +253,21 @@ public class PumpHistoryParser {
         double normalDeliveredAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
         double activeInsulin = read32BEtoInt(eventData, index + 0x16) / 10000.0;
 
-        PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
-                BOLUS_TYPE.NORMAL_BOLUS.get(), false, true, false,
-                bolusRef,
-                bolusSource,
-                presetBolusNumber,
-                normalProgrammedAmount, normalDeliveredAmount,
-                0, 0,
-                0, 0,
-                activeInsulin);
+        if(bolusSource == BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.value) {
+            PumpHistoryMicroBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
+                    bolusRef,
+                    normalDeliveredAmount);
+        } else {
+            PumpHistoryBolus.bolus(historyRealm, eventDate, eventRTC, eventOFFSET,
+                    BOLUS_TYPE.NORMAL_BOLUS.get(), false, true, false,
+                    bolusRef,
+                    bolusSource,
+                    presetBolusNumber,
+                    normalProgrammedAmount, normalDeliveredAmount,
+                    0, 0,
+                    0, 0,
+                    activeInsulin);
+        }
 
         /* paz
         if(bolusSource == BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.value) {
@@ -513,6 +520,7 @@ public class PumpHistoryParser {
         int bg = read16BEtoUInt(eventData, index + 0x0C);
         byte bgUnits = (byte) (eventData[index + 0x0B] & 1);
         byte bgSource = eventData[index + 0x0E];
+        byte bgContext = -1;
         boolean calibrationFlag = ((eventData[index + 0x0B] & 0x02) == 2) || bgSource == BG_SOURCE.SENSOR_CAL.value;
         String serial = new StringBuffer(readString(eventData, index + 0x0F, eventSize - 0x0F)).reverse().toString();
         PumpHistoryBG.bg(historyRealm, eventDate, eventRTC, eventOFFSET,
@@ -520,6 +528,23 @@ public class PumpHistoryParser {
                 bg,
                 bgUnits,
                 bgSource,
+                bgContext,
+                serial);
+    }
+
+    private void CLOSED_LOOP_BG_READING() {
+        int bg = read16BEtoUInt(eventData, index + 0x0B);
+        byte bgUnits = (byte) (eventData[index + 0x16] & 1);
+        byte bgSource = -1;
+        byte bgContext = (byte) ((eventData[index + 0x16] & 0xF8) >> 3);
+        boolean calibrationFlag = bgContext == BG_CONTEXT.BG_SENT_FOR_CALIB.value || bgContext == BG_CONTEXT.ENTERED_IN_SENSOR_CALIB.value;
+        String serial = "";
+        PumpHistoryBG.bg(historyRealm, eventDate, eventRTC, eventOFFSET,
+                calibrationFlag,
+                bg,
+                bgUnits,
+                bgSource,
+                bgContext,
                 serial);
     }
 
@@ -539,17 +564,6 @@ public class PumpHistoryParser {
                 "");
     }
 */
-
-    private void CLOSED_LOOP_BG_READING() {
-        int bgContext = (eventData[index + 0x16] & 0xF8) >> 3;
-        int bg = read16BEtoUInt(eventData, index + 0x0B);
-        byte bgUnits = (byte) (eventData[index + 0x16] & 1);
-
-        PumpHistoryBG.bgcl(historyRealm, eventDate, eventRTC, eventOFFSET,
-                bgContext,
-                bg,
-                bgUnits);
-    }
 
     private void CALIBRATION_COMPLETE() {
         double calFactor = read16BEtoUInt(eventData, index + 0xB) / 100.0;
@@ -1103,6 +1117,7 @@ public class PumpHistoryParser {
 
     public enum BG_CONTEXT {
         BG_READING_RECEIVED(0),
+
         USER_ACCEPTED_REMOTE_BG(1),
         USER_REJECTED_REMOTE_BG(2),
         REMOTE_BG_ACCEPTANCE_SCREEN_TIMEOUT(3),
@@ -1110,11 +1125,13 @@ public class PumpHistoryParser {
         BG_SI_FAIL_RESULT_RECD_FRM_GST(5),
         BG_SENT_FOR_CALIB(6),
         USER_REJECTED_SENSOR_CALIB(7),
+
         ENTERED_IN_BG_ENTRY(8),
         ENTERED_IN_MEAL_WIZARD(9),
         ENTERED_IN_BOLUS_WIZRD(10),
         ENTERED_IN_SENSOR_CALIB(11),
         ENTERED_AS_BG_MARKER(12),
+
         NA(-1);
 
         private int value;

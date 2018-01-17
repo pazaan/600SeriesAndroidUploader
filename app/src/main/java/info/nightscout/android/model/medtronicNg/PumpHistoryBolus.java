@@ -39,8 +39,10 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
     private int bolusRef = -1;
 
     private int bolusType; // normal=0 square=1 dual=2
-    private int bolusSource;
     private int bolusPreset;
+    private int bolusSource;
+
+    private double totalProgrammedAmount;
 
     private double normalProgrammedAmount;
     private double normalDeliveredAmount;
@@ -102,28 +104,23 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
             String notes = "";
 
-            if (PumpHistoryParser.BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.equals(bolusSource)) {
-                // Synthesize Closed Loop Microboluses into Temp Basals
 
-                notes = "microbolus " + normalDeliveredAmount + "U";
+            // debug any missed estimates on 670G
 
-                notes += " [DEBUG: ref=" + bolusRef + " prog=" + normalProgrammedAmount + " " + String.format("%08X", programmedRTC) + " del=" + normalDeliveredAmount + " " + String.format("%08X", normalDeliveredRTC) + "]";
+            if (estimate && !programmed && !normalDelivered && !squareDelivered) {
 
-                treatment.setEventType("Temp Basal");
-                treatment.setKey600("MICRO" + key);
-                treatment.setDuration((float) 5);
+                notes = "*** carb " + carbInput + "g : " + foodEstimate + "U, correction " + correctionEstimate + "U, final: " + finalEstimate;
+
+                notes += " [DEBUG: rtc=" + String.format("%08X", estimateRTC) + "]";
+
+                treatment.setCreated_at(eventDate);
+                treatment.setKey600("WIZ" + String.format("%08X", estimateRTC));
+                treatment.setEventType("Note");
                 treatment.setNotes(notes);
-
-                if (programmed) {
-                    treatment.setCreated_at(programmedDate);
-                    treatment.setAbsolute((float) (normalProgrammedAmount * 12));
-                } else {
-                    treatment.setCreated_at(normalDeliveredDate);
-                    treatment.setAbsolute((float) (normalDeliveredAmount * 12));
-                }
 
                 return uploadItems;
             }
+
 
             treatment.setCreated_at(programmedDate);
             treatment.setKey600(key);
@@ -212,7 +209,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
                 } else {
 
-                    // closed loop meal wizard
+                    // closed loop wizard
                         notes += "WIZ: carb %1.0fg : %2.1fU, correction %5.1fU (ratio %8.0f/u";
                 }
 
@@ -235,7 +232,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 );
             }
 
-            notes += " [DEBUG: source=" + bolusSource + " ref=" + bolusRef + "]";
+            notes += " [DEBUG: source=" + bolusSource + " ref=" + bolusRef + " rtc=" + String.format("%08X", programmedRTC) + "]";
 
             // nightscout does not have a square bolus type so a combo type is used but due to no normal bolus part
             // there is no tag shown in the main graph, a note is sent to NS to compensate for this
@@ -267,46 +264,25 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                              int squareProgrammedDuration, int squareDeliveredDuration,
                              double activeInsulin) {
 
-        PumpHistoryBolus object;
-
-        if (PumpHistoryParser.BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.equals(bolusSource) && bolusRef == 0) {
-            // unsure if there is an actual bolusRef for these?
-            // and does it use programmed/delivered events or just delivered?
-            // so handling separately for now
-
-            if (programmed) {
-                object = realm.where(PumpHistoryBolus.class)
-                        .equalTo("programmedRTC", eventRTC)
-                        .findFirst();
-            } else {
-                object = realm.where(PumpHistoryBolus.class)
-                        .equalTo("normalDeliveredRTC", eventRTC)
-                        .findFirst();
-            }
-
-        } else {
-
-            object = realm.where(PumpHistoryBolus.class)
+        PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
                     .beginGroup()
                     .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("programmedRTC", eventRTC - 8 * 60 * 60)
-                    .lessThanOrEqualTo("programmedRTC", eventRTC + 8 * 60 * 60)
+                    .greaterThanOrEqualTo("programmedRTC", eventRTC - (8 * 60 * 60))
+                    .lessThanOrEqualTo("programmedRTC", eventRTC + (8 * 60 * 60))
                     .endGroup()
                     .or()
                     .beginGroup()
                     .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("normalDeliveredRTC", eventRTC - 8 * 60 * 60)
-                    .lessThanOrEqualTo("normalDeliveredRTC", eventRTC + 8 * 60 * 60)
+                    .greaterThanOrEqualTo("normalDeliveredRTC", eventRTC - (8 * 60 * 60))
+                    .lessThanOrEqualTo("normalDeliveredRTC", eventRTC + (8 * 60 * 60))
                     .endGroup()
                     .or()
                     .beginGroup()
                     .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("squareDeliveredRTC", eventRTC - 8 * 60 * 60)
-                    .lessThanOrEqualTo("squareDeliveredRTC", eventRTC + 8 * 60 * 60)
+                    .greaterThanOrEqualTo("squareDeliveredRTC", eventRTC - (8 * 60 * 60))
+                    .lessThanOrEqualTo("squareDeliveredRTC", eventRTC + (8 * 60 * 60))
                     .endGroup()
                     .findFirst();
-
-        }
 
         if (object == null) {
             // look for a bolus estimate
@@ -317,7 +293,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 object = realm.where(PumpHistoryBolus.class)
                         .equalTo("bolusRef", -1)
                         .equalTo("estimate", true)
-                        .greaterThan("estimateRTC", eventRTC - 60)
+                        .greaterThan("estimateRTC", eventRTC - (5 * 60))
                         .lessThanOrEqualTo("estimateRTC", eventRTC)
                         .findFirst();
             }
@@ -334,6 +310,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object.setBolusPreset(presetBolusNumber);
             object.setActiveInsulin(activeInsulin);
         }
+
         if (programmed && !object.isProgrammed()) {
             Log.d(TAG, "*update*" + " Ref: " + bolusRef + " update bolus event programming");
             object.setEventDate(eventDate);
@@ -343,21 +320,12 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object.setProgrammedOFFSET(eventOFFSET);
             object.setNormalProgrammedAmount(normalProgrammedAmount);
             object.setSquareProgrammedAmount(squareProgrammedAmount);
+            object.setTotalProgrammedAmount(normalProgrammedAmount + squareProgrammedAmount);
             object.setSquareProgrammedDuration(squareProgrammedDuration);
-
-
-            // microbolus: does it use programmed/delivered events or just delivered?
-            if (PumpHistoryParser.BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.equals(bolusSource)) {
-                if (object.isNormalDelivered()) object.setUploadREQ(true);
-
-            } else {
-
-                object.setKey("BOLUS" + String.format("%08X", eventRTC));
-                object.setUploadREQ(true);
-
-            }
-
+            object.setKey("BOLUS" + String.format("%08X", eventRTC));
+            object.setUploadREQ(true);
         }
+
         if (normalDelivered && !object.isNormalDelivered()) {
             Log.d(TAG, "*update*" + " Ref: " + bolusRef + " update bolus event normal delivered");
             object.setNormalDelivered(true);
@@ -366,14 +334,8 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object.setNormalDeliveredOFFSET(eventOFFSET);
             object.setNormalDeliveredAmount(normalDeliveredAmount);
             if (object.isProgrammed() && normalProgrammedAmount != normalDeliveredAmount) object.setUploadREQ(true);
-
-            // microbolus: does it use programmed/delivered events or just delivered?
-            if (PumpHistoryParser.BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.equals(bolusSource)) {
-                object.setUploadREQ(true);
-                object.setKey("BOLUS" + String.format("%08X", eventRTC));
-            }
-
         }
+
         if (squareDelivered && !object.isSquareDelivered()) {
             Log.d(TAG, "*update*" + " Ref: " + bolusRef + " update bolus event square delivered");
             object.setSquareDelivered(true);
@@ -413,8 +375,9 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object = realm.where(PumpHistoryBolus.class)
                     .notEqualTo("bolusRef", -1)
                     .equalTo("estimate", false)
+                    .equalTo("totalProgrammedAmount", finalEstimate)
                     .greaterThan("programmedRTC", eventRTC - 60)
-                    .lessThan("programmedRTC", eventRTC + 60)
+                    .lessThan("programmedRTC", eventRTC + (5 * 60))
                     .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.BOLUS_WIZARD.get())
                     .or()
                     .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.CLOSED_LOOP_BG_CORRECTION.get())
@@ -449,6 +412,9 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object.setBolusStepSize(bolusStepSize);
             object.setEstimateModifiedByUser(estimateModifiedByUser);
             object.setFinalEstimate(finalEstimate);
+
+            // debug: upload to NS to check if this is being attached to a bolus event
+            object.setUploadREQ(true);
         }
     }
 
@@ -589,6 +555,14 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
     public void setBolusPreset(int bolusPreset) {
         this.bolusPreset = bolusPreset;
+    }
+
+    public double getTotalProgrammedAmount() {
+        return totalProgrammedAmount;
+    }
+
+    public void setTotalProgrammedAmount(double totalProgrammedAmount) {
+        this.totalProgrammedAmount = totalProgrammedAmount;
     }
 
     public double getNormalProgrammedAmount() {

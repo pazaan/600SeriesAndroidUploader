@@ -24,6 +24,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpHistoryDebug;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
+import info.nightscout.android.model.medtronicNg.PumpHistoryMicroBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
 import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
@@ -79,6 +80,7 @@ public class PumpHistoryHandler {
         historyDB.add(new DBitem("BG", 20, historyRealm.where(PumpHistoryBG.class).findAll()));
         historyDB.add(new DBitem("PROFILE", 20, historyRealm.where(PumpHistoryProfile.class).findAll()));
         historyDB.add(new DBitem("MISC", 20, historyRealm.where(PumpHistoryMisc.class).findAll()));
+        historyDB.add(new DBitem("MICRO", 100, historyRealm.where(PumpHistoryMicroBolus.class).findAll()));
         historyDB.add(new DBitem("DEBUG", 20, historyRealm.where(PumpHistoryDebug.class).findAll()));
     }
 

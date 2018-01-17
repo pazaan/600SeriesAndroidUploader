@@ -44,11 +44,9 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     private int bgOffset;
     private Date bgDate;
 
-    private boolean bgcl;
-    private int bgContext;
-
     private byte bgUnits;
     private byte bgSource;
+    private byte bgContext;
 
     private int bg;
     private String serial;
@@ -67,11 +65,51 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     public List nightscout(DataStore dataStore) {
         List<UploadItem> uploadItems = new ArrayList<>();
 
+        boolean bgToNS = false;
+        switch (PumpHistoryParser.BG_CONTEXT.convert(bgContext)) {
+            case BG_READING_RECEIVED:
+                break;
+            case USER_ACCEPTED_REMOTE_BG:
+                break;
+            case USER_REJECTED_REMOTE_BG:
+                break;
+            case REMOTE_BG_ACCEPTANCE_SCREEN_TIMEOUT:
+                break;
+            case BG_SI_PASS_RESULT_RECD_FRM_GST:
+                break;
+            case BG_SI_FAIL_RESULT_RECD_FRM_GST:
+                break;
+            case BG_SENT_FOR_CALIB:
+                bgToNS = true;
+                break;
+            case USER_REJECTED_SENSOR_CALIB:
+                break;
+            case ENTERED_IN_BG_ENTRY:
+                bgToNS = true;
+                break;
+            case ENTERED_IN_MEAL_WIZARD:
+                bgToNS = true;
+                break;
+            case ENTERED_IN_BOLUS_WIZRD:
+                bgToNS = true;
+                break;
+            case ENTERED_IN_SENSOR_CALIB:
+                bgToNS = true;
+                break;
+            case ENTERED_AS_BG_MARKER:
+                bgToNS = true;
+                break;
+            default:
+                bgToNS = true;
+        }
+
         if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableFingerBG()) {
 
             UploadItem uploadItem = new UploadItem();
             uploadItems.add(uploadItem);
             TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
+
+            String notes = "";
 
             BigDecimal bgl;
             String units;
@@ -84,22 +122,26 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             }
             treatment.setKey600(key);
             treatment.setCreated_at(bgDate);
-            treatment.setEventType("BG Check");
-            treatment.setGlucoseType("Finger");
-            treatment.setGlucose(bgl);
-            treatment.setUnits(units);
 
-            if (calibration && dataStore.isNsEnableCalibrationInfo()) {
+            if (bgToNS) {
+                treatment.setEventType("BG Check");
+                treatment.setGlucoseType("Finger");
+                treatment.setGlucose(bgl);
+                treatment.setUnits(units);
+            } else {
+                treatment.setEventType("Note");
+            }
+
+            //if (calibration && dataStore.isNsEnableCalibrationInfo()) {
+            if (calibration) {
                 long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
-                treatment.setNotes("CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)");
+                notes += "CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)";
                 uploadItem.update();
             }
 
-            if (bgcl) {
-                treatment.setNotes("[DEBUG: bgContext=" + bgContext + " rtc=" + String.format("%08X", bgRTC) + "]");
-            } else {
-                treatment.setNotes("[DEBUG: cal=" + calibrationFlag + "]");
-            }
+            notes += " [DEBUG: bgContext=" + bgContext + " bgSource=" + bgSource + " cal=" + calibrationFlag + " rtc=" + String.format("%08X", bgRTC) + "]";
+
+            if (!notes.equals("")) treatment.setNotes(notes);
 
             // insert BG reading as CGM chart entry
             if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsertBGasCGM()) {
@@ -125,11 +167,13 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                           int bg,
                           byte bgUnits,
                           byte bgSource,
+                          byte bgContext,
                           String serial) {
 
         PumpHistoryBG object = realm.where(PumpHistoryBG.class)
                 .equalTo("bgRTC", eventRTC)
                 .findFirst();
+
         if (object == null) {
             // look for a calibration
             object = realm.where(PumpHistoryBG.class)
@@ -144,6 +188,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             } else {
                 Log.d(TAG, "*update*" + " add bg to calibration");
             }
+
             object.setBgDate(eventDate);
             object.setBgRTC(eventRTC);
             object.setBgOffset(eventOFFSET);
@@ -151,14 +196,54 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             object.setBg(bg);
             object.setBgUnits(bgUnits);
             object.setBgSource(bgSource);
+            object.setBgContext(bgContext);
             object.setSerial(serial);
             object.setKey("BG" + String.format("%08X", eventRTC));
+
+            // debug: send the lot to NS
             object.setUploadREQ(true);
-
-            object.setBgcl(false);
-            object.setBgContext(0);
-
-        } else if (calibrationFlag && !object.isCalibrationFlag()){
+/*
+            switch (PumpHistoryParser.BG_CONTEXT.convert(bgContext)) {
+                case BG_READING_RECEIVED:
+                    break;
+                case USER_ACCEPTED_REMOTE_BG:
+                    break;
+                case USER_REJECTED_REMOTE_BG:
+                    break;
+                case REMOTE_BG_ACCEPTANCE_SCREEN_TIMEOUT:
+                    break;
+                case BG_SI_PASS_RESULT_RECD_FRM_GST:
+                    break;
+                case BG_SI_FAIL_RESULT_RECD_FRM_GST:
+                    break;
+                case BG_SENT_FOR_CALIB:
+                    object.setUploadREQ(true);
+                    object.setCalibrationFlag(true);
+                    break;
+                case USER_REJECTED_SENSOR_CALIB:
+                    break;
+                case ENTERED_IN_BG_ENTRY:
+                    object.setUploadREQ(true);
+                    break;
+                case ENTERED_IN_MEAL_WIZARD:
+                    object.setUploadREQ(true);
+                    break;
+                case ENTERED_IN_BOLUS_WIZRD:
+                    object.setUploadREQ(true);
+                    break;
+                case ENTERED_IN_SENSOR_CALIB:
+                    object.setUploadREQ(true);
+                    object.setCalibrationFlag(true);
+                    break;
+                case ENTERED_AS_BG_MARKER:
+                    object.setUploadREQ(true);
+                    break;
+                default:
+                    object.setUploadREQ(true);
+                    object.setCalibrationFlag(calibrationFlag);
+            }
+*/
+        } else if (PumpHistoryParser.BG_CONTEXT.NA.equals(bgContext) && calibrationFlag && !object.isCalibrationFlag()){
             Log.d(TAG, "*update*" + " bg used for calibration");
             object.setCalibrationFlag(true);
         }
@@ -193,36 +278,6 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             object.setCalibrationOFFSET(eventOFFSET);
             object.setCalibrationFactor(calFactor);
             object.setCalibrationTarget(bgTarget);
-        }
-    }
-
-    public static void bgcl(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                            int bgContext,
-                            int bg,
-                            byte bgUnits) {
-
-        PumpHistoryBG object = realm.where(PumpHistoryBG.class)
-                .equalTo("bgRTC", eventRTC)
-                .equalTo("bgContext", bgContext)
-                .findFirst();
-        if (object == null) {
-            Log.d(TAG, "*new*" + " bgcl");
-            object = realm.createObject(PumpHistoryBG.class);
-            object.setEventDate(eventDate);
-
-            object.setBgDate(eventDate);
-            object.setBgRTC(eventRTC);
-            object.setBgOffset(eventOFFSET);
-            object.setCalibrationFlag(false);
-            object.setBg(bg);
-            object.setBgUnits(bgUnits);
-            object.setBgSource((byte) 0);
-            object.setSerial("");
-            object.setKey("BGCL" + String.format("%08X", eventRTC));
-            object.setUploadREQ(true);
-
-            object.setBgcl(true);
-            object.setBgContext(bgContext);
         }
     }
 
@@ -326,19 +381,11 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
         this.bgSource = bgSource;
     }
 
-    public boolean isBgcl() {
-        return bgcl;
-    }
-
-    public void setBgcl(boolean bgcl) {
-        this.bgcl = bgcl;
-    }
-
-    public int getBgContext() {
+    public byte getBgContext() {
         return bgContext;
     }
 
-    public void setBgContext(int bgContext) {
+    public void setBgContext(byte bgContext) {
         this.bgContext = bgContext;
     }
 
