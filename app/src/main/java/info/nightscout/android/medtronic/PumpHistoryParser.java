@@ -541,7 +541,7 @@ public class PumpHistoryParser {
 */
 
     private void CLOSED_LOOP_BG_READING() {
-        int bgContext = eventData[index + 0x16] & 248 >> 3;
+        int bgContext = (eventData[index + 0x16] & 0xF8) >> 3;
         int bg = read16BEtoUInt(eventData, index + 0x0B);
         byte bgUnits = (byte) (eventData[index + 0x16] & 1);
 

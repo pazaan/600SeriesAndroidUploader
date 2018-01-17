@@ -683,8 +683,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             note += " ST:" + String.format(Locale.US,"%8s", Integer.toBinaryString(status)).replace(' ', '0')
                     + " BP:" + record.getActiveBasalPattern() + "/" + record.getActiveTempBasalPattern()
-                    + " NB:" + HexDump.toHexString(record.getBolusingReference())
-                    + " LB:" + HexDump.toHexString(record.getLastBolusReference());
+                    + " NB:" + (record.getBolusingReference() & 0xFF)
+                    + " LB:" + (record.getLastBolusReference() & 0xFF);
 
             payload = record.getPayload();
 

@@ -44,18 +44,20 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     private int bgOffset;
     private Date bgDate;
 
-    boolean bgcl;
-    int bgContext;
+    private boolean bgcl;
+    private int bgContext;
 
-    byte bgUnits;
-    byte bgSource;
+    private byte bgUnits;
+    private byte bgSource;
 
-    int bg;
-    String serial;
-    boolean calibrationFlag;
+    private int bg;
+    private String serial;
+    private boolean calibrationFlag;
 
-    boolean calibration;
+    private boolean calibration;
     private Date calibrationDate;
+
+    @Index
     private int calibrationRTC;
     private int calibrationOFFSET;
     private double calibrationFactor;
@@ -152,6 +154,10 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             object.setSerial(serial);
             object.setKey("BG" + String.format("%08X", eventRTC));
             object.setUploadREQ(true);
+
+            object.setBgcl(false);
+            object.setBgContext(0);
+
         } else if (calibrationFlag && !object.isCalibrationFlag()){
             Log.d(TAG, "*update*" + " bg used for calibration");
             object.setCalibrationFlag(true);
@@ -159,8 +165,8 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     }
 
     public static void calibration(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                              double calFactor,
-                              int bgTarget) {
+                                   double calFactor,
+                                   int bgTarget) {
 
         PumpHistoryBG object = realm.where(PumpHistoryBG.class)
                 .equalTo("calibrationRTC", eventRTC)
@@ -203,15 +209,21 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             Log.d(TAG, "*new*" + " bgcl");
             object = realm.createObject(PumpHistoryBG.class);
             object.setEventDate(eventDate);
+
+            object.setBgDate(eventDate);
+            object.setBgRTC(eventRTC);
+            object.setBgOffset(eventOFFSET);
+            object.setCalibrationFlag(false);
+            object.setBg(bg);
+            object.setBgUnits(bgUnits);
+            object.setBgSource((byte) 0);
+            object.setSerial("");
+            object.setKey("BGCL" + String.format("%08X", eventRTC));
+            object.setUploadREQ(true);
+
+            object.setBgcl(true);
+            object.setBgContext(bgContext);
         }
-        object.setBgcl(true);
-        object.setBgDate(eventDate);
-        object.setBgRTC(eventRTC);
-        object.setBgOffset(eventOFFSET);
-        object.setBg(bg);
-        object.setBgUnits(bgUnits);
-        object.setKey("BGCL" + String.format("%08X", eventRTC));
-        object.setUploadREQ(true);
     }
 
     @Override

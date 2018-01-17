@@ -354,6 +354,7 @@ public class StatusNotification {
         String text = "";
 
         RealmResults<PumpHistoryBG> results = historyRealm.where(PumpHistoryBG.class)
+                .notEqualTo("bg",0)
                 .greaterThan("eventDate", new Date(now - (24 * 60 * 60000L)))
                 .findAllSorted("eventDate", Sort.DESCENDING);
 

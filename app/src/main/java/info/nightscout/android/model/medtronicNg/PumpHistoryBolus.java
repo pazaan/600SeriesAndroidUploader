@@ -107,7 +107,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
                 notes = "microbolus " + normalDeliveredAmount + "U";
 
-                notes += " [DEBUG: ref=" + bolusRef + "prog=" + normalProgrammedAmount + " " + String.format("%08X", programmedRTC) + " del=" + normalDeliveredAmount + " " + String.format("%08X", normalDeliveredRTC) + "]";
+                notes += " [DEBUG: ref=" + bolusRef + " prog=" + normalProgrammedAmount + " " + String.format("%08X", programmedRTC) + " del=" + normalDeliveredAmount + " " + String.format("%08X", normalDeliveredRTC) + "]";
 
                 treatment.setEventType("Temp Basal");
                 treatment.setKey600("MICRO" + key);
@@ -206,9 +206,9 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
                     // for mg/dl remove the decimal placing ie. "123.0" = "123"
                     if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits))
-                        notes += "WIZ: carb %1.0fg : %2.1fU, target %3.0f-%4.0f : %5.1fU, iob %6.1f : %7.1fU (ratio %8.0f/u, isf %9.0f/u";
+                        notes += "WIZ: carb %1.0fg : %2.1fU, target %3.0f ~ %4.0f : %5.1fU, iob %6.1f : %7.1fU (ratio %8.0f/u, isf %9.0f/u";
                     else
-                        notes += "WIZ: carb %1.0fg : %2.1fU, target %3.1f-%4.1f : %5.1fU, iob %6.1f : %7.1fU (ratio %8.0f/u, isf %9.1f/u";
+                        notes += "WIZ: carb %1.0fg : %2.1fU, target %3.1f ~ %4.1f : %5.1fU, iob %6.1f : %7.1fU (ratio %8.0f/u, isf %9.1f/u";
 
                 } else {
 
@@ -289,20 +289,20 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object = realm.where(PumpHistoryBolus.class)
                     .beginGroup()
                     .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("programmedRTC", eventRTC - 12 * 60 * 60)
-                    .lessThanOrEqualTo("programmedRTC", eventRTC + 12 * 60 * 60)
+                    .greaterThanOrEqualTo("programmedRTC", eventRTC - 8 * 60 * 60)
+                    .lessThanOrEqualTo("programmedRTC", eventRTC + 8 * 60 * 60)
                     .endGroup()
                     .or()
                     .beginGroup()
                     .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("normalDeliveredRTC", eventRTC - 12 * 60 * 60)
-                    .lessThanOrEqualTo("normalDeliveredRTC", eventRTC + 12 * 60 * 60)
+                    .greaterThanOrEqualTo("normalDeliveredRTC", eventRTC - 8 * 60 * 60)
+                    .lessThanOrEqualTo("normalDeliveredRTC", eventRTC + 8 * 60 * 60)
                     .endGroup()
                     .or()
                     .beginGroup()
                     .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("squareDeliveredRTC", eventRTC - 12 * 60 * 60)
-                    .lessThanOrEqualTo("squareDeliveredRTC", eventRTC + 12 * 60 * 60)
+                    .greaterThanOrEqualTo("squareDeliveredRTC", eventRTC - 8 * 60 * 60)
+                    .lessThanOrEqualTo("squareDeliveredRTC", eventRTC + 8 * 60 * 60)
                     .endGroup()
                     .findFirst();
 
