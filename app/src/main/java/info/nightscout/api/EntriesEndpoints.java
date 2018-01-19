@@ -138,11 +138,16 @@ public interface EntriesEndpoints {
     Call<ResponseBody> deleteDateRange(@Query("find[date][$gte]") String from,
                                        @Query("find[date][$lte]") String to);
 
-    // bulk delete non-keyed entries
+    // bulk delete non-keyed entries, ignore key600 field
     @DELETE("/api/v1/entries/sgv.json")
     Call<ResponseBody> deleteCleanupItems(@Query("find[date][$gte]") String from,
                                           @Query("find[date][$lte]") String to,
                                           @Query("find[key600][$not][$exists]") String empty);
+
+    // bulk delete non-keyed entries
+    @DELETE("/api/v1/entries/sgv.json")
+    Call<ResponseBody> deleteCleanupItems(@Query("find[date][$gte]") String from,
+                                          @Query("find[date][$lte]") String to);
 
     @Headers({
             "Accept: application/json",

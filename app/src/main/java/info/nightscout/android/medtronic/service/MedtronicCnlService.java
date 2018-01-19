@@ -19,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import info.nightscout.android.HistoryDebug;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.MedtronicCnlReader;
@@ -301,6 +302,19 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             cnl0x81 = 0;
 
             try {
+
+                if (false) {
+                    userLogMessage("Adding history from file");
+                    //new HistoryDebug(mContext).logcatCGM("20180104-caty-670G-2-weeks.json");
+                    //new HistoryDebug(mContext).logcatPUMP("20180104-caty-670G-2-weeks.json");
+                    //new HistoryDebug(mContext).logcatCGM("20180101-caty-670G-3-months.json");
+                    //new HistoryDebug(mContext).logcatPUMP("20180101-caty-670G-3-months.json");
+                    new HistoryDebug(mContext).history("20180104-caty-670G-2-weeks.json");
+                    userLogMessage("Processing done");
+                    nextpoll = 0;
+                    return;
+                }
+
                 long pollInterval = dataStore.getPollInterval();
 
                 if (!openUsbDevice()) {
@@ -685,7 +699,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     + " BP:" + record.getActiveBasalPattern() + "/" + record.getActiveTempBasalPattern()
                     + " LB:" + (record.getLastBolusReference() & 0xFF) + "/" + (record.getBolusingReference() & 0xFF)
                     + " BR:" + record.getBasalRate() + "/" + record.getBasalUnitsDeliveredToday()
-                    + " AI:" + record.getActiveInsulin();
+                    + " AI:" + record.getActiveInsulin()
+                    + " HP:" + isHistoryNeeded();
 
             payload = record.getPayload();
 
@@ -699,6 +714,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             if ((payload[0x0F] | payload[0x19]) > 0) {
                 note += " 0x0F: " + HexDump.toHexString(payload[0x0F]) + " 0x19: " + HexDump.toHexString(payload[0x19]);
+            }
+
+            if (payload.length > 0x60) {
+                note += " 0x60: " + HexDump.toHexString(payload, 0x60, payload.length - 0x60);
             }
 
             i--;
@@ -840,9 +859,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     }
                 }
 
-                // bolus part delivered? normal (ref change) / square (ref change) / dual (ref can change due to normal bolus mid delivery of square part)
+                // microbolus part delivered? normal (ref change) / square (ref change) / dual (ref can change due to normal microbolus mid delivery of square part)
                 if (!results.first().isBolusingNormal() && results.first().getLastBolusReference() != results.get(1).getLastBolusReference()) {
-                    // end of a dual bolus?
+                    // end of a dual microbolus?
                     if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                         // was dual ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
@@ -851,7 +870,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             historyNeeded = true;
                         }
                     }
-                    // end of a square bolus?
+                    // end of a square microbolus?
                     else if (!results.first().isBolusingSquare() && results.get(1).isBolusingSquare() && !results.get(1).isBolusingNormal()) {
                         // was square ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
@@ -860,17 +879,17 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             historyNeeded = true;
                         }
                     }
-                    // dual bolus normal part delivered?
+                    // dual microbolus normal part delivered?
                     else if (!results.first().isBolusingSquare() && !results.get(1).isBolusingDual() && results.first().isBolusingDual()) {
-                        userLogMessage(info + "dual bolus");
+                        userLogMessage(info + "dual microbolus");
                         historyNeeded = true;
                     }
-                    // normal bolus delivered
+                    // normal microbolus delivered
                     else {
-                        userLogMessage(info + "normal bolus");
+                        userLogMessage(info + "normal microbolus");
                         historyNeeded = true;
                     }
-                    // dual bolus ended? or ended before expected duration?
+                    // dual microbolus ended? or ended before expected duration?
                 } else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                     // was dual ended before expected duration?
                     int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
@@ -880,9 +899,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     }
                 }
 
-                // square bolus started?
+                // square microbolus started?
                 if (!results.first().isBolusingNormal() && results.first().isBolusingSquare() && !results.get(1).isBolusingSquare()) {
-                    userLogMessage(info + "square bolus");
+                    userLogMessage(info + "square microbolus");
                     historyNeeded = true;
                 }
 

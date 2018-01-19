@@ -106,12 +106,12 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
 
             // debug any missed estimates on 670G
-
+/*
             if (estimate && !programmed && !normalDelivered && !squareDelivered) {
 
-                notes = "*** carb " + carbInput + "g : " + foodEstimate + "U, correction " + correctionEstimate + "U, final: " + finalEstimate;
+                notes = "*** carb " + carbInput + "g : " + foodEstimate + "U, correction " + correctionEstimate + "U, final " + finalEstimate + "U";
 
-                notes += " [DEBUG: rtc=" + String.format("%08X", estimateRTC) + "]";
+                notes += " [DEBUG: rtc=" + String.format("%08X", estimateRTC) +"]";
 
                 treatment.setCreated_at(eventDate);
                 treatment.setKey600("WIZ" + String.format("%08X", estimateRTC));
@@ -120,7 +120,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
                 return uploadItems;
             }
-
+*/
 
             treatment.setCreated_at(programmedDate);
             treatment.setKey600(key);
@@ -203,36 +203,39 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
                     // for mg/dl remove the decimal placing ie. "123.0" = "123"
                     if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits))
-                        notes += "WIZ: carb %1.0fg : %2.1fU, target %3.0f ~ %4.0f : %5.1fU, iob %6.1f : %7.1fU (ratio %8.0f/u, isf %9.0f/u";
+                        notes += "WIZ: carb %.0fg : %.1fU, target %.0f~%.0f : %.1fU, iob %.1f : %.1fU (ratio %.0f/u, isf %.0f/u";
                     else
-                        notes += "WIZ: carb %1.0fg : %2.1fU, target %3.1f ~ %4.1f : %5.1fU, iob %6.1f : %7.1fU (ratio %8.0f/u, isf %9.1f/u";
+                        notes += "WIZ: carb %.0fg : %.1fU, target %.1f~%.1f : %.1fU, iob %.1f : %.1fU (ratio %.0f/u, isf %.1f/u";
 
+                    notes = String.format(Locale.US, notes,
+                            carbInputAsGrams,
+                            foodEstimate,
+                            lowBgTarget,
+                            highBgTarget,
+                            correctionEstimate,
+                            iob,
+                            iobAdjustment > 0 ? -iobAdjustment : iobAdjustment,
+                            carbRatioAsGrams,
+                            isf);
                 } else {
 
                     // closed loop wizard
-                        notes += "WIZ: carb %1.0fg : %2.1fU, correction %5.1fU (ratio %8.0f/u";
+                    notes += "WIZ: carb %.0fg : %.1fU, correction %.1fU (ratio %.0f/u";
+
+                    notes = String.format(Locale.US, notes,
+                            carbInputAsGrams,
+                            foodEstimate,
+                            correctionEstimate,
+                            carbRatioAsGrams);
                 }
 
                 if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits))
-                    notes += ", ex %10.2fu/15g";
+                    notes += String.format(Locale.getDefault(), ", ex %.2fu/15g", carbRatio);
 
                 notes += ")";
-
-                notes = String.format(Locale.US, notes,
-                        carbInputAsGrams,
-                        foodEstimate,
-                        lowBgTarget,
-                        highBgTarget,
-                        correctionEstimate,
-                        iob,
-                        iobAdjustment > 0 ? -iobAdjustment : iobAdjustment,
-                        carbRatioAsGrams,
-                        isf,
-                        carbRatio
-                );
             }
 
-            notes += " [DEBUG: source=" + bolusSource + " ref=" + bolusRef + " rtc=" + String.format("%08X", programmedRTC) + "]";
+            //notes += " [DEBUG: source=" + bolusSource + " ref=" + bolusRef + " rtc=" + String.format("%08X", programmedRTC) + " correction=" + correctionEstimate +  " final=" + finalEstimate + "]";
 
             // nightscout does not have a square bolus type so a combo type is used but due to no normal bolus part
             // there is no tag shown in the main graph, a note is sent to NS to compensate for this
@@ -293,6 +296,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 object = realm.where(PumpHistoryBolus.class)
                         .equalTo("bolusRef", -1)
                         .equalTo("estimate", true)
+                        .equalTo("finalEstimate", normalProgrammedAmount + squareProgrammedAmount)
                         .greaterThan("estimateRTC", eventRTC - (5 * 60))
                         .lessThanOrEqualTo("estimateRTC", eventRTC)
                         .findFirst();
@@ -366,6 +370,8 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                                            boolean estimateModifiedByUser,
                                            double finalEstimate) {
 
+        if (finalEstimate == 0) return;
+
         PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
                 .equalTo("estimate", true)
                 .equalTo("estimateRTC", eventRTC)
@@ -378,6 +384,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                     .equalTo("totalProgrammedAmount", finalEstimate)
                     .greaterThan("programmedRTC", eventRTC - 60)
                     .lessThan("programmedRTC", eventRTC + (5 * 60))
+                    .beginGroup()
                     .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.BOLUS_WIZARD.get())
                     .or()
                     .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.CLOSED_LOOP_BG_CORRECTION.get())
@@ -385,6 +392,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                     .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.CLOSED_LOOP_FOOD_BOLUS.get())
                     .or()
                     .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS.get())
+                    .endGroup()
                     .findFirst();
             if (object == null) {
                 Log.d(TAG, "*new*" + " Ref: n/a create new bolus event *estimate*");
@@ -414,56 +422,9 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object.setFinalEstimate(finalEstimate);
 
             // debug: upload to NS to check if this is being attached to a bolus event
-            object.setUploadREQ(true);
+            //object.setUploadREQ(true);
         }
     }
-
-/* paz
-    public static void mealWizardEstimate(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                           int bgUnits,
-                                           int carbUnits,
-                                           double bgInput,
-                                           double carbInput,
-                                           double carbRatio,
-                                           double correctionEstimate,
-                                           double foodEstimate,
-                                           double bolusWizardEstimate,
-                                           double finalEstimate) {
-
-        PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
-                .equalTo("estimate", true)
-                .equalTo("estimateRTC", eventRTC)
-                .findFirst();
-        if (object == null) {
-            object = realm.where(PumpHistoryBolus.class)
-                    .notEqualTo("bolusRef", -1)
-                    .equalTo("estimate", false)
-                    .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.BOLUS_WIZARD.get())
-                    .greaterThan("programmedRTC", eventRTC - 60)
-                    .lessThan("programmedRTC", eventRTC + 60)
-                    .findFirst();
-            if (object == null) {
-                Log.d(TAG, "*new*" + " Ref: n/a create new bolus event *estimate*");
-                object = realm.createObject(PumpHistoryBolus.class);
-                object.setEventDate(eventDate);
-            } else {
-                Log.d(TAG, "*update*" + " Ref: " + object.getBolusRef() + " adding estimate to bolus event");
-            }
-            object.setEstimate(true);
-            object.setEstimateRTC(eventRTC);
-            object.setEstimateOFFSET(eventOFFSET);
-            object.setBgUnits(bgUnits);
-            object.setCarbUnits(carbUnits);
-            object.setBgInput(bgInput);
-            object.setCarbInput(carbInput);
-            object.setCarbRatio(carbRatio);
-            object.setCorrectionEstimate(correctionEstimate);
-            object.setFoodEstimate(foodEstimate);
-            object.setBolusWizardEstimate(bolusWizardEstimate);
-            object.setFinalEstimate(finalEstimate);
-        }
-    }
-*/
 
     @Override
     public Date getEventDate() {
@@ -869,156 +830,3 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
         this.estimateModifiedByUser = estimateModifiedByUser;
     }
 }
-
-/*
-
-// original working 640G bolus + wizard handler
-// holding this here until the 630/640/670 handling is proven
-
-    public static void bolus(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                             int bolusType,
-                             boolean programmed, boolean normalDelivered, boolean squareDelivered,
-                             int bolusRef,
-                             int bolusSource,
-                             int presetBolusNumber,
-                             double normalProgrammedAmount, double normalDeliveredAmount,
-                             double squareProgrammedAmount, double squareDeliveredAmount,
-                             int squareProgrammedDuration, int squareDeliveredDuration,
-                             double activeInsulin) {
-
-        PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
-                .beginGroup()
-                .equalTo("bolusRef", bolusRef)
-                .greaterThanOrEqualTo("programmedRTC", eventRTC - 12 * 60 * 60)
-                .lessThanOrEqualTo("programmedRTC", eventRTC + 12 * 60 * 60)
-                .endGroup()
-                .or()
-                .beginGroup()
-                .equalTo("bolusRef", bolusRef)
-                .greaterThanOrEqualTo("normalDeliveredRTC", eventRTC - 12 * 60 * 60)
-                .lessThanOrEqualTo("normalDeliveredRTC", eventRTC + 12 * 60 * 60)
-                .endGroup()
-                .or()
-                .beginGroup()
-                .equalTo("bolusRef", bolusRef)
-                .greaterThanOrEqualTo("squareDeliveredRTC", eventRTC - 12 * 60 * 60)
-                .lessThanOrEqualTo("squareDeliveredRTC", eventRTC + 12 * 60 * 60)
-                .endGroup()
-                .findFirst();
-
-        if (object == null) {
-            // look for a bolus estimate
-            if (PumpHistoryParser.BOLUS_SOURCE.BOLUS_WIZARD.equals(bolusSource)) {
-                object = realm.where(PumpHistoryBolus.class)
-                        .equalTo("bolusRef", -1)
-                        .equalTo("estimate", true)
-                        .greaterThan("estimateRTC", eventRTC - 60)
-                        .findFirst();
-            }
-            if (object == null) {
-                Log.d(TAG, "*new*" + " Ref: " + bolusRef + " create new bolus event");
-                object = realm.createObject(PumpHistoryBolus.class);
-            } else {
-                Log.d(TAG, "*update*" + " Ref: " + bolusRef + " estimate found, add bolus event");
-            }
-            object.setEventDate(eventDate);
-            object.setBolusType(bolusType);
-            object.setBolusRef(bolusRef);
-            object.setBolusSource(bolusSource);
-            object.setBolusPreset(presetBolusNumber);
-            object.setActiveInsulin(activeInsulin);
-        }
-        if (programmed && !object.isProgrammed()) {
-            Log.d(TAG, "*update*" + " Ref: " + bolusRef + " update bolus event programming");
-            object.setEventDate(eventDate);
-            object.setProgrammed(true);
-            object.setProgrammedDate(eventDate);
-            object.setProgrammedRTC(eventRTC);
-            object.setProgrammedOFFSET(eventOFFSET);
-            object.setNormalProgrammedAmount(normalProgrammedAmount);
-            object.setSquareProgrammedAmount(squareProgrammedAmount);
-            object.setSquareProgrammedDuration(squareProgrammedDuration);
-            object.setKey("BOLUS" + String.format("%08X", eventRTC));
-            object.setUploadREQ(true);
-        }
-        if (normalDelivered && !object.isNormalDelivered()) {
-            Log.d(TAG, "*update*" + " Ref: " + bolusRef + " update bolus event normal delivered");
-            object.setNormalDelivered(true);
-            object.setNormalDeliveredDate(eventDate);
-            object.setNormalDeliveredRTC(eventRTC);
-            object.setNormalDeliveredOFFSET(eventOFFSET);
-            object.setNormalDeliveredAmount(normalDeliveredAmount);
-            if (object.isProgrammed() && normalProgrammedAmount != normalDeliveredAmount) object.setUploadREQ(true);
-        }
-        if (squareDelivered && !object.isSquareDelivered()) {
-            Log.d(TAG, "*update*" + " Ref: " + bolusRef + " update bolus event square delivered");
-            object.setSquareDelivered(true);
-            object.setSquareDeliveredDate(eventDate);
-            object.setSquareDeliveredRTC(eventRTC);
-            object.setSquareDeliveredOFFSET(eventOFFSET);
-            object.setSquareDeliveredAmount(squareDeliveredAmount);
-            object.setSquareDeliveredDuration(squareDeliveredDuration);
-            if (object.isProgrammed() && squareProgrammedAmount != squareDeliveredAmount) object.setUploadREQ(true);
-        }
-    }
-
-    public static void bolusWizardEstimate(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                           int bgUnits,
-                                           int carbUnits,
-                                           double bgInput,
-                                           double carbInput,
-                                           double isf,
-                                           double carbRatio,
-                                           double lowBgTarget,
-                                           double highBgTarget,
-                                           double correctionEstimate,
-                                           double foodEstimate,
-                                           double iob,
-                                           double iobAdjustment,
-                                           double bolusWizardEstimate,
-                                           int bolusStepSize,
-                                           boolean estimateModifiedByUser,
-                                           double finalEstimate) {
-
-        PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
-                .equalTo("estimate", true)
-                .equalTo("estimateRTC", eventRTC)
-                .findFirst();
-        if (object == null) {
-            object = realm.where(PumpHistoryBolus.class)
-                    .notEqualTo("bolusRef", -1)
-                    .equalTo("estimate", false)
-                    .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.BOLUS_WIZARD.get())
-                    .greaterThan("programmedRTC", eventRTC - 60)
-                    .lessThan("programmedRTC", eventRTC + 60)
-                    .findFirst();
-            if (object == null) {
-                Log.d(TAG, "*new*" + " Ref: n/a create new bolus event *estimate*");
-                object = realm.createObject(PumpHistoryBolus.class);
-                object.setEventDate(eventDate);
-            } else {
-                Log.d(TAG, "*update*" + " Ref: " + object.getBolusRef() + " adding estimate to bolus event");
-            }
-            object.setEstimate(true);
-            object.setEstimateRTC(eventRTC);
-            object.setEstimateOFFSET(eventOFFSET);
-            object.setBgUnits(bgUnits);
-            object.setCarbUnits(carbUnits);
-            object.setBgInput(bgInput);
-            object.setCarbInput(carbInput);
-            object.setIsf(isf);
-            object.setCarbRatio(carbRatio);
-            object.setLowBgTarget(lowBgTarget);
-            object.setHighBgTarget(highBgTarget);
-            object.setCorrectionEstimate(correctionEstimate);
-            object.setFoodEstimate(foodEstimate);
-            object.setIob(iob);
-            object.setIobAdjustment(iobAdjustment);
-            object.setBolusWizardEstimate(bolusWizardEstimate);
-            object.setBolusStepSize(bolusStepSize);
-            object.setEstimateModifiedByUser(estimateModifiedByUser);
-            object.setFinalEstimate(finalEstimate);
-        }
-    }
-
- */

@@ -65,9 +65,73 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     public List nightscout(DataStore dataStore) {
         List<UploadItem> uploadItems = new ArrayList<>();
 
+        if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableFingerBG()) {
+
+            UploadItem uploadItem = new UploadItem();
+            uploadItems.add(uploadItem);
+            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
+
+            String notes = "";
+
+            BigDecimal bgl;
+            String units;
+            if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits)) {
+                bgl = new BigDecimal(bg);
+                units = "mg/dl";
+            } else {
+                bgl = new BigDecimal(bg / MMOLXLFACTOR).setScale(1, BigDecimal.ROUND_HALF_UP);
+                units = "mmol";
+            }
+            treatment.setKey600(key);
+            treatment.setCreated_at(bgDate);
+
+            treatment.setEventType("BG Check");
+            treatment.setGlucoseType("Finger");
+            treatment.setGlucose(bgl);
+            treatment.setUnits(units);
+
+            //if (calibration && dataStore.isNsEnableCalibrationInfo()) {
+            if (calibration) {
+                long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
+                notes += "CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)";
+                uploadItem.update();
+            }
+
+            //notes += " [DEBUG: bgContext=" + bgContext + " " + PumpHistoryParser.BG_CONTEXT.convert(bgContext).name() + " bgSource=" + bgSource + " cal=" + calibrationFlag + " rtc=" + String.format("%08X", bgRTC) + "]";
+
+            if (!notes.equals("")) treatment.setNotes(notes);
+
+            // insert BG reading as CGM chart entry
+            if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsertBGasCGM()) {
+
+                UploadItem uploadItem1 = new UploadItem();
+                uploadItems.add(uploadItem1);
+                EntriesEndpoints.Entry entry = uploadItem1.ack(uploadACK).entry();
+
+                entry.setKey600(key + "CGM");
+                entry.setType("sgv");
+                entry.setDate(bgDate.getTime());
+                entry.setDateString(bgDate.toString());
+                entry.setSgv(bg);
+            }
+
+        }
+
+        return uploadItems;
+    }
+
+    public static void bg(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+                          boolean calibrationFlag,
+                          int bg,
+                          byte bgUnits,
+                          byte bgSource,
+                          byte bgContext,
+                          String serial) {
+
         boolean bgToNS = false;
         switch (PumpHistoryParser.BG_CONTEXT.convert(bgContext)) {
             case BG_READING_RECEIVED:
+                bgToNS = true;
                 break;
             case USER_ACCEPTED_REMOTE_BG:
                 break;
@@ -102,73 +166,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             default:
                 bgToNS = true;
         }
-
-        if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableFingerBG()) {
-
-            UploadItem uploadItem = new UploadItem();
-            uploadItems.add(uploadItem);
-            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
-
-            String notes = "";
-
-            BigDecimal bgl;
-            String units;
-            if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits)) {
-                bgl = new BigDecimal(bg);
-                units = "mg/dl";
-            } else {
-                bgl = new BigDecimal(bg / MMOLXLFACTOR).setScale(1, BigDecimal.ROUND_HALF_UP);
-                units = "mmol";
-            }
-            treatment.setKey600(key);
-            treatment.setCreated_at(bgDate);
-
-            if (bgToNS) {
-                treatment.setEventType("BG Check");
-                treatment.setGlucoseType("Finger");
-                treatment.setGlucose(bgl);
-                treatment.setUnits(units);
-            } else {
-                treatment.setEventType("Note");
-            }
-
-            //if (calibration && dataStore.isNsEnableCalibrationInfo()) {
-            if (calibration) {
-                long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
-                notes += "CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)";
-                uploadItem.update();
-            }
-
-            notes += " [DEBUG: bgContext=" + bgContext + " bgSource=" + bgSource + " cal=" + calibrationFlag + " rtc=" + String.format("%08X", bgRTC) + "]";
-
-            if (!notes.equals("")) treatment.setNotes(notes);
-
-            // insert BG reading as CGM chart entry
-            if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsertBGasCGM()) {
-
-                UploadItem uploadItem1 = new UploadItem();
-                uploadItems.add(uploadItem1);
-                EntriesEndpoints.Entry entry = uploadItem1.ack(uploadACK).entry();
-
-                entry.setKey600(key + "CGM");
-                entry.setType("sgv");
-                entry.setDate(bgDate.getTime());
-                entry.setDateString(bgDate.toString());
-                entry.setSgv(bg);
-            }
-
-        }
-
-        return uploadItems;
-    }
-
-    public static void bg(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                          boolean calibrationFlag,
-                          int bg,
-                          byte bgUnits,
-                          byte bgSource,
-                          byte bgContext,
-                          String serial) {
+        if (!bgToNS) return;
 
         PumpHistoryBG object = realm.where(PumpHistoryBG.class)
                 .equalTo("bgRTC", eventRTC)

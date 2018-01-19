@@ -58,7 +58,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private byte cgmExceptionType;
     private boolean lowSuspendActive;
     private PumpStatusEvent.CGM_TREND cgmTrend;
-    private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
+    private boolean recentBolusWizard; // Whether a microbolus wizard has been run recently
     private int recentBGL; // in mg/dL. 0 means no recent finger bg reading.
     private short alert;
 
@@ -186,7 +186,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         bolusingMinutesRemaining = read16BEtoShort(payload, 0x0C);
         bolusingReference = payload[0x0E];
 
-        // Last bolus
+        // Last microbolus
         long rawLastBolusAmount = read32BEtoULong(payload, 0x10);
         lastBolusAmount = new BigDecimal(rawLastBolusAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
         lastBolusDate = MessageUtils.decodeDateTime(read32BEtoULong(payload, 0x14), 0);
@@ -301,7 +301,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         pumpRecord.setBolusingMinutesRemaining(bolusingMinutesRemaining);
         pumpRecord.setBolusingReference(bolusingReference);
 
-        // Last bolus
+        // Last microbolus
         pumpRecord.setLastBolusAmount(lastBolusAmount);
         pumpRecord.setLastBolusReference(lastBolusReference);
         pumpRecord.setLastBolusPumpDate(lastBolusDate);

@@ -9,6 +9,8 @@ public class DataStore extends RealmObject {
     @Index
     private long timestamp;
 
+    private boolean debug_bump;
+
     // do not send cgm/pump backfill data prior to this date
     // used to stop overwriting older NS entries
     // user option to override (we clear old data from NS to stop multiple entries and refresh using keys)

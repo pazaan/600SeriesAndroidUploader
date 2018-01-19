@@ -45,6 +45,9 @@ Profile - no QUERY support, GET returns all profile sets, can POST & DELETE a si
 public class NightScoutUpload {
     private static final String TAG = NightScoutUpload.class.getSimpleName();
 
+    // delete all items or just the items without a Key600 file
+    private static final boolean CLEAN_COMPLETE = true;
+
     private DeviceEndpoints deviceEndpoints;
     private EntriesEndpoints entriesEndpoints;
     private TreatmentsEndpoints treatmentsEndpoints;
@@ -403,6 +406,9 @@ public class NightScoutUpload {
 
             long limit = dataStore.getNightscoutLimitDate().getTime();
 
+            Response<ResponseBody> responseBody;
+            Response<List<TreatmentsEndpoints.Treatment>> response;
+
             if (cgmTo == 0) cgmTo = limit;
             if (pumpTo == 0) pumpTo = limit;
 
@@ -411,10 +417,17 @@ public class NightScoutUpload {
             if (cgmFrom < cgmTo) {
                 Log.d(TAG, "cleanup: entries (cgm history) " + dateFormat.format(cgmFrom) + " to " + dateFormat.format(cgmTo));
 
-                Response<ResponseBody> responseBody = entriesEndpoints.deleteCleanupItems(
-                        "" + cgmFrom,
-                        "" + cgmTo,
-                        "").execute();
+                if (CLEAN_COMPLETE) {
+                    responseBody = entriesEndpoints.deleteCleanupItems(
+                            "" + cgmFrom,
+                            "" + cgmTo).execute();
+                } else {
+                    responseBody = entriesEndpoints.deleteCleanupItems(
+                            "" + cgmFrom,
+                            "" + cgmTo,
+                            "").execute();
+                }
+
                 if (responseBody.isSuccessful()) {
                     Log.d(TAG, "cleanup: bulk deleted entries");
 
@@ -438,11 +451,19 @@ public class NightScoutUpload {
                 boolean success = true;
 
                 while (!finished && success) {
-                    Response<List<TreatmentsEndpoints.Treatment>> response = treatmentsEndpoints.findCleanupItems(
-                            dateFormat.format(pumpFrom),
-                            dateFormat.format(pumpTo),
-                            "Note",
-                            "", "20").execute();
+
+                    if (CLEAN_COMPLETE) {
+                        response = treatmentsEndpoints.findDateRangeCount(
+                                dateFormat.format(pumpFrom),
+                                dateFormat.format(pumpTo),
+                                "20").execute();
+                    } else {
+                        response = treatmentsEndpoints.findCleanupItems(
+                                dateFormat.format(pumpFrom),
+                                dateFormat.format(pumpTo),
+                                "Note",
+                                "", "20").execute();
+                    }
 
                     if (response.isSuccessful()) {
                         List<TreatmentsEndpoints.Treatment> list = response.body();
@@ -451,7 +472,7 @@ public class NightScoutUpload {
                             Log.d(TAG, "cleanup: found " + list.size());
 
                             while (count > 0) {
-                                Response<ResponseBody> responseBody = treatmentsEndpoints.deleteID(list.get(count - 1).get_id()).execute();
+                                responseBody = treatmentsEndpoints.deleteID(list.get(count - 1).get_id()).execute();
                                 if (responseBody.isSuccessful()) {
                                     Log.d(TAG, "cleanup: deleted this item! ID: " + list.get(count - 1).get_id());
                                 } else {

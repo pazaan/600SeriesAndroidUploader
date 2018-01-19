@@ -22,9 +22,9 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
+import info.nightscout.android.model.medtronicNg.PumpHistoryLoop;
 import info.nightscout.android.model.medtronicNg.PumpHistoryDebug;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
-import info.nightscout.android.model.medtronicNg.PumpHistoryMicroBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
 import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
@@ -75,13 +75,13 @@ public class PumpHistoryHandler {
 
         historyDB = new ArrayList<>();
         historyDB.add(new DBitem("CGM", 400, historyRealm.where(PumpHistoryCGM.class).findAll()));
-        historyDB.add(new DBitem("BOLUS", 20, historyRealm.where(PumpHistoryBolus.class).findAll()));
-        historyDB.add(new DBitem("BASAL", 20, historyRealm.where(PumpHistoryBasal.class).findAll()));
-        historyDB.add(new DBitem("BG", 20, historyRealm.where(PumpHistoryBG.class).findAll()));
-        historyDB.add(new DBitem("PROFILE", 20, historyRealm.where(PumpHistoryProfile.class).findAll()));
-        historyDB.add(new DBitem("MISC", 20, historyRealm.where(PumpHistoryMisc.class).findAll()));
-        historyDB.add(new DBitem("MICRO", 100, historyRealm.where(PumpHistoryMicroBolus.class).findAll()));
-        historyDB.add(new DBitem("DEBUG", 20, historyRealm.where(PumpHistoryDebug.class).findAll()));
+        historyDB.add(new DBitem("BOLUS", 30, historyRealm.where(PumpHistoryBolus.class).findAll()));
+        historyDB.add(new DBitem("BASAL", 30, historyRealm.where(PumpHistoryBasal.class).findAll()));
+        historyDB.add(new DBitem("BG", 30, historyRealm.where(PumpHistoryBG.class).findAll()));
+        historyDB.add(new DBitem("PROFILE", 30, historyRealm.where(PumpHistoryProfile.class).findAll()));
+        historyDB.add(new DBitem("MISC", 30, historyRealm.where(PumpHistoryMisc.class).findAll()));
+        historyDB.add(new DBitem("LOOP", 400, historyRealm.where(PumpHistoryLoop.class).findAll()));
+        historyDB.add(new DBitem("DEBUG", 30, historyRealm.where(PumpHistoryDebug.class).findAll()));
     }
 
     private class DBitem {
@@ -92,6 +92,7 @@ public class PumpHistoryHandler {
         DBitem (String name, int limiter, RealmResults results) {
             this.name = name;
             this.limiter = limiter;
+            //this.limiter = 5000;
             this.results = results;
         }
     }

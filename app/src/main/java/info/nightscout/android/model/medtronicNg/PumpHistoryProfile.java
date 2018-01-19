@@ -142,6 +142,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             basalProfileMap.put(dataStore.getNameBasalPattern6(), bp.makeProfile());
             basalProfileMap.put(dataStore.getNameBasalPattern7(), bp.makeProfile());
             basalProfileMap.put(dataStore.getNameBasalPattern8(), bp.makeProfile());
+            basalProfileMap.put("Closed Loop", bp.makeProfile());
         }
 
         return uploadItems;
@@ -182,6 +183,11 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
 
         private List<ProfileEndpoints.TimePeriod> parseBasalPattern() {
             List<ProfileEndpoints.TimePeriod> basalpattern = new ArrayList<>();
+
+            if (basalPatterns.length - index < 2) {
+                basalpattern.add(addPeriod(0, "0.0"));
+                return basalpattern;
+            }
 
             int pattern = read8toUInt(basalPatterns, index++);
             int items = read8toUInt(basalPatterns, index++);

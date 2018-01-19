@@ -83,4 +83,15 @@ public class MessageUtils {
 
         return ((offsetFromUTC + time) / 1000) - baseTime - offset;
     }
+
+    public static long offsetFromTime( long time, long rtc ) {
+        TimeZone currentTz = java.util.Calendar.getInstance().getTimeZone();
+
+        // Base time is midnight 1st Jan 2000 (GMT)
+        long baseTime = 946684800;
+
+        long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
+
+        return ((offsetFromUTC + time) / 1000) - baseTime - rtc;
+    }
 }
