@@ -22,6 +22,8 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
     @Ignore
     private static final String TAG = PumpHistoryLoop.class.getSimpleName();
 
+    //private boolean debug_bump;
+
     @Index
     private Date eventDate;
 
@@ -38,15 +40,13 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
     private int eventRTC;
     private int eventOFFSET;
 
-    private int bolusRef;
+    private int bolusRef = -1;
     private double deliveredAmount;
 
-    private boolean loopMode;
-    private boolean loopActive;
+    private boolean loopMode = false;
+    private boolean loopActive = false;
     private byte loopStatus;
     private byte loopPattern;
-
-    //private boolean debug_bump;
 
     @Override
     public List nightscout(DataStore dataStore) {
@@ -61,34 +61,19 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
             String notes = "";
 
             if (loopMode) {
+                treatment.setKey600(key);
+                treatment.setCreated_at(eventDate);
+                treatment.setEventType("Profile Switch");
 
                 if (loopActive) {
-/*
-                    notes = "LOOP: active=" + loopActive + " status=" + loopStatus;
+                    notes = "Auto Mode: active";
 
-                    treatment.setEventType("Note");
-                    treatment.setKey600(key);
-                    treatment.setNotes(notes);
-                    treatment.setCreated_at(eventDate);
-*/
-                    treatment.setKey600(key);
-                    treatment.setCreated_at(eventDate);
-                    treatment.setEventType("Profile Switch");
-
-                    String patternName = dataStore.getNameBasalPattern(loopPattern);
-                    notes = "Closed Loop: active";
-
-                    treatment.setProfile("Closed Loop");
+                    treatment.setProfile("Auto Mode");
                     treatment.setNotes(notes);
 
                 } else if (loopPattern != 0) {
-
-                    treatment.setKey600(key);
-                    treatment.setCreated_at(eventDate);
-                    treatment.setEventType("Profile Switch");
-
                     String patternName = dataStore.getNameBasalPattern(loopPattern);
-                    notes = "Closed Loop: not active, restart basal: " + patternName;
+                    notes = "Auto Mode: stopped";
 
                     treatment.setProfile(patternName);
                     treatment.setNotes(notes);
@@ -100,7 +85,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
 
                 notes = "microbolus " + deliveredAmount + "U";
 
-                notes += " [DEBUG: ref=" + bolusRef + " del=" + deliveredAmount + " " + String.format("%08X", eventRTC) + "]";
+                //notes += " [DEBUG: ref=" + bolusRef + " del=" + deliveredAmount + " " + String.format("%08X", eventRTC) + "]";
 
                 treatment.setEventType("Temp Basal");
                 treatment.setKey600(key);
@@ -135,14 +120,16 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
             object.setEventOFFSET(eventOFFSET);
             object.setDeliveredAmount(deliveredAmount);
 
-            object.setKey("MICROBOLUS" + String.format("%08X", eventRTC));
+            object.setLoopActive(true);
+
+            object.setKey("MB" + String.format("%08X", eventRTC));
             object.setUploadREQ(true);
         }
     }
 
     public static void mode(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                  boolean loopActive,
-                                  byte loopStatus) {
+                            boolean loopActive,
+                            byte loopStatus) {
 
         PumpHistoryLoop object = realm.where(PumpHistoryLoop.class)
                 .equalTo("eventRTC", eventRTC)
@@ -167,7 +154,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
     }
 
     public static void basal(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                            byte pattern) {
+                             byte pattern) {
 
         PumpHistoryLoop object = realm.where(PumpHistoryLoop.class)
                 .equalTo("loopMode", true)
@@ -190,6 +177,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
 
                 object.setEventDate(eventDate);
                 object.setLoopMode(true);
+                object.setLoopActive(false);
                 object.setEventRTC(eventRTC);
                 object.setEventOFFSET(eventOFFSET);
                 object.setLoopPattern(pattern);

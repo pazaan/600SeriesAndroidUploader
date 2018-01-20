@@ -45,8 +45,8 @@ Profile - no QUERY support, GET returns all profile sets, can POST & DELETE a si
 public class NightScoutUpload {
     private static final String TAG = NightScoutUpload.class.getSimpleName();
 
-    // delete all items or just the items without a Key600 file
-    private static final boolean CLEAN_COMPLETE = true;
+    // delete all items or just the items without a Key600 field
+    private static final boolean CLEAN_COMPLETE = false;
 
     private DeviceEndpoints deviceEndpoints;
     private EntriesEndpoints entriesEndpoints;
@@ -397,6 +397,11 @@ public class NightScoutUpload {
 
             int cgmDays = dataStore.getSysCgmHistoryDays();
             int pumpDays = dataStore.getSysPumpHistoryDays();
+
+            if (CLEAN_COMPLETE) {
+                cgmDays = 90;
+                pumpDays = 90;
+            }
 
             final long cgmFrom = now - cgmDays * (24 * 60 * 60000L);
             final long pumpFrom = now - pumpDays * (24 * 60 * 60000L);

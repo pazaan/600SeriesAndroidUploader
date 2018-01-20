@@ -68,6 +68,30 @@
         <item>90</item>
     </string-array>
 
+    <string-array name="pump_history_freq">
+        <item>events only</item>
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>45 minutes</item>
+        <item>60 minutes</item>
+        <item>75 minutes</item>
+        <item>90 minutes</item>
+        <item>105 minutes</item>
+        <item>120 minutes</item>
+    </string-array>
+
+    <string-array name="pump_history_freq_values">
+        <item>0</item>
+        <item>15</item>
+        <item>30</item>
+        <item>45</item>
+        <item>60</item>
+        <item>75</item>
+        <item>90</item>
+        <item>105</item>
+        <item>120</item>
+    </string-array>
+
     <string-array name="profile_default">
         <item>Pattern 1</item>
         <item>Pattern 2</item>

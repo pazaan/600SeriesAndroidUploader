@@ -657,6 +657,15 @@
                     android:summary="%s"
                     android:entries="@array/pump_history"
                     android:entryValues="@array/pump_history_days"/>
+                <ListPreference
+                    android:dependency="sysEnablePumpHistory"
+                    android:key="sysPumpHistoryFrequency"
+                    android:defaultValue="90"
+                    android:title="670G update frequency"
+                    android:summary="%s"
+                    android:entries="@array/pump_history_freq"
+                    android:entryValues="@array/pump_history_freq_values"/>
+
             </PreferenceCategory>
 
             <PreferenceCategory android:title="Radio">

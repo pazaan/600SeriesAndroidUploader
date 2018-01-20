@@ -134,21 +134,25 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             bp.parseSensitivity();
             bp.parseTargets();
 
-            basalProfileMap.put(dataStore.getNameBasalPattern1(), bp.makeProfile());
-            basalProfileMap.put(dataStore.getNameBasalPattern2(), bp.makeProfile());
-            basalProfileMap.put(dataStore.getNameBasalPattern3(), bp.makeProfile());
-            basalProfileMap.put(dataStore.getNameBasalPattern4(), bp.makeProfile());
-            basalProfileMap.put(dataStore.getNameBasalPattern5(), bp.makeProfile());
-            basalProfileMap.put(dataStore.getNameBasalPattern6(), bp.makeProfile());
-            basalProfileMap.put(dataStore.getNameBasalPattern7(), bp.makeProfile());
-            basalProfileMap.put(dataStore.getNameBasalPattern8(), bp.makeProfile());
-            basalProfileMap.put("Closed Loop", bp.makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern1(), bp.newProfile().parseBasalPattern().makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern2(), bp.newProfile().parseBasalPattern().makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern3(), bp.newProfile().parseBasalPattern().makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern4(), bp.newProfile().parseBasalPattern().makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern5(), bp.newProfile().parseBasalPattern().makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern6(), bp.newProfile().parseBasalPattern().makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern7(), bp.newProfile().parseBasalPattern().makeProfile());
+            basalProfileMap.put(dataStore.getNameBasalPattern8(), bp.newProfile().parseBasalPattern().makeProfile());
+
+            // "Auto Mode" profile using zero rate pattern for 670G pump
+            basalProfileMap.put("Auto Mode", bp.newProfile().emptyBasalPattern().makeProfile());
         }
 
         return uploadItems;
     }
 
     private class BasalProfile {
+        ProfileEndpoints.BasalProfile basalProfile;
+        List<ProfileEndpoints.TimePeriod> basal;
         List<ProfileEndpoints.TimePeriod> carbratio;
         List<ProfileEndpoints.TimePeriod> sens;
         List<ProfileEndpoints.TimePeriod> target_low;
@@ -161,9 +165,12 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         String units;
         int index = 0;
 
-        private ProfileEndpoints.BasalProfile makeProfile() {
-            ProfileEndpoints.BasalProfile basalProfile = new ProfileEndpoints.BasalProfile();
+        private BasalProfile newProfile() {
+            basalProfile = new ProfileEndpoints.BasalProfile();
+            return this;
+        }
 
+        private ProfileEndpoints.BasalProfile makeProfile() {
             basalProfile.setStartDate(startdate);
             basalProfile.setTimezone(timezone);
             basalProfile.setDelay(delay);
@@ -171,23 +178,25 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             basalProfile.setDia(dia);
             basalProfile.setUnits(units);
 
+            basalProfile.setBasal(basal);
             basalProfile.setCarbratio(carbratio);
             basalProfile.setSens(sens);
             basalProfile.setTarget_low(target_low);
             basalProfile.setTarget_high(target_high);
 
-            basalProfile.setBasal(parseBasalPattern());
-
             return basalProfile;
         }
 
-        private List<ProfileEndpoints.TimePeriod> parseBasalPattern() {
-            List<ProfileEndpoints.TimePeriod> basalpattern = new ArrayList<>();
+        private BasalProfile emptyBasalPattern() {
+            basal = new ArrayList<>();
+            // NS has an issue with a "0" rate basal pattern
+            // using "0.000001" as workaround
+            basal.add(addPeriod(0, "0.000001"));
+            return this;
+        }
 
-            if (basalPatterns.length - index < 2) {
-                basalpattern.add(addPeriod(0, "0.0"));
-                return basalpattern;
-            }
+        private BasalProfile parseBasalPattern() {
+            basal = new ArrayList<>();
 
             int pattern = read8toUInt(basalPatterns, index++);
             int items = read8toUInt(basalPatterns, index++);
@@ -195,17 +204,17 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             int time;
 
             if (items == 0)
-                basalpattern.add(addPeriod(0, "0.0"));
+                basal.add(addPeriod(0, "0.000001"));
             else {
                 for (int i = 0; i < items; i++) {
                     rate = read32BEtoULong(basalPatterns, index) / 10000.0;
                     time = read8toUInt(basalPatterns, index + 4) * 30;
-                    basalpattern.add(addPeriod(time, "" + rate));
+                    basal.add(addPeriod(time, "" + rate));
                     index += 5;
                 }
             }
 
-            return basalpattern;
+            return this;
         }
 
         private void parseCarbRatios() {

@@ -104,24 +104,6 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
             String notes = "";
 
-
-            // debug any missed estimates on 670G
-/*
-            if (estimate && !programmed && !normalDelivered && !squareDelivered) {
-
-                notes = "*** carb " + carbInput + "g : " + foodEstimate + "U, correction " + correctionEstimate + "U, final " + finalEstimate + "U";
-
-                notes += " [DEBUG: rtc=" + String.format("%08X", estimateRTC) +"]";
-
-                treatment.setCreated_at(eventDate);
-                treatment.setKey600("WIZ" + String.format("%08X", estimateRTC));
-                treatment.setEventType("Note");
-                treatment.setNotes(notes);
-
-                return uploadItems;
-            }
-*/
-
             treatment.setCreated_at(programmedDate);
             treatment.setKey600(key);
 
@@ -187,52 +169,63 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 // conversion for unit type
                 double carbInputAsGrams;
                 double carbRatioAsGrams;
+                String exchanges;
                 if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits)) {
                     carbInputAsGrams = 15 * carbInput;
                     carbRatioAsGrams = 15 / carbRatio;
+                    exchanges = String.format(Locale.US, ", ex %.2fu/15g", carbRatio);
                 } else {
                     carbInputAsGrams = carbInput;
                     carbRatioAsGrams = carbRatio;
+                    exchanges = "";
                 }
 
                 treatment.setCarbs((float) carbInputAsGrams);
 
-                if (!notes.equals("")) notes += "  ";
+                if (!notes.equals("")) notes += " : ";
+                //String wiztag = "WIZ: ";
+                String wiztag = "";
 
-                if (PumpHistoryParser.BOLUS_SOURCE.BOLUS_WIZARD.equals(bolusSource)) {
-
-                    // for mg/dl remove the decimal placing ie. "123.0" = "123"
-                    if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits))
-                        notes += "WIZ: carb %.0fg : %.1fU, target %.0f~%.0f : %.1fU, iob %.1f : %.1fU (ratio %.0f/u, isf %.0f/u";
-                    else
-                        notes += "WIZ: carb %.0fg : %.1fU, target %.1f~%.1f : %.1fU, iob %.1f : %.1fU (ratio %.0f/u, isf %.1f/u";
-
-                    notes = String.format(Locale.US, notes,
-                            carbInputAsGrams,
-                            foodEstimate,
-                            lowBgTarget,
-                            highBgTarget,
-                            correctionEstimate,
-                            iob,
-                            iobAdjustment > 0 ? -iobAdjustment : iobAdjustment,
-                            carbRatioAsGrams,
-                            isf);
-                } else {
-
-                    // closed loop wizard
-                    notes += "WIZ: carb %.0fg : %.1fU, correction %.1fU (ratio %.0f/u";
-
-                    notes = String.format(Locale.US, notes,
-                            carbInputAsGrams,
-                            foodEstimate,
-                            correctionEstimate,
-                            carbRatioAsGrams);
+                switch (PumpHistoryParser.BOLUS_SOURCE.convert(bolusSource)) {
+                    case BOLUS_WIZARD:
+                        // for mg/dl remove the decimal placing ie. "123.0" = "123"
+                        if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits))
+                            notes += wiztag + "carb %.0fg %.1fU, {%.0f~%.0f} %.1fU, iob %.1f %.1fU (%.0fg/u, isf %.0f/u" + exchanges + ")";
+                        else
+                            notes += wiztag + "carb %.0fg %.1fU, {%.1f~%.1f} %.1fU, iob %.1f %.1fU (%.0fg/u, isf %.1f/u" + exchanges + ")";
+                        notes = String.format(Locale.US, notes,
+                                carbInputAsGrams,
+                                foodEstimate,
+                                lowBgTarget,
+                                highBgTarget,
+                                correctionEstimate,
+                                iob,
+                                iobAdjustment > 0 ? -iobAdjustment : iobAdjustment,
+                                carbRatioAsGrams,
+                                isf);
+                        break;
+                    case CLOSED_LOOP_FOOD_BOLUS:
+                        notes += String.format(Locale.US,
+                                wiztag + "carb %.0fg %.1fU (%.0fg/u" + exchanges + ")",
+                                carbInputAsGrams,
+                                foodEstimate,
+                                carbRatioAsGrams);
+                        break;
+                    case CLOSED_LOOP_BG_CORRECTION:
+                        notes += String.format(Locale.US,
+                                wiztag + "correction %.1fU",
+                                correctionEstimate);
+                        break;
+                    case CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS:
+                        notes += String.format(Locale.US,
+                                wiztag + "carb %.0fg %.1fU, correction %.1fU (%.0fg/u" + exchanges + ")",
+                                carbInputAsGrams,
+                                foodEstimate,
+                                correctionEstimate,
+                                carbRatioAsGrams);
+                        break;
                 }
 
-                if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits))
-                    notes += String.format(Locale.getDefault(), ", ex %.2fu/15g", carbRatio);
-
-                notes += ")";
             }
 
             //notes += " [DEBUG: source=" + bolusSource + " ref=" + bolusRef + " rtc=" + String.format("%08X", programmedRTC) + " correction=" + correctionEstimate +  " final=" + finalEstimate + "]";
@@ -268,24 +261,24 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                              double activeInsulin) {
 
         PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
-                    .beginGroup()
-                    .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("programmedRTC", eventRTC - (8 * 60 * 60))
-                    .lessThanOrEqualTo("programmedRTC", eventRTC + (8 * 60 * 60))
-                    .endGroup()
-                    .or()
-                    .beginGroup()
-                    .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("normalDeliveredRTC", eventRTC - (8 * 60 * 60))
-                    .lessThanOrEqualTo("normalDeliveredRTC", eventRTC + (8 * 60 * 60))
-                    .endGroup()
-                    .or()
-                    .beginGroup()
-                    .equalTo("bolusRef", bolusRef)
-                    .greaterThanOrEqualTo("squareDeliveredRTC", eventRTC - (8 * 60 * 60))
-                    .lessThanOrEqualTo("squareDeliveredRTC", eventRTC + (8 * 60 * 60))
-                    .endGroup()
-                    .findFirst();
+                .beginGroup()
+                .equalTo("bolusRef", bolusRef)
+                .greaterThanOrEqualTo("programmedRTC", eventRTC - (8 * 60 * 60))
+                .lessThanOrEqualTo("programmedRTC", eventRTC + (8 * 60 * 60))
+                .endGroup()
+                .or()
+                .beginGroup()
+                .equalTo("bolusRef", bolusRef)
+                .greaterThanOrEqualTo("normalDeliveredRTC", eventRTC - (8 * 60 * 60))
+                .lessThanOrEqualTo("normalDeliveredRTC", eventRTC + (8 * 60 * 60))
+                .endGroup()
+                .or()
+                .beginGroup()
+                .equalTo("bolusRef", bolusRef)
+                .greaterThanOrEqualTo("squareDeliveredRTC", eventRTC - (8 * 60 * 60))
+                .lessThanOrEqualTo("squareDeliveredRTC", eventRTC + (8 * 60 * 60))
+                .endGroup()
+                .findFirst();
 
         if (object == null) {
             // look for a bolus estimate
@@ -370,6 +363,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                                            boolean estimateModifiedByUser,
                                            double finalEstimate) {
 
+        // unused or canceled wizard
         if (finalEstimate == 0) return;
 
         PumpHistoryBolus object = realm.where(PumpHistoryBolus.class)
@@ -420,9 +414,6 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             object.setBolusStepSize(bolusStepSize);
             object.setEstimateModifiedByUser(estimateModifiedByUser);
             object.setFinalEstimate(finalEstimate);
-
-            // debug: upload to NS to check if this is being attached to a bolus event
-            //object.setUploadREQ(true);
         }
     }
 

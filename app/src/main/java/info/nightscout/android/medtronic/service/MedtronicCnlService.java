@@ -104,7 +104,7 @@ public class MedtronicCnlService extends Service {
 
     private boolean shutdownProtect = false;
 
-    // temporary for error investigation
+    // debug use: temporary for error investigation
     public static int cnlClear = 0;
     public static int cnl0x81 = 0;
 
@@ -298,6 +298,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             readDataStore();
 
+            // debug use:
             cnlClear = 0;
             cnl0x81 = 0;
 
@@ -305,11 +306,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 if (false) {
                     userLogMessage("Adding history from file");
-                    //new HistoryDebug(mContext).logcatCGM("20180104-caty-670G-2-weeks.json");
-                    //new HistoryDebug(mContext).logcatPUMP("20180104-caty-670G-2-weeks.json");
-                    //new HistoryDebug(mContext).logcatCGM("20180101-caty-670G-3-months.json");
-                    //new HistoryDebug(mContext).logcatPUMP("20180101-caty-670G-3-months.json");
-                    new HistoryDebug(mContext).history("20180104-caty-670G-2-weeks.json");
+                    new HistoryDebug(mContext).run();
                     userLogMessage("Processing done");
                     nextpoll = 0;
                     return;
@@ -492,7 +489,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 }
                             }
 
-                            discovery670G_NS();
+                            // debug use:
+                            //debugStatusMessage();
 
                             // history
 
@@ -606,7 +604,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 } finally {
                     shutdownProtect = false;
 
-                    // temporary debug use
+                    // debug use:
                     //if (cnlClear > 0 || cnl0x81 > 0) userLogMessage("*** cnlClear=" + cnlClear + " cnl0x81=" + cnl0x81);
 
                     nextpoll = requestPollTime(timePollStarted, pollInterval);
@@ -643,90 +641,21 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         } // thread end
     }
 
-    private void discovery670G() {
-
-        RealmResults<PumpStatusEvent> results = realm
-                .where(PumpStatusEvent.class)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-
-        if (results.size() < 2) return;
-
-        byte[] payload = results.first().getPayload();
-
-        if ((payload[0x08] | payload[0x09] | payload[0x0A] | payload[0x0B]) > 0) {
-            userLogMessage("* 0x08: " + HexDump.toHexString(payload, 0x08, 4));
-        }
-
-        if ((payload[0x55] | payload[0x56] | payload[0x57]) > 0) {
-            userLogMessage("* 0x55: " + HexDump.toHexString(payload, 0x55, 3));
-        }
-
-        if ((payload[0x0F] | payload[0x19]) > 0) {
-            userLogMessage("* 0x0F: " + HexDump.toHexString(payload[0x0F]) + " 0x19: " + HexDump.toHexString(payload[0x19]));
-        }
-
-        byte status = results.first().getPumpStatus();
-
-        if ((status & 0x80) > 0) {
-            userLogMessage("* status: bit 7 set! " + HexDump.toHexString(status));
-        }
-
-    }
-
-    private void discovery670G_NS() {
-        long now = System.currentTimeMillis();
-
-        Date lastDate = pumpHistoryHandler.debugNoteLastDate();
-        if (lastDate != null && now - lastDate.getTime() < 30 * 60000L) return;
-
-        RealmResults<PumpStatusEvent> results = realm
-                .where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(now - 33 * 60000L))
-                .findAllSorted("eventDate", Sort.DESCENDING);
-
-        if (results.size() < 1) return;
-
-        String note = "DEBUG:";
-        byte[] payload;
-        int i = 0;
-
-        for (PumpStatusEvent record : results) {
-            note += " [" + i + "] ";
-
-            byte status = record.getPumpStatus();
-
-            note += " ST:" + String.format(Locale.US,"%8s", Integer.toBinaryString(status)).replace(' ', '0')
-                    + " BP:" + record.getActiveBasalPattern() + "/" + record.getActiveTempBasalPattern()
-                    + " LB:" + (record.getLastBolusReference() & 0xFF) + "/" + (record.getBolusingReference() & 0xFF)
-                    + " BR:" + record.getBasalRate() + "/" + record.getBasalUnitsDeliveredToday()
-                    + " AI:" + record.getActiveInsulin()
-                    + " HP:" + isHistoryNeeded();
-
-            payload = record.getPayload();
-
-            if ((payload[0x08] | payload[0x09] | payload[0x0A] | payload[0x0B]) > 0) {
-                note += " 0x08: " + HexDump.toHexString(payload, 0x08, 4);
-            }
-
-            if ((payload[0x55] | payload[0x56] | payload[0x57]) > 0) {
-                note += " 0x55: " + HexDump.toHexString(payload, 0x55, 3);
-            }
-
-            if ((payload[0x0F] | payload[0x19]) > 0) {
-                note += " 0x0F: " + HexDump.toHexString(payload[0x0F]) + " 0x19: " + HexDump.toHexString(payload[0x19]);
-            }
-
-            if (payload.length > 0x60) {
-                note += " 0x60: " + HexDump.toHexString(payload, 0x60, payload.length - 0x60);
-            }
-
-            i--;
-        }
-
-        pumpHistoryHandler.debugNote(new Date(now), note);
-    }
-
     private void statusWarnings() {
+/*
+        if (pumpHistoryHandler.isLoopActive()) {
+            userLogMessage(ICON_INFO + "670G auto mode is active");
+        }
+
+        if (dataStore.isNsEnableTreatments() && !dataStore.isNsEnableHistorySync()) {
+            userLogMessage(ICON_HELP + "Past historical data can be uploaded to Nightscout via the History Sync option in Advanced Nightscout Settings.");
+        }
+
+*/
+        if (dataStore.isNsEnableProfileUpload() && !pumpHistoryHandler.isProfileUploaded()) {
+            userLogMessage(ICON_INFO + "No basal pattern profile has been uploaded.");
+            userLogMessage(ICON_HELP + "Profiles can be uploaded from the main menu.");
+        }
 
         if (PumpBatteryError >= ERROR_PUMPBATTERY_AT) {
             PumpBatteryError = 0;
@@ -806,6 +735,18 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         boolean historyNeeded = false;
         String info = ICON_REFRESH + "history: ";
 
+        long recency = pumpHistoryHandler.pumpHistoryRecency() / 60000L;
+        if (recency == 0 || recency > 24 * 60) {
+            userLogMessage(info + "no recent data");
+            historyNeeded = true;
+        } else if (recency >= 6 * 60) {
+            userLogMessage(info + "recency " + (recency < 120 ? recency + " minutes" : ">" + recency / 60 + " hours"));
+            historyNeeded = true;
+        } else if (dataStore.getSysPumpHistoryFrequency() > 0 && (recency >= dataStore.getSysPumpHistoryFrequency() && pumpHistoryHandler.isLoopActivePotential())) {
+            userLogMessage(info + "670G auto mode");
+            historyNeeded = true;
+        }
+
         RealmResults<PumpStatusEvent> results = realm
                 .where(PumpStatusEvent.class)
                 .findAllSorted("eventDate", Sort.DESCENDING);
@@ -859,9 +800,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     }
                 }
 
-                // microbolus part delivered? normal (ref change) / square (ref change) / dual (ref can change due to normal microbolus mid delivery of square part)
+                // bolus part delivered? normal (ref change) / square (ref change) / dual (ref can change due to normal bolus mid delivery of square part)
                 if (!results.first().isBolusingNormal() && results.first().getLastBolusReference() != results.get(1).getLastBolusReference()) {
-                    // end of a dual microbolus?
+                    // end of a dual bolus?
                     if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                         // was dual ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
@@ -870,7 +811,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             historyNeeded = true;
                         }
                     }
-                    // end of a square microbolus?
+                    // end of a square bolus?
                     else if (!results.first().isBolusingSquare() && results.get(1).isBolusingSquare() && !results.get(1).isBolusingNormal()) {
                         // was square ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
@@ -879,17 +820,17 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             historyNeeded = true;
                         }
                     }
-                    // dual microbolus normal part delivered?
+                    // dual bolus normal part delivered?
                     else if (!results.first().isBolusingSquare() && !results.get(1).isBolusingDual() && results.first().isBolusingDual()) {
-                        userLogMessage(info + "dual microbolus");
+                        userLogMessage(info + "dual bolus");
                         historyNeeded = true;
                     }
-                    // normal microbolus delivered
+                    // normal bolus delivered
                     else {
-                        userLogMessage(info + "normal microbolus");
+                        userLogMessage(info + "normal bolus");
                         historyNeeded = true;
                     }
-                    // dual microbolus ended? or ended before expected duration?
+                    // dual bolus ended? or ended before expected duration?
                 } else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                     // was dual ended before expected duration?
                     int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
@@ -899,9 +840,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     }
                 }
 
-                // square microbolus started?
+                // square bolus started?
                 if (!results.first().isBolusingNormal() && results.first().isBolusingSquare() && !results.get(1).isBolusingSquare()) {
-                    userLogMessage(info + "square microbolus");
+                    userLogMessage(info + "square bolus");
                     historyNeeded = true;
                 }
 
@@ -957,7 +898,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
         return historyNeeded;
     }
-
 
     private long requestPollTime(long lastPollTime, long pollInterval) {
 
@@ -1102,5 +1042,55 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
     private boolean hasUsbHostFeature() {
         return mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
+    }
+
+    private void debugStatusMessage() {
+        long now = System.currentTimeMillis();
+
+        Date lastDate = pumpHistoryHandler.debugNoteLastDate();
+        if (lastDate != null && now - lastDate.getTime() < 30 * 60000L) return;
+
+        RealmResults<PumpStatusEvent> results = realm
+                .where(PumpStatusEvent.class)
+                .greaterThan("eventDate", new Date(now - 33 * 60000L))
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        if (results.size() < 1) return;
+
+        String note = "DEBUG:";
+        byte[] payload;
+
+        for (PumpStatusEvent record : results) {
+            note += " [" + dateFormatter.format(record.getEventDate()) + "] ";
+
+            byte status = record.getPumpStatus();
+
+            note += " ST:" + String.format(Locale.US,"%8s", Integer.toBinaryString(status)).replace(' ', '0')
+                    + " BP:" + record.getActiveBasalPattern() + "/" + record.getActiveTempBasalPattern()
+                    + " LB:" + (record.getLastBolusReference() & 0xFF) + "/" + (record.getBolusingReference() & 0xFF)
+                    + " BR:" + record.getBasalRate() + "/" + record.getBasalUnitsDeliveredToday()
+                    + " AI:" + record.getActiveInsulin();
+
+            payload = record.getPayload();
+            if (payload != null && payload.length > 0) {
+                if ((payload[0x08] | payload[0x09] | payload[0x0A] | payload[0x0B]) > 0) {
+                    note += " 0x08: " + HexDump.toHexString(payload, 0x08, 4);
+                }
+
+                if ((payload[0x55] | payload[0x56] | payload[0x57]) > 0) {
+                    note += " 0x55: " + HexDump.toHexString(payload, 0x55, 3);
+                }
+
+                if ((payload[0x0F] | payload[0x19]) > 0) {
+                    note += " 0x0F: " + HexDump.toHexString(payload[0x0F]) + " 0x19: " + HexDump.toHexString(payload[0x19]);
+                }
+
+                if (payload.length > 0x60) {
+                    note += " 0x60: " + HexDump.toHexString(payload, 0x60, payload.length - 0x60);
+                }
+            }
+        }
+
+        pumpHistoryHandler.debugNote(new Date(now), note);
     }
 }

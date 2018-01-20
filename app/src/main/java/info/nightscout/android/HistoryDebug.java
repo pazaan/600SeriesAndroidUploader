@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.Iterator;
 
 import info.nightscout.android.medtronic.PumpHistoryParser;
@@ -37,9 +38,22 @@ public class HistoryDebug {
         mContext = context;
     }
 
+    public void run() {
+
+        //logcatCGM("20180104-caty-670G-2-weeks.json");
+        //logcatPUMP("20180104-caty-670G-2-weeks.json");
+
+        //logcatCGM("20180101-caty-670G-3-months.json");
+        //logcatPUMP("20180101-caty-670G-3-months.json");
+
+        //history("20180101-caty-670G-3-months.json");
+
+        history("20180104-caty-670G-2-weeks.json");
+    }
+
     public void history(String file) {
         read(file, "cbg_pages");
-        time();
+        calcRTCandOFFSET(new Date(System.currentTimeMillis()));
         new PumpHistoryParser(eventData).process(pumpRTC, pumpOFFSET, 0, 0, 0);
         read(file, "pages");
         new PumpHistoryParser(eventData).process(pumpRTC, pumpOFFSET, 0, 0, 0);
@@ -62,7 +76,7 @@ public class HistoryDebug {
             }
 
             JSONArray pages = jsonObject.getJSONArray(type);
-            Log.d(TAG, "type: " + type + " pages: " + pages.length());
+            Log.d(TAG, "type: " + type + " count: " + pages.length());
 
             for (int i = 0; i < pages.length(); i++) {
                 String hex = pages.getString(i);
@@ -76,7 +90,7 @@ public class HistoryDebug {
         }
     }
 
-    public void time() {
+    public void calcRTCandOFFSET(Date date) {
 
         // get RTC and OFFSET from last event
         int index = 0;
@@ -88,7 +102,7 @@ public class HistoryDebug {
 
         pumpRTC = read32BEtoInt(eventData, indexLast + 0x03);
         int lastOFFSET = read32BEtoInt(eventData, indexLast + 0x07);
-        pumpOFFSET = (int) MessageUtils.offsetFromTime(System.currentTimeMillis(), pumpRTC & 0xFFFFFFFFL);
+        pumpOFFSET = (int) MessageUtils.offsetFromTime(date.getTime(), pumpRTC & 0xFFFFFFFFL);
     }
 
     public void logcatCGM(String file) {
@@ -138,6 +152,3 @@ public class HistoryDebug {
     }
 
 }
-
-
-

@@ -58,7 +58,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private byte cgmExceptionType;
     private boolean lowSuspendActive;
     private PumpStatusEvent.CGM_TREND cgmTrend;
-    private boolean recentBolusWizard; // Whether a microbolus wizard has been run recently
+    private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int recentBGL; // in mg/dL. 0 means no recent finger bg reading.
     private short alert;
 
@@ -87,7 +87,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             throw new UnexpectedMessageException("Invalid message received for PumpStatus");
         }
 
-        this.payload = payload; // save the payload for data mining on the 670G
+        this.payload = payload; // save the payload for data mining
 
         // add Flags
         pumpStatus = payload[0x03];
@@ -186,7 +186,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         bolusingMinutesRemaining = read16BEtoShort(payload, 0x0C);
         bolusingReference = payload[0x0E];
 
-        // Last microbolus
+        // Last bolus
         long rawLastBolusAmount = read32BEtoULong(payload, 0x10);
         lastBolusAmount = new BigDecimal(rawLastBolusAmount / 10000f).setScale(3, BigDecimal.ROUND_HALF_UP).floatValue();
         lastBolusDate = MessageUtils.decodeDateTime(read32BEtoULong(payload, 0x14), 0);
@@ -213,7 +213,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
      */
     public void updatePumpRecord(PumpStatusEvent pumpRecord) {
 
-        pumpRecord.setPayload(payload);  // save the payload for data mining on the 670G
+        //pumpRecord.setPayload(payload);  // save the payload for data mining
 
         // add Flags
         pumpRecord.setPumpStatus(pumpStatus);
@@ -301,7 +301,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         pumpRecord.setBolusingMinutesRemaining(bolusingMinutesRemaining);
         pumpRecord.setBolusingReference(bolusingReference);
 
-        // Last microbolus
+        // Last bolus
         pumpRecord.setLastBolusAmount(lastBolusAmount);
         pumpRecord.setLastBolusReference(lastBolusReference);
         pumpRecord.setLastBolusPumpDate(lastBolusDate);

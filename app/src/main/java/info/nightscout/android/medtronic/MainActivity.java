@@ -530,6 +530,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setSysCgmHistoryDays(Integer.parseInt(sharedPreferences.getString("sysCgmHistoryDays", "7")));
                 dataStore.setSysEnablePumpHistory(sharedPreferences.getBoolean("sysEnablePumpHistory", true));
                 dataStore.setSysPumpHistoryDays(Integer.parseInt(sharedPreferences.getString("sysPumpHistoryDays", "7")));
+                dataStore.setSysPumpHistoryFrequency(Integer.parseInt(sharedPreferences.getString("sysPumpHistoryFrequency", "90")));
 
                 dataStore.setSysEnableClashProtect(sharedPreferences.getBoolean("sysEnableClashProtect", true));
                 dataStore.setSysEnablePollOverride(sharedPreferences.getBoolean("sysEnablePollOverride", false));

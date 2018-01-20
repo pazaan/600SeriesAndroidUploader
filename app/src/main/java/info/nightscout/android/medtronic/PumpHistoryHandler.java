@@ -78,7 +78,7 @@ public class PumpHistoryHandler {
         historyDB.add(new DBitem("BOLUS", 30, historyRealm.where(PumpHistoryBolus.class).findAll()));
         historyDB.add(new DBitem("BASAL", 30, historyRealm.where(PumpHistoryBasal.class).findAll()));
         historyDB.add(new DBitem("BG", 30, historyRealm.where(PumpHistoryBG.class).findAll()));
-        historyDB.add(new DBitem("PROFILE", 30, historyRealm.where(PumpHistoryProfile.class).findAll()));
+        historyDB.add(new DBitem("PROFILE", 10, historyRealm.where(PumpHistoryProfile.class).findAll()));
         historyDB.add(new DBitem("MISC", 30, historyRealm.where(PumpHistoryMisc.class).findAll()));
         historyDB.add(new DBitem("LOOP", 400, historyRealm.where(PumpHistoryLoop.class).findAll()));
         historyDB.add(new DBitem("DEBUG", 30, historyRealm.where(PumpHistoryDebug.class).findAll()));
@@ -92,7 +92,7 @@ public class PumpHistoryHandler {
         DBitem (String name, int limiter, RealmResults results) {
             this.name = name;
             this.limiter = limiter;
-            //this.limiter = 5000;
+            //this.limiter = 5000; // debug use only
             this.results = results;
         }
     }
@@ -196,6 +196,59 @@ public class PumpHistoryHandler {
                 .findAllSorted("eventDate", Sort.DESCENDING);
         if (results.size() > 0) return results.first().getEventDate();
         return null;
+    }
+
+    public boolean isLoopActive() {
+        long now = System.currentTimeMillis();
+
+        RealmResults<PumpHistoryLoop> results = historyRealm
+                .where(PumpHistoryLoop.class)
+                .greaterThan("eventDate", new Date(now - 6 * 60 * 60000L))
+                .findAllSorted("eventDate", Sort.DESCENDING);
+
+        if (results.size() > 0 && results.first().isLoopActive())
+            return true;
+
+        return false;
+    }
+
+    // loop is active or has activation potential due to use during timeframe
+    public boolean isLoopActivePotential() {
+        long now = System.currentTimeMillis();
+
+        RealmResults<PumpHistoryLoop> results = historyRealm
+                .where(PumpHistoryLoop.class)
+                .greaterThan("eventDate", new Date(now - 6 * 60 * 60000L))
+                .equalTo("loopActive", true)
+                .findAll();
+
+        if (results.size() > 0) return true;
+
+        return false;
+    }
+
+    public boolean isProfileUploaded() {
+
+        RealmResults<PumpHistoryProfile> results = historyRealm
+                .where(PumpHistoryProfile.class)
+                .equalTo("profileDefine", true)
+                .findAll();
+
+        if (results.size() > 0) return true;
+        return false;
+    }
+
+    // Recency
+    public long pumpHistoryRecency() {
+
+        RealmResults<PumpHistorySegment> results = historyRealm
+                .where(PumpHistorySegment.class)
+                .equalTo("historyType", HISTORY_PUMP)
+                .findAllSorted("toDate", Sort.DESCENDING);
+
+        if (results.size() > 0) return System.currentTimeMillis() - results.first().getToDate().getTime();
+
+        return 0;
     }
 
     public void profile(final MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {

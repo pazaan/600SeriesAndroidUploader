@@ -67,6 +67,11 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
 
         if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableFingerBG()) {
 
+            if (PumpHistoryParser.BG_CONTEXT.BG_SENT_FOR_CALIB.equals(bgContext)
+                    && !dataStore.isNsEnableCalibrationInfo()) {
+                return uploadItems;
+            }
+
             UploadItem uploadItem = new UploadItem();
             uploadItems.add(uploadItem);
             TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
@@ -90,8 +95,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             treatment.setGlucose(bgl);
             treatment.setUnits(units);
 
-            //if (calibration && dataStore.isNsEnableCalibrationInfo()) {
-            if (calibration) {
+            if (calibration && dataStore.isNsEnableCalibrationInfo()) {
                 long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
                 notes += "CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)";
                 uploadItem.update();
@@ -102,7 +106,8 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             if (!notes.equals("")) treatment.setNotes(notes);
 
             // insert BG reading as CGM chart entry
-            if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsertBGasCGM()) {
+            if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsertBGasCGM()
+                    && !PumpHistoryParser.BG_CONTEXT.BG_SENT_FOR_CALIB.equals(bgContext)) {
 
                 UploadItem uploadItem1 = new UploadItem();
                 uploadItems.add(uploadItem1);
@@ -128,45 +133,34 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                           byte bgContext,
                           String serial) {
 
-        boolean bgToNS = false;
         switch (PumpHistoryParser.BG_CONTEXT.convert(bgContext)) {
             case BG_READING_RECEIVED:
-                bgToNS = true;
                 break;
             case USER_ACCEPTED_REMOTE_BG:
-                break;
+                return;
             case USER_REJECTED_REMOTE_BG:
-                break;
+                return;
             case REMOTE_BG_ACCEPTANCE_SCREEN_TIMEOUT:
-                break;
+                return;
             case BG_SI_PASS_RESULT_RECD_FRM_GST:
-                break;
+                return;
             case BG_SI_FAIL_RESULT_RECD_FRM_GST:
-                break;
+                return;
             case BG_SENT_FOR_CALIB:
-                bgToNS = true;
                 break;
             case USER_REJECTED_SENSOR_CALIB:
-                break;
+                return;
             case ENTERED_IN_BG_ENTRY:
-                bgToNS = true;
                 break;
             case ENTERED_IN_MEAL_WIZARD:
-                bgToNS = true;
                 break;
             case ENTERED_IN_BOLUS_WIZRD:
-                bgToNS = true;
                 break;
             case ENTERED_IN_SENSOR_CALIB:
-                bgToNS = true;
                 break;
             case ENTERED_AS_BG_MARKER:
-                bgToNS = true;
                 break;
-            default:
-                bgToNS = true;
         }
-        if (!bgToNS) return;
 
         PumpHistoryBG object = realm.where(PumpHistoryBG.class)
                 .equalTo("bgRTC", eventRTC)
@@ -176,6 +170,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             // look for a calibration
             object = realm.where(PumpHistoryBG.class)
                     .equalTo("calibration", true)
+                    .equalTo("calibrationFlag", false)
                     .greaterThan("calibrationRTC", eventRTC)
                     .lessThan("calibrationRTC", eventRTC + 20 * 60)
                     .findFirst();
@@ -197,50 +192,8 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             object.setBgContext(bgContext);
             object.setSerial(serial);
             object.setKey("BG" + String.format("%08X", eventRTC));
-
-            // debug: send the lot to NS
             object.setUploadREQ(true);
-/*
-            switch (PumpHistoryParser.BG_CONTEXT.convert(bgContext)) {
-                case BG_READING_RECEIVED:
-                    break;
-                case USER_ACCEPTED_REMOTE_BG:
-                    break;
-                case USER_REJECTED_REMOTE_BG:
-                    break;
-                case REMOTE_BG_ACCEPTANCE_SCREEN_TIMEOUT:
-                    break;
-                case BG_SI_PASS_RESULT_RECD_FRM_GST:
-                    break;
-                case BG_SI_FAIL_RESULT_RECD_FRM_GST:
-                    break;
-                case BG_SENT_FOR_CALIB:
-                    object.setUploadREQ(true);
-                    object.setCalibrationFlag(true);
-                    break;
-                case USER_REJECTED_SENSOR_CALIB:
-                    break;
-                case ENTERED_IN_BG_ENTRY:
-                    object.setUploadREQ(true);
-                    break;
-                case ENTERED_IN_MEAL_WIZARD:
-                    object.setUploadREQ(true);
-                    break;
-                case ENTERED_IN_BOLUS_WIZRD:
-                    object.setUploadREQ(true);
-                    break;
-                case ENTERED_IN_SENSOR_CALIB:
-                    object.setUploadREQ(true);
-                    object.setCalibrationFlag(true);
-                    break;
-                case ENTERED_AS_BG_MARKER:
-                    object.setUploadREQ(true);
-                    break;
-                default:
-                    object.setUploadREQ(true);
-                    object.setCalibrationFlag(calibrationFlag);
-            }
-*/
+
         } else if (PumpHistoryParser.BG_CONTEXT.NA.equals(bgContext) && calibrationFlag && !object.isCalibrationFlag()){
             Log.d(TAG, "*update*" + " bg used for calibration");
             object.setCalibrationFlag(true);

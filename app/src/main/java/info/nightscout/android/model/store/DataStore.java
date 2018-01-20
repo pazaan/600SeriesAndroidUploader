@@ -9,7 +9,7 @@ public class DataStore extends RealmObject {
     @Index
     private long timestamp;
 
-    private boolean debug_bump;
+    //private boolean debug_bump;
 
     // do not send cgm/pump backfill data prior to this date
     // used to stop overwriting older NS entries
@@ -43,6 +43,7 @@ public class DataStore extends RealmObject {
     private int sysCgmHistoryDays;
     private boolean sysEnablePumpHistory;
     private int sysPumpHistoryDays;
+    private int sysPumpHistoryFrequency;
     private boolean sysEnableClashProtect;
     private boolean sysEnablePollOverride;
     private long sysPollGracePeriod;
@@ -320,6 +321,14 @@ public class DataStore extends RealmObject {
 
     public void setSysPumpHistoryDays(int sysPumpHistoryDays) {
         this.sysPumpHistoryDays = sysPumpHistoryDays;
+    }
+
+    public int getSysPumpHistoryFrequency() {
+        return sysPumpHistoryFrequency;
+    }
+
+    public void setSysPumpHistoryFrequency(int sysPumpHistoryFrequency) {
+        this.sysPumpHistoryFrequency = sysPumpHistoryFrequency;
     }
 
     public boolean isSysEnableClashProtect() {

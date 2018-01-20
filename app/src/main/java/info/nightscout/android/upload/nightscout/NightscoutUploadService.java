@@ -53,7 +53,12 @@ public class NightscoutUploadService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Received start id " + startId + "  : " + intent);
 
-        if (intent != null) new Upload().start();
+        if (intent != null) {
+            if (startId == 1)
+                new Upload().start();
+            else
+                Log.d(TAG, "Service already in progress with previous task");
+        }
 
         return START_NOT_STICKY;
     }

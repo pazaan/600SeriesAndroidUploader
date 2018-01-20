@@ -56,7 +56,7 @@ public class PumpStatusEvent extends RealmObject {
     private byte cgmExceptionType;
     private boolean lowSuspendActive;
     private String cgmTrend;
-    private boolean recentBolusWizard; // Whether a microbolus wizard has been run recently
+    private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int recentBGL; // in mg/dL. 0 means no recent finger bg reading.
 
     private short alert;
