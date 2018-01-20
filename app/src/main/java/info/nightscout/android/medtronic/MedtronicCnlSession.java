@@ -22,7 +22,8 @@ public class MedtronicCnlSession {
     private byte radioRSSI;
 
     private int cnlSequenceNumber = 1;
-    private int medtronicSequenceNumber = 1;
+    private byte medtronicSequenceNumber = 1;
+    private byte comDSequenceNumber = 1;
 
     public byte[] getHMAC() throws NoSuchAlgorithmException {
         String shortSerial = this.stickSerial.replaceAll("\\d+-", "");
@@ -69,8 +70,12 @@ public class MedtronicCnlSession {
         return cnlSequenceNumber;
     }
 
-    public int getMedtronicSequenceNumber() {
+    public byte getMedtronicSequenceNumber() {
         return medtronicSequenceNumber;
+    }
+
+    public byte getComDSequenceNumber() {
+        return comDSequenceNumber;
     }
 
     public byte getRadioChannel() {
@@ -89,8 +94,18 @@ public class MedtronicCnlSession {
         cnlSequenceNumber++;
     }
 
+    public void setMedtronicSequenceNumber(byte medtronicSequenceNumber) {
+        this.medtronicSequenceNumber = medtronicSequenceNumber;
+    }
+
     public void incrMedtronicSequenceNumber() {
         medtronicSequenceNumber++;
+        if ((medtronicSequenceNumber & 0x7F) == 0) medtronicSequenceNumber = 0x01;
+    }
+
+    public void incrComDSequenceNumber() {
+        comDSequenceNumber++;
+        if ((comDSequenceNumber & 0x7F) == 0) comDSequenceNumber = 0x01;
     }
 
     public void setRadioChannel(byte radioChannel) {

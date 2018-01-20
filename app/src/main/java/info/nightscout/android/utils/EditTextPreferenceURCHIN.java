@@ -17,21 +17,21 @@ import info.nightscout.android.R;
  *
  * Code found at http://stackoverflow.com/a/31345545
  */
-public class ValidatingEditTextPreference extends EditTextPreference {
+public class EditTextPreferenceURCHIN extends EditTextPreference {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public ValidatingEditTextPreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public EditTextPreferenceURCHIN(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    public ValidatingEditTextPreference(Context context, AttributeSet attrs, int defStyleAttr) {
+    public EditTextPreferenceURCHIN(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
-    public ValidatingEditTextPreference(Context context, AttributeSet attrs) {
+    public EditTextPreferenceURCHIN(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public ValidatingEditTextPreference(Context context) {
+    public EditTextPreferenceURCHIN(Context context) {
         super(context);
     }
 
@@ -60,6 +60,7 @@ public class ValidatingEditTextPreference extends EditTextPreference {
         }
     }
 
+
     /***
      * Called to validate contents of the edit text.
      * <p/>
@@ -68,11 +69,19 @@ public class ValidatingEditTextPreference extends EditTextPreference {
      * @param text The text to validate.
      * @return An error message, or null if the value passes validation.
      */
+
+    private String legalCharacters = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz°•·-`~!@#$%^&*()_+=[]\\{}|;':\",./<>?";
+
     public String onValidate(String text) {
-        if (text.length() >= 12) {
-            return null;
-        } else {
-            return getContext().getString(R.string.error_msg_api_secret_length);
+
+        for (int i = 0; i < text.length(); i++) {
+            if (!legalCharacters.contains(text.substring(i, i+1)))
+                return getContext().getString(R.string.error_msg_illegal_characters);
         }
+
+        if (text.length() > 30)
+            return getContext().getString(R.string.error_msg_exceeds_length);
+
+        return null;
     }
 }

@@ -10,6 +10,7 @@ import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceScreen;
 import android.util.Log;
 
 import com.google.gson.JsonElement;
@@ -107,7 +108,12 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 
     // iterate through all preferences and update to saved value
     private void initSummary(Preference p) {
-        if (p instanceof PreferenceCategory) {
+        if (p instanceof PreferenceScreen) {
+            PreferenceScreen pScr = (PreferenceScreen) p;
+            for (int i = 0; i < pScr.getPreferenceCount(); i++) {
+                initSummary(pScr.getPreference(i));
+            }
+        } else if (p instanceof PreferenceCategory) {
             PreferenceCategory pCat = (PreferenceCategory) p;
             for (int i = 0; i < pCat.getPreferenceCount(); i++) {
                 initSummary(pCat.getPreference(i));

@@ -2,15 +2,16 @@ package info.nightscout.android.medtronic.message;
 
 import android.util.Log;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.util.Arrays;
 
-import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
-import info.nightscout.android.model.medtronicNg.PumpInfo;
-import info.nightscout.android.utils.HexDump;
+import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
+
+import static info.nightscout.android.utils.ToolKit.read8toUInt;
+import static info.nightscout.android.utils.ToolKit.read32BEtoULong;
+import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 
 /**
  * Created by lgoedhart on 27/03/2016.
@@ -18,31 +19,39 @@ import info.nightscout.android.utils.HexDump;
 public class PumpBasalPatternResponseMessage extends MedtronicSendMessageResponseMessage {
     private static final String TAG = PumpBasalPatternResponseMessage.class.getSimpleName();
 
-    protected PumpBasalPatternResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
+    private byte[] basalPattern; // [8bit] basalPattern number, [8bit] count, { [32bitBE] rate (div 10000), [8bit] time period (mult 30 min) }
+
+    protected PumpBasalPatternResponseMessage(MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException, UnexpectedMessageException {
         super(pumpSession, payload);
 
-        // TODO - determine message validity
-        /*
-        if (response.encode().length < (61 + 8)) {
-            // Invalid message.
-            // TODO - deal with this more elegantly
-            Log.e(TAG, "Invalid message received for getBasalPatterns");
-            return;
+        if (!MedtronicSendMessageRequestMessage.MessageType.READ_BASAL_PATTERN.response(read16BEtoUInt(payload, 0x01))) {
+            Log.e(TAG, "Invalid message received for PumpBasalPattern");
+            throw new UnexpectedMessageException("Invalid message received for PumpBasalPattern");
         }
-        */
 
-
-        byte bufferSize = (byte) (this.encode()[0x38] - 2); // TODO - getting the size should be part of the superclass.
-        ByteBuffer basalBuffer = ByteBuffer.allocate(bufferSize);
-        basalBuffer.order(ByteOrder.BIG_ENDIAN);
-        basalBuffer.put(this.encode(), 0x39, bufferSize);
-
-        if (BuildConfig.DEBUG) {
-            String outputString = HexDump.dumpHexString(basalBuffer.array());
-            Log.d(TAG, "BASAL PAYLOAD: " + outputString);
-        }
+        basalPattern = Arrays.copyOfRange(payload, 3, payload.length);
     }
 
-    public void updateBasalPatterns(PumpInfo pumpInfo) {
+    public byte[] getBasalPattern() {
+        return basalPattern;
+    }
+
+    public void logcat() {
+        int index = 0;
+        double rate;
+        int time;
+
+        Log.d(TAG, "Pattern data size: " + basalPattern.length);
+
+        int number = read8toUInt(basalPattern, index++);
+        int items = read8toUInt(basalPattern, index++);
+        Log.d(TAG, "Pattern: " + number + " Items: " + items);
+
+        for (int i = 0; i < items; i++) {
+            rate = read32BEtoULong(basalPattern, index) / 10000.0;
+            time = read8toUInt(basalPattern, index + 0x04) * 30;
+            Log.d(TAG, "TimePeriod: " + (i + 1) + " Rate: " + rate + " Time: " + time / 60 + "h" + time % 60 + "m");
+            index += 5;
+        }
     }
 }
