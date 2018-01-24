@@ -18,6 +18,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpHistoryDebug;
 import info.nightscout.android.model.medtronicNg.PumpHistoryLoop;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
+import info.nightscout.android.model.medtronicNg.PumpHistoryPattern;
 import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
 import info.nightscout.android.model.medtronicNg.PumpHistorySettings;
@@ -155,6 +156,7 @@ public class UploaderApplication extends Application {
             PumpHistoryBG.class,
             PumpHistoryMisc.class,
             PumpHistoryProfile.class,
+            PumpHistoryPattern.class,
             PumpHistorySettings.class,
             PumpHistoryLoop.class,
             PumpHistoryDebug.class

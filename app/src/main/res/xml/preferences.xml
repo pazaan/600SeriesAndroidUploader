@@ -112,12 +112,12 @@
                     android:dependency="nsEnableTreatments"
                     android:key="nsEnableSensorChange"
                     android:defaultValue="true"
-                    android:summary="Send sensor changes to Nightscout"/>
+                    android:summary="Send sensor changes to Nightscout (SAGE)"/>
                 <CheckBoxPreference android:title="Reservoir Change"
                     android:dependency="nsEnableTreatments"
                     android:key="nsEnableReservoirChange"
                     android:defaultValue="true"
-                    android:summary="Send reservoir changes to Nightscout"/>
+                    android:summary="Send reservoir changes to Nightscout (CAGE)"/>
                 <CheckBoxPreference android:title="Pump Battery Change"
                     android:dependency="nsEnableTreatments"
                     android:key="nsEnableBatteryChange"
@@ -661,7 +661,7 @@
                     android:dependency="sysEnablePumpHistory"
                     android:key="sysPumpHistoryFrequency"
                     android:defaultValue="90"
-                    android:title="670G update frequency"
+                    android:title="Auto Mode update frequency"
                     android:summary="%s"
                     android:entries="@array/pump_history_freq"
                     android:entryValues="@array/pump_history_freq_values"/>

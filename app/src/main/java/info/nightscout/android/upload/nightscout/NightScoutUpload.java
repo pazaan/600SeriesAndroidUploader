@@ -9,11 +9,9 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
@@ -46,6 +44,7 @@ public class NightScoutUpload {
     private static final String TAG = NightScoutUpload.class.getSimpleName();
 
     // delete all items or just the items without a Key600 field
+    // debug use only as may have issues if there is a lot of treatment entries in NS
     private static final boolean CLEAN_COMPLETE = false;
 
     private DeviceEndpoints deviceEndpoints;
@@ -58,12 +57,16 @@ public class NightScoutUpload {
 
     NightScoutUpload() {}
 
-    boolean doRESTUpload(String url,
-                         String secret,
-                         int uploaderBatteryLevel,
-                         List<PumpStatusEvent> statusRecords,
-                         List<PumpHistoryInterface> records)
+    public void doRESTUpload(Realm storeRealm, DataStore dataStore,
+                             String url,
+                             String secret,
+                             int uploaderBatteryLevel,
+                             List<PumpStatusEvent> statusRecords,
+                             List<PumpHistoryInterface> records)
             throws Exception {
+
+        this.storeRealm = storeRealm;
+        this.dataStore = dataStore;
 
         UploadApi uploadApi = new UploadApi(url, formToken(secret));
 
@@ -72,56 +75,42 @@ public class NightScoutUpload {
         treatmentsEndpoints = uploadApi.getTreatmentsEndpoints();
         profileEndpoints = uploadApi.getProfileEndpoints();
 
-        return uploadStatus(statusRecords, uploaderBatteryLevel) && uploadEvents(records);
+        uploadStatus(statusRecords, uploaderBatteryLevel);
+        uploadEvents(records);
     }
 
-    private boolean uploadEvents(List<PumpHistoryInterface> records) throws Exception {
-
-        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-        dataStore = storeRealm.where(DataStore.class).findFirst();
+    private void uploadEvents(List<PumpHistoryInterface> records) throws Exception {
 
         cleanupCheck();
 
         List<EntriesEndpoints.Entry> entries = new ArrayList<>();
         List<TreatmentsEndpoints.Treatment> treatments = new ArrayList<>();
 
-        boolean success = true;
-
         for (PumpHistoryInterface record : records) {
-
-            Iterator<UploadItem> iterator = record.nightscout(dataStore).iterator();
-            while (success && iterator.hasNext()) {
-                UploadItem uploadItem = iterator.next();
-                UploadItem.MODE mode = uploadItem.getMode();
-                if (uploadItem.isEntry()) {
-                    success = processEntry(mode, uploadItem.getEntry(), entries);
-                } else if (uploadItem.isTreatment()) {
-                    success = processTreatment(mode, uploadItem.getTreatment(), treatments);
-                } else if (uploadItem.isProfile()) {
-                    success = processProfile(mode, uploadItem.getProfile());
-                }
+            List<UploadItem> uploadItems = record.nightscout(dataStore);
+            for (UploadItem uploadItem : uploadItems) {
+                if (uploadItem.isEntry())
+                    processEntry(uploadItem.getMode(), uploadItem.getEntry(), entries);
+                else if (uploadItem.isTreatment())
+                    processTreatment(uploadItem.getMode(), uploadItem.getTreatment(), treatments);
+                else if (uploadItem.isProfile())
+                    processProfile(uploadItem.getMode(), uploadItem.getProfile());
             }
-
-            if (!success) break;
         }
 
         // bulk uploading for entries and treatments
 
-        if (success && entries.size() > 0) {
+        if (entries.size() > 0) {
             Response<ResponseBody> result = entriesEndpoints.sendEntries(entries).execute();
-            success = result.isSuccessful();
+            if (!result.isSuccessful()) throw new Exception("(entries) " + result.message());
         }
-        if (success && treatments.size() > 0) {
+        if (treatments.size() > 0) {
             Response<ResponseBody> result = treatmentsEndpoints.sendTreatments(treatments).execute();
-            success = result.isSuccessful();
+            if (!result.isSuccessful()) throw new Exception("(treatments) " + result.message());
         }
-
-        storeRealm.close();
-
-        return success;
     }
 
-    private boolean processEntry(UploadItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
+    private void processEntry(UploadItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
 
         String key = entry.getKey600();
         Response<List<EntriesEndpoints.Entry>> response = entriesEndpoints.checkKey("2017", key).execute();
@@ -138,9 +127,9 @@ public class NightScoutUpload {
                         Log.d(TAG, "deleted " + count + " with KEY: " + key);
                     } else {
                         Log.d(TAG, "no DELETE response from nightscout site");
-                        return false;
+                        throw new Exception("(processEntry) " + responseBody.message());
                     }
-                } else return true;
+                } else return;
             }
 
             if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
@@ -150,13 +139,11 @@ public class NightScoutUpload {
 
         } else {
             Log.d(TAG, "no response from nightscout site!");
-            return false;
+            throw new Exception("(processEntry) " + response.message());
         }
-
-        return true;
     }
 
-    private boolean processTreatment(UploadItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
+    private void processTreatment(UploadItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
 
         String key = treatment.getKey600();
         Response<List<TreatmentsEndpoints.Treatment>> response = treatmentsEndpoints.checkKey("2017", key).execute();
@@ -173,12 +160,12 @@ public class NightScoutUpload {
                         Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + list.get(count - 1).get_id());
                     } else {
                         Log.d(TAG, "no DELETE response from nightscout site");
-                        return false;
+                        throw new Exception("(processTreatment) " + responseBody.message());
                     }
                     count--;
                 }
 
-                if (count > 0) return true;
+                if (count > 0) return;
             }
 
             if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
@@ -188,13 +175,11 @@ public class NightScoutUpload {
 
         } else {
             Log.d(TAG, "no response from nightscout site!");
-            return false;
+            throw new Exception("(processTreatment) " + response.message());
         }
-
-        return true;
     }
 
-    private boolean processProfile(UploadItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
+    private void processProfile(UploadItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
 
         String key = profile.getKey600();
         Response<List<ProfileEndpoints.Profile>> response = profileEndpoints.getProfiles().execute();
@@ -220,7 +205,7 @@ public class NightScoutUpload {
                             Log.d(TAG, "deleted this item! ID: " + foundID);
                         } else {
                             Log.d(TAG, "no DELETE response from nightscout site");
-                            return false;
+                            throw new Exception("(processProfile) " + responseBody.message());
                         }
                     }
 
@@ -244,7 +229,7 @@ public class NightScoutUpload {
                                         Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + foundID);
                                     } else {
                                         Log.d(TAG, "no DELETE response from nightscout site");
-                                        return false;
+                                        throw new Exception("(processProfile) " + responseBody.message());
                                     }
                                     if (--count == 1) break;
                                 }
@@ -252,7 +237,7 @@ public class NightScoutUpload {
                         }
                     }
 
-                    if (count > 0) return true;
+                    if (count > 0) return;
                 }
             }
 
@@ -261,21 +246,19 @@ public class NightScoutUpload {
                 Response<ResponseBody> responseBody = profileEndpoints.sendProfile(profile).execute();
                 if (!responseBody.isSuccessful()) {
                     Log.d(TAG, "no POST response from nightscout site");
-                    return false;
+                    throw new Exception("(processProfile) " + responseBody.message());
                 }
             }
 
         } else {
             Log.d(TAG, "no response from nightscout site!");
-            return false;
+            throw new Exception("(processProfile) " + response.message());
         }
-
-        return true;
     }
 
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
 
-    private boolean uploadStatus(List<PumpStatusEvent> records, int uploaderBatteryLevel) throws Exception {
+    private void uploadStatus(List<PumpStatusEvent> records, int uploaderBatteryLevel) throws Exception {
 
         List<DeviceEndpoints.DeviceStatus> deviceEntries = new ArrayList<>();
         for (PumpStatusEvent record : records) {
@@ -378,13 +361,10 @@ public class NightScoutUpload {
             deviceEntries.add(deviceStatus);
         }
 
-        boolean uploaded = true;
         for (DeviceStatus status : deviceEntries) {
             Response<ResponseBody> result = deviceEndpoints.sendDeviceStatus(status).execute();
-            uploaded = uploaded && result.isSuccessful();
+            if (!result.isSuccessful()) throw new Exception("(device status) " + result.message());
         }
-
-        return uploaded;
     }
 
     private void cleanupCheck() throws Exception {
@@ -404,7 +384,7 @@ public class NightScoutUpload {
             }
 
             final long cgmFrom = now - cgmDays * (24 * 60 * 60000L);
-            final long pumpFrom = now - pumpDays * (24 * 60 * 60000L);
+            long pumpFrom = now - pumpDays * (24 * 60 * 60000L);
 
             long cgmTo = dataStore.getNightscoutCgmCleanFrom();
             long pumpTo = dataStore.getNightscoutPumpCleanFrom();
@@ -450,6 +430,11 @@ public class NightScoutUpload {
             }
 
             if (pumpFrom < pumpTo) {
+
+                // cleaning treatments can be slow, limit the period per pass
+                long limiter = 7 * 24 * 60 * 60000L;
+                if (pumpTo - pumpFrom > limiter) pumpFrom = pumpTo - limiter;
+
                 Log.d(TAG, "cleanup: treatments (pump history) " + dateFormat.format(pumpFrom) + " to " + dateFormat.format(pumpTo));
 
                 boolean finished = false;
@@ -489,11 +474,12 @@ public class NightScoutUpload {
                     } else success = false;
                 }
 
+                final long pumpFromFinal = pumpFrom;
                 if (success) {
                     storeRealm.executeTransaction(new Realm.Transaction() {
                         @Override
                         public void execute(Realm realm) {
-                            dataStore.setNightscoutPumpCleanFrom(pumpFrom);
+                            dataStore.setNightscoutPumpCleanFrom(pumpFromFinal);
                         }
                     });
                 }

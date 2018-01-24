@@ -131,6 +131,8 @@ public class MasterService extends Service {
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
+                dataStore.setNightscoutReportTime(0);
+                dataStore.setNightscoutAvailable(false);
                 dataStore.clearAllCommsErrors();
             }
         });

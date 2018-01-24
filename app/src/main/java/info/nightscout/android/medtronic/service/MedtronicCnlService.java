@@ -644,15 +644,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     private void statusWarnings() {
 /*
         if (pumpHistoryHandler.isLoopActive()) {
-            userLogMessage(ICON_INFO + "670G auto mode is active");
+            userLogMessage(ICON_INFO + "Auto mode is active");
         }
 
         if (dataStore.isNsEnableTreatments() && !dataStore.isNsEnableHistorySync()) {
             userLogMessage(ICON_HELP + "Past historical data can be uploaded to Nightscout via the History Sync option in Advanced Nightscout Settings.");
         }
-
 */
-        if (dataStore.isNsEnableProfileUpload() && !pumpHistoryHandler.isProfileUploaded()) {
+        if (dataStore.isNightscoutUpload() && dataStore.isNsEnableProfileUpload() && !pumpHistoryHandler.isProfileUploaded()) {
             userLogMessage(ICON_INFO + "No basal pattern profile has been uploaded.");
             userLogMessage(ICON_HELP + "Profiles can be uploaded from the main menu.");
         }
@@ -736,14 +735,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         String info = ICON_REFRESH + "history: ";
 
         long recency = pumpHistoryHandler.pumpHistoryRecency() / 60000L;
-        if (recency == 0 || recency > 24 * 60) {
+        if (recency == -1 || recency > 24 * 60) {
             userLogMessage(info + "no recent data");
             historyNeeded = true;
         } else if (recency >= 6 * 60) {
             userLogMessage(info + "recency " + (recency < 120 ? recency + " minutes" : ">" + recency / 60 + " hours"));
             historyNeeded = true;
         } else if (dataStore.getSysPumpHistoryFrequency() > 0 && (recency >= dataStore.getSysPumpHistoryFrequency() && pumpHistoryHandler.isLoopActivePotential())) {
-            userLogMessage(info + "670G auto mode");
+            userLogMessage(info + "auto mode");
             historyNeeded = true;
         }
 
@@ -1072,7 +1071,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     + " AI:" + record.getActiveInsulin();
 
             payload = record.getPayload();
-            if (payload != null && payload.length > 0) {
+            if (payload != null && payload.length >= 0x60) {
                 if ((payload[0x08] | payload[0x09] | payload[0x0A] | payload[0x0B]) > 0) {
                     note += " 0x08: " + HexDump.toHexString(payload, 0x08, 4);
                 }

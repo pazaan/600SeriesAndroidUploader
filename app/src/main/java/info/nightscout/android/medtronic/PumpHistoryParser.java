@@ -15,7 +15,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpHistoryLoop;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
-import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
+import info.nightscout.android.model.medtronicNg.PumpHistoryPattern;
 import info.nightscout.android.utils.HexDump;
 import io.realm.Realm;
 
@@ -458,7 +458,7 @@ public class PumpHistoryParser {
     private void BASAL_PATTERN_SELECTED() {
         int oldPatternNumber = read8toUInt(eventData, index + 0x0B);
         int newPatternNumber = read8toUInt(eventData, index + 0x0C);
-        PumpHistoryProfile.select(historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryPattern.change(historyRealm, eventDate, eventRTC, eventOFFSET,
                 oldPatternNumber,
                 newPatternNumber);
     }
