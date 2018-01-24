@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.api.ProfileEndpoints;
 import info.nightscout.api.TreatmentsEndpoints;
@@ -49,11 +48,6 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
     private int profileRTC;
     private int profileOFFSET;
 
-    private boolean profileSwitch = false;
-    private int oldPatternNumber;
-    private int newPatternNumber;
-
-    private boolean profileDefine = false;
     private int defaultProfile;
     private int units;
     private int carbsPerHour;
@@ -68,32 +62,18 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
     public List nightscout(DataStore dataStore) {
         List<UploadItem> uploadItems = new ArrayList<>();
 
-        if (profileSwitch && dataStore.isNsEnableTreatments() && dataStore.isNsEnablePatternChange()) {
+        if (dataStore.isNsEnableProfileUpload()) {
 
-            UploadItem uploadItem = new UploadItem();
-            uploadItems.add(uploadItem);
-            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
+            if (dataStore.isNsEnableTreatments() && dataStore.isNightscoutCareportal()) {
+                UploadItem uploadItem = new UploadItem();
+                uploadItems.add(uploadItem);
+                TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
 
-            treatment.setKey600(key);
-            treatment.setCreated_at(eventDate);
-            treatment.setEventType("Profile Switch");
-
-            String oldName = dataStore.getNameBasalPattern(oldPatternNumber);
-            String newName = dataStore.getNameBasalPattern(newPatternNumber);
-
-            treatment.setProfile(newName);
-            treatment.setNotes("Changed profile from " + oldName + " to " + newName);
-
-        } else if (profileDefine && dataStore.isNsEnableProfileUpload()) {
-
-            UploadItem uploadItem = new UploadItem();
-            uploadItems.add(uploadItem);
-            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
-
-            treatment.setKey600(key);
-            treatment.setCreated_at(eventDate);
-            treatment.setEventType("Note");
-            treatment.setNotes("Profile updated");
+                treatment.setKey600(key);
+                treatment.setCreated_at(eventDate);
+                treatment.setEventType("Note");
+                treatment.setNotes("Profile updated");
+            }
 
             UploadItem uploadItem2 = new UploadItem();
             uploadItems.add(uploadItem2);
@@ -307,7 +287,6 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         // create new entry
         PumpHistoryProfile object = realm.createObject(PumpHistoryProfile.class);
         object.setKey("PRO" + String.format("%08X", eventRTC));
-        object.setProfileDefine(true);
         object.setEventDate(eventDate);
         object.setProfileRTC(eventRTC);
         object.setProfileOFFSET(eventOFFSET);
@@ -316,28 +295,6 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         object.setSensitivity(sensitivity);
         object.setTargets(targets);
         object.setUploadREQ(true);
-    }
-
-    public static void select(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                              int oldPatternNumber,
-                              int newPatternNumber) {
-
-        PumpHistoryProfile object = realm.where(PumpHistoryProfile.class)
-                .equalTo("profileRTC", eventRTC)
-                .findFirst();
-        if (object == null) {
-            Log.d(TAG, "*new*" + " profile basal pattern switch");
-            // create new entry
-            object = realm.createObject(PumpHistoryProfile.class);
-            object.setKey("PRO" + String.format("%08X", eventRTC));
-            object.setProfileSwitch(true);
-            object.setEventDate(eventDate);
-            object.setProfileRTC(eventRTC);
-            object.setProfileOFFSET(eventOFFSET);
-            object.setOldPatternNumber(oldPatternNumber);
-            object.setNewPatternNumber(newPatternNumber);
-            object.setUploadREQ(true);
-        }
     }
 
     @Override
@@ -414,38 +371,6 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
 
     public void setProfileOFFSET(int profileOFFSET) {
         this.profileOFFSET = profileOFFSET;
-    }
-
-    public boolean isProfileSwitch() {
-        return profileSwitch;
-    }
-
-    public void setProfileSwitch(boolean profileSwitch) {
-        this.profileSwitch = profileSwitch;
-    }
-
-    public int getOldPatternNumber() {
-        return oldPatternNumber;
-    }
-
-    public void setOldPatternNumber(int oldPatternNumber) {
-        this.oldPatternNumber = oldPatternNumber;
-    }
-
-    public int getNewPatternNumber() {
-        return newPatternNumber;
-    }
-
-    public void setNewPatternNumber(int newPatternNumber) {
-        this.newPatternNumber = newPatternNumber;
-    }
-
-    public boolean isProfileDefine() {
-        return profileDefine;
-    }
-
-    public void setProfileDefine(boolean profileDefine) {
-        this.profileDefine = profileDefine;
     }
 
     public int getDefaultProfile() {

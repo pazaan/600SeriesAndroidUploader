@@ -3,21 +3,18 @@ package info.nightscout.android.upload.nightscout;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.util.List;
 
-import info.nightscout.android.R;
+import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.PumpHistoryHandler;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import info.nightscout.android.model.store.DataStore;
 import io.realm.Realm;
 import io.realm.RealmResults;
 
@@ -29,6 +26,10 @@ public class NightscoutUploadService extends Service {
     private static final String TAG = NightscoutUploadService.class.getSimpleName();
 
     private Context mContext;
+
+    private Realm realm;
+    private Realm storeRealm;
+    private DataStore dataStore;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -68,78 +69,90 @@ public class NightscoutUploadService extends Service {
 
             PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 60000);
 
-            Realm mRealm = Realm.getDefaultInstance();
+            storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+            dataStore = storeRealm.where(DataStore.class).findFirst();
 
-            final RealmResults<PumpStatusEvent> statusRecords = mRealm
-                    .where(PumpStatusEvent.class)
-                    .equalTo("uploaded", false)
-                    .findAll();
-
-            PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
-
-            List<PumpHistoryInterface> records = pumpHistoryHandler.uploadREQ();
-
-            if (statusRecords.size() > 0 || records.size() > 0) {
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-                Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
-
-                try {
-                    if (enableRESTUpload) {
-                        long start = System.currentTimeMillis();
-
-                        Log.i(TAG, String.format("Starting upload of %s record using a REST API", statusRecords.size() + records.size()));
-                        String urlSetting = prefs.getString(mContext.getString(R.string.preference_nightscout_url), "");
-                        String secretSetting = prefs.getString(mContext.getString(R.string.preference_api_secret), "YOURAPISECRET");
-
-                        int uploaderBatteryLevel = MasterService.getUploaderBatteryLevel();
-
-                        boolean uploadSuccess = new NightScoutUpload().doRESTUpload(
-                                urlSetting,
-                                secretSetting,
-                                uploaderBatteryLevel,
-                                statusRecords,
-                                records);
-
-                        if (uploadSuccess) {
-                            pumpHistoryHandler.uploadACK();
-
-                            mRealm.executeTransaction(new Realm.Transaction() {
-                                @Override
-                                public void execute(Realm realm) {
-                                    for (PumpStatusEvent updateRecord : statusRecords)
-                                        updateRecord.setUploaded(true);
-                                }
-                            });
-
-                        } else {
-                            if (prefs.getBoolean("dbgEnableUploadErrors", true))
-                                userLogMessage(ICON_WARN + "Uploading to nightscout was unsuccessful");
-                        }
-
-                        Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.size(), System.currentTimeMillis() - start));
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "ERROR uploading data!!!!!", e);
-                    if (prefs.getBoolean("dbgEnableUploadErrors", true))
-                        userLogMessage(ICON_WARN + "Error uploading: " + e.getMessage());
-                }
-
-            } else {
-                Log.i(TAG, "No records have to be uploaded");
+            if (dataStore.isNightscoutUpload()) {
+                new NightscoutStatus(mContext).check();
+                if (dataStore.isNightscoutAvailable()) uploadRecords();
             }
 
-            pumpHistoryHandler.close();
-            mRealm.close();
+            storeRealm.close();
 
             releaseWakeLock(wl);
             stopSelf();
         }
     }
 
-    private boolean isOnline() {
-        ConnectivityManager cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        return netInfo != null && netInfo.isConnectedOrConnecting();
+    private void uploadRecords() {
+
+        realm = Realm.getDefaultInstance();
+        final RealmResults<PumpStatusEvent> statusRecords = realm
+                .where(PumpStatusEvent.class)
+                .equalTo("uploaded", false)
+                .findAll();
+        Log.i(TAG, "Device status records to upload: " + statusRecords.size());
+
+        PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
+        List<PumpHistoryInterface> records = pumpHistoryHandler.uploadREQ();
+
+        int total = records.size() + statusRecords.size();
+
+        if (total > 0) {
+
+            try {
+
+                long start = System.currentTimeMillis();
+
+                Log.i(TAG, String.format("Starting upload of %s record using a REST API", total));
+                String urlSetting = dataStore.getNightscoutURL();
+                String secretSetting = dataStore.getNightscoutSECRET();
+
+                int uploaderBatteryLevel = MasterService.getUploaderBatteryLevel();
+
+                new NightScoutUpload().doRESTUpload(
+                        storeRealm,
+                        dataStore,
+                        urlSetting,
+                        secretSetting,
+                        uploaderBatteryLevel,
+                        statusRecords,
+                        records);
+
+                pumpHistoryHandler.uploadACK();
+
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        for (PumpStatusEvent updateRecord : statusRecords)
+                            updateRecord.setUploaded(true);
+                    }
+                });
+
+                if (dataStore.isDbgEnableExtendedErrors())
+                    userLogMessage("Uploaded " + total + " records [" + (System.currentTimeMillis() - start) + "ms]");
+
+                Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", total, System.currentTimeMillis() - start));
+
+            } catch (Exception e) {
+                Log.e(TAG, "ERROR uploading to Nightscout", e);
+
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        dataStore.setNightscoutAvailable(false);                        }
+                });
+
+                if (dataStore.isDbgEnableUploadErrors())
+                    userLogMessage(ICON_WARN + "Uploading to nightscout was unsuccessful: " + e.getMessage());
+            }
+
+        } else {
+            Log.i(TAG, "No records have to be uploaded");
+        }
+
+        pumpHistoryHandler.close();
+        realm.close();
     }
 
     protected void userLogMessage(String message) {

@@ -525,7 +525,7 @@ public class Urchin {
                     insulin = results.first().getNormalProgrammedAmount() + results.first().getSquareProgrammedAmount();
 
             } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(results.first().getBolusType())) {
-                if (dataStore.isUrchinBolusTags()) text += text += "s";
+                if (dataStore.isUrchinBolusTags()) text += "s";
                 if (results.first().isSquareDelivered())
                     insulin = results.first().getSquareDeliveredAmount();
                 else
@@ -723,10 +723,12 @@ public class Urchin {
         return (hours / 24) + "d";
     }
 
+    // assumes a liftime of 6 days, sensors with longer life will produce a wrong result
     private String sensorLife() {
         int hours = sensorHours();
         if (hours == -1) return "??";
         hours = 145 - hours;
+        if (hours < 0) hours = 0;
         if (hours > 120) return "6d";
         else if (hours > 10) return ((hours / 24) + 1) + "d";
         else return hours + "h";

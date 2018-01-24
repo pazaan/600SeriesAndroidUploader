@@ -14,24 +14,31 @@ public class DataStore extends RealmObject {
     // do not send cgm/pump backfill data prior to this date
     // used to stop overwriting older NS entries
     // user option to override (we clear old data from NS to stop multiple entries and refresh using keys)
-    private Date NightscoutLimitDate = null;
-    private long NightscoutCgmCleanFrom;
-    private long NightscoutPumpCleanFrom;
+    private Date nightscoutLimitDate = null;
+    private long nightscoutCgmCleanFrom;
+    private long nightscoutPumpCleanFrom;
 
-    private boolean RequestProfile = false;
-    private boolean RequestPumpHistory = false;
-    private boolean RequestCgmHistory = false;
+    private boolean nightscoutUpload = false;
+    private String nightscoutURL = "";
+    private String nightscoutSECRET = "";
+    private long nightscoutReportTime = 0;
+    private boolean nightscoutAvailable = false;
+    private boolean nightscoutCareportal = false;
 
-    private int PumpCgmNA;
+    private boolean requestProfile = false;
+    private boolean requestPumpHistory = false;
+    private boolean requestCgmHistory = false;
 
-    private int CommsSuccess;
-    private int CommsError;
-    private int CommsConnectError;
-    private int CommsSignalError;
-    private int CommsSgvSuccess;
-    private int PumpLostSensorError;
-    private int PumpClockError;
-    private int PumpBatteryError;
+    private int pumpCgmNA;
+
+    private int commsSuccess;
+    private int commsError;
+    private int commsConnectError;
+    private int commsSignalError;
+    private int commsSgvSuccess;
+    private int pumpLostSensorError;
+    private int pumpClockError;
+    private int pumpBatteryError;
 
     private boolean mmolxl;
     private boolean mmolxlDecimals;
@@ -120,135 +127,183 @@ public class DataStore extends RealmObject {
     }
 
     public Date getNightscoutLimitDate() {
-        return NightscoutLimitDate;
+        return nightscoutLimitDate;
     }
 
     public void setNightscoutLimitDate(Date nightscoutLimitDate) {
-        NightscoutLimitDate = nightscoutLimitDate;
+        this.nightscoutLimitDate = nightscoutLimitDate;
     }
 
     public long getNightscoutCgmCleanFrom() {
-        return NightscoutCgmCleanFrom;
+        return nightscoutCgmCleanFrom;
     }
 
     public void setNightscoutCgmCleanFrom(long nightscoutCgmCleanFrom) {
-        NightscoutCgmCleanFrom = nightscoutCgmCleanFrom;
+        this.nightscoutCgmCleanFrom = nightscoutCgmCleanFrom;
     }
 
     public long getNightscoutPumpCleanFrom() {
-        return NightscoutPumpCleanFrom;
+        return nightscoutPumpCleanFrom;
     }
 
     public void setNightscoutPumpCleanFrom(long nightscoutPumpCleanFrom) {
-        NightscoutPumpCleanFrom = nightscoutPumpCleanFrom;
+        this.nightscoutPumpCleanFrom = nightscoutPumpCleanFrom;
+    }
+
+    public boolean isNightscoutUpload() {
+        return nightscoutUpload;
+    }
+
+    public void setNightscoutUpload(boolean nightscoutUpload) {
+        this.nightscoutUpload = nightscoutUpload;
+    }
+
+    public String getNightscoutURL() {
+        return nightscoutURL;
+    }
+
+    public void setNightscoutURL(String nightscoutURL) {
+        this.nightscoutURL = nightscoutURL;
+    }
+
+    public String getNightscoutSECRET() {
+        return nightscoutSECRET;
+    }
+
+    public void setNightscoutSECRET(String nightscoutSECRET) {
+        this.nightscoutSECRET = nightscoutSECRET;
+    }
+
+    public long getNightscoutReportTime() {
+        return nightscoutReportTime;
+    }
+
+    public void setNightscoutReportTime(long nightscoutReportTime) {
+        this.nightscoutReportTime = nightscoutReportTime;
+    }
+
+    public boolean isNightscoutAvailable() {
+        return nightscoutAvailable;
+    }
+
+    public void setNightscoutAvailable(boolean nightscoutAvailable) {
+        this.nightscoutAvailable = nightscoutAvailable;
+    }
+
+    public boolean isNightscoutCareportal() {
+        return nightscoutCareportal;
+    }
+
+    public void setNightscoutCareportal(boolean nightscoutCareportal) {
+        this.nightscoutCareportal = nightscoutCareportal;
     }
 
     public boolean isRequestProfile() {
-        return RequestProfile;
+        return requestProfile;
     }
 
     public void setRequestProfile(boolean requestProfile) {
-        RequestProfile = requestProfile;
+        this.requestProfile = requestProfile;
     }
 
     public boolean isRequestPumpHistory() {
-        return RequestPumpHistory;
+        return requestPumpHistory;
     }
 
     public void setRequestPumpHistory(boolean requestPumpHistory) {
-        RequestPumpHistory = requestPumpHistory;
+        this.requestPumpHistory = requestPumpHistory;
     }
 
     public boolean isRequestCgmHistory() {
-        return RequestCgmHistory;
+        return requestCgmHistory;
     }
 
     public void setRequestCgmHistory(boolean requestCgmHistory) {
-        RequestCgmHistory = requestCgmHistory;
+        this.requestCgmHistory = requestCgmHistory;
     }
 
     public int getPumpCgmNA() {
-        return PumpCgmNA;
+        return pumpCgmNA;
     }
 
     public void setPumpCgmNA(int pumpCgmNA) {
-        PumpCgmNA = pumpCgmNA;
+        this.pumpCgmNA = pumpCgmNA;
     }
 
     public int getCommsSuccess() {
-        return CommsSuccess;
+        return commsSuccess;
     }
 
     public void setCommsSuccess(int commsSuccess) {
-        CommsSuccess = commsSuccess;
+        this.commsSuccess = commsSuccess;
     }
 
     public int getCommsError() {
-        return CommsError;
+        return commsError;
     }
 
     public void setCommsError(int commsError) {
-        CommsError = commsError;
+        this.commsError = commsError;
     }
 
     public int getCommsConnectError() {
-        return CommsConnectError;
+        return commsConnectError;
     }
 
     public void setCommsConnectError(int commsConnectError) {
-        CommsConnectError = commsConnectError;
+        this.commsConnectError = commsConnectError;
     }
 
     public int getCommsSignalError() {
-        return CommsSignalError;
+        return commsSignalError;
     }
 
     public void setCommsSignalError(int commsSignalError) {
-        CommsSignalError = commsSignalError;
+        this.commsSignalError = commsSignalError;
     }
 
     public int getCommsSgvSuccess() {
-        return CommsSgvSuccess;
+        return commsSgvSuccess;
     }
 
     public void setCommsSgvSuccess(int commsSgvSuccess) {
-        CommsSgvSuccess = commsSgvSuccess;
+        this.commsSgvSuccess = commsSgvSuccess;
     }
 
     public int getPumpLostSensorError() {
-        return PumpLostSensorError;
+        return pumpLostSensorError;
     }
 
     public void setPumpLostSensorError(int pumpLostSensorError) {
-        PumpLostSensorError = pumpLostSensorError;
+        this.pumpLostSensorError = pumpLostSensorError;
     }
 
     public int getPumpClockError() {
-        return PumpClockError;
+        return pumpClockError;
     }
 
     public void setPumpClockError(int pumpClockError) {
-        PumpClockError = pumpClockError;
+        this.pumpClockError = pumpClockError;
     }
 
     public int getPumpBatteryError() {
-        return PumpBatteryError;
+        return pumpBatteryError;
     }
 
     public void setPumpBatteryError(int pumpBatteryError) {
-        PumpBatteryError = pumpBatteryError;
+        this.pumpBatteryError = pumpBatteryError;
     }
 
     public void clearAllCommsErrors() {
-        this.PumpCgmNA = 0;
-        this.CommsSuccess = 0;
-        this.CommsError = 0;
-        this.CommsConnectError = 0;
-        this.CommsSignalError = 0;
-        this.CommsSgvSuccess = 0;
-        this.PumpLostSensorError = 0;
-        this.PumpClockError = 0;
-        this.PumpBatteryError = 0;
+        this.pumpCgmNA = 0;
+        this.commsSuccess = 0;
+        this.commsError = 0;
+        this.commsConnectError = 0;
+        this.commsSignalError = 0;
+        this.commsSgvSuccess = 0;
+        this.pumpLostSensorError = 0;
+        this.pumpClockError = 0;
+        this.pumpBatteryError = 0;
     }
 
     public boolean isMmolxl() {

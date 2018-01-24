@@ -40,13 +40,15 @@ public class PumpHistoryDebug extends RealmObject implements PumpHistoryInterfac
     public List nightscout(DataStore dataStore) {
         List<UploadItem> uploadItems = new ArrayList<>();
 
-        UploadItem uploadItem = new UploadItem();
-        uploadItems.add(uploadItem);
-        TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
-        treatment.setEventType("Note");
-        treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
-        treatment.setNotes(note);
+        if (dataStore.isNsEnableTreatments() && dataStore.isNightscoutCareportal()) {
+            UploadItem uploadItem = new UploadItem();
+            uploadItems.add(uploadItem);
+            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
+            treatment.setEventType("Note");
+            treatment.setKey600(key);
+            treatment.setCreated_at(eventDate);
+            treatment.setNotes(note);
+        }
 
         return uploadItems;
     }

@@ -455,9 +455,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void statusStartup() {
         if (!prefs.getBoolean("EnableCgmService", false)) {
-            userLogMessage.add(ICON_HEART + "nightscout 600 Series Uploader");
-            userLogMessage.add(ICON_SETTING + "Poll interval: " + (dataStore.getPollInterval() / 60000) + " minutes");
-            userLogMessage.add(ICON_SETTING + "Low battery poll interval: " + (dataStore.getLowBatPollInterval() / 60000) + " minutes");
+            userLogMessage.add(ICON_HEART + "Nightscout 600 Series Uploader");
+            userLogMessage.add(ICON_SETTING + "Uploading: " + (dataStore.isNightscoutUpload() ? "enabled" : "disabled"));
+            userLogMessage.add(ICON_SETTING + "Treatments: " + (dataStore.isNsEnableTreatments() ? "enabled" : "disabled"));
+            userLogMessage.add(ICON_SETTING + "Poll interval: " + (dataStore.getPollInterval() / 60000) + " min");
+            userLogMessage.add(ICON_SETTING + "Low battery poll interval: " + (dataStore.getLowBatPollInterval() / 60000) + " min");
+            int historyFrequency = dataStore.getSysPumpHistoryFrequency();
+            userLogMessage.add(ICON_SETTING + "Auto Mode update: " + (historyFrequency == 0 ? "events only" : historyFrequency + " min"));
         }
     }
 
@@ -524,6 +528,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setLowBatPollInterval(Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
                         Long.toString(MedtronicCnlService.LOW_BATTERY_POLL_PERIOD_MS))));
                 dataStore.setDoublePollOnPumpAway(sharedPreferences.getBoolean("doublePollOnPumpAway", false));
+
+                dataStore.setNightscoutUpload(sharedPreferences.getBoolean("EnableRESTUpload", false));
+                dataStore.setNightscoutURL(sharedPreferences.getString(getString(R.string.preference_nightscout_url), ""));
+                dataStore.setNightscoutSECRET(sharedPreferences.getString(getString(R.string.preference_api_secret), "YOURAPISECRET"));
 
                 // system
                 dataStore.setSysEnableCgmHistory(sharedPreferences.getBoolean("sysEnableCgmHistory", true));
@@ -896,7 +904,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         long timeLastSGV = results.last().getEventDate().getTime();
 
-        // calc X & Y chart bounds with readable stepping for mmol & ml/dl
+        // calc X & Y chart bounds with readable stepping for mmol & mg/dl
         // X needs offsetting as graphview will not always show points near edges
         long minX = (((timeLastSGV + 150000L - (chartZoom * 60 * 60 * 1000L)) / 60000L) * 60000L);
         long maxX = timeLastSGV + 90000L;

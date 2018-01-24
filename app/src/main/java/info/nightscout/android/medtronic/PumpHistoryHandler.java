@@ -26,6 +26,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryLoop;
 import info.nightscout.android.model.medtronicNg.PumpHistoryDebug;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
+import info.nightscout.android.model.medtronicNg.PumpHistoryPattern;
 import info.nightscout.android.model.medtronicNg.PumpHistoryProfile;
 import info.nightscout.android.model.medtronicNg.PumpHistorySegment;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -74,23 +75,26 @@ public class PumpHistoryHandler {
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
         historyDB = new ArrayList<>();
-        historyDB.add(new DBitem("CGM", 400, historyRealm.where(PumpHistoryCGM.class).findAll()));
-        historyDB.add(new DBitem("BOLUS", 30, historyRealm.where(PumpHistoryBolus.class).findAll()));
-        historyDB.add(new DBitem("BASAL", 30, historyRealm.where(PumpHistoryBasal.class).findAll()));
-        historyDB.add(new DBitem("BG", 30, historyRealm.where(PumpHistoryBG.class).findAll()));
-        historyDB.add(new DBitem("PROFILE", 10, historyRealm.where(PumpHistoryProfile.class).findAll()));
-        historyDB.add(new DBitem("MISC", 30, historyRealm.where(PumpHistoryMisc.class).findAll()));
-        historyDB.add(new DBitem("LOOP", 400, historyRealm.where(PumpHistoryLoop.class).findAll()));
-        historyDB.add(new DBitem("DEBUG", 30, historyRealm.where(PumpHistoryDebug.class).findAll()));
+        historyDB.add(new DBitem("CGM", false, 400, historyRealm.where(PumpHistoryCGM.class).findAll()));
+        historyDB.add(new DBitem("BOLUS", true, 30, historyRealm.where(PumpHistoryBolus.class).findAll()));
+        historyDB.add(new DBitem("BASAL", true,30, historyRealm.where(PumpHistoryBasal.class).findAll()));
+        historyDB.add(new DBitem("PATTERN", true,10, historyRealm.where(PumpHistoryPattern.class).findAll()));
+        historyDB.add(new DBitem("BG", true,30, historyRealm.where(PumpHistoryBG.class).findAll()));
+        historyDB.add(new DBitem("PROFILE", false,10, historyRealm.where(PumpHistoryProfile.class).findAll()));
+        historyDB.add(new DBitem("MISC", true,10, historyRealm.where(PumpHistoryMisc.class).findAll()));
+        historyDB.add(new DBitem("LOOP", true,300, historyRealm.where(PumpHistoryLoop.class).findAll()));
+        historyDB.add(new DBitem("DEBUG", true,20, historyRealm.where(PumpHistoryDebug.class).findAll()));
     }
 
     private class DBitem {
         String name; // name for logging
         int limiter; // upload limiter
+        boolean careportal; // requires careportal and treatments
         RealmResults<PumpHistoryInterface> results;
 
-        DBitem (String name, int limiter, RealmResults results) {
+        DBitem (String name, boolean careportal, int limiter, RealmResults results) {
             this.name = name;
+            this.careportal = careportal;
             this.limiter = limiter;
             //this.limiter = 5000; // debug use only
             this.results = results;
@@ -145,24 +149,26 @@ public class PumpHistoryHandler {
         int count;
 
         Date limitDate;
-        if (dataStore.isNsEnableHistorySync()) {
+        if (dataStore.isNsEnableHistorySync())
             limitDate = new Date(System.currentTimeMillis() - (180 * 24 * 60 * 60000L));
-        } else {
+        else
             limitDate = dataStore.getNightscoutLimitDate();
-        }
         Log.d(TAG, "Nightscout upload limitdate: " + dateFormatter.format(limitDate));
 
         uploadRecords = new ArrayList<>();
 
         for (DBitem dBitem : historyDB) {
-            count = 0;
-            for (PumpHistoryInterface record : dBitem.results.where()
-                    .equalTo("uploadREQ", true)
-                    .greaterThanOrEqualTo("eventDate", limitDate)
-                    .findAllSorted("eventDate", Sort.DESCENDING)) {
-                if (++count <= dBitem.limiter) uploadRecords.add(record);
-            }
-            Log.d(TAG, dBitem.name + " records to upload: " + count + " limit: " + dBitem.limiter);
+            if (!dBitem.careportal || (dataStore.isNightscoutCareportal() && dataStore.isNsEnableTreatments())) {
+                count = 0;
+                for (PumpHistoryInterface record : dBitem.results.where()
+                        .equalTo("uploadREQ", true)
+                        .greaterThanOrEqualTo("eventDate", limitDate)
+                        .findAllSorted("eventDate", Sort.DESCENDING)) {
+                    if (++count <= dBitem.limiter) uploadRecords.add(record);
+                }
+                Log.d(TAG, dBitem.name + " records to upload: " + count + " limit: " + dBitem.limiter);
+            } else
+                Log.d(TAG, dBitem.name + " records ignored, careportal=" + dataStore.isNightscoutCareportal() + " treatments=" + dataStore.isNsEnableTreatments());
         }
 
         Log.d(TAG, "total records to upload: " + uploadRecords.size());
@@ -206,10 +212,7 @@ public class PumpHistoryHandler {
                 .greaterThan("eventDate", new Date(now - 6 * 60 * 60000L))
                 .findAllSorted("eventDate", Sort.DESCENDING);
 
-        if (results.size() > 0 && results.first().isLoopActive())
-            return true;
-
-        return false;
+        return results.size() > 0 && results.first().isLoopActive();
     }
 
     // loop is active or has activation potential due to use during timeframe
@@ -222,20 +225,16 @@ public class PumpHistoryHandler {
                 .equalTo("loopActive", true)
                 .findAll();
 
-        if (results.size() > 0) return true;
-
-        return false;
+        return results.size() > 0;
     }
 
     public boolean isProfileUploaded() {
 
         RealmResults<PumpHistoryProfile> results = historyRealm
                 .where(PumpHistoryProfile.class)
-                .equalTo("profileDefine", true)
                 .findAll();
 
-        if (results.size() > 0) return true;
-        return false;
+        return results.size() > 0;
     }
 
     // Recency
@@ -248,7 +247,7 @@ public class PumpHistoryHandler {
 
         if (results.size() > 0) return System.currentTimeMillis() - results.first().getToDate().getTime();
 
-        return 0;
+        return -1;
     }
 
     public void profile(final MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {

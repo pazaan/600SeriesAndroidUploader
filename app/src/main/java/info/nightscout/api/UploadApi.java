@@ -15,11 +15,15 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class UploadApi {
     private Retrofit retrofit;
 
+    private StatusEndpoints statusEndpoints;
     private DeviceEndpoints deviceEndpoints;
     private ProfileEndpoints profileEndpoints;
     private EntriesEndpoints entriesEndpoints;
     private TreatmentsEndpoints treatmentsEndpoints;
 
+    public StatusEndpoints getStatusEndpoints() {
+        return statusEndpoints;
+    }
     public DeviceEndpoints getDeviceEndpoints() {
         return deviceEndpoints;
     }
@@ -61,18 +65,23 @@ public class UploadApi {
                 .readTimeout(60, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS);
 
-        okHttpClient.addInterceptor(new AddAuthHeader(token));
-/*
-        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-        okHttpClient.addInterceptor(logging);
-*/
+        if (token != null)
+            okHttpClient.addInterceptor(new AddAuthHeader(token));
+
+        // dev debug logging only
+        if (false) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            okHttpClient.addInterceptor(logging);
+        }
+
         retrofit = new Retrofit.Builder()
                 .baseUrl(baseURL)
                 .client(okHttpClient.build())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
+        statusEndpoints = retrofit.create(StatusEndpoints.class);
         deviceEndpoints = retrofit.create(DeviceEndpoints.class);
         profileEndpoints = retrofit.create(ProfileEndpoints.class);
         entriesEndpoints = retrofit.create(EntriesEndpoints.class);
