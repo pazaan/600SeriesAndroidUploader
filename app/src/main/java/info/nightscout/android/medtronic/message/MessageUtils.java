@@ -19,10 +19,14 @@ public class MessageUtils {
     }
 
     public static int CRC16CCITT(byte[] data, int initialValue, int polynomial, int bytesToCheck) {
+        return CRC16CCITT(data, 0, initialValue, polynomial, bytesToCheck);
+    }
+
+    public static int CRC16CCITT(byte[] data, int offset, int initialValue, int polynomial, int bytesToCheck) {
         // From http://introcs.cs.princeton.edu/java/61data/CRC16CCITT.java
         int crc = initialValue;
         for (int c = 0; c < bytesToCheck; c++) {
-            byte b = data[c];
+            byte b = data[c + offset];
             for (int i = 0; i < 8; i++) {
                 boolean bit = ((b >> (7 - i) & 1) == 1);
                 boolean c15 = ((crc >> 15 & 1) == 1);
@@ -67,5 +71,27 @@ public class MessageUtils {
         long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
 
         return new Date((( baseTime + rtc + offset ) * 1000 ) - offsetFromUTC );
+    }
+
+    public static long rtcFromTime( long time, long offset ) {
+        TimeZone currentTz = java.util.Calendar.getInstance().getTimeZone();
+
+        // Base time is midnight 1st Jan 2000 (GMT)
+        long baseTime = 946684800;
+
+        long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
+
+        return ((offsetFromUTC + time) / 1000) - baseTime - offset;
+    }
+
+    public static long offsetFromTime( long time, long rtc ) {
+        TimeZone currentTz = java.util.Calendar.getInstance().getTimeZone();
+
+        // Base time is midnight 1st Jan 2000 (GMT)
+        long baseTime = 946684800;
+
+        long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
+
+        return ((offsetFromUTC + time) / 1000) - baseTime - rtc;
     }
 }

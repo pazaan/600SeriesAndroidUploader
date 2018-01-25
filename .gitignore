@@ -4,3 +4,4 @@ fabric.properties
 local.properties
 .idea
 /app/app.iml
+bugfender.properties

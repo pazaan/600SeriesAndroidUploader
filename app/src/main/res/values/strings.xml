@@ -23,6 +23,9 @@
     <string name="preference_enable_rest_upload">EnableRESTUpload</string>
     <string name="preference_enable_xdrip_plus">EnablexDripPlusUpload</string>
     <string name="error_msg_api_secret_length">API Secret must be 12 characters or longer.</string>
+    <string name="error_msg_illegal_characters">Text contains illegal characters</string>
+    <string name="error_msg_exceeds_length">Text exceeds maximum length</string>
+    <string name="error_msg_empty">Text is empty</string>
     <string name="text_unit_mmolxl">mmol/L</string>
     <string name="text_unit_mgxdl">mg/dL</string>
 

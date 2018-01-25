@@ -66,7 +66,7 @@
                 android:gravity="bottom|center_horizontal"
                 android:orientation="vertical">
 
-                <TextView
+                <com.mikepenz.iconics.view.IconicsTextView
                     android:id="@+id/textview_trend"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -120,10 +120,19 @@
 
     </LinearLayout>
 
-    <com.jjoe64.graphview.GraphView
+    <android.support.percent.PercentRelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:gravity="center_horizontal"
         android:layout_width="match_parent"
-        android:layout_height="100dip"
-        android:id="@+id/chart" />
+        android:layout_height="wrap_content">
+        <com.jjoe64.graphview.GraphView
+            app:layout_widthPercent="100%"
+            app:layout_aspectRatio="333%"
+            app:layout_marginTopPercent="0%"
+            app:layout_marginLeftPercent="0%"
+            android:id="@+id/chart"/>
+    </android.support.percent.PercentRelativeLayout>
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -135,14 +144,56 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="-10sp"
+                android:layout_gravity="center_horizontal"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/button_log_top"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="older log entries" />
+
+                <Button
+                    android:id="@+id/button_log_top_recent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="most recent" />
+            </LinearLayout>
+
             <com.mikepenz.iconics.view.IconicsTextView
                 android:id="@+id/textview_log"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10sp"
-                android:maxLines="800"
                 android:gravity="bottom"
-                android:text="" />
+                android:text=""
+                android:layout_weight="0.33" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-10sp"
+                android:layout_gravity="center_horizontal"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/button_log_bottom"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="newer log entries" />
+
+                <Button
+                    android:id="@+id/button_log_bottom_recent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="most recent" />
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 
