@@ -1,14 +1,14 @@
 {
-  "latestVersion": "0.5.1",
-  "latestVersionCode": "9",
-  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.5.1",
+  "latestVersion": "0.6.0",
+  "latestVersionCode": "10",
+  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.6.0",
   "releaseNotes": [
-    "- Further improvements to polling",
-    "- Crash fixes",
-    "- Fix fingerstick BG reporting",
-    "- Refresh the display correctly after polling from the pump",
-    "- Add icons to log entries",
-    "- Add auto-scrolling to status log",
-    "- Fix trend arrows truncated on some phones"
+    "- Automatically builds Nightscout profile from pump settings",
+    "- New setting to read and back-fill historical CGM data",
+    "- Upload treatments, adding bolus information and carbs",
+    "- Supports operating without CGM data (fingerstick and bolus entries only)",
+    "- Adds support for basal rates",
+    "- Adds support for 670G Auto Mode",
+    "- Crash fixes
   ]
 }
