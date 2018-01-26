@@ -9,6 +9,6 @@
     "- Supports operating without CGM data (fingerstick and bolus entries only)",
     "- Adds support for basal rates",
     "- Adds support for 670G Auto Mode",
-    "- Crash fixes
+    "- Crash fixes"
   ]
 }
