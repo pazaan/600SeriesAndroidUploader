@@ -14,20 +14,27 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class UploadApi {
     private Retrofit retrofit;
-    private GlucoseEndpoints glucoseEndpoints;
-    private BolusEndpoints bolusEndpoints;
+
+    private StatusEndpoints statusEndpoints;
     private DeviceEndpoints deviceEndpoints;
+    private ProfileEndpoints profileEndpoints;
+    private EntriesEndpoints entriesEndpoints;
+    private TreatmentsEndpoints treatmentsEndpoints;
 
-    public GlucoseEndpoints getGlucoseEndpoints() {
-        return glucoseEndpoints;
+    public StatusEndpoints getStatusEndpoints() {
+        return statusEndpoints;
     }
-
-    public BolusEndpoints getBolusEndpoints() {
-        return bolusEndpoints;
-    }
-
     public DeviceEndpoints getDeviceEndpoints() {
         return deviceEndpoints;
+    }
+    public ProfileEndpoints getProfileEndpoints() {
+        return profileEndpoints;
+    }
+    public EntriesEndpoints getEntriesEndpoints() {
+        return entriesEndpoints;
+    }
+    public TreatmentsEndpoints getTreatmentsEndpoints() {
+        return treatmentsEndpoints;
     }
 
     public UploadApi(String baseURL, String token) {
@@ -58,11 +65,15 @@ public class UploadApi {
                 .readTimeout(60, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS);
 
-        okHttpClient.addInterceptor(new AddAuthHeader(token));
+        if (token != null)
+            okHttpClient.addInterceptor(new AddAuthHeader(token));
 
-        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-        okHttpClient.addInterceptor(logging);
+        // dev debug logging only
+        if (false) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            okHttpClient.addInterceptor(logging);
+        }
 
         retrofit = new Retrofit.Builder()
                 .baseUrl(baseURL)
@@ -70,8 +81,10 @@ public class UploadApi {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        glucoseEndpoints = retrofit.create(GlucoseEndpoints.class);
-        bolusEndpoints = retrofit.create(BolusEndpoints.class);
+        statusEndpoints = retrofit.create(StatusEndpoints.class);
         deviceEndpoints = retrofit.create(DeviceEndpoints.class);
+        profileEndpoints = retrofit.create(ProfileEndpoints.class);
+        entriesEndpoints = retrofit.create(EntriesEndpoints.class);
+        treatmentsEndpoints = retrofit.create(TreatmentsEndpoints.class);
     }
 }

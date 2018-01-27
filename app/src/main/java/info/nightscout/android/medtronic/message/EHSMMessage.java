@@ -14,34 +14,15 @@ import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
  */
 
 public class EHSMMessage extends  MedtronicSendMessageRequestMessage<ContourNextLinkResponseMessage>{
-    protected EHSMMessage(SendMessageType sendMessageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        super(sendMessageType, pumpSession, payload);
+    private static final String TAG = EHSMMessage.class.getSimpleName();
+
+    protected EHSMMessage(MessageType messageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
+        super(messageType, pumpSession, payload);
     }
 
     @Override
-    public ContourNextLinkResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, UnexpectedMessageException {
-
-        // clear unexpected incoming messages
-        clearMessage(mDevice);
-
-        sendMessage(mDevice);
-        if (millis > 0) {
-            try {
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-            }
-        }
-
-        // The End EHSM Session only has an 0x81 response
-        if (readMessage_0x81(mDevice) != 48) {
-            throw new UnexpectedMessageException("length of EHSMMessage response does not match");
-        }
-/*
-        readMessage(mDevice);
-        if (this.encode().length != 54) {
-            throw new UnexpectedMessageException("length of EHSMMessage response does not match");
-        }
-*/
+    public ContourNextLinkResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
+        sendToPump(mDevice, mPumpSession, TAG);
         return null;
     }
 }
