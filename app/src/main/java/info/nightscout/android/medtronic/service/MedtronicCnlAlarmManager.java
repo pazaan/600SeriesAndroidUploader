@@ -9,8 +9,6 @@ import android.util.Log;
 
 import java.util.Date;
 
-import info.nightscout.android.utils.ConfigurationStore;
-
 /**
  * Created by lgoedhart on 14/07/2016.
  */
@@ -64,13 +62,13 @@ public class MedtronicCnlAlarmManager {
         }
     }
 
-    // restarting the alarm after MedtronicCnlIntentService.POLL_PERIOD_MS from now
+    // restarting the alarm after MedtronicCnlService.POLL_PERIOD_MS from now
     public static void restartAlarm() {
         // Due to potential of some versions of android to mangle alarms and clash with polling times
         // the default alarm reset is set to POLL_PERIOD_MS + 60 seconds
         // It's expected to trigger between polls if alarm has not been honored with a safe margin greater then
         // the around 10 minutes that some OS versions force during sleep
-        setAlarmAfterMillis(MedtronicCnlIntentService.POLL_PERIOD_MS + 60000L); // grace already accounted for when using current intent time to set default restart
+        setAlarmAfterMillis(MedtronicCnlService.POLL_PERIOD_MS + 60000L); // grace already accounted for when using current intent time to set default restart
     }
 
     // Cancel the alarm.

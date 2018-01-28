@@ -15,8 +15,8 @@ cache:
 env:
   global:
   - EMULATOR_API_LEVEL=14
-  - ANDROID_API_LEVEL=25
-  - ANDROID_BUILD_TOOLS_VERSION=25.0.2
+  - ANDROID_API_LEVEL=26
+  - ANDROID_BUILD_TOOLS_VERSION=26.0.2
   - ANDROID_ABI=armeabi-v7a
   - ADB_INSTALL_TIMEOUT=5
 
@@ -52,7 +52,7 @@ script:
 - ./gradlew clean build connectedCheck -PdisablePreDex --stacktrace
 
 before_deploy:
-- mv app/build/outputs/apk/app-release.apk app/build/outputs/apk/600-series-ns-uploader.apk
+- mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/600-series-ns-uploader.apk
 
 deploy:
   skip_cleanup: true
@@ -60,7 +60,7 @@ deploy:
   api_key:
     secure: "z1DxcbyRZKwIAV6/EeJgKwU/RYDoxnL/IoMtBlGCVe80C/tDfiv9D5DeDhLGQp/MKK8pIec35aj5EMrAacF6sgXzpooXuWNlfNdZJhLnpa8mCr9/Wpr9ll82Wc5EPIPEHf/k0e83gXzPiQuwTdBnHRlNfqylmWcwduA595e5GJZW88IzDJY0fS2p2R+4e6QJgX4Tp7KlLMMirXzTo1FjGUwuD8sM2Eh1imLnwSMO5oeXptUcd4deQqgRVTCgrNVcSRAlQsJNK0sAbkWC54SOLeMM/8CUoKbfpTMlEflpJ2V/n+EiomB2PFZYi7G7rx/Kcpw39thFMUbNSOInrmU3nHqTGACjbkjluufhw92S/05kA/qNDZeMH/8UHrArgpvXZIQbaJPhEbAk4lG5YfMoI1fs+k3kcmbtkOI4+ve/IOPHOuFGVAJZot66t6/kETdD59edS7uVjW+oPD9cSgLG0IAKPzF8jBpPw8olPaviGvjHvJVElg8EhCHMKqrcpix0LbxyC9gNc8Js6Y/JVj7rseApCTREIuSi8ug4mTOVWoLqUKIfMVCGGgKWTVCTbJTADFl+zFiQZj5Y1t+YEWKq2Qz6T36ISVsUBnYTmyu2zUTRBzZKHWS0qgxHZpKppi80pYyw299c99YVeXfb4yGmHLSoO6e80sPjTgaT2DQs6E0="
   file:
-    - app/build/outputs/apk/600-series-ns-uploader.apk
+    - app/build/outputs/apk/release/600-series-ns-uploader.apk
   on:
     repo: pazaan/600SeriesAndroidUploader
     tags: true

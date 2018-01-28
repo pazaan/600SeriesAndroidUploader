@@ -19,19 +19,22 @@ public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessa
 
     @Override
     public DeviceInfoResponseCommandMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
+
+        clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
+
         sendMessage(mDevice);
 
         if (millis > 0) {
             try {
                 Thread.sleep(millis);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
         byte[] response1 = readMessage(mDevice);
         if (millis > 0) {
             try {
                 Thread.sleep(millis);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
         byte[] response2 = readMessage(mDevice);

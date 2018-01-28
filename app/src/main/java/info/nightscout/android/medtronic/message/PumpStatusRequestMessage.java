@@ -1,7 +1,5 @@
 package info.nightscout.android.medtronic.message;
 
-import android.util.Log;
-
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -18,39 +16,12 @@ public class PumpStatusRequestMessage extends MedtronicSendMessageRequestMessage
     private static final String TAG = PumpStatusRequestMessage.class.getSimpleName();
 
     public PumpStatusRequestMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
-        super(SendMessageType.READ_PUMP_STATUS_REQUEST, pumpSession, null);
+        super(MessageType.READ_PUMP_STATUS, pumpSession, null);
     }
 
-    // TODO - this needs refactoring
     public PumpStatusResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        sendMessage(mDevice);
-        if (millis > 0) {
-            try {
-                Log.d(TAG, "waiting " + millis +" ms");
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-            }
-        }
-        // Read the 0x81
-        readMessage_0x81(mDevice);
-        if (millis > 0) {
-            try {
-                Log.d(TAG, "waiting " + millis +" ms");
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-            }
-        }
-        // Read the 0x80
-        byte[] payload = readMessage(mDevice);
-        // if pump sends an unexpected response get the next response as pump can resend or send out of sequence and this avoids comms errors
-        if (payload.length < 0x9C) {
-            payload = readMessage(mDevice);
-        }
-
-        // clear unexpected incoming messages
-        clearMessage(mDevice);
-
-        return this.getResponse(payload);
+        sendToPump(mDevice, mPumpSession, TAG);
+        return getResponse(readFromPump(mDevice, mPumpSession, TAG));
     }
 
     @Override

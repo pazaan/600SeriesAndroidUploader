@@ -9,7 +9,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
  */
 public class BeginEHSMMessage extends EHSMMessage {
     public BeginEHSMMessage(MedtronicCnlSession pumpSession) throws EncryptionException, ChecksumException {
-        super(SendMessageType.BEGIN_EHSM_SESSION, pumpSession, buildPayload());
+        super(MessageType.EHSM_SESSION, pumpSession, buildPayload());
     }
 
     protected static byte[] buildPayload() {
