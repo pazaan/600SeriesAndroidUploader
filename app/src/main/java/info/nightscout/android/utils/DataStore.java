@@ -1,12 +1,7 @@
 package info.nightscout.android.utils;
 
 
-import org.apache.commons.lang3.time.DateUtils;
-
 import java.util.Date;
-
-import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import io.realm.Realm;
 
 /**
  * Created by volker on 30.03.2017.
@@ -15,16 +10,21 @@ import io.realm.Realm;
 public class DataStore {
     private static DataStore instance;
 
-    private PumpStatusEvent lastPumpStatus;
-    private int uploaderBatteryLevel = 0;
-    private int unavailableSGVCount = 0;
-    private int lastBolusWizardBGL = 0;
+    private Date uploaderStartDate;
+
     private long activePumpMac = 0;
-    private int commsErrorCount = 0;
-    private int commsSuccessCount = 0;
-    private int commsConnectThreshold = 0;
-    private int commsSignalThreshold = 0;
-    private float commsUnavailableThreshold = 0;
+    private int uploaderBatteryLevel = 0;
+
+    private int pumpCgmNA = 0;
+
+    private int CommsSuccess = 0;
+    private int CommsError = 0;
+    private int CommsConnectError = 0;
+    private int CommsSignalError = 0;
+    private int CommsSgvSuccess = 0;
+    private int PumpLostSensorError = 0;
+    private int PumpClockError = 0;
+    private int PumpBatteryError = 0;
 
     private DataStore() {}
 
@@ -32,59 +32,13 @@ public class DataStore {
         if (DataStore.instance == null) {
             instance = new DataStore();
 
-            // set some initial dummy values
-            PumpStatusEvent dummyStatus = new PumpStatusEvent();
-            dummyStatus.setSgvDate(DateUtils.addDays(new Date(), -1));
-            dummyStatus.setSgv(0);
-
-            // bypass setter to avoid dealing with a real Realm object
-            instance.lastPumpStatus = dummyStatus;
+            instance.uploaderStartDate = new Date();
         }
-
         return instance;
     }
 
-    public PumpStatusEvent getLastPumpStatus() {
-        return lastPumpStatus;
-    }
-
-    public void setLastPumpStatus(PumpStatusEvent lastPumpStatus) {
-        Realm realm = Realm.getDefaultInstance();
-
-        this.lastPumpStatus = realm.copyFromRealm(lastPumpStatus);
-        if (!realm.isClosed()) realm.close();
-    }
-
-    public int getUploaderBatteryLevel() {
-        return uploaderBatteryLevel;
-    }
-
-    public void setUploaderBatteryLevel(int uploaderBatteryLevel) {
-        this.uploaderBatteryLevel = uploaderBatteryLevel;
-    }
-
-    public int getUnavailableSGVCount() {
-        return unavailableSGVCount;
-    }
-
-    public int incUnavailableSGVCount() {
-        return unavailableSGVCount++;
-    }
-
-    public void clearUnavailableSGVCount() {
-        this.unavailableSGVCount = 0;
-    }
-
-    public void setUnavailableSGVCount(int unavailableSGVCount) {
-        this.unavailableSGVCount = unavailableSGVCount;
-    }
-
-    public int getLastBolusWizardBGL() {
-        return lastBolusWizardBGL;
-    }
-
-    public void setLastBolusWizardBGL(int lastBolusWizardBGL) {
-        this.lastBolusWizardBGL = lastBolusWizardBGL;
+    public Date getUploaderStartDate() {
+        return uploaderStartDate;
     }
 
     public long getActivePumpMac() {
@@ -95,80 +49,117 @@ public class DataStore {
         this.activePumpMac = activePumpMac;
     }
 
-    public int getCommsErrorCount() {
-        return commsErrorCount;
+    public int getUploaderBatteryLevel() {
+        return uploaderBatteryLevel;
     }
 
-    public int incCommsErrorCount() { return commsErrorCount++; }
-
-    public int decCommsErrorThreshold() {
-        if (commsErrorCount > 0) commsErrorCount--;
-        return commsErrorCount;}
-
-    public void clearCommsErrorCount() {
-        this.commsErrorCount = 0;
+    public void setUploaderBatteryLevel(int uploaderBatteryLevel) {
+        this.uploaderBatteryLevel = uploaderBatteryLevel;
     }
 
-    public int getCommsSuccessCount() {
-        return commsSuccessCount;
+    public int getPumpCgmNA() {
+        return pumpCgmNA;
     }
 
-    public int incCommsSuccessCount() { return commsSuccessCount++; }
-
-    public int decCommsSuccessCount() {
-        if (commsSuccessCount > 0) commsSuccessCount--;
-        return commsSuccessCount;}
-
-    public void clearCommsSuccessCount() {
-        this.commsSuccessCount = 0;
+    public int incPumpCgmNA() {
+        return pumpCgmNA++;
     }
 
-    public int getCommsConnectThreshold() {
-        return commsConnectThreshold;
+    public void clearPumpCgmNA() {
+        this.pumpCgmNA = 0;
     }
 
-    public int incCommsConnectThreshold() { return commsConnectThreshold++; }
-
-    public int decCommsConnectThreshold() {
-        if (commsConnectThreshold > 0) commsConnectThreshold--;
-        return commsConnectThreshold;}
-
-    public void clearCommsConnectThreshold() {
-        this.commsConnectThreshold = 0;
+    public int getCommsSuccess() {
+        return CommsSuccess;
     }
 
-    public int getCommsSignalThreshold() {
-        return commsSignalThreshold;
+    public int incCommsSuccess() { return CommsSuccess++; }
+
+    public void clearCommsSuccess() {
+        this.CommsSuccess = 0;
     }
 
-    public int incCommsSignalThreshold() { return commsSignalThreshold++; }
-
-    public int decCommsSignalThreshold() {
-        if (commsSignalThreshold > 0) commsSignalThreshold--;
-        return commsSignalThreshold;}
-
-    public void clearCommsSignalThreshold() {
-        this.commsSignalThreshold = 0;
+    public int getCommsError() {
+        return CommsError;
     }
 
-    public float getCommsUnavailableThreshold() {
-        return commsUnavailableThreshold;
+    public int incCommsError() { return CommsError++; }
+
+    public void clearCommsError() {
+        this.CommsError = 0;
     }
 
-    public float addCommsUnavailableThreshold(float value) {
-        commsUnavailableThreshold+= value;
-        if (commsUnavailableThreshold < 0) commsUnavailableThreshold = 0;
-        return commsUnavailableThreshold;}
+    public int getCommsConnectError() {
+        return CommsConnectError;
+    }
 
-    public void clearCommsUnavailableThreshold() {
-        this.commsUnavailableThreshold = 0;
+    public int incCommsConnectError() { return CommsConnectError++; }
+
+    public int decCommsConnectError() {
+        if (CommsConnectError > 0) CommsConnectError--;
+        return CommsConnectError;}
+
+    public void clearCommsConnectError() {
+        this.CommsConnectError = 0;
+    }
+
+    public int getCommsSignalError() {
+        return CommsSignalError;
+    }
+
+    public int incCommsSignalError() { return CommsSignalError++; }
+
+    public int decCommsSignalError() {
+        if (CommsSignalError > 0) CommsSignalError--;
+        return CommsSignalError;}
+
+    public void clearCommsSignalError() {
+        this.CommsSignalError = 0;
+    }
+
+    public int getCommsSgvSuccess() {
+        return CommsSgvSuccess;
+    }
+
+    public int incCommsSgvSuccess() { return CommsSgvSuccess++; }
+
+    public int getPumpLostSensorError() {
+        return PumpLostSensorError;
+    }
+
+    public int incPumpLostSensorError() { return PumpLostSensorError++; }
+
+    public void clearPumpLostSensorError() {
+        this.PumpLostSensorError = 0;
+    }
+
+    public int getPumpClockError() {
+        return PumpClockError;
+    }
+
+    public int incPumpClockError() { return PumpClockError++; }
+
+    public void clearPumpClockError() {
+        this.PumpClockError = 0;
+    }
+
+    public int getPumpBatteryError() {
+        return PumpBatteryError;
+    }
+
+    public int incPumpBatteryError() { return PumpBatteryError++; }
+
+    public void clearPumpBatteryError() {
+        this.PumpBatteryError = 0;
     }
 
     public void clearAllCommsErrors() {
-        this.commsErrorCount = 0;
-        this.commsSuccessCount = 0;
-        this.commsConnectThreshold = 0;
-        this.commsSignalThreshold = 0;
-        this.commsUnavailableThreshold = 0;
+        this.CommsSuccess = 0;
+        this.CommsError = 0;
+        this.CommsConnectError = 0;
+        this.CommsSignalError = 0;
+        this.PumpLostSensorError = 0;
+        this.PumpClockError = 0;
+        this.PumpBatteryError = 0;
     }
 }

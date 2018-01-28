@@ -11,6 +11,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import info.nightscout.android.R;
+import info.nightscout.android.medtronic.service.MedtronicCnlIntentService;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.utils.DataStore;
 import io.realm.Realm;
@@ -29,8 +30,8 @@ public class NightscoutUploadIntentService extends IntentService {
 
     protected void sendStatus(String message) {
         Intent localIntent =
-                new Intent(Constants.ACTION_STATUS_MESSAGE)
-                        .putExtra(Constants.EXTENDED_DATA, message);
+                new Intent(MedtronicCnlIntentService.Constants.ACTION_STATUS_MESSAGE)
+                        .putExtra(MedtronicCnlIntentService.Constants.EXTENDED_DATA, message);
         LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
 
@@ -53,13 +54,14 @@ public class NightscoutUploadIntentService extends IntentService {
         RealmResults<PumpStatusEvent> records = mRealm
                 .where(PumpStatusEvent.class)
                 .equalTo("uploaded", false)
-                .notEqualTo("sgv", 0)
                 .findAll();
 
         if (records.size() > 0) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 
             Boolean enableRESTUpload = prefs.getBoolean("EnableRESTUpload", false);
+            Boolean enableTreatmentsUpload = prefs.getBoolean("EnableTreatmentsUpload", false);
+
             try {
                 if (enableRESTUpload) {
                     long start = System.currentTimeMillis();
@@ -67,21 +69,30 @@ public class NightscoutUploadIntentService extends IntentService {
                     String urlSetting = prefs.getString(mContext.getString(R.string.preference_nightscout_url), "");
                     String secretSetting = prefs.getString(mContext.getString(R.string.preference_api_secret), "YOURAPISECRET");
                     Boolean uploadSuccess = mNightScoutUpload.doRESTUpload(urlSetting,
-                            secretSetting, DataStore.getInstance().getUploaderBatteryLevel(), records);
+                            secretSetting, enableTreatmentsUpload, DataStore.getInstance().getUploaderBatteryLevel(), records);
                     if (uploadSuccess) {
                         mRealm.beginTransaction();
                         for (PumpStatusEvent updateRecord : records) {
                             updateRecord.setUploaded(true);
                         }
                         mRealm.commitTransaction();
+                    } else {
+                        sendStatus(MedtronicCnlIntentService.ICON_WARN + "Uploading to Nightscout returned unsuccessful");
                     }
                     Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", records.size(), System.currentTimeMillis() - start));
+                } else {
+                    mRealm.beginTransaction();
+                    for (PumpStatusEvent updateRecord : records) {
+                        updateRecord.setUploaded(true);
+                    }
+                    mRealm.commitTransaction();
                 }
             } catch (Exception e) {
+                sendStatus(MedtronicCnlIntentService.ICON_WARN + "Error uploading: " + e.getMessage());
                 Log.e(TAG, "ERROR uploading data!!!!!", e);
             }
         } else {
-            Log.i(TAG, "No records has to be uploaded");
+            Log.i(TAG, "No records have to be uploaded");
         }
         mRealm.close();
 
@@ -99,6 +110,5 @@ public class NightscoutUploadIntentService extends IntentService {
 
         public static final String EXTENDED_DATA = "info.nightscout.android.upload.nightscout.DATA";
     }
-
 
 }

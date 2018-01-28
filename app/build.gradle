@@ -51,8 +51,15 @@ def getBugfenderApiKey() {
     String bugfenderApiKey = System.getenv("BUGFENDER_API_KEY")
 
     if(bugfenderApiKey == null) {
-        logger.warn("Bugfender API key not set")
-        bugfenderApiKey = ""
+        File file = new File("app/bugfender.properties")
+        if (file.exists()) {
+            Properties properties = new Properties()
+            properties.load(new FileInputStream(file.getAbsolutePath().toString()))
+            bugfenderApiKey = properties.getProperty("apiKey", "")
+        } else {
+            logger.warn("Bugfender API key not set")
+            bugfenderApiKey = ""
+        }
     }
 
     return "\"" + bugfenderApiKey + "\""

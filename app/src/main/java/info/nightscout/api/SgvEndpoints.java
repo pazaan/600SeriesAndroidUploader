@@ -8,57 +8,41 @@ import retrofit2.http.Body;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
 
-public interface BolusEndpoints {
+public interface SgvEndpoints {
 
-    class BolusEntry {
+    class SgvEntry {
         String type;
         String dateString;
         long date;
-        int mbg;
+        int sgv;
+        String direction;
         String device;
-
-        public BolusEntry() {  }
-
-        public String getType() {
-            return type;
-        }
 
         public void setType(String type) {
             this.type = type;
-        }
-
-        public String getDateString() {
-            return dateString;
         }
 
         public void setDateString(String dateString) {
             this.dateString = dateString;
         }
 
-        public long getDate() {
-            return date;
-        }
-
         public void setDate(long date) {
             this.date = date;
         }
 
-        public int getMbg() {
-            return mbg;
+        public void setSgv(int sgv) {
+            this.sgv = sgv;
         }
 
-        public void setMbg(int mbg) {
-            this.mbg = mbg;
-        }
-
-        public String getDevice() {
-            return device;
+        public void setDirection(String direction) {
+            this.direction = direction;
         }
 
         public void setDevice(String device) {
             this.device = device;
         }
 
+        public SgvEntry() {  }
     }
 
     @Headers({
@@ -66,8 +50,7 @@ public interface BolusEndpoints {
             "Content-type: application/json"
     })
     @POST("/api/v1/entries")
-    Call<ResponseBody> sendEntries(@Body List<BolusEntry> entries);
-
+    Call<ResponseBody> sendEntries(@Body List<SgvEntry> entries);
 }
 
 
