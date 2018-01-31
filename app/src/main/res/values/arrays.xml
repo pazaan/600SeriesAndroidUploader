@@ -170,6 +170,44 @@
         <item>8</item>
     </string-array>
 
+    <string-array name="grams_per_exchange">
+        <item>5 Grams</item>
+        <item>6 Grams</item>
+        <item>7 Grams</item>
+        <item>8 Grams</item>
+        <item>9 Grams</item>
+        <item>10 Grams</item>
+        <item>11 Grams</item>
+        <item>12 Grams</item>
+        <item>13 Grams</item>
+        <item>14 Grams</item>
+        <item>15 Grams</item>
+        <item>16 Grams</item>
+        <item>17 Grams</item>
+        <item>18 Grams</item>
+        <item>19 Grams</item>
+        <item>20 Grams</item>
+    </string-array>
+
+    <string-array name="grams_per_exchange_values">
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+        <item>16</item>
+        <item>17</item>
+        <item>18</item>
+        <item>19</item>
+        <item>20</item>
+    </string-array>
+
     <string-array name="poll_period">
         <item>10 seconds</item>
         <item>15 seconds</item>
@@ -296,14 +334,14 @@
     </string-array>
 
     <string-array name="urchin_battery">
-        <item>0-100</item>
-        <item>0-100&#65130;</item>
-        <item>0-99</item>
-        <item>0-99&#65130;</item>
-        <item>0-9</item>
-        <item>Hi-Lo</item>
-        <item>H-M-L</item>
-        <item>F-H-M-L-E</item>
+        <item>0&#8211;100</item>
+        <item>0&#8211;100&#65130;</item>
+        <item>0&#8211;99</item>
+        <item>0&#8211;99&#65130;</item>
+        <item>0&#8211;9</item>
+        <item>Hi&#8211;Lo</item>
+        <item>H&#8211;M&#8211;L</item>
+        <item>F&#8211;H&#8211;M&#8211;L&#8211;E</item>
     </string-array>
 
     <string-array name="urchin_units">
@@ -317,7 +355,7 @@
         <item>space: \'2.55u 1h15m\'</item>
         <item>dot: \'2.5u·1h15m\'</item>
         <item>bullet: \'2.5u•1h15m\'</item>
-        <item>dash: \'2.5u-1h15m\'</item>
+        <item>dash: \'2.5u&#8211;1h15m\'</item>
         <item>slash: \'2.5u/1h15m\'</item>
         <item>slash: \'2.5u\\1h15m\'</item>
         <item>line: \'2.5u|1h15m\'</item>

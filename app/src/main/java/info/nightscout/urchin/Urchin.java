@@ -538,7 +538,7 @@ public class Urchin {
                     insulin =  results.first().getNormalProgrammedAmount();
             }
 
-            text += new BigDecimal(insulin).setScale(1, BigDecimal.ROUND_HALF_UP).stripTrailingZeros()
+            text += new BigDecimal(insulin).setScale(1, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toPlainString()
                     + styleUnits() + styleConcatenate() + styleTime(results.first().getProgrammedDate().getTime());
         }
 
@@ -640,7 +640,6 @@ public class Urchin {
                 && pumpStatusEvent.isCgmActive()
                 && pumpStatusEvent.getEventDate().getTime() >= timeNow - 15 *60000L) {
 
-            text = "";
             if (pumpStatusEvent.isCgmCalibrating())
                 text = "C";
             else {

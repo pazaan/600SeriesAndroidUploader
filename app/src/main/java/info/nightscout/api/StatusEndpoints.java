@@ -31,7 +31,7 @@ public interface StatusEndpoints {
         private String serverTime;
         @SerializedName("serverTimeEpoch")
         @Expose
-        private Long serverTimeEpoch;
+        private Float serverTimeEpoch;
         @SerializedName("apiEnabled")
         @Expose
         private Boolean apiEnabled;
@@ -86,11 +86,11 @@ public interface StatusEndpoints {
             this.serverTime = serverTime;
         }
 
-        public Long getServerTimeEpoch() {
+        public Float getServerTimeEpoch() {
             return serverTimeEpoch;
         }
 
-        public void setServerTimeEpoch(Long serverTimeEpoch) {
+        public void setServerTimeEpoch(Float serverTimeEpoch) {
             this.serverTimeEpoch = serverTimeEpoch;
         }
 
@@ -159,7 +159,7 @@ public interface StatusEndpoints {
         private String units;
         @SerializedName("timeFormat")
         @Expose
-        private Long timeFormat;
+        private Float timeFormat;
         @SerializedName("nightMode")
         @Expose
         private Boolean nightMode;
@@ -180,43 +180,43 @@ public interface StatusEndpoints {
         private Boolean alarmUrgentHigh;
         @SerializedName("alarmUrgentHighMins")
         @Expose
-        private List<Long> alarmUrgentHighMins = null;
+        private List<Float> alarmUrgentHighMins = null;
         @SerializedName("alarmHigh")
         @Expose
         private Boolean alarmHigh;
         @SerializedName("alarmHighMins")
         @Expose
-        private List<Long> alarmHighMins = null;
+        private List<Float> alarmHighMins = null;
         @SerializedName("alarmLow")
         @Expose
         private Boolean alarmLow;
         @SerializedName("alarmLowMins")
         @Expose
-        private List<Long> alarmLowMins = null;
+        private List<Float> alarmLowMins = null;
         @SerializedName("alarmUrgentLow")
         @Expose
         private Boolean alarmUrgentLow;
         @SerializedName("alarmUrgentLowMins")
         @Expose
-        private List<Long> alarmUrgentLowMins = null;
+        private List<Float> alarmUrgentLowMins = null;
         @SerializedName("alarmUrgentMins")
         @Expose
-        private List<Long> alarmUrgentMins = null;
+        private List<Float> alarmUrgentMins = null;
         @SerializedName("alarmWarnMins")
         @Expose
-        private List<Long> alarmWarnMins = null;
+        private List<Float> alarmWarnMins = null;
         @SerializedName("alarmTimeagoWarn")
         @Expose
         private Boolean alarmTimeagoWarn;
         @SerializedName("alarmTimeagoWarnMins")
         @Expose
-        private Long alarmTimeagoWarnMins;
+        private Float alarmTimeagoWarnMins;
         @SerializedName("alarmTimeagoUrgent")
         @Expose
         private Boolean alarmTimeagoUrgent;
         @SerializedName("alarmTimeagoUrgentMins")
         @Expose
-        private Long alarmTimeagoUrgentMins;
+        private Float alarmTimeagoUrgentMins;
         @SerializedName("language")
         @Expose
         private String language;
@@ -231,10 +231,10 @@ public interface StatusEndpoints {
         private String showForecast;
         @SerializedName("focusHours")
         @Expose
-        private Long focusHours;
+        private Float focusHours;
         @SerializedName("heartbeat")
         @Expose
-        private Long heartbeat;
+        private Float heartbeat;
         @SerializedName("baseURL")
         @Expose
         private String baseURL;
@@ -262,11 +262,11 @@ public interface StatusEndpoints {
             this.units = units;
         }
 
-        public Long getTimeFormat() {
+        public Float getTimeFormat() {
             return timeFormat;
         }
 
-        public void setTimeFormat(Long timeFormat) {
+        public void setTimeFormat(Float timeFormat) {
             this.timeFormat = timeFormat;
         }
 
@@ -318,11 +318,11 @@ public interface StatusEndpoints {
             this.alarmUrgentHigh = alarmUrgentHigh;
         }
 
-        public List<Long> getAlarmUrgentHighMins() {
+        public List<Float> getAlarmUrgentHighMins() {
             return alarmUrgentHighMins;
         }
 
-        public void setAlarmUrgentHighMins(List<Long> alarmUrgentHighMins) {
+        public void setAlarmUrgentHighMins(List<Float> alarmUrgentHighMins) {
             this.alarmUrgentHighMins = alarmUrgentHighMins;
         }
 
@@ -334,11 +334,11 @@ public interface StatusEndpoints {
             this.alarmHigh = alarmHigh;
         }
 
-        public List<Long> getAlarmHighMins() {
+        public List<Float> getAlarmHighMins() {
             return alarmHighMins;
         }
 
-        public void setAlarmHighMins(List<Long> alarmHighMins) {
+        public void setAlarmHighMins(List<Float> alarmHighMins) {
             this.alarmHighMins = alarmHighMins;
         }
 
@@ -350,11 +350,11 @@ public interface StatusEndpoints {
             this.alarmLow = alarmLow;
         }
 
-        public List<Long> getAlarmLowMins() {
+        public List<Float> getAlarmLowMins() {
             return alarmLowMins;
         }
 
-        public void setAlarmLowMins(List<Long> alarmLowMins) {
+        public void setAlarmLowMins(List<Float> alarmLowMins) {
             this.alarmLowMins = alarmLowMins;
         }
 
@@ -366,27 +366,27 @@ public interface StatusEndpoints {
             this.alarmUrgentLow = alarmUrgentLow;
         }
 
-        public List<Long> getAlarmUrgentLowMins() {
+        public List<Float> getAlarmUrgentLowMins() {
             return alarmUrgentLowMins;
         }
 
-        public void setAlarmUrgentLowMins(List<Long> alarmUrgentLowMins) {
+        public void setAlarmUrgentLowMins(List<Float> alarmUrgentLowMins) {
             this.alarmUrgentLowMins = alarmUrgentLowMins;
         }
 
-        public List<Long> getAlarmUrgentMins() {
+        public List<Float> getAlarmUrgentMins() {
             return alarmUrgentMins;
         }
 
-        public void setAlarmUrgentMins(List<Long> alarmUrgentMins) {
+        public void setAlarmUrgentMins(List<Float> alarmUrgentMins) {
             this.alarmUrgentMins = alarmUrgentMins;
         }
 
-        public List<Long> getAlarmWarnMins() {
+        public List<Float> getAlarmWarnMins() {
             return alarmWarnMins;
         }
 
-        public void setAlarmWarnMins(List<Long> alarmWarnMins) {
+        public void setAlarmWarnMins(List<Float> alarmWarnMins) {
             this.alarmWarnMins = alarmWarnMins;
         }
 
@@ -398,11 +398,11 @@ public interface StatusEndpoints {
             this.alarmTimeagoWarn = alarmTimeagoWarn;
         }
 
-        public Long getAlarmTimeagoWarnMins() {
+        public Float getAlarmTimeagoWarnMins() {
             return alarmTimeagoWarnMins;
         }
 
-        public void setAlarmTimeagoWarnMins(Long alarmTimeagoWarnMins) {
+        public void setAlarmTimeagoWarnMins(Float alarmTimeagoWarnMins) {
             this.alarmTimeagoWarnMins = alarmTimeagoWarnMins;
         }
 
@@ -414,11 +414,11 @@ public interface StatusEndpoints {
             this.alarmTimeagoUrgent = alarmTimeagoUrgent;
         }
 
-        public Long getAlarmTimeagoUrgentMins() {
+        public Float getAlarmTimeagoUrgentMins() {
             return alarmTimeagoUrgentMins;
         }
 
-        public void setAlarmTimeagoUrgentMins(Long alarmTimeagoUrgentMins) {
+        public void setAlarmTimeagoUrgentMins(Float alarmTimeagoUrgentMins) {
             this.alarmTimeagoUrgentMins = alarmTimeagoUrgentMins;
         }
 
@@ -454,19 +454,19 @@ public interface StatusEndpoints {
             this.showForecast = showForecast;
         }
 
-        public Long getFocusHours() {
+        public Float getFocusHours() {
             return focusHours;
         }
 
-        public void setFocusHours(Long focusHours) {
+        public void setFocusHours(Float focusHours) {
             this.focusHours = focusHours;
         }
 
-        public Long getHeartbeat() {
+        public Float getHeartbeat() {
             return heartbeat;
         }
 
-        public void setHeartbeat(Long heartbeat) {
+        public void setHeartbeat(Float heartbeat) {
             this.heartbeat = heartbeat;
         }
 
@@ -524,46 +524,46 @@ public interface StatusEndpoints {
 
         @SerializedName("bgHigh")
         @Expose
-        private Long bgHigh;
+        private Float bgHigh;
         @SerializedName("bgTargetTop")
         @Expose
-        private Long bgTargetTop;
+        private Float bgTargetTop;
         @SerializedName("bgTargetBottom")
         @Expose
-        private Long bgTargetBottom;
+        private Float bgTargetBottom;
         @SerializedName("bgLow")
         @Expose
-        private Long bgLow;
+        private Float bgLow;
 
-        public Long getBgHigh() {
+        public Float getBgHigh() {
             return bgHigh;
         }
 
-        public void setBgHigh(Long bgHigh) {
+        public void setBgHigh(Float bgHigh) {
             this.bgHigh = bgHigh;
         }
 
-        public Long getBgTargetTop() {
+        public Float getBgTargetTop() {
             return bgTargetTop;
         }
 
-        public void setBgTargetTop(Long bgTargetTop) {
+        public void setBgTargetTop(Float bgTargetTop) {
             this.bgTargetTop = bgTargetTop;
         }
 
-        public Long getBgTargetBottom() {
+        public Float getBgTargetBottom() {
             return bgTargetBottom;
         }
 
-        public void setBgTargetBottom(Long bgTargetBottom) {
+        public void setBgTargetBottom(Float bgTargetBottom) {
             this.bgTargetBottom = bgTargetBottom;
         }
 
-        public Long getBgLow() {
+        public Float getBgLow() {
             return bgLow;
         }
 
-        public void setBgLow(Long bgLow) {
+        public void setBgLow(Float bgLow) {
             this.bgLow = bgLow;
         }
 

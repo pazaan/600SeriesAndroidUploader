@@ -171,6 +171,15 @@
                     android:summary="Send basal pattern changes to Nightscout"/>
             </PreferenceCategory>
 
+            <PreferenceCategory android:title="Misc">
+                <ListPreference android:title="Grams Per Exchange"
+                    android:key="nsGramsPerExchange"
+                    android:defaultValue="15"
+                    android:summary="%s"
+                    android:entries="@array/grams_per_exchange"
+                    android:entryValues="@array/grams_per_exchange_values"/>
+            </PreferenceCategory>
+
             <PreferenceCategory android:title="Pattern and Preset Naming">
                 <PreferenceScreen
                     android:title="Basal Patterns"
@@ -737,6 +746,18 @@
                     android:switchTextOff="off"
                     android:switchTextOn="on"
                     android:title="Control / Passthrough"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory android:title="USB">
+                <info.nightscout.android.utils.CustomSwitchPreference
+                    android:disableDependentsState="false"
+                    android:key="sysEnableUsbPermissionDialog"
+                    android:defaultValue="false"
+                    android:summaryOff="Request permission via OS dialog"
+                    android:summaryOn="Request permission via APP dialog"
+                    android:switchTextOff="off"
+                    android:switchTextOn="on"
+                    android:title="Permission Request"/>
             </PreferenceCategory>
         </PreferenceScreen>
 

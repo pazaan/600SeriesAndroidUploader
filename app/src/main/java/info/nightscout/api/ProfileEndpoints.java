@@ -3,12 +3,11 @@ package info.nightscout.api;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
+import info.nightscout.android.upload.nightscout.NightScoutUpload;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -116,14 +115,12 @@ public interface ProfileEndpoints {
         }
 
         public void setCreated_at(Date created_at) {
-            this.created_at = ISO8601_DATE_FORMAT.format(created_at);
+            this.created_at = NightScoutUpload.formatDateForNS(created_at);
         }
 
         public void setStartDate(Date startDate) {
-            this.startDate = ISO8601_DATE_FORMAT.format(startDate);
+            this.startDate = NightScoutUpload.formatDateForNS(startDate);
         }
-
-        private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
     }
 
     class BasalProfile {
@@ -250,10 +247,8 @@ public interface ProfileEndpoints {
         }
 
         public void setStartDate(Date startDate) {
-            this.startDate = ISO8601_DATE_FORMAT.format(startDate);
+            this.startDate = NightScoutUpload.formatDateForNS(startDate);
         }
-
-        private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
     }
 
     class TimePeriod {

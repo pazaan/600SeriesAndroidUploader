@@ -75,14 +75,14 @@ public class PumpHistoryHandler {
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
         historyDB = new ArrayList<>();
-        historyDB.add(new DBitem("CGM", false, 400, historyRealm.where(PumpHistoryCGM.class).findAll()));
-        historyDB.add(new DBitem("BOLUS", true, 30, historyRealm.where(PumpHistoryBolus.class).findAll()));
-        historyDB.add(new DBitem("BASAL", true,30, historyRealm.where(PumpHistoryBasal.class).findAll()));
+        historyDB.add(new DBitem("CGM", false, 300, historyRealm.where(PumpHistoryCGM.class).findAll()));
+        historyDB.add(new DBitem("BOLUS", true, 20, historyRealm.where(PumpHistoryBolus.class).findAll()));
+        historyDB.add(new DBitem("BASAL", true,20, historyRealm.where(PumpHistoryBasal.class).findAll()));
         historyDB.add(new DBitem("PATTERN", true,10, historyRealm.where(PumpHistoryPattern.class).findAll()));
-        historyDB.add(new DBitem("BG", true,30, historyRealm.where(PumpHistoryBG.class).findAll()));
+        historyDB.add(new DBitem("BG", true,20, historyRealm.where(PumpHistoryBG.class).findAll()));
         historyDB.add(new DBitem("PROFILE", false,10, historyRealm.where(PumpHistoryProfile.class).findAll()));
         historyDB.add(new DBitem("MISC", true,10, historyRealm.where(PumpHistoryMisc.class).findAll()));
-        historyDB.add(new DBitem("LOOP", true,300, historyRealm.where(PumpHistoryLoop.class).findAll()));
+        historyDB.add(new DBitem("LOOP", true,200, historyRealm.where(PumpHistoryLoop.class).findAll()));
         historyDB.add(new DBitem("DEBUG", true,20, historyRealm.where(PumpHistoryDebug.class).findAll()));
     }
 
@@ -280,20 +280,26 @@ public class PumpHistoryHandler {
         if (dataStore.isNameBasalPatternChanged() &&
                 (dataStore.isNsEnableProfileSingle() || dataStore.isNsEnableProfileOffset())) {
 
-            userLogMessage("Basal Pattern Names changed, updating pattern switch treatments in Nightscout");
-
-            final RealmResults<PumpHistoryProfile> results = historyRealm
-                    .where(PumpHistoryProfile.class)
-                    .equalTo("profileSwitch", true)
+            final RealmResults<PumpHistoryPattern> results = historyRealm
+                    .where(PumpHistoryPattern.class)
                     .findAll();
-            historyRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    for (PumpHistoryProfile record : results) {
-                        record.setUploadREQ(true);
+
+            if (results.size() > 0) {
+                Log.d(TAG, "NameBasalPatternChanged: Found " + results.size() + " pattern switch treatments to update");
+                userLogMessage("Basal Pattern Names changed, updating pattern switch treatments in Nightscout");
+
+                historyRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        for (PumpHistoryPattern record : results) {
+                            record.setUploadREQ(true);
+                            record.setUploadACK(true);
+                        }
                     }
-                }
-            });
+                });
+
+            }
+
             storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
@@ -301,13 +307,47 @@ public class PumpHistoryHandler {
                 }
             });
         }
+    }
 
+    public void checkGramsPerExchangeChanged() {
+
+        if (dataStore.isNsGramsPerExchangeChanged()) {
+
+            final RealmResults<PumpHistoryBolus> results = historyRealm
+                    .where(PumpHistoryBolus.class)
+                    .equalTo("programmed", true)
+                    .equalTo("estimate", true)
+                    .equalTo("carbUnits", PumpHistoryParser.CARB_UNITS.EXCHANGES.get())
+                    .findAll();
+
+            if (results.size() > 0) {
+                Log.d(TAG, "GramsPerExchangeChanged: Found " + results.size() + " carb/bolus treatments to update");
+                userLogMessage("Grams per Exchange changed, updating carb/bolus treatments in Nightscout");
+
+                historyRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        for (PumpHistoryBolus record : results) {
+                            record.setUploadREQ(true);
+                            record.setUploadACK(true);
+                        }
+                    }
+                });
+            }
+
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    dataStore.setNsGramsPerExchangeChanged(false);
+                }
+            });
+        }
     }
 
     public void cgm(final PumpStatusEvent pumpRecord) {
 
         // push the current sgv from status (always have latest sgv available even if there are comms errors after this)
-        if (pumpRecord.isValidSGV()) {
+        if (pumpRecord.isCgmActive()) {
 
             final Date date = pumpRecord.getCgmDate();
             final int rtc = pumpRecord.getCgmRTC();
@@ -317,7 +357,7 @@ public class PumpHistoryHandler {
                     .where(PumpHistoryCGM.class)
                     .findAllSorted("eventDate", Sort.ASCENDING);
 
-            // sgv is available do we need the backfill?
+            // cgm is available do we need the backfill?
             if (dataStore.isSysEnableCgmHistory()
                     && results.size() == 0
                     || (results.size() > 0 && date.getTime() - results.last().getEventDate().getTime() > 9 * 60 * 1000L)) {
@@ -335,6 +375,7 @@ public class PumpHistoryHandler {
                 public void execute(Realm realm) {
                     PumpHistoryCGM.cgm(historyRealm, date, rtc, offset,
                             pumpRecord.getSgv(),
+                            pumpRecord.getCgmExceptionType(),
                             pumpRecord.getCgmTrendString()
                     );
                 }
