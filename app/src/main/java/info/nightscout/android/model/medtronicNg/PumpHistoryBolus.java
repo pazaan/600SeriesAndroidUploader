@@ -170,10 +170,11 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 double carbInputAsGrams;
                 double carbRatioAsGrams;
                 String exchanges;
+                int gramsPerExchange = dataStore.getNsGramsPerExchange();
                 if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits)) {
-                    carbInputAsGrams = 15 * carbInput;
-                    carbRatioAsGrams = 15 / carbRatio;
-                    exchanges = String.format(Locale.US, ", ex %.2fu/15g", carbRatio);
+                    carbInputAsGrams = gramsPerExchange * carbInput;
+                    carbRatioAsGrams = gramsPerExchange / carbRatio;
+                    exchanges = String.format(Locale.US, ", ex %.2fu/%sg", carbRatio, gramsPerExchange);
                 } else {
                     carbInputAsGrams = carbInput;
                     carbRatioAsGrams = carbRatio;

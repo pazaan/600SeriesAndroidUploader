@@ -94,48 +94,53 @@ public class MasterService extends Service {
 
         mContext = this.getBaseContext();
 
-        IntentFilter masterServiceIntentFilter = new IntentFilter();
-        masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_ACTIVE);
-        masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_FINISHED);
-        masterServiceIntentFilter.addAction(Constants.ACTION_STOP_SERVICE);
-        masterServiceIntentFilter.addAction(Constants.ACTION_READ_NOW);
-        masterServiceIntentFilter.addAction(Constants.ACTION_READ_PROFILE);
-        masterServiceIntentFilter.addAction(Constants.ACTION_URCHIN_UPDATE);
-        registerReceiver(masterServiceReceiver, masterServiceIntentFilter);
-
-        registerReceiver(
-                userLogMessageReceiver,
-                new IntentFilter(Constants.ACTION_USERLOG_MESSAGE));
-
-        IntentFilter batteryIntentFilter = new IntentFilter();
-        batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
-        batteryIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        batteryIntentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
-        registerReceiver(batteryReceiver, batteryIntentFilter);
-
-        IntentFilter usbIntentFilter = new IntentFilter();
-        usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        usbIntentFilter.addAction(Constants.ACTION_HAS_USB_PERMISSION);
-        usbIntentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
-        registerReceiver(usbReceiver, usbIntentFilter);
-
-        MedtronicCnlAlarmManager.setContext(mContext);
-
-        urchin = new Urchin(mContext);
-
-        realm = Realm.getDefaultInstance();
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
         dataStore = storeRealm.where(DataStore.class).findFirst();
 
-        storeRealm.executeTransaction(new Realm.Transaction() {
-            @Override
-            public void execute(Realm realm) {
-                dataStore.setNightscoutReportTime(0);
-                dataStore.setNightscoutAvailable(false);
-                dataStore.clearAllCommsErrors();
-            }
-        });
+        // safety check: don't proceed until main ui has been run and datastore initialised
+        if (dataStore != null) {
+
+            realm = Realm.getDefaultInstance();
+
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    dataStore.setNightscoutReportTime(0);
+                    dataStore.setNightscoutAvailable(false);
+                    dataStore.clearAllCommsErrors();
+                }
+            });
+
+            IntentFilter masterServiceIntentFilter = new IntentFilter();
+            masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_ACTIVE);
+            masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_FINISHED);
+            masterServiceIntentFilter.addAction(Constants.ACTION_STOP_SERVICE);
+            masterServiceIntentFilter.addAction(Constants.ACTION_READ_NOW);
+            masterServiceIntentFilter.addAction(Constants.ACTION_READ_PROFILE);
+            masterServiceIntentFilter.addAction(Constants.ACTION_URCHIN_UPDATE);
+            registerReceiver(masterServiceReceiver, masterServiceIntentFilter);
+
+            registerReceiver(
+                    userLogMessageReceiver,
+                    new IntentFilter(Constants.ACTION_USERLOG_MESSAGE));
+
+            IntentFilter batteryIntentFilter = new IntentFilter();
+            batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
+            batteryIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+            batteryIntentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
+            registerReceiver(batteryReceiver, batteryIntentFilter);
+
+            IntentFilter usbIntentFilter = new IntentFilter();
+            usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+            usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+            usbIntentFilter.addAction(Constants.ACTION_HAS_USB_PERMISSION);
+            usbIntentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
+            registerReceiver(usbReceiver, usbIntentFilter);
+
+            MedtronicCnlAlarmManager.setContext(mContext);
+
+            urchin = new Urchin(mContext);
+        }
     }
 
     @Override
@@ -143,19 +148,18 @@ public class MasterService extends Service {
         super.onDestroy();
         Log.d(TAG, "onDestroy called");
 
-        urchin.close();
-
-        statusNotification.endNotification();
-
         MedtronicCnlAlarmManager.cancelAlarm();
 
-        if (!storeRealm.isClosed()) storeRealm.close();
-        if (!realm.isClosed()) realm.close();
+        if (userLogMessageReceiver != null) unregisterReceiver(userLogMessageReceiver);
+        if (usbReceiver != null) unregisterReceiver(usbReceiver);
+        if (batteryReceiver != null) unregisterReceiver(batteryReceiver);
+        if (masterServiceReceiver != null) unregisterReceiver(masterServiceReceiver);
 
-        unregisterReceiver(userLogMessageReceiver);
-        unregisterReceiver(usbReceiver);
-        unregisterReceiver(batteryReceiver);
-        unregisterReceiver(masterServiceReceiver);
+        if (urchin != null) urchin.close();
+        if (statusNotification != null) statusNotification.endNotification();
+
+        if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
+        if (realm != null && !realm.isClosed()) realm.close();
     }
 
     @Override
@@ -172,6 +176,11 @@ public class MasterService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Received start id " + startId + ": " + intent);
         //userLogMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
+
+        if (dataStore == null) {
+            // safety check: don't proceed until main ui has been run and datastore initialised
+            stopSelf();
+        }
 
         if (intent == null || startId == 1) {
             Log.i(TAG, "service start");
@@ -354,12 +363,14 @@ public class MasterService extends Service {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
-            // received from UsbActivity via OS
+            // received from UsbActivity via OS / app requested permission dialog
             if (Constants.ACTION_HAS_USB_PERMISSION.equals(action)) {
 
-                statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
-
-                startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
+                if (hasUsbPermission()) {
+                    userLogMessage.add(ICON_INFO + "Got permission for USB.");
+                    statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
+                    startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
+                }
 
                 // received from OS
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
@@ -397,11 +408,16 @@ public class MasterService extends Service {
             } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
                 Log.d(TAG, "No permission to read the USB device.");
                 userLogMessage.add(ICON_WARN + "No permission to read the USB device.");
-                userLogMessage.add(ICON_HELP + "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
 
                 MedtronicCnlAlarmManager.cancelAlarm();
 
                 statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+
+                if (dataStore.isSysEnableUsbPermissionDialog()) {
+                    requestUsbPermission();
+                } else {
+                    userLogMessage.add(ICON_HELP + "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
+                }
 
             }
         }
@@ -412,6 +428,13 @@ public class MasterService extends Service {
         UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID);
 
         return !(usbManager != null && cnlDevice != null && !usbManager.hasPermission(cnlDevice));
+    }
+
+    private void requestUsbPermission() {
+        UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
+        UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID);
+        PendingIntent permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(Constants.ACTION_HAS_USB_PERMISSION), 0);
+        usbManager.requestPermission(cnlDevice, permissionIntent);
     }
 
     private void showDisconnectionNotification(String title, String message) {

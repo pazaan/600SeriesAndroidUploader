@@ -57,8 +57,10 @@ public class NightscoutUploadService extends Service {
         if (intent != null) {
             if (startId == 1)
                 new Upload().start();
-            else
+            else {
                 Log.d(TAG, "Service already in progress with previous task");
+                userLogMessage(ICON_WARN + "Uploading service is busy completing previous task. New records will be uploaded after the next poll.");
+            }
         }
 
         return START_NOT_STICKY;

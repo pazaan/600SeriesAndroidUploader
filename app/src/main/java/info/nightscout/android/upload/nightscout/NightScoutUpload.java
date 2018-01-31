@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -77,6 +78,15 @@ public class NightScoutUpload {
 
         uploadStatus(statusRecords, uploaderBatteryLevel);
         uploadEvents(records);
+    }
+
+    public static String formatDateForNS(Date date) {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+        SimpleDateFormat dftz = new SimpleDateFormat("Z", Locale.getDefault());
+        String tz = dftz.format(date);
+        if (tz.length() == 5 && (tz.startsWith("+") || tz.startsWith("-")))
+            return df.format(date) + tz.subSequence(0,3) + ":" + tz.subSequence(3,5);
+        return df.format(date);
     }
 
     private void uploadEvents(List<PumpHistoryInterface> records) throws Exception {
@@ -256,8 +266,6 @@ public class NightScoutUpload {
         }
     }
 
-    private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
-
     private void uploadStatus(List<PumpStatusEvent> records, int uploaderBatteryLevel) throws Exception {
 
         List<DeviceEndpoints.DeviceStatus> deviceEntries = new ArrayList<>();
@@ -344,7 +352,7 @@ public class NightScoutUpload {
             pumpstatus = new PumpStatus(false, false, statusPUMP + " " + statusCGM);
 
             PumpInfo pumpInfo = new PumpInfo(
-                    ISO8601_DATE_FORMAT.format(record.getEventDate()),
+                    formatDateForNS(record.getEventDate()),
                     new BigDecimal(record.getReservoirAmount()).setScale(0, BigDecimal.ROUND_HALF_UP),
                     iob,
                     battery,
@@ -354,7 +362,7 @@ public class NightScoutUpload {
             DeviceStatus deviceStatus = new DeviceStatus(
                     uploaderBatteryLevel,
                     record.getDeviceName(),
-                    ISO8601_DATE_FORMAT.format(record.getEventDate()),
+                    formatDateForNS(record.getEventDate()),
                     pumpInfo
             );
 

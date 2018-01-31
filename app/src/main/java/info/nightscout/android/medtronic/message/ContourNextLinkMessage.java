@@ -359,6 +359,7 @@ public abstract class ContourNextLinkMessage {
                     expectedSegments = multipacketSession.packetsToFetch;
                     fetchMoreData = true;
                 } else if (MedtronicSendMessageRequestMessage.MessageType.MULTIPACKET_SEGMENT_TRANSMISSION.response(cmd)) {
+                    if (multipacketSession == null) throw new UnexpectedMessageException("multipacketSession not initiated before segment received" + tag);
                     multipacketSession.addSegment(decrypted);
                     expectedSegments--;
 
@@ -447,23 +448,27 @@ public abstract class ContourNextLinkMessage {
         }
 
         private void addSegment(byte[] data) throws UnexpectedMessageException {
-            int packetNumber = read16BEtoUInt(data, 0x0003);
-            int packetSize = data.length - 7;
-            segments[packetNumber] = true;
+            try {
+                int packetNumber = read16BEtoUInt(data, 0x0003);
+                int packetSize = data.length - 7;
+                segments[packetNumber] = true;
 
-            Log.d(TAG, "*** Got a Multipacket Segment: " + (packetNumber + 1) + " of " + this.packetsToFetch + ", count: " + segmentsFilled() + " [packetSize=" + packetSize + " " + this.packetSize + "/" + this.lastPacketSize + "]");
+                Log.d(TAG, "*** Got a Multipacket Segment: " + (packetNumber + 1) + " of " + this.packetsToFetch + ", count: " + segmentsFilled() + " [packetSize=" + packetSize + " " + this.packetSize + "/" + this.lastPacketSize + "]");
 
-            if (packetNumber == lastPacketNumber() &&
-                    packetSize != this.lastPacketSize) {
-                throw new UnexpectedMessageException("Multipacket Transfer last packet size mismatch");
-            } else if (packetNumber != lastPacketNumber() &&
-                    packetSize != this.packetSize) {
-                throw new UnexpectedMessageException("Multipacket Transfer packet size mismatch");
+                if (packetNumber == lastPacketNumber() &&
+                        packetSize != this.lastPacketSize) {
+                    throw new UnexpectedMessageException("Multipacket Transfer last packet size mismatch");
+                } else if (packetNumber != lastPacketNumber() &&
+                        packetSize != this.packetSize) {
+                    throw new UnexpectedMessageException("Multipacket Transfer packet size mismatch");
+                }
+
+                int to = (packetNumber * this.packetSize) + 1;
+                int from = 5;
+                while (from < packetSize + 5) this.response[to++] = data[from++];
+            } catch (Exception e) {
+                throw new UnexpectedMessageException("Multipacket Transfer bad segment data received");
             }
-
-            int to = (packetNumber * this.packetSize) + 1;
-            int from = 5;
-            while (from < packetSize + 5) this.response[to++] = data[from++];
         }
 
         private byte[] missingSegments() {
