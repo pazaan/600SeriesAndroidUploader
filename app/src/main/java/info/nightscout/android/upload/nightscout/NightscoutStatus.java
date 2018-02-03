@@ -4,8 +4,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import info.nightscout.android.UploaderApplication;
@@ -55,9 +59,9 @@ public class NightscoutStatus {
     private String ns_version_code = "0.0.0";
     private String ns_version_channel = "";
     private String ns_version_date = "";
-    private String ns_version_major = "0";
-    private String ns_version_minor = "0";
-    private String ns_version_point = "0";
+    private int ns_version_major = 0;
+    private int ns_version_minor = 0;
+    private int ns_version_point = 0;
 
     private boolean available;
     private long reporttime;
@@ -91,18 +95,21 @@ public class NightscoutStatus {
 
             if (!available || report) {
                 String url = dataStore.getNightscoutURL();
-                available = new getStatus().run(url);
+                String secret = dataStore.getNightscoutSECRET();
+                available = new getStatus().run(url, secret);
 
                 if (available && dataStore.isDbgEnableUploadErrors()) {
 
-                    if (dataStore.getNightscoutReportTime() == 0) {
+                    if (!dataStore.isNightscoutAvailable()) {
                         userLogMessage(ICON_INFO + "Nightscout site is available");
                     }
 
+                    /* This doesn't seem to be a requirement for newer versions of NS
                     if (!ns_authDefaultRoles.contains("readable")) {
                         userLogMessage(ICON_WARN + "Nightscout 'authDefaultRoles' check has failed, data can not be uploaded.");
-                        userLogMessage(ICON_HELP + "Add 'authDefaultRoles' and set to 'readable devicestatus-upload' in Azure or Heroku.");
+                        userLogMessage(ICON_HELP + "Add 'AUTH_DEFAULT_ROLES' and set to 'readable devicestatus-upload' in Azure or Heroku.");
                     }
+                    */
 
                     if (dataStore.isNsEnableTreatments() && !ns_careportal) {
                         userLogMessage(ICON_WARN + "Careportal is not enabled in Nightscout, treatment data can not be uploaded.");
@@ -112,8 +119,12 @@ public class NightscoutStatus {
                     if (report) {
                         reporttime = now;
 
-                        if (Integer.parseInt(ns_version_major) <= NS_MAJOR &&
-                                (Integer.parseInt(ns_version_minor) < NS_MINOR || (Integer.parseInt(ns_version_minor) == NS_MINOR && Integer.parseInt(ns_version_point) < NS_POINT))) {
+                        if (dataStore.isDbgEnableExtendedErrors()) {
+                            userLogMessage("NS version: " + ns_version);
+                        }
+
+                        if (ns_version_major <= NS_MAJOR &&
+                                (ns_version_minor < NS_MINOR || (ns_version_minor == NS_MINOR && ns_version_point < NS_POINT))) {
                             userLogMessage(ICON_HELP + "Your version of Nightscout is out of date. It is recommended to use the latest release version of Nightscout with the 600 Series Uploader.");
                         }
 
@@ -159,19 +170,6 @@ public class NightscoutStatus {
                         if (!(ns_enable.contains("IOB") || ns_enable.contains("iob"))) {
                             userLogMessage(ICON_HELP + "IOB active insulin can be shown in Nightscout. Add 'iob' to your ENABLE string in Azure or Heroku.");
                         }
-
-                        if (false) {
-                            String note = "";
-                            note += "Nightscout Status:";
-                            note += "\nver: " + ns_version;
-                            note += "\ncustomTitle: " + ns_customTitle;
-                            note += "\ncareportal: " + ns_careportal;
-                            note += "\nunits: " + ns_units;
-                            note += "\nauthDefaultRoles: " + ns_authDefaultRoles;
-                            note += "\nenable: " + ns_enable;
-                            note += "\npump: " + ns_pumpFields;
-                            userLogMessage(ICON_INFO + note);
-                        }
                     }
 
                 } else if (!available && dataStore.isDbgEnableUploadErrors())
@@ -192,11 +190,11 @@ public class NightscoutStatus {
     }
 
     private class getStatus extends Thread {
-        public boolean run(String url) {
+        public boolean run(String url, String secret) {
             boolean available = false;
 
             try{
-                UploadApi uploadApi = new UploadApi(url, null);
+                UploadApi uploadApi = new UploadApi(url, formToken(secret));
 
                 statusEndpoints = uploadApi.getStatusEndpoints();
 
@@ -220,16 +218,19 @@ public class NightscoutStatus {
                     }
                     String code[] = ns_version_code.split("\\.");
                     if (code.length == 3) {
-                        ns_version_major = code[0];
-                        ns_version_minor = code[1];
-                        ns_version_point = code[2];
+                        try {
+                            ns_version_major = Integer.parseInt(code[0]);
+                            ns_version_minor = Integer.parseInt(code[1]);
+                            ns_version_point = Integer.parseInt(code[2]);
+                        } catch (Exception ignored) {
+                        }
                     }
                 }
 
                 s = responseBody.body().getName();
                 if (s != null) ns_name = s;
 
-                ns_careportal = responseBody.body().isCareportalEnabled();
+                if (responseBody.body().isCareportalEnabled() != null) ns_careportal = responseBody.body().isCareportalEnabled();
 
                 if (responseBody.body().getSettings() != null) {
 
@@ -254,12 +255,13 @@ public class NightscoutStatus {
 
                     StatusEndpoints.Pump pump = responseBody.body().getExtendedSettings().getPump();
                     if (pump != null) {
-                        ns_pumpFields = pump.getFields();
+                        s = pump.getFields();
+                        if (s != null) ns_pumpFields = s;
                     }
 
                     StatusEndpoints.Devicestatus devicestatus = responseBody.body().getExtendedSettings().getDevicestatus();
                     if (devicestatus != null) {
-                        ns_devicestatus = devicestatus.isAdvanced();
+                        if (devicestatus.isAdvanced() != null) ns_devicestatus = devicestatus.isAdvanced();
                     }
                 }
 
@@ -267,12 +269,25 @@ public class NightscoutStatus {
 
             } catch (Exception e) {
                 Log.e(TAG, "Nightscout status check error", e);
-                if (dataStore.isDbgEnableExtendedErrors())
+                if (dataStore.isDbgEnableUploadErrors())
                     userLogMessage(ICON_WARN + "Nightscout status is not available: " + e.getMessage());
             }
 
             return available;
         }
+    }
+
+    @NonNull
+    private String formToken(String secret) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] bytes = secret.getBytes("UTF-8");
+        digest.update(bytes, 0, bytes.length);
+        bytes = digest.digest();
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b & 0xff));
+        }
+        return sb.toString();
     }
 
     private boolean isOnline() {

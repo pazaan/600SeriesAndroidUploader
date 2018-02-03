@@ -110,6 +110,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
             bp.carbshr = carbshr;
             bp.dia = dia;
             bp.delay = delay;
+            bp.carbsPerExchange = dataStore.getNsGramsPerExchange();
             bp.parseCarbRatios();
             bp.parseSensitivity();
             bp.parseTargets();
@@ -143,6 +144,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         String carbshr;
         String dia;
         String units;
+        int carbsPerExchange;
         int index = 0;
 
         private BasalProfile newProfile() {
@@ -211,8 +213,8 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
                 for (int i = 0; i < items; i++) {
                     // pump grams/unit rate
                     rate1 = read32BEtoInt(carbRatios, index) / 10;
-                    // pump units/exchange rate (converted by dividing into 15g, the standard amount of grams per exchange)
-                    rate2 = (int) (15 / ((double) (read32BEtoInt(carbRatios, index + 4)) / 1000.0));
+                    // pump units/exchange rate (converted by dividing into carbsPerExchange default=15g, the standard amount of grams per exchange)
+                    rate2 = (int) (carbsPerExchange / ((double) (read32BEtoInt(carbRatios, index + 4)) / 1000.0));
                     time = read8toUInt(carbRatios, index + 8) * 30;
                     carbratio.add(addPeriod(time, "" + (rate1 > 0 ? rate1 : rate2)));
                     index += 9;

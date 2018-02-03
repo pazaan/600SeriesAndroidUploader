@@ -97,18 +97,6 @@ public class UploaderApplication extends Application {
                 .modules(new HistoryModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
-
-        Realm storeRealm = Realm.getInstance(storeConfiguration);
-        if (storeRealm.where(DataStore.class).findFirst() == null) {
-            storeRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    realm.createObject(DataStore.class);
-                }
-            });
-        }
-        storeRealm.close();
-
     }
 
     public static long getStartupRealtime() {

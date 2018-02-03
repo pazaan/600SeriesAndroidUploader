@@ -303,7 +303,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             cnl0x81 = 0;
 
             try {
-
+/*
                 if (false) {
                     userLogMessage("Adding history from file");
                     new HistoryDebug(mContext).run();
@@ -311,7 +311,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     nextpoll = 0;
                     return;
                 }
-
+*/
                 long pollInterval = dataStore.getPollInterval();
 
                 if (!openUsbDevice()) {
@@ -524,6 +524,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                     });
                                 }
 
+                                pumpHistoryHandler.checkGramsPerExchangeChanged();
+
                                 pumpHistoryHandler.update(cnlReader);
                             }
                         }
@@ -651,9 +653,15 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             userLogMessage(ICON_HELP + "Past historical data can be uploaded to Nightscout via the History Sync option in Advanced Nightscout Settings.");
         }
 */
-        if (dataStore.isNightscoutUpload() && dataStore.isNsEnableProfileUpload() && !pumpHistoryHandler.isProfileUploaded()) {
-            userLogMessage(ICON_INFO + "No basal pattern profile has been uploaded.");
-            userLogMessage(ICON_HELP + "Profiles can be uploaded from the main menu.");
+        if (dataStore.isNightscoutUpload() && dataStore.isNsEnableProfileUpload()) {
+            if (!pumpHistoryHandler.isProfileUploaded()) {
+                userLogMessage(ICON_INFO + "No basal pattern profile has been uploaded.");
+                userLogMessage(ICON_HELP + "Profiles can be uploaded from the main menu.");
+            } else if (dataStore.isNameBasalPatternChanged() &&
+                    (dataStore.isNsEnableProfileSingle() || dataStore.isNsEnableProfileOffset())) {
+                userLogMessage(ICON_INFO + "Basal pattern names have changed, your profile should be updated.");
+                userLogMessage(ICON_HELP + "Profiles can be updated from the main menu.");
+            }
         }
 
         if (PumpBatteryError >= ERROR_PUMPBATTERY_AT) {
@@ -784,7 +792,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // was temp ended before expected duration?
                 if (!results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
                     int diff = results.get(1).getTempBasalMinutesRemaining() - ageMinutes;
-                    if (diff < -2 || diff > 2) {
+                    if (diff < -4 || diff > 4) {
                         userLogMessage(info + "temp ended");
                         historyNeeded = true;
                     }
@@ -793,7 +801,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // was a new temp started while one was in progress?
                 if (results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
                     int diff = results.get(1).getTempBasalMinutesRemaining() - results.first().getTempBasalMinutesRemaining() - ageMinutes;
-                    if (diff < -2 || diff > 2) {
+                    if (diff < -4 || diff > 4) {
                         userLogMessage(info + "temp extended");
                         historyNeeded = true;
                     }
@@ -805,7 +813,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                         // was dual ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                        if (diff < -2 || diff > 2) {
+                        if (diff < -4 || diff > 4) {
                             userLogMessage(info + "dual ended");
                             historyNeeded = true;
                         }
@@ -814,7 +822,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     else if (!results.first().isBolusingSquare() && results.get(1).isBolusingSquare() && !results.get(1).isBolusingNormal()) {
                         // was square ended before expected duration?
                         int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                        if (diff < -2 || diff > 2) {
+                        if (diff < -4 || diff > 4) {
                             userLogMessage(info + "square ended");
                             historyNeeded = true;
                         }
@@ -833,7 +841,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 } else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                     // was dual ended before expected duration?
                     int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                    if (diff < -2 || diff > 2) {
+                    if (diff < -4 || diff > 4) {
                         userLogMessage(info + "dual ended");
                         historyNeeded = true;
                     }

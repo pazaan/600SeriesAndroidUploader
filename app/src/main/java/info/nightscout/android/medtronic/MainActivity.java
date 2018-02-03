@@ -119,6 +119,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
         dataStore = storeRealm.where(DataStore.class).findFirst();
+        if (dataStore == null) {
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    dataStore = realm.createObject(DataStore.class);
+                }
+            });
+        }
 
         // limit date for NS backfill sync period, set to this init date to stop overwrite of older NS data (pref option to override)
         if (dataStore.getNightscoutLimitDate() == null) {
@@ -548,6 +556,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setSysPollErrorRetry(Long.parseLong(sharedPreferences.getString("sysPollErrorRetry", "90000")));
                 dataStore.setSysPollOldSgvRetry(Long.parseLong(sharedPreferences.getString("sysPollOldSgvRetry", "90000")));
                 dataStore.setSysEnableWait500ms(sharedPreferences.getBoolean("sysEnableWait500ms", false));
+                dataStore.setSysEnableUsbPermissionDialog(sharedPreferences.getBoolean("sysEnableUsbPermissionDialog", false));
 
                 // debug
                 dataStore.setDbgEnableExtendedErrors(sharedPreferences.getBoolean("dbgEnableExtendedErrors", false));
@@ -569,6 +578,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 dataStore.setNsProfileDefault(Integer.parseInt(sharedPreferences.getString("nsProfileDefault", "1")));
                 dataStore.setNsActiveInsulinTime(Float.parseFloat(sharedPreferences.getString("nsActiveInsulinTime", "3")));
                 dataStore.setNsEnablePatternChange(sharedPreferences.getBoolean("nsEnablePatternChange", true));
+                dataStore.setNsGramsPerExchange(Integer.parseInt(sharedPreferences.getString("nsGramsPerExchange", "15")));
                 dataStore.setNsEnableInsertBGasCGM(sharedPreferences.getBoolean("nsEnableInsertBGasCGM", false));
 
                 // pattern and preset naming

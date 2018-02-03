@@ -93,7 +93,7 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
 
         // Check that we have the correct number of bytes in this message
         if (payload.length - HEADER_SIZE != historySizeCompressed) {
-            throw new UnexpectedMessageException("Unexpected update message size");
+            throw new UnexpectedMessageException("Unexpected message size");
         }
 
         byte[] blockPayload;
@@ -101,12 +101,16 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
         if (historyCompressed) {
             blockPayload = new byte[historySizeUncompressed];
 
-            LzoAlgorithm algorithm = LzoAlgorithm.LZO1X;
-            LzoDecompressor decompressor = LzoLibrary.getInstance().newDecompressor(algorithm, null);
-            int lzoReturnCode = decompressor.decompress(payload, HEADER_SIZE, historySizeCompressed, blockPayload, 0, new lzo_uintp(historySizeUncompressed));
+            try {
+                LzoAlgorithm algorithm = LzoAlgorithm.LZO1X;
+                LzoDecompressor decompressor = LzoLibrary.getInstance().newDecompressor(algorithm, null);
+                int lzoReturnCode = decompressor.decompress(payload, HEADER_SIZE, historySizeCompressed, blockPayload, 0, new lzo_uintp(historySizeUncompressed));
+                if (lzoReturnCode != LzoTransformer.LZO_E_OK)
+                    throw new UnexpectedMessageException("Error trying to decompress message (" + decompressor.toErrorString(lzoReturnCode) + ")");
+            } catch (Exception e) {
+                throw new UnexpectedMessageException("Error trying to decompress message");
+            }
 
-            if (lzoReturnCode != LzoTransformer.LZO_E_OK)
-                throw new UnexpectedMessageException("Error trying to decompress update message (" + decompressor.toErrorString(lzoReturnCode) + ")");
         } else {
             blockPayload = Arrays.copyOfRange(payload, HEADER_SIZE, payload.length);
         }

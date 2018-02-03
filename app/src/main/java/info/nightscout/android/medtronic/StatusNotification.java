@@ -122,6 +122,11 @@ public class StatusNotification {
     private void updateNotification() {
         Log.d(TAG, "updateNotification called");
 
+        if (realm == null || storeRealm == null || historyRealm == null) {
+            Log.e(TAG, "unexpected null for Realm");
+            return;
+        }
+
         long now = System.currentTimeMillis();
 
         String poll = "";
@@ -150,7 +155,7 @@ public class StatusNotification {
                 if (sgvAge < 60 && deltaTime < 30) {
                     int diff = results.first().getSgv() - results.get(1).getSgv();
                     if (dataStore.isMmolxl())
-                        delta += "Δ " + (diff > 0 ? "+" : "") + new BigDecimal(diff / MMOLXLFACTOR).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        delta += "Δ " + (diff > 0 ? "+" : "") + new BigDecimal(diff / MMOLXLFACTOR).setScale(2, BigDecimal.ROUND_HALF_UP).toPlainString();
                     else
                         delta += "Δ " + (diff > 0 ? "+" : "") + diff;
                     if (deltaTime > 6)

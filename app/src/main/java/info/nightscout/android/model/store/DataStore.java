@@ -59,6 +59,7 @@ public class DataStore extends RealmObject {
     private long sysPollErrorRetry;
     private long sysPollOldSgvRetry;
     private boolean sysEnableWait500ms;
+    private boolean sysEnableUsbPermissionDialog;
 
     private boolean dbgEnableExtendedErrors;
     private boolean dbgEnableUploadErrors;
@@ -78,6 +79,8 @@ public class DataStore extends RealmObject {
     private int nsProfileDefault;
     private float nsActiveInsulinTime;
     private boolean nsEnablePatternChange;
+    private int nsGramsPerExchange;
+    private boolean nsGramsPerExchangeChanged = false;
     private boolean nsEnableInsertBGasCGM;
 
     private boolean urchinEnable;
@@ -450,6 +453,14 @@ public class DataStore extends RealmObject {
         this.sysEnableWait500ms = sysEnableWait500ms;
     }
 
+    public boolean isSysEnableUsbPermissionDialog() {
+        return sysEnableUsbPermissionDialog;
+    }
+
+    public void setSysEnableUsbPermissionDialog(boolean sysEnableUsbPermissionDialog) {
+        this.sysEnableUsbPermissionDialog = sysEnableUsbPermissionDialog;
+    }
+
     public boolean isDbgEnableExtendedErrors() {
         return dbgEnableExtendedErrors;
     }
@@ -584,6 +595,24 @@ public class DataStore extends RealmObject {
 
     public void setNsEnablePatternChange(boolean nsEnablePatternChange) {
         this.nsEnablePatternChange = nsEnablePatternChange;
+    }
+
+    public int getNsGramsPerExchange() {
+        return nsGramsPerExchange;
+    }
+
+    public void setNsGramsPerExchange(int nsGramsPerExchange) {
+        if (this.nsGramsPerExchange != 0 && this.nsGramsPerExchange != nsGramsPerExchange)
+            nsGramsPerExchangeChanged = true;
+        this.nsGramsPerExchange = nsGramsPerExchange;
+    }
+
+    public boolean isNsGramsPerExchangeChanged() {
+        return nsGramsPerExchangeChanged;
+    }
+
+    public void setNsGramsPerExchangeChanged(boolean nsGramsPerExchangeChanged) {
+        this.nsGramsPerExchangeChanged = nsGramsPerExchangeChanged;
     }
 
     public boolean isNsEnableInsertBGasCGM() {

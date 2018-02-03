@@ -61,17 +61,30 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     public List nightscout(DataStore dataStore) {
         List<UploadItem> uploadItems = new ArrayList<>();
 
-        UploadItem uploadItem = new UploadItem();
-        uploadItems.add(uploadItem);
-        EntriesEndpoints.Entry entry = uploadItem.ack(uploadACK).entry();
+        int sgvNS = sgv;
+        if (sgvNS == 0) {
+            if (sensorException == 2) // SENSOR_CAL_NEEDED
+                sgvNS = 5; // nightscout: '?NC' SENSOR_NOT_CALIBRATED
+            else if (sensorException == 5) // SENSOR_CHANGE_SENSOR_ERROR
+                sgvNS = 1; // nightscout: '?SN' SENSOR_NOT_ACTIVE
+            else if (sensorException == 6) // SENSOR_END_OF_LIFE
+                sgvNS = 1; // nightscout: '?SN' SENSOR_NOT_ACTIVE
+        }
 
-        entry.setKey600(key);
-        entry.setType("sgv");
-        entry.setDate(eventDate.getTime());
-        entry.setDateString(eventDate.toString());
+        if (sgvNS > 0) {
+            UploadItem uploadItem = new UploadItem();
+            uploadItems.add(uploadItem);
+            EntriesEndpoints.Entry entry = uploadItem.ack(uploadACK).entry();
 
-        entry.setSgv(sgv);
-        if (cgmTrend != null) entry.setDirection(PumpHistoryParser.TextEN.valueOf("NS_TREND_" + cgmTrend).getText());
+            entry.setKey600(key);
+            entry.setType("sgv");
+            entry.setDate(eventDate.getTime());
+            entry.setDateString(eventDate.toString());
+
+            entry.setSgv(sgvNS);
+            if (cgmTrend != null)
+                entry.setDirection(PumpHistoryParser.TextEN.valueOf("NS_TREND_" + cgmTrend).getText());
+        }
 
         return uploadItems;
     }
@@ -134,6 +147,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
     public static void cgm(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
                            int sgv,
+                           byte sensorException,
                            String trend) {
 
         PumpHistoryCGM object = realm.where(PumpHistoryCGM.class)
@@ -148,6 +162,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
             object.setCgmRTC(eventRTC);
             object.setCgmOFFSET(eventOFFSET);
             object.setSgv(sgv);
+            object.setSensorException(sensorException);
             object.setCgmTrend(trend);
             object.setUploadREQ(true);
         }
