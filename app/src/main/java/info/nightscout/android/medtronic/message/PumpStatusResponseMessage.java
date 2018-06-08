@@ -5,11 +5,13 @@ import android.util.Log;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import info.nightscout.android.utils.HexDump;
 
 import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
 import static info.nightscout.android.utils.ToolKit.read32BEtoULong;
@@ -26,45 +28,64 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     // Data from the Medtronic Pump add message
 
     private byte pumpStatus;
-    private byte cgmStatus;
     private boolean suspended;
     private boolean bolusingNormal;
     private boolean bolusingSquare;
     private boolean bolusingDual;
     private boolean deliveringInsulin;
     private boolean tempBasalActive;
+
+    private byte cgmStatus;
     private boolean cgmActive;
     private boolean cgmCalibrating;
     private boolean cgmCalibrationComplete;
     private boolean cgmException;
     private boolean cgmWarmUp;
+
     private byte activeBasalPattern;
-    private byte activeTempBasalPattern;
     private float basalRate;
+    private float basalUnitsDeliveredToday;
+
+    private byte activeTempBasalPattern;
     private float tempBasalRate;
     private short tempBasalPercentage;
     private short tempBasalMinutesRemaining;
-    private float basalUnitsDeliveredToday;
+
     private short batteryPercentage;
+
     private float reservoirAmount;
     private short minutesOfInsulinRemaining; // 25h == "more than 1 day"
+
     private float activeInsulin;
+
     private int sgv;
+    private PumpStatusEvent.CGM_TREND cgmTrend;
+    private byte cgmExceptionType;
 
     private Date cgmDate;
     private int cgmRTC;
     private int cgmOFFSET;
 
-    private byte cgmExceptionType;
-    private boolean lowSuspendActive;
-    private PumpStatusEvent.CGM_TREND cgmTrend;
+    private byte plgmStatus;
+    private boolean plgmAlertOnHigh;
+    private boolean plgmAlertOnLow;
+    private boolean plgmAlertBeforeHigh;
+    private boolean plgmAlertBeforeLow;
+    private boolean plgmAlertSuspend;
+    private boolean plgmAlertSuspendLow;
+
     private boolean recentBolusWizard; // Whether a bolus wizard has been run recently
     private int recentBGL; // in mg/dL. 0 means no recent finger bg reading.
-    private short alert;
 
+    private short alert;
     private Date alertDate;
     private int alertRTC;
     private int alertOFFSET;
+    private short alertSilenceMinutesRemaining;
+    private byte alertSilenceStatus;
+    private boolean alertSilenceHigh;
+    private boolean alertSilenceHighLow;
+    private boolean alertSilenceAll;
 
     private float bolusingDelivered;
     private short bolusingMinutesRemaining;
@@ -72,6 +93,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
     private float lastBolusAmount;
     private Date lastBolusDate;
     private byte lastBolusReference;
+
     private byte transmitterBattery;
     private byte transmitterControl;
     private short calibrationDueMinutes;
@@ -93,16 +115,17 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         pumpStatus = payload[0x03];
         cgmStatus = payload[0x41];
 
-        suspended = (pumpStatus & 0x01) != 0x00;
-        bolusingNormal = (pumpStatus & 0x02) != 0x00;
-        bolusingSquare = (pumpStatus & 0x04) != 0x00;
-        bolusingDual = (pumpStatus & 0x08) != 0x00;
-        deliveringInsulin = (pumpStatus & 0x10) != 0x00;
-        tempBasalActive = (pumpStatus & 0x20) != 0x00;
-        cgmActive = (pumpStatus & 0x40) != 0x00;
-        cgmCalibrating = (cgmStatus & 0x01) != 0x00;
-        cgmCalibrationComplete = (cgmStatus & 0x02) != 0x00;
-        cgmException = (cgmStatus & 0x04) != 0x00;
+        suspended = (pumpStatus & 0x01) != 0;
+        bolusingNormal = (pumpStatus & 0x02) != 0;
+        bolusingSquare = (pumpStatus & 0x04) != 0;
+        bolusingDual = (pumpStatus & 0x08) != 0;
+        deliveringInsulin = (pumpStatus & 0x10) != 0;
+        tempBasalActive = (pumpStatus & 0x20) != 0;
+
+        cgmActive = (pumpStatus & 0x40) != 0;
+        cgmCalibrating = (cgmStatus & 0x01) != 0;
+        cgmCalibrationComplete = (cgmStatus & 0x02) != 0;
+        cgmException = (cgmStatus & 0x04) != 0;
 
         // Active basal pattern
         byte pattern = payload[0x1A];
@@ -163,13 +186,17 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
             cgmWarmUp = false;
         }
 
-        // Predictive low suspend
-        // TODO - there is more status info in this byte other than just a boolean yes/no
-        // noted: 0x01=high 0x04=before high 0x08=before low 0x0A=low 0x80=suspend 0x92=suspend low
-        lowSuspendActive = payload[0x3F] != 0;
+        // PLGM
+        plgmStatus = payload[0x3F];
+        plgmAlertOnHigh = (plgmStatus & 0x01) != 0;
+        plgmAlertOnLow = (plgmStatus & 0x02) != 0;
+        plgmAlertBeforeHigh = (plgmStatus & 0x04) != 0;
+        plgmAlertBeforeLow = (plgmStatus & 0x08) != 0;
+        plgmAlertSuspend = (plgmStatus & 0x80) != 0;
+        plgmAlertSuspendLow = (plgmStatus & 0x10) != 0; // needs discovery confirmation!
 
         // Recent Bolus Wizard
-        recentBolusWizard = payload[0x48] != 0;
+        recentBolusWizard = payload[0x48] != 0; // needs discovery work!
 
         // Recent BGL
         recentBGL = read16BEtoUInt(payload, 0x49); // In mg/DL
@@ -179,6 +206,11 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         alertRTC = read32BEtoInt(payload, 0x4D);
         alertOFFSET = read32BEtoInt(payload, 0x51);
         alertDate = MessageUtils.decodeDateTime(alertRTC & 0xFFFFFFFFL, alertOFFSET);
+        alertSilenceMinutesRemaining = read16BEtoShort(payload, 0x56);
+        alertSilenceStatus = payload[0x55];
+        alertSilenceHigh = (alertSilenceStatus & 0x01) != 0;
+        alertSilenceHighLow = (alertSilenceStatus & 0x02) != 0;
+        alertSilenceAll = (alertSilenceStatus & 0x04) != 0;
 
         // Now bolusing
         long rawBolusingDelivered = read32BEtoULong(payload, 0x04);
@@ -279,18 +311,27 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         pumpRecord.setCgmTrend(cgmTrend);
         pumpRecord.setCgmExceptionType(cgmExceptionType);
 
-        // Predictive low suspend
-        // TODO - there is more status info in this byte other than just a boolean yes/no
-        pumpRecord.setLowSuspendActive(lowSuspendActive);
+        // PLGM
+        pumpRecord.setPlgmStatus(plgmStatus);
+        pumpRecord.setPlgmAlertOnHigh(plgmAlertOnHigh);
+        pumpRecord.setPlgmAlertOnLow(plgmAlertOnLow);
+        pumpRecord.setPlgmAlertBeforeHigh(plgmAlertBeforeHigh);
+        pumpRecord.setPlgmAlertBeforeLow(plgmAlertBeforeLow);
+        pumpRecord.setPlgmAlertSuspend(plgmAlertSuspend);
+        pumpRecord.setPlgmAlertSuspendLow(plgmAlertSuspendLow);
 
         // Recent BGL
         pumpRecord.setRecentBGL(recentBGL); // In mg/DL
 
         // Active alert
         pumpRecord.setAlert(alert);
-        pumpRecord.setAlertRTC(cgmRTC);
-        pumpRecord.setAlertOFFSET(cgmOFFSET);
-        //pumpRecord.setAlertDate(new Date(alertDate.getTime() - pumpRecord.getClockDifference()));
+        pumpRecord.setAlertRTC(alertRTC);
+        pumpRecord.setAlertOFFSET(alertOFFSET);
+        pumpRecord.setAlertSilenceMinutesRemaining(alertSilenceMinutesRemaining);
+        pumpRecord.setAlertSilenceStatus(alertSilenceStatus);
+        pumpRecord.setAlertSilenceHigh(alertSilenceHigh);
+        pumpRecord.setAlertSilenceHighLow(alertSilenceHighLow);
+        pumpRecord.setAlertSilenceAll(alertSilenceAll);
 
         // Date using alertRTC + eventOFFSET as pump clock may have changed
         Date alertEventDate = MessageUtils.decodeDateTime(alertRTC & 0xFFFFFFFFL, pumpRecord.getEventOFFSET());

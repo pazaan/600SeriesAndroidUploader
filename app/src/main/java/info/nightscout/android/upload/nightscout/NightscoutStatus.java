@@ -2,8 +2,6 @@ package info.nightscout.android.upload.nightscout;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -79,7 +77,8 @@ public class NightscoutStatus {
         available = dataStore.isNightscoutAvailable();
         reporttime = dataStore.getNightscoutReportTime();
 
-        if (!isOnline()) {
+        //if (!isOnline()) {
+        if (!UploaderApplication.isOnline()) {
             available = false;
             if (dataStore.isDbgEnableUploadErrors())
                 userLogMessage(ICON_WARN + "Offline / No internet service");
@@ -179,7 +178,7 @@ public class NightscoutStatus {
 
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
-            public void execute(Realm realm) {
+            public void execute(@NonNull Realm realm) {
                 dataStore.setNightscoutAvailable(available);
                 dataStore.setNightscoutReportTime(reporttime);
                 dataStore.setNightscoutCareportal(ns_careportal);
@@ -289,13 +288,14 @@ public class NightscoutStatus {
         }
         return sb.toString();
     }
-
+/*
     private boolean isOnline() {
-        ConnectivityManager cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager) mContext.getApplicationContext()
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         return netInfo != null && netInfo.isConnectedOrConnecting();
     }
-
+*/
     protected void userLogMessage(String message) {
         try {
             Intent intent =

@@ -21,7 +21,8 @@ public class CloseConnectionRequestMessage extends ContourNextLinkBinaryRequestM
     @Override
     public CloseConnectionResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
 
-        clearMessage(mDevice, CLEAR_TIMEOUT_MS);
+//        clearMessage(mDevice, CLEAR_TIMEOUT_MS);
+        clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
 
         sendMessage(mDevice);
         if (millis > 0) {

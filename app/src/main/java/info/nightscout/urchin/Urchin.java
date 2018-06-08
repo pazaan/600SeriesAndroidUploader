@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 import info.nightscout.android.UploaderApplication;
-import info.nightscout.android.medtronic.PumpHistoryParser;
+import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
@@ -112,13 +112,6 @@ public class Urchin {
         update();
     }
 
-    private void openRealm() {
-        realm = Realm.getDefaultInstance();
-        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-        historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
-        dataStore = storeRealm.where(DataStore.class).findFirst();
-    }
-
     private void closeRealm() {
         if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
         if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
@@ -168,7 +161,8 @@ public class Urchin {
     }
 
     public void update() {
-        openRealm();
+        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        dataStore = storeRealm.where(DataStore.class).findFirst();
 
         if (!dataStore.isUrchinEnable()) {
             Log.d(TAG, "update: urchin disabled");
@@ -176,24 +170,29 @@ public class Urchin {
             pebbleAckReceiver = null;
 
         } else {
-
             Log.d(TAG, "update: urchin enabled");
+
+            realm = Realm.getDefaultInstance();
+            historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
             timeNow = System.currentTimeMillis();
             ignoreACK = timeNow + 2000L;
 
             RealmResults<PumpStatusEvent> pumpresults = realm.where(PumpStatusEvent.class)
                     .greaterThan("eventDate", new Date(timeNow - 24 * 60 * 1000L))
-                    .findAllSorted("eventDate", Sort.DESCENDING);
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findAll();
 
             RealmResults<PumpStatusEvent> cgmresults = pumpresults.where()
                     .equalTo("cgmActive", true)
-                    .findAllSorted("cgmDate", Sort.DESCENDING);
+                    .sort("cgmDate", Sort.DESCENDING)
+                    .findAll();
 
             RealmResults<PumpHistoryCGM> sgvresults = historyRealm.where(PumpHistoryCGM.class)
                     .notEqualTo("sgv", 0)
                     .greaterThan("eventDate", new Date(timeNow - 2 * 60 * 60000L))
-                    .findAllSorted("eventDate", Sort.DESCENDING);
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findAll();
 
             long lastReceivedEventTime;
             long lastReceivedCgmTime;
@@ -298,7 +297,8 @@ public class Urchin {
         RealmResults<PumpHistoryCGM> results = historyRealm.where(PumpHistoryCGM.class)
                 .greaterThan("eventDate", new Date(time - (GRAPH_MAX_SGV_COUNT * TIME_STEP)))
                 .notEqualTo("sgv", 0)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         Iterator<PumpHistoryCGM> iterator = results.iterator();
         PumpHistoryCGM record = null;
@@ -335,7 +335,8 @@ public class Urchin {
         RealmResults<PumpStatusEvent> results = realm
                 .where(PumpStatusEvent.class)
                 .greaterThanOrEqualTo("eventDate", limitDate)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         Iterator<PumpStatusEvent> iterator = results.iterator();
         PumpStatusEvent record = null;
@@ -410,7 +411,8 @@ public class Urchin {
             RealmResults<PumpHistoryBolus> results = historyRealm.where(PumpHistoryBolus.class)
                     .greaterThan("eventDate", new Date(time - (GRAPH_MAX_SGV_COUNT * TIME_STEP)))
                     .equalTo("programmed", true)
-                    .findAllSorted("eventDate", Sort.DESCENDING);
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findAll();
 
             Iterator<PumpHistoryBolus> iterator = results.iterator();
             PumpHistoryBolus record = null;
@@ -446,9 +448,10 @@ public class Urchin {
 
             RealmResults<PumpHistoryBolus> results = historyRealm.where(PumpHistoryBolus.class)
                     .greaterThan("eventDate", new Date(time - (GRAPH_MAX_SGV_COUNT * TIME_STEP) - (8 * 60 * 60000L)))
-                    .notEqualTo("bolusType", PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.get())
+                    .notEqualTo("bolusType", PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.value())
                     .equalTo("programmed", true)
-                    .findAllSorted("eventDate", Sort.DESCENDING);
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findAll();
 
             Iterator<PumpHistoryBolus> iterator = results.iterator();
             PumpHistoryBolus record = null;
@@ -512,7 +515,8 @@ public class Urchin {
         RealmResults<PumpHistoryBolus> results = historyRealm.where(PumpHistoryBolus.class)
                 .greaterThan("eventDate", new Date(timeNow - 12 * 60 * 60000L))
                 .equalTo("programmed", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() > 0) {
             if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(results.first().getBolusType())) {
@@ -553,12 +557,13 @@ public class Urchin {
             if (pumpStatusEvent.isSuspended()) {
                 RealmResults<PumpHistoryBasal> suspend = historyRealm.where(PumpHistoryBasal.class)
                         .greaterThan("eventDate", new Date(timeNow - 12 * 60 * 60000L))
-                        .equalTo("suspend", true)
+                        .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.SUSPEND.value())
                         .or()
-                        .equalTo("resume", true)
-                        .findAllSorted("eventDate", Sort.DESCENDING);
+                        .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.RESUME.value())
+                        .sort("eventDate", Sort.DESCENDING)
+                        .findAll();
                 // check if most recent suspend is in history and show the start time
-                if (suspend.size() > 0 && suspend.first().isSuspend())
+                if (suspend.size() > 0 && PumpHistoryBasal.RECORDTYPE.SUSPEND.equals(suspend.first().getRecordtype()))
                     rate = (float) 0;
 
             } else if (pumpStatusEvent.isTempBasalActive()) {
@@ -582,12 +587,13 @@ public class Urchin {
             if (pumpStatusEvent.isSuspended()) {
                 RealmResults<PumpHistoryBasal> suspend = historyRealm.where(PumpHistoryBasal.class)
                         .greaterThan("eventDate", new Date(timeNow - 12 * 60 * 60000L))
-                        .equalTo("suspend", true)
+                        .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.SUSPEND.value())
                         .or()
-                        .equalTo("resume", true)
-                        .findAllSorted("eventDate", Sort.DESCENDING);
+                        .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.RESUME.value())
+                        .sort("eventDate", Sort.DESCENDING)
+                        .findAll();
                 // check if most recent suspend is in history and show the start time
-                if (suspend.size() > 0 && suspend.first().isSuspend())
+                if (suspend.size() > 0 && PumpHistoryBasal.RECORDTYPE.SUSPEND.equals(suspend.first().getRecordtype()))
                     text = "S" + styleConcatenate() + styleTime(suspend.first().getEventDate().getTime());
 
             } else if (pumpStatusEvent.isTempBasalActive()) {
@@ -616,12 +622,13 @@ public class Urchin {
             if (pumpStatusEvent.isSuspended()) {
                 RealmResults<PumpHistoryBasal> suspend = historyRealm.where(PumpHistoryBasal.class)
                         .greaterThan("eventDate", new Date(timeNow - 12 * 60 * 60000L))
-                        .equalTo("suspend", true)
+                        .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.SUSPEND.value())
                         .or()
-                        .equalTo("resume", true)
-                        .findAllSorted("eventDate", Sort.DESCENDING);
+                        .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.RESUME.value())
+                        .sort("eventDate", Sort.DESCENDING)
+                        .findAll();
                 // check if most recent suspend is in history and show the start time
-                if (suspend.size() > 0 && suspend.first().isSuspend())
+                if (suspend.size() > 0 && PumpHistoryBasal.RECORDTYPE.SUSPEND.equals(suspend.first().getRecordtype()))
                     text = "S" + styleConcatenate() + styleTime(suspend.first().getEventDate().getTime());
 
             } else if (pumpStatusEvent.isTempBasalActive()) {
@@ -676,8 +683,9 @@ public class Urchin {
     private String pumpBatteryAge() {
         String text = "";
         RealmResults<PumpHistoryMisc> results = historyRealm.where(PumpHistoryMisc.class)
-                .equalTo("item", 2)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_BATTERY.value())
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
         if (results.size() > 0)
             text = ((timeNow - results.first().getEventDate().getTime()) / (24 * 60 * 60000L)) + "d";
         return text;
@@ -693,8 +701,9 @@ public class Urchin {
     private String pumpReservoirAge() {
         String text = "";
         RealmResults<PumpHistoryMisc> results = historyRealm.where(PumpHistoryMisc.class)
-                .equalTo("item", 3)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_CANNULA.value())
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
         if (results.size() > 0)
             text = ((timeNow - results.first().getEventDate().getTime()) / (60 * 60000L)) + "h";
         return text;
@@ -709,8 +718,9 @@ public class Urchin {
 
     private int sensorHours() {
         RealmResults<PumpHistoryMisc> results = historyRealm.where(PumpHistoryMisc.class)
-                .equalTo("item", 1)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR.value())
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
         if (results.size() > 0)
             return (int) ((timeNow - results.first().getEventDate().getTime()) / (60 * 60000L));
         else return -1;

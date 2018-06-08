@@ -1,4 +1,4 @@
-package info.nightscout.android;
+package info.nightscout.android.history;
 
 import android.content.Context;
 import android.util.Log;
@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Iterator;
 
-import info.nightscout.android.medtronic.PumpHistoryParser;
 import info.nightscout.android.medtronic.message.MessageUtils;
 
 import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
@@ -26,16 +25,18 @@ public class HistoryDebug {
     private static final String TAG = HistoryDebug.class.getSimpleName();
 
     private Context mContext;
+    private PumpHistoryHandler pumpHistoryHandler;
 
     private int pumpRTC;
     private int pumpOFFSET;
 
     private byte[] eventData;
 
-    public HistoryDebug(Context context) {
+    public HistoryDebug(Context context, PumpHistoryHandler pumpHistoryHandler) {
         Log.d(TAG, "initialise HistoryDebug");
 
-        mContext = context;
+        this.mContext = context;
+        this.pumpHistoryHandler = pumpHistoryHandler;
     }
 
     public void run() {
@@ -46,17 +47,17 @@ public class HistoryDebug {
         //logcatCGM("20180101-caty-670G-3-months.json");
         //logcatPUMP("20180101-caty-670G-3-months.json");
 
-        //history("20180101-caty-670G-3-months.json");
+        history("20180101-caty-670G-3-months.json");
 
-        history("20180104-caty-670G-2-weeks.json");
+        //history("20180104-caty-670G-2-weeks.json");
     }
 
     public void history(String file) {
         read(file, "cbg_pages");
         calcRTCandOFFSET(new Date(System.currentTimeMillis()));
-        new PumpHistoryParser(eventData).process(pumpRTC, pumpOFFSET, 0, 0, 0);
+        //new PumpHistoryParser(eventData).process(pumpHistoryHandler.pumpHistorySender, pumpRTC, pumpOFFSET, 0, 0, 0);
         read(file, "pages");
-        new PumpHistoryParser(eventData).process(pumpRTC, pumpOFFSET, 0, 0, 0);
+        new PumpHistoryParser(eventData).process(pumpHistoryHandler.pumpHistorySender, pumpRTC, pumpOFFSET, 0, 0, 0);
     }
 
     // file = json file stored in assets

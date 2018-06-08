@@ -7,7 +7,10 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
+import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.service.MasterService;
+import info.nightscout.android.model.store.DataStore;
+import io.realm.Realm;
 
 /**
  * Created by Pogman on 8.9.17.
@@ -28,14 +31,30 @@ public class UsbActivity extends AppCompatActivity {
         // else let the service know we have usb permission and to start/resume polling
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (!prefs.getBoolean("EnableCgmService", false)) {
-            Log.d(TAG, "starting main activity");
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-        } else {
+
+        boolean service = false;
+
+        if (prefs.getBoolean("EnableCgmService", false)) {
+
+            Realm storeRealm = null;
+            try {
+                storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+                if (storeRealm.where(DataStore.class).findFirst() != null) service = true;
+            } catch (Exception ignored) {
+            } finally {
+                if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
+            }
+
+        }
+
+        if (service) {
             Log.d(TAG, "starting master service");
             startService(new Intent(this, MasterService.class));
             sendBroadcast(new Intent(MasterService.Constants.ACTION_HAS_USB_PERMISSION));
+        } else {
+            Log.d(TAG, "starting main activity");
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
         }
 
         finish();

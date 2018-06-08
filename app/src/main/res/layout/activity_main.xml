@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="5sp"
-            android:text="never"
+            android:text="@string/main_never"
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <LinearLayout
@@ -53,7 +53,7 @@
                 android:layout_gravity="bottom"
                 android:layout_weight="1"
                 android:maxLines="1"
-                android:text="-"
+                android:text="@string/text_dash"
                 android:textAlignment="center"
                 android:textAppearance="?android:attr/textAppearanceLarge"
                 android:textSize="70sp" />
@@ -72,7 +72,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center|top"
                     android:maxLines="1"
-                    android:text="-"
+                    android:text="@string/text_dash"
                     android:textAppearance="?android:attr/textAppearanceLarge"
                     android:textSize="40sp" />
 
@@ -81,7 +81,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="mmol/L"
+                    android:text="@string/text_unit_mgdl"
                     android:textAppearance="?android:attr/textAppearanceSmall"
                     android:maxLines="1" />
 
@@ -100,21 +100,25 @@
                 android:id="@+id/label_iob"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Active Insulin: "
+                android:text="@string/main_active_insulin"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
                 android:id="@+id/textview_iob"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="-"
+                android:layout_marginLeft="5sp"
+                android:layout_marginStart="5sp"
+                android:text="@string/text_dash"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <TextView
                 android:id="@+id/label_units"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text=" U"
+                android:layout_marginLeft="5sp"
+                android:layout_marginStart="5sp"
+                android:text="@string/text_insulin_unit"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
         </LinearLayout>
 
@@ -155,13 +159,13 @@
                     android:id="@+id/button_log_top"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="older log entries" />
+                    android:text="@string/older_log_entries" />
 
                 <Button
                     android:id="@+id/button_log_top_recent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="most recent" />
+                    android:text="@string/most_recent" />
             </LinearLayout>
 
             <com.mikepenz.iconics.view.IconicsTextView
@@ -185,13 +189,13 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="newer log entries" />
+                    android:text="@string/newer_log_entries" />
 
                 <Button
                     android:id="@+id/button_log_bottom_recent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="most recent" />
+                    android:text="@string/most_recent" />
             </LinearLayout>
 
         </LinearLayout>

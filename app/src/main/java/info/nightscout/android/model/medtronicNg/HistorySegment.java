@@ -8,7 +8,7 @@ import io.realm.RealmObject;
  * Created by Pogman on 23.10.17.
  */
 
-public class PumpHistorySegment extends RealmObject {
+public class HistorySegment extends RealmObject {
     private Date fromDate;
     private Date toDate;
     private byte historyType;

@@ -14,16 +14,35 @@ public class ToolKit {
     private static final boolean debug_wakelocks = true;
 
     public static PowerManager.WakeLock getWakeLock(Context context, final String name, int millis) {
-        final PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, name);
-        wl.acquire(millis);
-        if (debug_wakelocks) Log.d(TAG, "getWakeLock: " + name + " " + wl.toString());
-        return wl;
+        try {
+            final PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, name);
+            wl.acquire(millis);
+            if (debug_wakelocks) Log.d(TAG, "getWakeLock: " + name + " " + wl.toString());
+            return wl;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    public static void acquireWakelock(PowerManager.WakeLock wl, int millis) {
+        try {
+            if (wl != null && wl.isHeld()) {
+                if (debug_wakelocks) Log.d(TAG, "acquireWakelock: " + wl.toString() + " acquire " + millis + "ms");
+                wl.acquire(millis);
+            } else {
+                if (debug_wakelocks) Log.d(TAG, "acquireWakelock: null / not held");
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     public static void releaseWakeLock(PowerManager.WakeLock wl) {
         if (debug_wakelocks) Log.d(TAG, "releaseWakeLock: " + wl.toString());
-        if (wl.isHeld()) wl.release();
+        try {
+            if (wl != null && wl.isHeld()) wl.release();
+        } catch (Exception ignored) {
+        }
     }
 
     public static short read8toShort(byte[] data, int offset) {

@@ -91,6 +91,9 @@ public interface TreatmentsEndpoints {
         @SerializedName("glucose")
         private BigDecimal glucose;
 
+        @SerializedName("isAnnouncement")
+        private Boolean isAnnouncement;
+
         public String get_id() {
             return _id;
         }
@@ -265,6 +268,14 @@ public interface TreatmentsEndpoints {
 
         public void setGlucose(BigDecimal glucose) {
             this.glucose = glucose;
+        }
+
+        public Boolean getAnnouncement() {
+            return isAnnouncement;
+        }
+
+        public void setAnnouncement(Boolean announcement) {
+            isAnnouncement = announcement;
         }
 
         public void setCreated_at(Date created_at) {

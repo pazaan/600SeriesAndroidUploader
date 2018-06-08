@@ -1,6 +1,8 @@
 package info.nightscout.api;
 
 
+import android.support.annotation.NonNull;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -48,7 +50,7 @@ public class UploadApi {
             }
 
             @Override
-            public Response intercept(Interceptor.Chain chain) throws IOException {
+            public Response intercept(@NonNull Interceptor.Chain chain) throws IOException {
                 Request original = chain.request();
 
                 Request.Builder requestBuilder = original.newBuilder()

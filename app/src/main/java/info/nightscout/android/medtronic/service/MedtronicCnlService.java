@@ -5,34 +5,45 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbEndpoint;
+import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.concurrent.TimeoutException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-import info.nightscout.android.HistoryDebug;
+import info.nightscout.android.history.HistoryDebug;
+import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.MedtronicCnlReader;
-import info.nightscout.android.medtronic.PumpHistoryHandler;
+import info.nightscout.android.history.PumpHistoryHandler;
+import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.medtronic.message.ContourNextLinkCommandMessage;
+import info.nightscout.android.medtronic.message.ContourNextLinkMessage;
+import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
+import info.nightscout.android.model.medtronicNg.PumpHistorySystem;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.utils.HexDump;
+import info.nightscout.android.utils.FormatKit;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -101,10 +112,12 @@ public class MedtronicCnlService extends Service {
     private int PumpBatteryError;
 
     private long pumpClockDifference;
+    private long pollInterval;
 
     private boolean shutdownProtect = false;
 
     // debug use: temporary for error investigation
+    public static long cnlClearTimer = 0;
     public static int cnlClear = 0;
     public static int cnl0x81 = 0;
 
@@ -155,7 +168,7 @@ public class MedtronicCnlService extends Service {
         }
 
         // kill process if it's been around too long, stops android killing us without warning due to process age (if mid-comms can crash the CNL E86/E81)
-        long uptime = UploaderApplication.getUptime() / 60000;
+        long uptime = UploaderApplication.getUptime() / 60000L;
         if (uptime > 60) {
             Log.d(TAG, "process uptime exceeded, killing process now. Uptime: " + uptime + " minutes");
             android.os.Process.killProcess(android.os.Process.myPid());
@@ -168,7 +181,7 @@ public class MedtronicCnlService extends Service {
 
         // Protection for older Android versions (v4 and v5)
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M  && readPump != null) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M && readPump != null) {
             sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_FINISHED).putExtra("nextpoll", System.currentTimeMillis() + 30000L));
             pullEmergencyBrake();
         }
@@ -205,7 +218,7 @@ public class MedtronicCnlService extends Service {
         // less then ideal but we need to stop CNL comms asap before android kills us while protecting comms that must complete to avoid a CNL E86 error
 
         if (mHidDevice != null) {
-            Log.d(TAG, "comms in progress, pull the emergency brake!");
+            Log.w(TAG, "comms in progress, pull the emergency brake!");
 
             long now = System.currentTimeMillis();
             while (shutdownProtect && (System.currentTimeMillis() - now) < 1000L) {
@@ -217,18 +230,18 @@ public class MedtronicCnlService extends Service {
                 }
             }
 
-            try {
-                new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
-                        .sendNoResponse(mHidDevice);
-                Thread.sleep(10);
-            } catch (IOException | InterruptedException | EncryptionException | ChecksumException | UnexpectedMessageException | TimeoutException ignored) {
+            if (mHidDevice != null) {
+                try {
+                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT)
+                            .sendNoResponse(mHidDevice);
+                    Thread.sleep(10);
+                } catch (IOException | InterruptedException | EncryptionException | ChecksumException | UnexpectedMessageException | TimeoutException ignored) {
+                }
             }
 
-            mHidDevice.close();
-            mHidDevice = null;
+            if (mHidDevice != null) mHidDevice.close();
         }
 
-        stopSelf();
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
@@ -247,7 +260,7 @@ public class MedtronicCnlService extends Service {
     private void writeDataStore() {
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
-            public void execute(Realm realm) {
+            public void execute(@NonNull Realm realm) {
                 dataStore.setPumpCgmNA(PumpCgmNA);
                 dataStore.setCommsSuccess(CommsSuccess);
                 dataStore.setCommsError(CommsError);
@@ -278,6 +291,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
 */
 
+    private long timePollStarted;
+
     private class ReadPump extends Thread {
         public void run() {
             Log.d(TAG, "readPump called");
@@ -286,49 +301,57 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_ACTIVE));
 
-            long timePollStarted = System.currentTimeMillis();
+            //long timePollStarted = System.currentTimeMillis();
+            timePollStarted = System.currentTimeMillis();
             long nextpoll = 0;
 
-            // note: Realm use only in this thread!
-            realm = Realm.getDefaultInstance();
-            storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-            dataStore = storeRealm.where(DataStore.class).findFirst();
-
-            pumpHistoryHandler = new PumpHistoryHandler(mContext);
-
-            readDataStore();
-
             // debug use:
+            cnlClearTimer = 0;
             cnlClear = 0;
             cnl0x81 = 0;
 
+            FormatKit.getInstance(mContext);
+
             try {
-/*
-                if (false) {
-                    userLogMessage("Adding history from file");
-                    new HistoryDebug(mContext).run();
-                    userLogMessage("Processing done");
-                    nextpoll = 0;
-                    return;
-                }
-*/
-                long pollInterval = dataStore.getPollInterval();
+                // note: Realm use only in this thread!
+                realm = Realm.getDefaultInstance();
+                storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+                dataStore = storeRealm.where(DataStore.class).findFirst();
+
+                readDataStore();
+                pumpHistoryHandler = new PumpHistoryHandler(mContext);
+
+                //pumpHistoryHandler.reupDailyTotal();
+                //if (true) return;
+
+                //pumpHistoryHandler.reupload(PumpHistoryBG.class, "NS");
+
+                //if (debugHistory(true)) return;
+
+                pollInterval = dataStore.getPollInterval();
 
                 if (!openUsbDevice()) {
                     Log.w(TAG, "Could not open usb device");
 //                userLogMessage(ICON_WARN + "Could not open usb device");
+
+                    pumpHistoryHandler.systemStatus(PumpHistorySystem.STATUS.CNL_USB_ERROR);
+
                     return;
                 }
 
                 long due = checkPollTime();
                 if (due > 0) {
                     if (dataStore.isSysEnableClashProtect()) {
-                        userLogMessage("Please wait: Pump is expecting sensor communication. Poll due in " + ((due - System.currentTimeMillis()) / 1000L) + " seconds");
+                        userLogMessage(String.format(Locale.getDefault(),
+                                getString(R.string.please_wait) + ": " + getString(R.string.pump_is_expecting_sensor_communication),
+                                (due - System.currentTimeMillis()) / 1000L));
                         nextpoll = due;
                         return;
                     } else {
-                        userLogMessage("Pump is expecting sensor communication. Poll due in " + ((due - System.currentTimeMillis()) / 1000L) + " seconds");
-                        userLogMessage(ICON_SETTING + "Radio clash protection is disabled.");
+                        userLogMessage(String.format(Locale.getDefault(),
+                                getString(R.string.pump_is_expecting_sensor_communication),
+                                (due - System.currentTimeMillis()) / 1000L));
+                        userLogMessage(ICON_SETTING + getString(R.string.radio_clash_protection_is_disabled));
                     }
                 }
 
@@ -336,8 +359,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (dataStore.isSysEnableWait500ms()) cnlReader.setCnlCommandMessageSleepMS(500);
 
                 try {
-                    userLogMessage("Connecting to Contour Next Link ");
                     Log.d(TAG, "Connecting to Contour Next Link [pid" + android.os.Process.myPid() + "]");
+                    userLogMessage(getString(R.string.connecting_to_contour_next_link));
 
                     shutdownProtect = true;
                     cnlReader.requestDeviceInfo();
@@ -346,7 +369,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     if (realm.where(ContourNextLinkInfo.class).equalTo("serialNumber", cnlReader.getStickSerial()).findFirst() == null) {
                         realm.executeTransaction(new Realm.Transaction() {
                             @Override
-                            public void execute(Realm realm) {
+                            public void execute(@NonNull Realm realm) {
                                 realm.createObject(ContourNextLinkInfo.class, cnlReader.getStickSerial());
                             }
                         });
@@ -367,19 +390,22 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                         cnlReader.requestReadInfo();
 
-                        // investigation: Negotiate Chan 0x81 empty response issue, always requesting key seems to stop this happening? why that?
-                        // negotiateChannel has more details
                         cnlReader.requestLinkKey();
-                        //info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
+                        realm.executeTransaction(new Realm.Transaction() {
+                            @Override
+                            public void execute(@NonNull Realm realm) {
+                                info.setKey(MessageUtils.byteArrayToHexString(cnlReader.getPumpSession().getKey()));
+                            }
+                        });
 
                         final long pumpMAC = cnlReader.getPumpSession().getPumpMAC();
-                        Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xffffff));
+                        Log.i(TAG, "PumpInfo MAC: " + (pumpMAC & 0xFFFFFF));
 
                         // Is activePump already configured?
                         if (realm.where(PumpInfo.class).equalTo("pumpMac", pumpMAC).findFirst() == null) {
                             realm.executeTransaction(new Realm.Transaction() {
                                 @Override
-                                public void execute(Realm realm) {
+                                public void execute(@NonNull Realm realm) {
                                     realm.createObject(PumpInfo.class, pumpMAC);
                                 }
                             });
@@ -391,10 +417,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                         final byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                         if (radioChannel == 0) {
-                            userLogMessage(ICON_WARN + "Could not communicate with the pump. Is it nearby?");
                             Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
+                            userLogMessage(ICON_WARN + getString(R.string.could_not_communicate_with_the_pump));
                             CommsConnectError++;
-                            pollInterval = POLL_PERIOD_MS / (dataStore.isDoublePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
+                            pollInterval = pollInterval / (dataStore.isDoublePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
+
+                            pumpHistoryHandler.systemStatus(PumpHistorySystem.STATUS.COMMS_PUMP_LOST);
+
+                            /*
                         } else if (cnlReader.getPumpSession().getRadioRSSIpercentage() < 5) {
                             userLogMessage(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
                             userLogMessage(ICON_WARN + "Warning: pump signal too weak. Is it nearby?");
@@ -402,14 +432,16 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             CommsConnectError++;
                             CommsSignalError++;
                             pollInterval = POLL_PERIOD_MS / (dataStore.isDoublePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
+*/
                         } else {
                             if (CommsConnectError > 0) CommsConnectError--;
                             if (cnlReader.getPumpSession().getRadioRSSIpercentage() < 20)
                                 CommsSignalError++;
                             else if (CommsSignalError > 0) CommsSignalError--;
 
-                            userLogMessage(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
-                            Log.d(TAG, String.format("Connected to Contour Next Link on channel %d.", (int) radioChannel));
+                            Log.d(TAG, String.format("Connected on channel %d  RSSI: %d%%", radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
+                            userLogMessage(String.format(Locale.getDefault(), getString(R.string.connected_on_channel_rssi),
+                                    radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
 
                             // read pump status
                             final PumpStatusEvent pumpRecord = new PumpStatusEvent();
@@ -422,8 +454,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             cnlReader.getPumpTime();
                             pumpClockDifference = cnlReader.getSessionClockDifference();
 
-                            // TODO - add a check to see of status update is needed? may just need history update?
-
                             pumpRecord.setEventDate(cnlReader.getSessionDate());
                             pumpRecord.setEventRTC(cnlReader.getSessionRTC());
                             pumpRecord.setEventOFFSET(cnlReader.getSessionOFFSET());
@@ -435,7 +465,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             // write completed record to storage
                             realm.executeTransaction(new Realm.Transaction() {
                                 @Override
-                                public void execute(Realm realm) {
+                                public void execute(@NonNull Realm realm) {
                                     activePump.setLastRadioChannel(radioChannel);
                                     activePump.setDeviceName(deviceName);
                                     activePump.getPumpHistory().add(pumpRecord);
@@ -445,61 +475,27 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             CommsSuccess++;
                             CommsError = 0;
 
-                            if (pumpRecord.getBatteryPercentage() <= 25) {
-                                PumpBatteryError++;
-                                pollInterval = dataStore.getLowBatPollInterval();
-                            } else {
-                                PumpBatteryError = 0;
-                            }
-
-                            if (pumpRecord.isCgmActive()) {
-                                PumpCgmNA = 0; // poll clash detection
-                                PumpLostSensorError = 0;
-
-                                if (pumpRecord.isCgmWarmUp())
-                                    userLogMessage(ICON_CGM + "sensor is in warm-up phase");
-                                else if (pumpRecord.getCalibrationDueMinutes() == 0)
-                                    userLogMessage(ICON_CGM + "sensor calibration is due now!");
-                                else if (pumpRecord.getSgv() == 0 && pumpRecord.isCgmCalibrating())
-                                    userLogMessage(ICON_CGM + "sensor is calibrating");
-                                else if (pumpRecord.getSgv() == 0)
-                                    userLogMessage(ICON_CGM + "sensor error (pump graph gap)");
-                                else {
-                                    CommsSgvSuccess++;
-                                    userLogMessage("SGV: ¦" + pumpRecord.getSgv()
-                                            + "¦  At: " + dateFormatter.format(pumpRecord.getCgmDate().getTime())
-                                            + "  Pump: " + (pumpClockDifference > 0 ? "+" : "") + (pumpClockDifference / 1000L) + "sec");
-                                    if (pumpRecord.isCgmCalibrating())
-                                        userLogMessage(ICON_CGM + "sensor is calibrating");
-                                    if (pumpRecord.isOldSgvWhenNewExpected()) {
-                                        userLogMessage(ICON_CGM + "old SGV event received");
-                                        // pump may have missed sensor transmission or be delayed in posting to status message
-                                        // in most cases the next scheduled poll will have latest sgv, occasionally it is available this period after a delay
-                                        pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollOldSgvRetry() : POLL_OLDSGV_RETRY_MS;
-                                    }
-                                }
-
-                            } else {
-                                PumpCgmNA++; // poll clash detection
-                                if (CommsSgvSuccess > 0) {
-                                    PumpLostSensorError++; // only count errors if cgm is being used
-                                    userLogMessage(ICON_CGM + "cgm n/a (pump lost sensor)");
-                                } else {
-                                    userLogMessage(ICON_CGM + "cgm n/a");
-                                }
-                            }
+                            checkPumpBattery(pumpRecord);
+                            checkCGM(pumpRecord);
 
                             // debug use:
                             //debugStatusMessage();
 
                             // history
 
+                            //pumpHistoryHandler.reupload(PumpHistoryAlarm.class, "NS");
+                            //pumpHistoryHandler.reupload(PumpHistoryMisc.class, "NS");
+                            //cnlReader.getHistoryLogcat(timePollStarted - 8 * 24 * 60 * 60000L, timePollStarted, 2);
+
+                            pumpHistoryHandler.systemStatus(PumpHistorySystem.STATUS.COMMS_PUMP_CONNECTED);
+
                             pumpHistoryHandler.cgm(pumpRecord);
 
                             if (dataStore.isSysEnablePumpHistory() && isHistoryNeeded()) {
+//                            if (dataStore.isSysEnablePumpHistory() && isHistoryNeeded() || true) {
                                 storeRealm.executeTransaction(new Realm.Transaction() {
                                     @Override
-                                    public void execute(Realm realm) {
+                                    public void execute(@NonNull Realm realm) {
                                         dataStore.setRequestPumpHistory(true);
                                     }
                                 });
@@ -518,7 +514,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                     pumpHistoryHandler.profile(cnlReader);
                                     storeRealm.executeTransaction(new Realm.Transaction() {
                                         @Override
-                                        public void execute(Realm realm) {
+                                        public void execute(@NonNull Realm realm) {
                                             dataStore.setRequestProfile(false);
                                         }
                                     });
@@ -531,39 +527,55 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         }
 
                     } catch (UnexpectedMessageException e) {
-                        CommsError++;
+                        //CommsError++;
                         pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollErrorRetry() : POLL_ERROR_RETRY_MS;
                         Log.e(TAG, "Unexpected Message", e);
-                        if (dataStore.isDbgEnableExtendedErrors())
-                            userLogMessage(ICON_WARN + "Communication Error: " + e.getMessage());
-                        else
-                            userLogMessage(ICON_WARN + "Communication Error: busy/noisy");
+
+                        // Check if NAK error = DEVICE_HAS_ERROR(0x07)
+                        // This error state will block all further comms until cleared on the pump
+                        // Seen when pump has an alarm for "Insulin Flow Blocked" faultCode=7
+
+                        ContourNextLinkMessage.NAK nak = ContourNextLinkMessage.NAK.NA;
+                        if (e.getMessage().contains("NAK")) {
+                            int nakcode = Integer.parseInt(e.getMessage().split("NAK")[1].split("[()]")[1].split(":")[1], 16);
+                            nak = ContourNextLinkMessage.NAK.convert(nakcode);
+                            Log.e(TAG, "Pump sent NAK code: " + nakcode + " name: " + nak.name());
+                        }
+
+                        if (nak == ContourNextLinkMessage.NAK.DEVICE_HAS_ERROR) {
+                            pumpHistoryHandler.systemStatus(PumpHistorySystem.STATUS.PUMP_DEVICE_ERROR);
+                            userLogMessage(ICON_WARN + "Pump has a device error. No data can be read until this error has been cleared on the Pump.");
+                        } else if (dataStore.isDbgEnableExtendedErrors()) {
+                            userLogMessage(ICON_WARN + getString(R.string.error_communication) + " " + e.getMessage());
+                        } else {
+                            userLogMessage(ICON_WARN + getString(R.string.error_communication_busy_noisy));
+                        }
                     } catch (TimeoutException e) {
-                        CommsError++;
+                        //CommsError++;
                         pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollErrorRetry() : POLL_ERROR_RETRY_MS;
                         Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
                         if (dataStore.isDbgEnableExtendedErrors())
-                            userLogMessage(ICON_WARN + "Timeout Error: " + e.getMessage());
+                            userLogMessage(ICON_WARN + getString(R.string.error_timeout) + " " + e.getMessage());
                         else
-                            userLogMessage(ICON_WARN + "Timeout communicating with the pump.");
+                            userLogMessage(ICON_WARN + getString(R.string.error_timeout_pump));
                     } catch (ChecksumException e) {
                         CommsError++;
                         Log.e(TAG, "Checksum error getting message from the Contour Next Link.", e);
                         if (dataStore.isDbgEnableExtendedErrors())
-                            userLogMessage(ICON_WARN + "Checksum Error: " + e.getMessage());
+                            userLogMessage(ICON_WARN + getString(R.string.error_checksum) + " " + e.getMessage());
                         else
-                            userLogMessage(ICON_WARN + "Checksum error getting message from the Contour Next Link.");
+                            userLogMessage(ICON_WARN + getString(R.string.error_checksum_cnl));
                     } catch (EncryptionException e) {
                         CommsError++;
                         Log.e(TAG, "Error decrypting messages from Contour Next Link.", e);
                         if (dataStore.isDbgEnableExtendedErrors())
-                            userLogMessage(ICON_WARN + "Decryption Error: " + e.getMessage());
+                            userLogMessage(ICON_WARN + getString(R.string.error_decryption) + " " + e.getMessage());
                         else
-                            userLogMessage(ICON_WARN + "Error decrypting messages from Contour Next Link.");
+                            userLogMessage(ICON_WARN + getString(R.string.error_decryption_cnl));
                     } catch (NoSuchAlgorithmException e) {
                         CommsError++;
                         Log.e(TAG, "Could not determine CNL HMAC", e);
-                        userLogMessage(ICON_WARN + "Error connecting to Contour Next Link: Hashing error.");
+                        userLogMessage(ICON_WARN + getString(R.string.error_hashing));
                     } finally {
                         try {
                             cnlReader.closeConnection();
@@ -578,54 +590,78 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     CommsError++;
                     Log.e(TAG, "Error connecting to Contour Next Link.", e);
                     if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(ICON_WARN + "Error connecting to Contour Next Link: " + e.getMessage());
+                        userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl) + " " + e.getMessage());
                     else
-                        userLogMessage(ICON_WARN + "Error connecting to Contour Next Link.");
-                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + "CNL reset successful.");
+                        userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl));
+                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + getString(R.string.error_cnl_reset_success));
                 } catch (ChecksumException e) {
                     CommsError++;
                     Log.e(TAG, "Checksum error getting message from the Contour Next Link.", e);
-                    userLogMessage(ICON_WARN + "Checksum error getting message from the Contour Next Link.");
+                    if (dataStore.isDbgEnableExtendedErrors())
+                        userLogMessage(ICON_WARN + getString(R.string.error_checksum) + " " + e.getMessage());
+                    else
+                        userLogMessage(ICON_WARN + getString(R.string.error_checksum_cnl));
                 } catch (EncryptionException e) {
                     CommsError++;
                     Log.e(TAG, "Error decrypting messages from Contour Next Link.", e);
-                    userLogMessage(ICON_WARN + "Error decrypting messages from Contour Next Link.");
+                    if (dataStore.isDbgEnableExtendedErrors())
+                        userLogMessage(ICON_WARN + getString(R.string.error_decryption) + " " + e.getMessage());
+                    else
+                        userLogMessage(ICON_WARN + getString(R.string.error_decryption_cnl));
                 } catch (TimeoutException e) {
                     CommsError++;
                     Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
-                    userLogMessage(ICON_WARN + "Timeout communicating with the Contour Next Link.");
-                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + "CNL reset successful.");
+                    if (dataStore.isDbgEnableExtendedErrors())
+                        userLogMessage(ICON_WARN + getString(R.string.error_timeout) + " " + e.getMessage());
+                    else
+                        userLogMessage(ICON_WARN + getString(R.string.error_timeout_cnl));
+                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + getString(R.string.error_cnl_reset_success));
                 } catch (UnexpectedMessageException e) {
                     CommsError++;
                     Log.e(TAG, "Could not close connection.", e);
                     if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(ICON_WARN + "Could not close connection: " + e.getMessage());
+                        userLogMessage(ICON_WARN + getString(R.string.error_close_connection) + " " + e.getMessage());
                     else
-                        userLogMessage(ICON_WARN + "Could not close connection.");
-                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + "CNL reset successful.");
+                        userLogMessage(ICON_WARN + getString(R.string.error_close_connection));
+                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + getString(R.string.error_cnl_reset_success));
                 } finally {
                     shutdownProtect = false;
 
                     // debug use:
-                    //if (cnlClear > 0 || cnl0x81 > 0) userLogMessage("*** cnlClear=" + cnlClear + " cnl0x81=" + cnl0x81);
+                    //if (cnlClear > 0 || cnl0x81 > 0) userLogMessage("*** cnlClear=" + cnlClear + " [" + cnlClearTimer + "ms] cnl0x81=" + cnl0x81);
 
                     nextpoll = requestPollTime(timePollStarted, pollInterval);
                     if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage("Next poll due at: " + dateFormatter.format(nextpoll) + " [" + (System.currentTimeMillis() - timePollStarted) + "ms]");
+                        userLogMessage(String.format(Locale.getDefault(), getString(R.string.next_poll_due_at) + " [%dms]",
+                                dateFormatter.format(nextpoll), System.currentTimeMillis() - timePollStarted));
                     else
-                        userLogMessage("Next poll due at: " + dateFormatter.format(nextpoll));
+                        userLogMessage(String.format(Locale.getDefault(), getString(R.string.next_poll_due_at), dateFormatter.format(nextpoll)));
 
                     RemoveOutdatedRecords();
+
+                    statusWarnings();
                 }
 
-            } finally {
-                statusWarnings();
-                writeDataStore();
+            } catch (Exception e) {
+                Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
+                try {
+                    if (dataStore.isDbgEnableExtendedErrors())
+                        userLogMessage(ICON_WARN + getString(R.string.unexpected_error) + "\n" + Log.getStackTraceString(e));
+                } catch (Exception ignored) {}
+                int retry = 60;
+                userLogMessage(String.format(Locale.getDefault(), getString(R.string.polling_service_could_not_complete), retry));
+                nextpoll = System.currentTimeMillis() + (retry * 1000L);
 
-                if (!storeRealm.isClosed()) storeRealm.close();
-                if (!realm.isClosed()) realm.close();
+            } finally {
+
+                checkConnection();
+
+                if (dataStore != null) writeDataStore();
 
                 if (pumpHistoryHandler != null) pumpHistoryHandler.close();
+
+                if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
+                if (realm != null && !realm.isClosed()) realm.close();
 
                 if (mHidDevice != null) {
                     Log.i(TAG, "Closing serial device...");
@@ -635,12 +671,137 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_FINISHED).putExtra("nextpoll", nextpoll));
 
+                // allow some time for broadcast to be received before releasing wakelock
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                }
                 releaseWakeLock(wl);
+
                 stopSelf();
             }
 
             readPump = null;
         } // thread end
+    }
+
+    private void checkConnection() {
+
+        RealmResults<PumpStatusEvent> results = realm
+                .where(PumpStatusEvent.class)
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+        if (results.size() >= 2) {
+
+            long last1 = results.first().getEventDate().getTime();
+            long last2 = results.get(1).getEventDate().getTime();
+
+            long disconnected = timePollStarted - last1;
+            long timespan = last1 - last2;
+
+            if (disconnected > 0) {
+                // disconnected
+
+            } else {
+                // connected
+
+            }
+
+        }
+
+    }
+
+    private void checkPumpBattery(PumpStatusEvent pumpRecord) {
+        if (pumpRecord.getBatteryPercentage() <= 25) {
+            PumpBatteryError++;
+            pollInterval = dataStore.getLowBatPollInterval();
+        } else {
+            PumpBatteryError = 0;
+        }
+    }
+
+    private void checkCGM(PumpStatusEvent pumpRecord) {
+        if (pumpRecord.isCgmActive()) {
+            PumpCgmNA = 0; // poll clash detection
+            PumpLostSensorError = 0;
+
+            Log.d(TAG, "&&& CgmWarmUp=" + pumpRecord.isCgmWarmUp() +
+                    " CalibrationDueMinutes=" + pumpRecord.getCalibrationDueMinutes() +
+                    " CgmCalibrating=" + pumpRecord.isCgmCalibrating() +
+                    " ExceptionType=" + pumpRecord.getCgmExceptionType() +
+                    " CgmStatus=" + pumpRecord.getCgmStatus()
+            );
+
+            if (pumpRecord.isCgmWarmUp())
+                userLogMessage(ICON_CGM + "sensor is in warm-up phase");
+            else if (pumpRecord.getCalibrationDueMinutes() == 0)
+                userLogMessage(ICON_CGM + "sensor calibration is due now!");
+            else if (pumpRecord.getSgv() == 0 && pumpRecord.isCgmCalibrating())
+                userLogMessage(ICON_CGM + "sensor is calibrating");
+            else if (pumpRecord.getSgv() == 0)
+
+                switch (PumpHistoryParser.CGM_EXCEPTION.convert(pumpRecord.getCgmExceptionType())) {
+                    case SENSOR_INIT:
+                        userLogMessage(ICON_CGM + "sensor error (init)");
+                        break;
+                    case SENSOR_CAL_NEEDED:
+                        userLogMessage(ICON_CGM + "sensor error (cal needed)");
+                        break;
+                    case SENSOR_ERROR:
+                        userLogMessage(ICON_CGM + "sensor error (sgv not available)");
+                        break;
+                    case SENSOR_CHANGE_SENSOR_ERROR:
+                        userLogMessage(ICON_CGM + "sensor error (change sensor)");
+                        break;
+                    case SENSOR_END_OF_LIFE:
+                        userLogMessage(ICON_CGM + "sensor error (end of life)");
+                        break;
+                    case SENSOR_NOT_READY:
+                        userLogMessage(ICON_CGM + "sensor error (not ready)");
+                        break;
+                    case SENSOR_READING_HIGH:
+                        userLogMessage(ICON_CGM + "sensor error (reading high)");
+                        break;
+                    case SENSOR_READING_LOW:
+                        userLogMessage(ICON_CGM + "sensor error (reading low)");
+                        break;
+                    case SENSOR_CAL_PENDING:
+                        userLogMessage(ICON_CGM + "sensor error (cal pending)");
+                        break;
+                    case SENSOR_CAL_ERROR:
+                        userLogMessage(ICON_CGM + "sensor error (cal error)");
+                        break;
+                    case SENSOR_TIME_UNKNOWN:
+                        userLogMessage(ICON_CGM + "sensor error (time unknown)");
+                        break;
+                    default:
+                        userLogMessage(ICON_CGM + "sensor error (n/a)");
+                }
+
+            else {
+                CommsSgvSuccess++;
+                userLogMessage("SGV: ¦" + pumpRecord.getSgv()
+                        + "¦  At: " + dateFormatter.format(pumpRecord.getCgmDate().getTime())
+                        + "  Pump: " + (pumpClockDifference > 0 ? "+" : "") + (pumpClockDifference / 1000L) + "sec");
+                if (pumpRecord.isCgmCalibrating())
+                    userLogMessage(ICON_CGM + "sensor is calibrating");
+                if (pumpRecord.isOldSgvWhenNewExpected()) {
+                    userLogMessage(ICON_CGM + "old SGV event received");
+                    // pump may have missed sensor transmission or be delayed in posting to status message
+                    // in most cases the next scheduled poll will have latest sgv, occasionally it is available this period after a delay
+                    pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollOldSgvRetry() : POLL_OLDSGV_RETRY_MS;
+                }
+            }
+
+        } else {
+            PumpCgmNA++; // poll clash detection
+            if (CommsSgvSuccess > 0) {
+                PumpLostSensorError++; // only count errors if cgm is being used
+                userLogMessage(ICON_CGM + "cgm n/a (pump lost sensor)");
+            } else {
+                userLogMessage(ICON_CGM + "cgm n/a");
+            }
+        }
     }
 
     private void statusWarnings() {
@@ -653,24 +814,29 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             userLogMessage(ICON_HELP + "Past historical data can be uploaded to Nightscout via the History Sync option in Advanced Nightscout Settings.");
         }
 */
-        if (dataStore.isNightscoutUpload() && dataStore.isNsEnableProfileUpload()) {
+        if (dataStore.isNightscoutUpload() && dataStore.isNsEnableProfileUpload() && CommsSuccess > 0) {
             if (!pumpHistoryHandler.isProfileUploaded()) {
-                userLogMessage(ICON_INFO + "No basal pattern profile has been uploaded.");
-                userLogMessage(ICON_HELP + "Profiles can be uploaded from the main menu.");
+                userLogMessage(ICON_INFO + getString(R.string.info_no_profile_uploaded));
+                userLogMessage(ICON_HELP + getString(R.string.help_profile_upload_main_menu));
             } else if (dataStore.isNameBasalPatternChanged() &&
                     (dataStore.isNsEnableProfileSingle() || dataStore.isNsEnableProfileOffset())) {
-                userLogMessage(ICON_INFO + "Basal pattern names have changed, your profile should be updated.");
-                userLogMessage(ICON_HELP + "Profiles can be updated from the main menu.");
+                userLogMessage(ICON_INFO + getString(R.string.info_basal_pattern_names));
+                userLogMessage(ICON_HELP + getString(R.string.help_profile_upload_main_menu));
             }
         }
 
         if (PumpBatteryError >= ERROR_PUMPBATTERY_AT) {
             PumpBatteryError = 0;
             if (dataStore.getLowBatPollInterval() > POLL_PERIOD_MS) {
-                userLogMessage(ICON_WARN + "Warning: pump battery low. Poll interval increased, history and backfill processing disabled.");
-                userLogMessage(ICON_SETTING + "Low battery poll interval: " + (dataStore.getLowBatPollInterval() / 60000) + " minutes");
+                userLogMessage(ICON_WARN + String.format(Locale.getDefault(), "%s %s",
+                        getString(R.string.warn_pump_battery_low),
+                        getString(R.string.info_pump_low_battery_mode_change)));
+                userLogMessage(ICON_SETTING + String.format(Locale.getDefault(), "%s %d %s",
+                        getString(R.string.info_low_battery_interval),
+                        dataStore.getLowBatPollInterval() / 60000,
+                        getString(R.string.time_minutes)));
             } else {
-                userLogMessage(ICON_WARN + "Warning: pump battery low");
+                userLogMessage(ICON_WARN + getString(R.string.warn_pump_battery_low));
             }
         }
 
@@ -678,51 +844,54 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             PumpClockError++;
         if (PumpClockError >= ERROR_PUMPCLOCK_AT) {
             PumpClockError = 0;
-            userLogMessage(ICON_WARN + "Warning: Time difference between Pump and Uploader excessive."
-                    + " Pump is over " + (Math.abs(pumpClockDifference) / 60000L) + " minutes " + (pumpClockDifference > 0 ? "ahead" : "behind") + " of time used by uploader.");
-            userLogMessage(ICON_HELP + "The uploader phone/device should have the current time provided by network. Pump clock drifts forward and needs to be set to correct time occasionally.");
+            userLogMessage(ICON_WARN + String.format(Locale.getDefault(), getString(R.string.warn_pump_time_difference),
+                    (int) (Math.abs(pumpClockDifference) / 60000L),
+                    getString(R.string.time_minutes),
+                    pumpClockDifference > 0 ? getString(R.string.time_ahead) : getString(R.string.time_behind)));
+            userLogMessage(ICON_HELP + getString(R.string.help_pump_time_difference));
         }
 
         if (CommsError >= ERROR_COMMS_AT) {
-            userLogMessage(ICON_WARN + "Warning: multiple comms/timeout errors detected.");
-            userLogMessage(ICON_HELP + "Try: disconnecting and reconnecting the Contour Next Link to phone / restarting phone / check pairing of CNL with Pump.");
+            userLogMessage(ICON_WARN + getString(R.string.warn_multiple_comms_errors));
+            userLogMessage(ICON_HELP + getString(R.string.help_multiple_comms_errors));
         }
 
         if (PumpLostSensorError >= ERROR_PUMPLOSTSENSOR_AT) {
             PumpLostSensorError = 0;
-            userLogMessage(ICON_WARN + "Warning: SGV is unavailable from pump often. The pump is missing transmissions from the sensor.");
-            userLogMessage(ICON_HELP + "Keep pump on same side of body as sensor. Avoid using body sensor locations that can block radio signal.");
+            userLogMessage(ICON_WARN + getString(R.string.warn_missing_transmissions));
+            userLogMessage(ICON_HELP + getString(R.string.help_missing_transmissions));
         }
 
         if (CommsConnectError >= ERROR_CONNECT_AT * (dataStore.isDoublePollOnPumpAway() ? 2 : 1)) {
             CommsConnectError = 0;
-            userLogMessage(ICON_WARN + "Warning: connecting to pump is failing often.");
-            userLogMessage(ICON_HELP + "Keep pump nearby to uploader phone/device. The body can block radio signals between pump and uploader.");
+            userLogMessage(ICON_WARN + getString(R.string.warn_connection_fail));
+            userLogMessage(ICON_HELP + getString(R.string.help_connection_fail));
         }
 
         if (CommsSignalError >= ERROR_SIGNAL_AT) {
             CommsSignalError = 0;
-            userLogMessage(ICON_WARN + "Warning: RSSI radio signal from pump is generally weak and may increase errors.");
-            userLogMessage(ICON_HELP + "Keep pump nearby to uploader phone/device. The body can block radio signals between pump and uploader.");
+            userLogMessage(ICON_WARN + getString(R.string.warn_rssi_signal));
+            userLogMessage(ICON_HELP + getString(R.string.help_rssi_signal));
         }
     }
 
     private void RemoveOutdatedRecords() {
-        final RealmResults<PumpStatusEvent> results =
-                realm.where(PumpStatusEvent.class)
-                        .lessThan("eventDate", new Date(System.currentTimeMillis() - (48 * 60 * 60000L)))
-                        .findAll();
+        realm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
 
-        if (results.size() > 0) {
-            realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    // Delete all matches
+                RealmResults<PumpStatusEvent> results =
+                        realm.where(PumpStatusEvent.class)
+                                .lessThan("eventDate", new Date(System.currentTimeMillis() - (48 * 60 * 60000L)))
+                                .findAll();
+
+                if (results.size() > 0) {
                     Log.d(TAG, "Deleting " + results.size() + " records from realm");
                     results.deleteAllFromRealm();
                 }
-            });
-        }
+
+            }
+        });
     }
 
     private void validatePumpRecord(PumpStatusEvent pumpRecord, PumpInfo activePump) {
@@ -740,116 +909,188 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
     private boolean isHistoryNeeded() {
         boolean historyNeeded = false;
-        String info = ICON_REFRESH + "history: ";
+        String logTAG = "*H* ";
+        String userlogTAG = ICON_REFRESH + getString(R.string.history_text) + ": ";
 
-        long recency = pumpHistoryHandler.pumpHistoryRecency() / 60000L;
+        int recency = Math.round((float) pumpHistoryHandler.pumpHistoryRecency() / 60000L);
         if (recency == -1 || recency > 24 * 60) {
-            userLogMessage(info + "no recent data");
+            Log.d(TAG, logTAG + "no recent data");
+            userLogMessage(userlogTAG + getString(R.string.history_no_recent_data));
             historyNeeded = true;
         } else if (recency >= 6 * 60) {
-            userLogMessage(info + "recency " + (recency < 120 ? recency + " minutes" : ">" + recency / 60 + " hours"));
+            Log.d(TAG, logTAG + "recency " + (recency < 120 ? recency + " minutes" : ">" + recency / 60 + " hours"));
+            userLogMessage(userlogTAG + getString(R.string.history_recency) + " " + (recency < 120 ? recency + " " + getString(R.string.time_minutes) : ">" + recency / 60 + " " + getString(R.string.time_hours)));
             historyNeeded = true;
         } else if (dataStore.getSysPumpHistoryFrequency() > 0 && (recency >= dataStore.getSysPumpHistoryFrequency() && pumpHistoryHandler.isLoopActivePotential())) {
-            userLogMessage(info + "auto mode");
+            Log.d(TAG, logTAG + "auto mode");
+            userLogMessage(userlogTAG + getString(R.string.history_auto_mode));
             historyNeeded = true;
         }
 
         RealmResults<PumpStatusEvent> results = realm
                 .where(PumpStatusEvent.class)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+
+        RealmResults<PumpStatusEvent> cgmresults  = results.where()
+                .equalTo("cgmActive", true)
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() > 1) {
 
             // time between status data points
             long ageMS = results.first().getEventDate().getTime() - results.get(1).getEventDate().getTime();
-            int ageMinutes = (int) Math.ceil(ageMS / 60000L);
+            int ageMinutes = Math.round((float) ageMS / 60000L);
+
+            byte statusNow = results.first().getPumpStatus();
+            byte statusPre = results.get(1).getPumpStatus();
+
+            Log.d(TAG, String.format(logTAG + "recency=%s age=%s [%sms] statusNow=%s statusPre=%s",
+                    recency, ageMinutes, ageMS,
+                    String.format("%8s", Integer.toBinaryString(statusNow)).replace(' ', '0'),
+                    String.format("%8s", Integer.toBinaryString(statusPre)).replace(' ', '0')));
+
+            byte bolusRefNow = results.first().getLastBolusReference();
+            byte bolusRefPre = results.get(1).getLastBolusReference();
+            int bolusMinsNow = results.first().getBolusingMinutesRemaining();
+            int bolusMinsPre = results.get(1).getBolusingMinutesRemaining();
+            int bolusMinsDiff = bolusMinsPre - bolusMinsNow;
+
+            Log.d(TAG, String.format(logTAG + "refNow=%s refPre=%s bolusMinsNow=%s bolusMinsPre=%s bolusMinsDiff=%s",
+                    bolusRefNow, bolusRefPre, bolusMinsNow, bolusMinsPre, bolusMinsDiff));
+
+            byte basalPatNow = results.first().getActiveBasalPattern();
+            byte basalPatPre = results.get(1).getActiveBasalPattern();
+            int tempMinsNow = results.first().getTempBasalMinutesRemaining();
+            int tempMinsPre = results.get(1).getTempBasalMinutesRemaining();
+            int tempMinsDiff = tempMinsPre - tempMinsNow;
+
+            Log.d(TAG, String.format(logTAG + "basalPatNow=%s basalPatPre=%s tempMinsNow=%s tempMinsPre=%s tempMinsDiff=%s",
+                    basalPatNow, basalPatPre, tempMinsNow, tempMinsPre, tempMinsDiff));
+
+            // note: floats used for div 10000 int conversion, round to 4 places for actual value (%.4f)
+            float reservoirChange = results.first().getReservoirAmount() - results.get(1).getReservoirAmount();
+            float basalChange = results.first().getBasalUnitsDeliveredToday() - results.get(1).getBasalUnitsDeliveredToday();
+            float sumChange = reservoirChange + basalChange;
+
+            Log.d(TAG, String.format(logTAG + "reservoirChange=%.4f basalChange=%.4f sumChange=%.4f",
+                    reservoirChange, basalChange, sumChange));
+
+            Log.d(TAG, String.format(logTAG + "silence status=%d minutes=%d high=%s highlow=%s all=%s",
+                    results.first().getAlertSilenceStatus(),
+                    results.first().getAlertSilenceMinutesRemaining(),
+                    results.first().isAlertSilenceHigh(),
+                    results.first().isAlertSilenceHighLow(),
+                    results.first().isAlertSilenceAll()));
+
+            Log.d(TAG, String.format(logTAG + "PLGM status=%d high=%s low=%s beforehigh=%s beforelow=%s suspend=%s suspendlow=%s",
+                    results.first().getPlgmStatus(),
+                    results.first().isPlgmAlertOnHigh(),
+                    results.first().isPlgmAlertOnLow(),
+                    results.first().isPlgmAlertBeforeHigh(),
+                    results.first().isPlgmAlertBeforeLow(),
+                    results.first().isPlgmAlertSuspend(),
+                    results.first().isPlgmAlertSuspendLow()));
+
+            Log.d(TAG, String.format(logTAG + "alert code=%d date=%s rtc=%s offset=%s",
+                    results.first().getAlert(),
+                    results.first().getAlertDate(),
+                    HexDump.toHexString(results.first().getAlertRTC()),
+                    HexDump.toHexString(results.first().getAlertOFFSET())));
 
             if (ageMinutes > 15) {
-                userLogMessage(info + "stale status " + (ageMinutes < 120 ? ageMinutes + " minutes" : ">" + ageMinutes / 60 + " hours"));
+                Log.d(TAG, logTAG + "stale status " + (ageMinutes < 120 ? ageMinutes + " minutes" : ">" + ageMinutes / 60 + " hours"));
+                userLogMessage(userlogTAG + getString(R.string.history_stale_status) + " " + (ageMinutes < 120 ? ageMinutes + " " + getString(R.string.time_minutes) : ">" + ageMinutes / 60 + " " + getString(R.string.time_hours)));
                 historyNeeded = true;
 
             } else {
 
                 // basal pattern changed?
-                if (results.first().getActiveBasalPattern() != 0 && results.get(1).getActiveBasalPattern() != 0
-                        && results.first().getActiveBasalPattern() != results.get(1).getActiveBasalPattern()) {
-                    userLogMessage(info + "basal pattern changed");
+                if (basalPatNow != 0 && basalPatPre != 0 && basalPatNow != basalPatPre) {
+                    Log.d(TAG, "*H* basal pattern changed");
+                    userLogMessage(userlogTAG + getString(R.string.history_basal_pattern_changed));
                     historyNeeded = true;
                 }
 
                 // suspend/resume?
-                if (results.first().isSuspended() != results.get(1).isSuspended()) {
-                    userLogMessage(info + (results.first().isSuspended() ? "basal suspend" : "basal resume"));
+                if (results.first().isSuspended() && !results.get(1).isSuspended()) {
+                    Log.d(TAG, logTAG + "basal suspend");
+                    userLogMessage(userlogTAG + getString(R.string.history_basal_suspend));
+                    historyNeeded = true;
+                } else if (!results.first().isSuspended() && results.get(1).isSuspended()) {
+                    Log.d(TAG, logTAG + "basal resume");
+                    userLogMessage(userlogTAG + getString(R.string.history_basal_resume));
                     historyNeeded = true;
                 }
 
                 // new temp basal?
                 if (results.first().isTempBasalActive() && !results.get(1).isTempBasalActive()) {
-                    userLogMessage(info + "temp basal");
+                    Log.d(TAG, logTAG + "temp basal");
+                    userLogMessage(userlogTAG + getString(R.string.history_temp_basal));
                     historyNeeded = true;
                 }
 
                 // was temp ended before expected duration?
-                if (!results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
-                    int diff = results.get(1).getTempBasalMinutesRemaining() - ageMinutes;
-                    if (diff < -4 || diff > 4) {
-                        userLogMessage(info + "temp ended");
-                        historyNeeded = true;
-                    }
+                if (!results.first().isTempBasalActive() && results.get(1).isTempBasalActive()
+                        && Math.abs(tempMinsPre - ageMinutes) > 4) {
+                    Log.d(TAG, logTAG + "temp ended");
+                    userLogMessage(userlogTAG + getString(R.string.history_temp_ended));
+                    historyNeeded = true;
                 }
 
                 // was a new temp started while one was in progress?
-                if (results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
-                    int diff = results.get(1).getTempBasalMinutesRemaining() - results.first().getTempBasalMinutesRemaining() - ageMinutes;
-                    if (diff < -4 || diff > 4) {
-                        userLogMessage(info + "temp extended");
-                        historyNeeded = true;
-                    }
+                if (results.first().isTempBasalActive() && results.get(1).isTempBasalActive()
+                        && Math.abs(tempMinsDiff - ageMinutes) > 4) {
+                    Log.d(TAG, logTAG + "temp extended");
+                    userLogMessage(userlogTAG + getString(R.string.history_temp_extended));
+                    historyNeeded = true;
                 }
 
                 // bolus part delivered? normal (ref change) / square (ref change) / dual (ref can change due to normal bolus mid delivery of square part)
-                if (!results.first().isBolusingNormal() && results.first().getLastBolusReference() != results.get(1).getLastBolusReference()) {
-                    // end of a dual bolus?
+                if (!results.first().isBolusingNormal() && bolusRefNow != bolusRefPre) {
+
+                    // was dual ended before expected duration?
                     if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
-                        // was dual ended before expected duration?
-                        int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                        if (diff < -4 || diff > 4) {
-                            userLogMessage(info + "dual ended");
+                        if (Math.abs(bolusMinsPre - ageMinutes) > 4) {
+                            Log.d(TAG, logTAG + "dual ended");
+                            userLogMessage(userlogTAG + getString(R.string.history_dual_ended));
                             historyNeeded = true;
                         }
                     }
-                    // end of a square bolus?
+                    // was square ended before expected duration?
                     else if (!results.first().isBolusingSquare() && results.get(1).isBolusingSquare() && !results.get(1).isBolusingNormal()) {
-                        // was square ended before expected duration?
-                        int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                        if (diff < -4 || diff > 4) {
-                            userLogMessage(info + "square ended");
+                        if (Math.abs(bolusMinsPre - ageMinutes) > 4) {
+                            Log.d(TAG, logTAG + "square ended");
+                            userLogMessage(userlogTAG + getString(R.string.history_square_ended));
                             historyNeeded = true;
                         }
                     }
                     // dual bolus normal part delivered?
                     else if (!results.first().isBolusingSquare() && !results.get(1).isBolusingDual() && results.first().isBolusingDual()) {
-                        userLogMessage(info + "dual bolus");
+                        Log.d(TAG, logTAG + "dual bolus");
+                        userLogMessage(userlogTAG + getString(R.string.history_dual_bolus));
                         historyNeeded = true;
                     }
                     // normal bolus delivered
                     else {
-                        userLogMessage(info + "normal bolus");
+                        Log.d(TAG, logTAG + "normal bolus");
+                        userLogMessage(userlogTAG + getString(R.string.history_normal_bolus));
                         historyNeeded = true;
                     }
-                    // dual bolus ended? or ended before expected duration?
-                } else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
-                    // was dual ended before expected duration?
-                    int diff = results.get(1).getBolusingMinutesRemaining() - ageMinutes;
-                    if (diff < -4 || diff > 4) {
-                        userLogMessage(info + "dual ended");
-                        historyNeeded = true;
-                    }
+                }
+                // bolus ended? or ended before expected duration?
+                else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()
+                        && Math.abs(bolusMinsPre - ageMinutes) > 4) {
+                    Log.d(TAG, logTAG + "bolus ended");
+                    userLogMessage(userlogTAG + getString(R.string.history_bolus_ended));
+                    historyNeeded = true;
                 }
 
                 // square bolus started?
                 if (!results.first().isBolusingNormal() && results.first().isBolusingSquare() && !results.get(1).isBolusingSquare()) {
-                    userLogMessage(info + "square bolus");
+                    Log.d(TAG, logTAG + "square bolus");
+                    userLogMessage(userlogTAG + getString(R.string.history_square_bolus));
                     historyNeeded = true;
                 }
 
@@ -860,14 +1101,25 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                 .equalTo("recentBGL", results.first().getRecentBGL())
                                 .findAll()
                                 .size() == 1) {
-                    userLogMessage(info + "recent finger bg");
+                    Log.d(TAG, logTAG + "recent finger bg");
+                    userLogMessage(userlogTAG + getString(R.string.history_recent_finger_bg));
                     historyNeeded = true;
                 }
-
+/*
                 // calibration factor info available?
                 if (dataStore.isNsEnableCalibrationInfo() && dataStore.isNsEnableCalibrationInfoNow()
                         && (results.first().isCgmCalibrationComplete() && !results.get(1).isCgmCalibrationComplete())) {
-                    userLogMessage(info + "calibration info");
+                    Log.d(TAG, logTAG + "calibration info");
+                    userLogMessage(userlogTAG + getString(R.string.history_calibration_info));
+                    historyNeeded = true;
+                }
+*/
+                // calibration factor info available?
+                if (dataStore.isNsEnableCalibrationInfo()
+                        && (cgmresults.size() > 1 && results.first().getCalibrationDueMinutes() > 0
+                        && results.first().getCalibrationDueMinutes() > cgmresults.get(1).getCalibrationDueMinutes())) {
+                    Log.d(TAG, logTAG + "calibration info");
+                    userLogMessage(userlogTAG + getString(R.string.history_calibration_info));
                     historyNeeded = true;
                 }
 
@@ -876,30 +1128,69 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (results.first().getActiveBasalPattern() != 0) {
 
                     if (results.first().getReservoirAmount() > results.get(1).getReservoirAmount()) {
-                        userLogMessage(info + "reservoir changed");
+                        Log.d(TAG, logTAG + "reservoir changed");
+                        userLogMessage(userlogTAG + getString(R.string.history_reservoir_changed));
                         historyNeeded = true;
                     }
 
                     if (results.first().getBatteryPercentage() > results.get(1).getBatteryPercentage()) {
-                        userLogMessage(info + "battery changed");
+                        Log.d(TAG, logTAG + "battery changed");
+                        userLogMessage(userlogTAG + getString(R.string.history_battery_changed));
                         historyNeeded = true;
                     }
 
                     if (!historyNeeded && results.get(1).getActiveBasalPattern() == 0) {
-                        userLogMessage(info + "pattern resume");
+                        Log.d(TAG, logTAG + "pattern resume");
+                        userLogMessage(userlogTAG + getString(R.string.history_pattern_resume));
+                        historyNeeded = true;
+                    }
+
+                    // cannula fill?
+                    // if nothing else is happening and pump is just delivering basal check reservoir amounts to deduce a cannula fill event
+                    if (ageMinutes < 15 && !historyNeeded
+                            && !results.first().isBolusingNormal() && !results.get(1).isBolusingNormal()
+                            && !results.first().isBolusingSquare() && !results.get(1).isBolusingSquare()
+                            && !results.first().isBolusingDual() && !results.get(1).isBolusingDual()
+                            && bolusRefNow == bolusRefPre
+                            && basalChange >= 0 && sumChange < -0.1) {
+                        Log.d(TAG, logTAG + "cannula fill");
+                        userLogMessage(userlogTAG + getString(R.string.history_cannula_fill));
                         historyNeeded = true;
                     }
                 }
 
-                if (results.first().isCgmWarmUp()) {
-                    results = results.where()
-                            .equalTo("cgmActive", true)
-                            .findAllSorted("eventDate", Sort.DESCENDING);
-                    if (results.size() > 1 && !results.get(1).isCgmWarmUp()) {
-                        userLogMessage(info + "sensor changed");
+                // sensor changed?
+                if (results.first().isCgmWarmUp()
+                        && (cgmresults.size() > 1 && !cgmresults.get(1).isCgmWarmUp())) {
+                    Log.d(TAG, logTAG + "sensor changed");
+                    userLogMessage(userlogTAG + getString(R.string.history_sensor_changed));
+                    historyNeeded = true;
+                }
+
+                // daily totals?
+                SimpleDateFormat sdfDay = new SimpleDateFormat("dd", Locale.getDefault());
+                long dayNow = results.first().getEventDate().getTime() + pumpClockDifference;
+                long dayPre = results.get(1).getEventDate().getTime() + pumpClockDifference;
+                if (!sdfDay.format(dayNow).equals(sdfDay.format(dayPre))) {
+                    Log.d(TAG, logTAG + "daily totals");
+                    userLogMessage(userlogTAG + getString(R.string.history_daily_totals));
+                    historyNeeded = true;
+                }
+
+                // active alerts?
+                if (results.first().getAlert() != 0) {
+                    if (results.first().getAlertRTC() != results.get(1).getAlertRTC()) {
+                        Log.d(TAG, logTAG + "active alert");
+                        userLogMessage(userlogTAG + getString(R.string.history_active_alert));
+                        historyNeeded = true;
+                    } else if (recency >= 15) {
+                        // recheck at interval to catch stacked alerts as pump will only show the oldest uncleared active alert
+                        Log.d(TAG, logTAG + "alert recheck");
+                        userLogMessage(userlogTAG + getString(R.string.history_alert_recheck));
                         historyNeeded = true;
                     }
                 }
+
             }
         }
 
@@ -918,12 +1209,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         long nextRequestedPollTime;
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000L)))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .greaterThan("eventDate", new Date(now - (24 * 60 * 60000L)))
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         RealmResults<PumpStatusEvent> cgmresults = results.where()
                 .equalTo("cgmActive", true)
-                .findAllSorted("cgmDate", Sort.DESCENDING);
+                .sort("cgmDate", Sort.DESCENDING)
+                .findAll();
 
         long pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollGracePeriod() : POLL_GRACE_PERIOD_MS;
 
@@ -975,12 +1268,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         long due = 0;
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 1000L)))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .greaterThan("eventDate", new Date(now - (24 * 60 * 60000L)))
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         RealmResults<PumpStatusEvent> cgmresults = results.where()
                 .equalTo("cgmActive", true)
-                .findAllSorted("cgmDate", Sort.DESCENDING);
+                .sort("cgmDate", Sort.DESCENDING)
+                .findAll();
 
         long pollOffset = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollGracePeriod() : POLL_GRACE_PERIOD_MS;
 
@@ -1018,15 +1313,21 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
      */
     private boolean openUsbDevice() {
         if (!hasUsbHostFeature()) {
-            userLogMessage(ICON_WARN + "It appears that this device doesn't support USB OTG.");
             Log.e(TAG, "Device does not support USB OTG");
+            userLogMessage(ICON_WARN + getString(R.string.error_usb_no_support));
+            return false;
+        }
+
+        if (mUsbManager == null) {
+            Log.e(TAG, "USB connection error. mUsbManager == null");
+            userLogMessage(ICON_WARN + getString(R.string.error_usb_no_connection));
             return false;
         }
 
         UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
         if (cnlStick == null) {
-            userLogMessage(ICON_WARN + "USB connection error. Is the Contour Next Link plugged in?");
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
+            userLogMessage(ICON_WARN + getString(R.string.error_usb_no_connection));
             return false;
         }
 
@@ -1039,8 +1340,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         try {
             mHidDevice.open();
         } catch (Exception e) {
-            userLogMessage(ICON_WARN + "Unable to open USB device");
             Log.e(TAG, "Unable to open serial device", e);
+            userLogMessage(ICON_WARN + getString(R.string.error_usb_no_open));
             return false;
         }
 
@@ -1048,7 +1349,65 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     }
 
     private boolean hasUsbHostFeature() {
+
+        //getUsbInfo();
+
         return mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
+    }
+
+    private void getUsbInfo() {
+
+        UsbManager mManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> deviceList = mManager.getDeviceList();
+        Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+
+        while (deviceIterator.hasNext()) {
+            UsbDevice device = deviceIterator.next();
+            Log.i(TAG, "Model: " + device.getDeviceName());
+            Log.i(TAG, "ID: " + device.getDeviceId());
+            Log.i(TAG, "Class: " + device.getDeviceClass());
+            Log.i(TAG, "Protocol: " + device.getDeviceProtocol());
+            Log.i(TAG, "Vendor ID " + device.getVendorId());
+            Log.i(TAG, "Product ID: " + device.getProductId());
+            Log.i(TAG, "Interface count: " + device.getInterfaceCount());
+            Log.i(TAG, "---------------------------------------");
+            // Get interface details
+            for (int index = 0; index < device.getInterfaceCount(); index++) {
+                UsbInterface mUsbInterface = device.getInterface(index);
+                Log.i(TAG, "  *****     *****");
+                Log.i(TAG, "  Interface index: " + index);
+                Log.i(TAG, "  Interface ID: " + mUsbInterface.getId());
+                Log.i(TAG, "  Inteface class: " + mUsbInterface.getInterfaceClass());
+                Log.i(TAG, "  Interface protocol: " + mUsbInterface.getInterfaceProtocol());
+                Log.i(TAG, "  Endpoint count: " + mUsbInterface.getEndpointCount());
+                // Get endpoint details
+                for (int epi = 0; epi < mUsbInterface.getEndpointCount(); epi++) {
+                    UsbEndpoint mEndpoint = mUsbInterface.getEndpoint(epi);
+                    Log.i(TAG, "    ++++   ++++   ++++");
+                    Log.i(TAG, "    Endpoint index: " + epi);
+                    Log.i(TAG, "    Attributes: " + mEndpoint.getAttributes());
+                    Log.i(TAG, "    Direction: " + mEndpoint.getDirection());
+                    Log.i(TAG, "    Number: " + mEndpoint.getEndpointNumber());
+                    Log.i(TAG, "    Interval: " + mEndpoint.getInterval());
+                    Log.i(TAG, "    Packet size: " + mEndpoint.getMaxPacketSize());
+                    Log.i(TAG, "    Type: " + mEndpoint.getType());
+                }
+            }
+        }
+        Log.i(TAG, " No more devices connected.");
+    }
+
+    private boolean debugHistory(boolean debug) {
+        if (debug) {
+            if (pumpHistoryHandler.records() == 0) {
+                userLogMessage("Getting history from file");
+                new HistoryDebug(mContext, pumpHistoryHandler).run();
+                userLogMessage("Processing done");
+            } else {
+                userLogMessage("History file already processed");
+            }
+        }
+        return debug;
     }
 
     private void debugStatusMessage() {
@@ -1060,7 +1419,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         RealmResults<PumpStatusEvent> results = realm
                 .where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(now - 33 * 60000L))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() < 1) return;
 

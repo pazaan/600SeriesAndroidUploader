@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.history.MessageItem;
+import info.nightscout.android.history.NightscoutItem;
+import info.nightscout.android.history.PumpHistoryParser;
+import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.api.TreatmentsEndpoints;
-import info.nightscout.api.UploadItem;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -22,19 +24,20 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
     @Ignore
     private static final String TAG = PumpHistoryLoop.class.getSimpleName();
 
-    //private boolean debug_bump;
+    @Index
+    private String senderREQ = "";
+    @Index
+    private String senderACK = "";
+    @Index
+    private String senderDEL = "";
 
     @Index
     private Date eventDate;
 
-    @Index
-    private boolean uploadREQ = false;
-    private boolean uploadACK = false;
-
-    private boolean xdripREQ = false;
-    private boolean xdripACK = false;
-
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
+
+    @Index
+    private byte recordtype;
 
     @Index
     private int eventRTC;
@@ -43,148 +46,216 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
     private int bolusRef = -1;
     private double deliveredAmount;
 
-    private boolean loopMode = false;
-    private boolean loopActive = false;
-    private byte loopStatus;
-    private byte loopPattern;
+    private byte transitionValue;
+    private byte transitionReason;
 
-    @Override
-    public List nightscout(DataStore dataStore) {
-        List<UploadItem> uploadItems = new ArrayList<>();
+    private byte basalPattern;
 
-        if (dataStore.isNsEnableTreatments()) {
+    public enum RECORDTYPE {
+        MICROBOLUS(1),
+        TRANSITION_IN(2),
+        TRANSITION_OUT(3),
+        RESTART_BASAL(4),
+        NA(-1);
 
-            UploadItem uploadItem = new UploadItem();
-            uploadItems.add(uploadItem);
-            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
+        private int value;
 
-            String notes = "";
-
-            if (loopMode) {
-                treatment.setKey600(key);
-                treatment.setCreated_at(eventDate);
-                treatment.setEventType("Profile Switch");
-
-                if (loopActive) {
-                    notes = "Auto Mode: active";
-
-                    treatment.setProfile("Auto Mode");
-                    treatment.setNotes(notes);
-
-                } else if (loopPattern != 0) {
-                    String patternName = dataStore.getNameBasalPattern(loopPattern);
-                    notes = "Auto Mode: stopped";
-
-                    treatment.setProfile(patternName);
-                    treatment.setNotes(notes);
-                }
-
-            } else {
-
-                // Synthesize Closed Loop Microboluses into Temp Basals
-
-                notes = "microbolus " + deliveredAmount + "U";
-
-                //notes += " [DEBUG: ref=" + bolusRef + " del=" + deliveredAmount + " " + String.format("%08X", eventRTC) + "]";
-
-                treatment.setEventType("Temp Basal");
-                treatment.setKey600(key);
-                treatment.setDuration((float) 5);
-                treatment.setNotes(notes);
-
-                treatment.setCreated_at(eventDate);
-                treatment.setAbsolute((float) (deliveredAmount * 12));
-            }
+        RECORDTYPE(int value) {
+            this.value = value;
         }
 
-        return uploadItems;
+        public byte value() {
+            return (byte) this.value;
+        }
+
+        public boolean equals(int value) {
+            return this.value == value;
+        }
+
+        public static RECORDTYPE convert(int value) {
+            for (RECORDTYPE recordtype : RECORDTYPE.values())
+                if (recordtype.value == value) return recordtype;
+            return RECORDTYPE.NA;
+        }
     }
 
-    public static void microbolus(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+    @Override
+    public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
+        List<NightscoutItem> nightscoutItems = new ArrayList<>();
+
+        NightscoutItem nightscoutItem = new NightscoutItem();
+        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
+
+        switch (RECORDTYPE.convert(recordtype)) {
+
+            case MICROBOLUS:
+                // Synthesize Closed Loop Microboluses into Temp Basals
+                treatment.setEventType("Temp Basal");
+                treatment.setCreated_at(eventDate);
+                treatment.setKey600(key);
+                treatment.setDuration((float) 5);
+                treatment.setAbsolute((float) (deliveredAmount * 12));
+                treatment.setNotes("microbolus " + deliveredAmount + "U");
+                nightscoutItems.add(nightscoutItem);
+                break;
+
+            case TRANSITION_IN:
+                treatment.setEventType("Profile Switch");
+                treatment.setCreated_at(eventDate);
+                treatment.setKey600(key);
+                treatment.setProfile("Auto Mode");
+                treatment.setNotes("Auto Mode: active (" + PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string() + ")");
+                nightscoutItems.add(nightscoutItem);
+                break;
+
+            case RESTART_BASAL:
+                treatment.setEventType("Profile Switch");
+                treatment.setCreated_at(eventDate);
+                treatment.setKey600(key);
+                treatment.setProfile(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, basalPattern - 1));
+                treatment.setNotes("Auto Mode: stopped (" + PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string() + ")");
+                nightscoutItems.add(nightscoutItem);
+                break;
+        }
+
+        return nightscoutItems;
+    }
+
+    public static void microbolus(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
                                   int bolusRef,
                                   double deliveredAmount) {
 
-        PumpHistoryLoop object = realm.where(PumpHistoryLoop.class)
+        //if (true) return;
+
+        PumpHistoryLoop record = realm.where(PumpHistoryLoop.class)
                 .equalTo("eventRTC", eventRTC)
-                .equalTo("loopMode", false)
+                .equalTo("recordtype", RECORDTYPE.MICROBOLUS.value())
                 .findFirst();
 
-        if (object == null) {
-            Log.d(TAG, "*new*" + " Ref: " + bolusRef + " create new microbolus event");
-            object = realm.createObject(PumpHistoryLoop.class);
-
-            object.setEventDate(eventDate);
-            object.setBolusRef(bolusRef);
-
-            object.setEventRTC(eventRTC);
-            object.setEventOFFSET(eventOFFSET);
-            object.setDeliveredAmount(deliveredAmount);
-
-            object.setLoopActive(true);
-
-            object.setKey("MB" + String.format("%08X", eventRTC));
-            object.setUploadREQ(true);
+        if (record == null) {
+            Log.d(TAG, "*new* microbolus ref: " + bolusRef);
+            record = realm.createObject(PumpHistoryLoop.class);
+            record.recordtype = RECORDTYPE.MICROBOLUS.value();
+            record.eventDate = eventDate;
+            record.eventRTC = eventRTC;
+            record.eventOFFSET = eventOFFSET;
+            record.bolusRef = bolusRef;
+            record.deliveredAmount = deliveredAmount;
+            record.key = String.format("MB%08X", eventRTC);
+            pumpHistorySender.senderREQ(record);
         }
     }
 
-    public static void mode(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                            boolean loopActive,
-                            byte loopStatus) {
+    public static void transition(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+                                  byte transitionValue,
+                                  byte transitionReason) {
 
-        PumpHistoryLoop object = realm.where(PumpHistoryLoop.class)
-                .equalTo("eventRTC", eventRTC)
-                .equalTo("loopMode", true)
-                .findFirst();
+        PumpHistoryLoop record;
 
-        if (object == null) {
-            Log.d(TAG, "*new*" + "loop mode event");
-            object = realm.createObject(PumpHistoryLoop.class);
+        switch (PumpHistoryParser.CL_TRANSITION_VALUE.convert(transitionValue)) {
 
-            object.setEventDate(eventDate);
-            object.setLoopMode(true);
+            case CL_INTO_ACTIVE:
+                record = realm.where(PumpHistoryLoop.class)
+                        .equalTo("eventRTC", eventRTC)
+                        .equalTo("recordtype", RECORDTYPE.TRANSITION_IN.value())
+                        .findFirst();
+                if (record == null) {
+                    Log.d(TAG, "*new* loop transition in event");
+                    record = realm.createObject(PumpHistoryLoop.class);
+                    record.recordtype = RECORDTYPE.TRANSITION_IN.value();
+                    record.eventDate = eventDate;
+                    record.eventRTC = eventRTC;
+                    record.eventOFFSET = eventOFFSET;
+                    record.transitionValue = transitionValue;
+                    record.transitionReason = transitionReason;
+                    record.key = String.format("LOOP%08X", eventRTC);
+                    pumpHistorySender.senderREQ(record);
+                }
+                break;
 
-            object.setEventRTC(eventRTC);
-            object.setEventOFFSET(eventOFFSET);
-            object.setLoopActive(loopActive);
-            object.setLoopStatus(loopStatus);
+            case CL_OUT_OF_ACTIVE:
+                record = realm.where(PumpHistoryLoop.class)
+                        .equalTo("eventRTC", eventRTC)
+                        .equalTo("recordtype", RECORDTYPE.TRANSITION_OUT.value())
+                        .findFirst();
+                if (record == null) {
+                    Log.d(TAG, "*new* loop transition out event");
+                    record = realm.createObject(PumpHistoryLoop.class);
+                    record.recordtype = RECORDTYPE.TRANSITION_OUT.value();
+                    record.eventDate = eventDate;
+                    record.eventRTC = eventRTC;
+                    record.eventOFFSET = eventOFFSET;
+                    record.transitionValue = transitionValue;
+                    record.transitionReason = transitionReason;
+                    record.key = String.format("LOOP%08X", eventRTC);
+                }
 
-            object.setKey("LOOP" + String.format("%08X", eventRTC));
-            if (loopActive) object.setUploadREQ(true);
         }
     }
 
-    public static void basal(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
+    public static void basal(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
                              byte pattern) {
 
-        PumpHistoryLoop object = realm.where(PumpHistoryLoop.class)
-                .equalTo("loopMode", true)
-                .equalTo("loopActive", false)
+        PumpHistoryLoop transitionRecord = realm.where(PumpHistoryLoop.class)
+                .equalTo("recordtype", RECORDTYPE.TRANSITION_OUT.value())
                 .greaterThan("eventRTC", eventRTC - (5 * 60))
                 .lessThanOrEqualTo("eventRTC", eventRTC)
                 .findFirst();
 
-        if (object != null) {
+        if (transitionRecord != null) {
 
-            object = realm.where(PumpHistoryLoop.class)
-                    .equalTo("loopPattern", pattern)
+            PumpHistoryLoop record = realm.where(PumpHistoryLoop.class)
+                    .equalTo("recordtype", RECORDTYPE.RESTART_BASAL.value())
                     .equalTo("eventRTC", eventRTC)
                     .findFirst();
 
-            if (object == null) {
-                Log.d(TAG, "*new*" + "loop restart basal pattern");
-
-                object = realm.createObject(PumpHistoryLoop.class);
-
-                object.setEventDate(eventDate);
-                object.setLoopMode(true);
-                object.setLoopActive(false);
-                object.setEventRTC(eventRTC);
-                object.setEventOFFSET(eventOFFSET);
-                object.setLoopPattern(pattern);
-                object.setKey("LOOP" + String.format("%08X", eventRTC));
-                object.setUploadREQ(true);
+            if (record == null) {
+                Log.d(TAG, "*new* loop restart basal pattern");
+                record = realm.createObject(PumpHistoryLoop.class);
+                record.recordtype = RECORDTYPE.RESTART_BASAL.value();
+                record.eventDate = eventDate;
+                record.eventRTC = eventRTC;
+                record.eventOFFSET = eventOFFSET;
+                record.basalPattern = pattern;
+                record.transitionValue = transitionRecord.transitionValue;
+                record.transitionReason = transitionRecord.transitionReason;
+                record.key = String.format("LOOP%08X", eventRTC);
+                pumpHistorySender.senderREQ(record);
             }
         }
+    }
+
+    @Override
+    public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {return new ArrayList<>();}
+
+    @Override
+    public String getSenderREQ() {
+        return senderREQ;
+    }
+
+    @Override
+    public void setSenderREQ(String senderREQ) {
+        this.senderREQ = senderREQ;
+    }
+
+    @Override
+    public String getSenderACK() {
+        return senderACK;
+    }
+
+    @Override
+    public void setSenderACK(String senderACK) {
+        this.senderACK = senderACK;
+    }
+
+    @Override
+    public String getSenderDEL() {
+        return senderDEL;
+    }
+
+    @Override
+    public void setSenderDEL(String senderDEL) {
+        this.senderDEL = senderDEL;
     }
 
     @Override
@@ -198,46 +269,6 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
     }
 
     @Override
-    public boolean isUploadREQ() {
-        return uploadREQ;
-    }
-
-    @Override
-    public void setUploadREQ(boolean uploadREQ) {
-        this.uploadREQ = uploadREQ;
-    }
-
-    @Override
-    public boolean isUploadACK() {
-        return uploadACK;
-    }
-
-    @Override
-    public void setUploadACK(boolean uploadACK) {
-        this.uploadACK = uploadACK;
-    }
-
-    @Override
-    public boolean isXdripREQ() {
-        return xdripREQ;
-    }
-
-    @Override
-    public void setXdripREQ(boolean xdripREQ) {
-        this.xdripREQ = xdripREQ;
-    }
-
-    @Override
-    public boolean isXdripACK() {
-        return xdripACK;
-    }
-
-    @Override
-    public void setXdripACK(boolean xdripACK) {
-        this.xdripACK = xdripACK;
-    }
-
-    @Override
     public String getKey() {
         return key;
     }
@@ -247,67 +278,35 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
         this.key = key;
     }
 
-    public int getBolusRef() {
-        return bolusRef;
-    }
-
-    public void setBolusRef(int bolusRef) {
-        this.bolusRef = bolusRef;
-    }
-
-    public double getDeliveredAmount() {
-        return deliveredAmount;
-    }
-
-    public void setDeliveredAmount(double deliveredAmount) {
-        this.deliveredAmount = deliveredAmount;
+    public byte getRecordtype() {
+        return recordtype;
     }
 
     public int getEventRTC() {
         return eventRTC;
     }
 
-    public void setEventRTC(int eventRTC) {
-        this.eventRTC = eventRTC;
-    }
-
     public int getEventOFFSET() {
         return eventOFFSET;
     }
 
-    public void setEventOFFSET(int eventOFFSET) {
-        this.eventOFFSET = eventOFFSET;
+    public int getBolusRef() {
+        return bolusRef;
     }
 
-    public boolean isLoopMode() {
-        return loopMode;
+    public double getDeliveredAmount() {
+        return deliveredAmount;
     }
 
-    public void setLoopMode(boolean loopMode) {
-        this.loopMode = loopMode;
+    public byte getTransitionValue() {
+        return transitionValue;
     }
 
-    public boolean isLoopActive() {
-        return loopActive;
+    public byte getTransitionReason() {
+        return transitionReason;
     }
 
-    public void setLoopActive(boolean loopActive) {
-        this.loopActive = loopActive;
-    }
-
-    public byte getLoopStatus() {
-        return loopStatus;
-    }
-
-    public void setLoopStatus(byte loopStatus) {
-        this.loopStatus = loopStatus;
-    }
-
-    public byte getLoopPattern() {
-        return loopPattern;
-    }
-
-    public void setLoopPattern(byte loopPattern) {
-        this.loopPattern = loopPattern;
+    public byte getBasalPattern() {
+        return basalPattern;
     }
 }

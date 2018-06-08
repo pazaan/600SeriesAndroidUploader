@@ -1,5 +1,6 @@
 package info.nightscout.android.medtronic;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import info.nightscout.android.UploaderApplication;
@@ -26,16 +27,16 @@ public class UserLogMessage {
     private void addMessage(final String message) {
         Log.d(TAG, "addMessage: " + message);
 
-        final Realm userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
+        Realm userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
 
-        userLogRealm.executeTransaction(new Realm.Transaction() {
+        userLogRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
-            public void execute(Realm realm) {
+            public void execute(@NonNull Realm realm) {
 
-                userLogRealm.createObject(UserLog.class).UserLogMessage(message);
+                realm.createObject(UserLog.class).UserLogMessage(message);
 
                 // remove stale items
-                RealmResults results = userLogRealm.where(UserLog.class)
+                RealmResults results = realm.where(UserLog.class)
                         .lessThan("timestamp", System.currentTimeMillis() - STALE_MS)
                         .findAll();
                 if (results.size() > 0) results.deleteAllFromRealm();
@@ -50,12 +51,12 @@ public class UserLogMessage {
     }
 
     public void clear() {
-        final Realm userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
+        Realm userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
 
-        userLogRealm.executeTransaction(new Realm.Transaction() {
+        userLogRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
-            public void execute(Realm realm) {
-                userLogRealm.deleteAll();
+            public void execute(@NonNull Realm realm) {
+                realm.deleteAll();
             }
         });
 

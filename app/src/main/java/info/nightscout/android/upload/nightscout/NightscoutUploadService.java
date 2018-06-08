@@ -5,12 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.util.List;
 
 import info.nightscout.android.UploaderApplication;
-import info.nightscout.android.medtronic.PumpHistoryHandler;
+import info.nightscout.android.history.PumpHistoryHandler;
+import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -96,7 +98,8 @@ public class NightscoutUploadService extends Service {
         Log.i(TAG, "Device status records to upload: " + statusRecords.size());
 
         PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
-        List<PumpHistoryInterface> records = pumpHistoryHandler.uploadREQ();
+        pumpHistoryHandler.processSenderTTL("NS");
+        List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ("NS");
 
         int total = records.size() + statusRecords.size();
 
@@ -106,13 +109,14 @@ public class NightscoutUploadService extends Service {
 
                 long start = System.currentTimeMillis();
 
-                Log.i(TAG, String.format("Starting upload of %s record using a REST API", total));
+                Log.i(TAG, String.format("Starting process of %s records for upload", total));
                 String urlSetting = dataStore.getNightscoutURL();
                 String secretSetting = dataStore.getNightscoutSECRET();
 
                 int uploaderBatteryLevel = MasterService.getUploaderBatteryLevel();
 
                 new NightScoutUpload().doRESTUpload(
+                        pumpHistoryHandler.pumpHistorySender,
                         storeRealm,
                         dataStore,
                         urlSetting,
@@ -121,11 +125,11 @@ public class NightscoutUploadService extends Service {
                         statusRecords,
                         records);
 
-                pumpHistoryHandler.uploadACK();
+                pumpHistoryHandler.setSenderRecordsACK(records,"NS");
 
                 realm.executeTransaction(new Realm.Transaction() {
                     @Override
-                    public void execute(Realm realm) {
+                    public void execute(@NonNull Realm realm) {
                         for (PumpStatusEvent updateRecord : statusRecords)
                             updateRecord.setUploaded(true);
                     }
@@ -141,7 +145,7 @@ public class NightscoutUploadService extends Service {
 
                 storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
-                    public void execute(Realm realm) {
+                    public void execute(@NonNull Realm realm) {
                         dataStore.setNightscoutAvailable(false);                        }
                 });
 

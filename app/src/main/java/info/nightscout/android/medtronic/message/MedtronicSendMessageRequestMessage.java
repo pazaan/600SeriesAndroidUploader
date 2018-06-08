@@ -16,6 +16,8 @@ import java.nio.ByteOrder;
  */
 
 public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRequestMessage<T> {
+    private static final String TAG = MedtronicSendMessageRequestMessage.class.getSimpleName();
+
     static int ENVELOPE_SIZE = 11;
     static int ENCRYPTED_ENVELOPE_SIZE = 3;
     static int CRC_SIZE = 2;
@@ -48,10 +50,6 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
             this.response = (short) response;
         }
 
-        public int request() {
-            return this.request & 0x0000FFFF;
-        }
-
         public boolean response(int response) {
             return (this.response & 0x0000FFFF) == response;
         }
@@ -59,10 +57,16 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         public byte[] response() {
             return new byte[]{(byte) (this.request >> 8), (byte) (this.request)};
         }
+
+        public static MessageType convert(short value) {
+            for (MessageType messageType : MessageType.values())
+                if (messageType.response == value) return messageType;
+            return MessageType.NO_TYPE;
+        }
     }
 
     protected MedtronicSendMessageRequestMessage(MessageType messageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        super(CommandType.SEND_MESSAGE, CommandAction.PUMP_REQUEST, pumpSession, buildPayload(messageType, pumpSession, payload));
+        super(CommandType.SEND_MESSAGE, CommandAction.TRANSMIT_PACKET, pumpSession, buildPayload(messageType, pumpSession, payload));
     }
 
     @Override
@@ -120,7 +124,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         payloadBuffer.put((byte) sendPayloadBuffer.capacity());
 
         String outputString = HexDump.dumpHexString(sendPayloadBuffer.array());
-        Log.d("PUMP", "PAYLOAD: " + outputString);
+        Log.d(TAG, "*** REQUEST: " + messageType.name() + " (" + HexDump.toHexString(messageType.request) + ") PAYLOAD:" + outputString);
 
         payloadBuffer.put(encrypt( pumpSession.getKey(), pumpSession.getIV(), sendPayloadBuffer.array()));
 

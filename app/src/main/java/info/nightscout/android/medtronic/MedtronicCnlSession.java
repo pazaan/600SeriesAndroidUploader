@@ -92,6 +92,7 @@ public class MedtronicCnlSession {
 
     public void incrCnlSequenceNumber() {
         cnlSequenceNumber++;
+        if ((cnlSequenceNumber & 0x000000FF) == 0) cnlSequenceNumber = 0x00000001;
     }
 
     public void setMedtronicSequenceNumber(byte medtronicSequenceNumber) {

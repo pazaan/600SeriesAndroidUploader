@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.menu.MenuView;
 import android.support.v7.widget.Toolbar;
@@ -33,6 +34,7 @@ import android.widget.Toast;
 
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
+//import com.jaredrummler.android.device.DeviceName;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
@@ -65,6 +67,7 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.model.store.UserLog;
+import info.nightscout.android.utils.FormatKit;
 import io.realm.OrderedCollectionChangeSet;
 import io.realm.OrderedRealmCollectionChangeListener;
 import io.realm.Realm;
@@ -87,8 +90,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private int chartZoom = 3;
     private boolean hasZoomedChart = false;
 
-    private boolean mEnableCgmService = true;
-    private SharedPreferences prefs = null;
+    private boolean mEnableCgmService;// = true;
+    private SharedPreferences prefs;// = null;
 
     private TextView mTextViewLog; // This will eventually move to a status page.
     private TextView mTextViewLogButtonTop;
@@ -113,16 +116,25 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
 
-        mRealm = Realm.getDefaultInstance();
-        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-        userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
-        historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+        try {
+            if (Realm.compactRealm(Realm.getDefaultConfiguration()))
+                Log.i(TAG, "compactRealm: default successful");
+            if (Realm.compactRealm(UploaderApplication.getStoreConfiguration()))
+                Log.i(TAG, "compactRealm: store successful");
+            if (Realm.compactRealm(UploaderApplication.getUserLogConfiguration()))
+                Log.i(TAG, "compactRealm: userlog successful");
+            if (Realm.compactRealm(UploaderApplication.getHistoryConfiguration()))
+                Log.i(TAG, "compactRealm: history successful");
+        } catch (Exception e) {
+            Log.e(TAG, "Error trying to compact realm" + Log.getStackTraceString(e));
+        }
 
+        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
         dataStore = storeRealm.where(DataStore.class).findFirst();
         if (dataStore == null) {
             storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
-                public void execute(Realm realm) {
+                public void execute(@NonNull Realm realm) {
                     dataStore = realm.createObject(DataStore.class);
                 }
             });
@@ -132,28 +144,20 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (dataStore.getNightscoutLimitDate() == null) {
             storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
-                public void execute(Realm realm) {
+                public void execute(@NonNull Realm realm) {
                     dataStore.setNightscoutLimitDate(new Date(System.currentTimeMillis()));
                 }
             });
         }
 
-        setContentView(R.layout.activity_main);
-
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         prefs.registerOnSharedPreferenceChangeListener(this);
-
-        if (!prefs.getBoolean(getString(R.string.preference_eula_accepted), false)) {
-            stopMasterService();
-        }
-
         copyPrefsToDataStore(prefs);
 
-        chartZoom = Integer.parseInt(prefs.getString("chartZoom", "3"));
+        setContentView(R.layout.activity_main);
 
         // Disable battery optimization to avoid missing values on 6.0+
         // taken from https://github.com/NightscoutFoundation/xDrip/blob/master/app/src/main/java/com/eveningoutpost/dexdrip/Home.java#L277L298
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             final String packageName = getPackageName();
             final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -173,7 +177,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
 
-        mEnableCgmService = Eula.show(this, prefs);
+        mEnableCgmService = Eula.show(this, prefs)
+                && prefs.getBoolean(getString(R.string.preference_eula_accepted), false);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -184,31 +189,31 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         final PrimaryDrawerItem itemSettings = new PrimaryDrawerItem()
-                .withName("Settings")
+                .withName(R.string.main_menu_settings)
                 .withIcon(GoogleMaterial.Icon.gmd_settings)
                 .withSelectable(false);
         final PrimaryDrawerItem itemRegisterUsb = new PrimaryDrawerItem()
-                .withName("Registered devices")
+                .withName(R.string.main_menu_registered_devices)
                 .withIcon(GoogleMaterial.Icon.gmd_usb)
                 .withSelectable(false);
         final PrimaryDrawerItem itemStopCollecting = new PrimaryDrawerItem()
-                .withName("Stop collecting data")
+                .withName(R.string.main_menu_stop_collecting_data)
                 .withIcon(GoogleMaterial.Icon.gmd_power_settings_new)
                 .withSelectable(false);
         final PrimaryDrawerItem itemGetNow = new PrimaryDrawerItem()
-                .withName("Read data now")
+                .withName(R.string.main_menu_read_data_now)
                 .withIcon(GoogleMaterial.Icon.gmd_refresh)
                 .withSelectable(false);
         final PrimaryDrawerItem itemUpdateProfile = new PrimaryDrawerItem()
-                .withName("Update pump profile")
+                .withName(R.string.main_menu_update_pump_profile)
                 .withIcon(GoogleMaterial.Icon.gmd_insert_chart)
                 .withSelectable(false);
         final PrimaryDrawerItem itemClearLog = new PrimaryDrawerItem()
-                .withName("Clear log")
+                .withName(R.string.main_menu_clear_log)
                 .withIcon(GoogleMaterial.Icon.gmd_clear_all)
                 .withSelectable(false);
         final PrimaryDrawerItem itemCheckForUpdate = new PrimaryDrawerItem()
-                .withName("Check for App update")
+                .withName(R.string.main_menu_check_for_app_update)
                 .withIcon(GoogleMaterial.Icon.gmd_update)
                 .withSelectable(false);
 
@@ -242,20 +247,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         } else if (drawerItem.equals(itemRegisterUsb)) {
                             openUsbRegistration();
                         } else if (drawerItem.equals(itemStopCollecting)) {
-                            statusFinish();
                             mEnableCgmService = false;
-                            stopMasterService();
                             finish();
                         } else if (drawerItem.equals(itemGetNow)) {
                             // It was triggered by user so start reading of data now and not based on last poll.
-                            userLogMessage.add("Requesting poll now...");
-                            sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_NOW));
-                        } else if (drawerItem.equals(itemUpdateProfile)) {
-                            if (dataStore.isNsEnableProfileUpload()) {
-                                userLogMessage.add("Requesting pump profile update...");
-                                sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_PROFILE));
+                            if (mEnableCgmService) {
+                                userLogMessage.add(getString(R.string.main_requesting_poll_now));
+                                sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_NOW));
                             } else {
-                                userLogMessage.add("Profile update is not enabled.");
+                                userLogMessage.add(getString(R.string.main_cgm_service_disabled));
+                            }
+                        } else if (drawerItem.equals(itemUpdateProfile)) {
+                            if (mEnableCgmService) {
+                                if (dataStore.isNsEnableProfileUpload()) {
+                                    userLogMessage.add(getString(R.string.main_requesting_pump_profile));
+                                    sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_PROFILE));
+                                } else {
+                                    userLogMessage.add(getString(R.string.main_pump_profile_disabled));
+                                }
+                            } else {
+                                userLogMessage.add(getString(R.string.main_cgm_service_disabled));
                             }
                         } else if (drawerItem.equals(itemClearLog)) {
                             userLogMessage.clear();
@@ -304,6 +315,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 changeUserLogViewRecent();
             }
         });
+
+        chartZoom = Integer.parseInt(prefs.getString("chartZoom", "3"));
 
         mChart = findViewById(R.id.chart);
 
@@ -361,13 +374,39 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     }
                 }
         );
+
+        /*
+        DeviceName.with(this).request(new DeviceName.Callback() {
+
+            @Override public void onFinished(DeviceName.DeviceInfo info, Exception error) {
+                String manufacturer = info.manufacturer;  // "Samsung"
+                String name = info.marketName;            // "Galaxy S8+"
+                String model = info.model;                // "SM-G955W"
+                String codename = info.codename;          // "dream2qltecan"
+                String deviceName = info.getName();       // "Galaxy S8+"
+
+                Log.i(TAG, "manufacturer = " + info.manufacturer);
+                Log.i(TAG, "name = " + info.marketName);
+                Log.i(TAG, "model = " + info.model);
+                Log.i(TAG, "codename = " + info.codename);
+                Log.i(TAG, "deviceName = " + info.getName());
+            }
+        });
+        */
+
+        FormatKit.getInstance(this);
     }
 
     @Override
     protected void onStart() {
         Log.d(TAG, "onStart called");
         super.onStart();
+        if (userLogRealm == null) userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
+        if (historyRealm == null) historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+        if (mRealm == null) mRealm = Realm.getDefaultInstance();
+
         checkForUpdateBackground(5);
+
         startDisplay();
         startUserLogView();
     }
@@ -387,8 +426,16 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     protected void onStop() {
         Log.d(TAG, "onStop called");
         super.onStop();
+
         stopUserLogView();
         stopDisplay();
+
+        if (userLogRealm != null && !userLogRealm.isClosed()) userLogRealm.close();
+        if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
+        if (mRealm != null && !mRealm.isClosed()) mRealm.close();
+        userLogRealm = null;
+        historyRealm = null;
+        mRealm = null;
     }
 
     @Override
@@ -396,18 +443,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "onDestroy called");
         super.onDestroy();
 
-        statusDestroy();
+        if (!mEnableCgmService) stopMasterService();
 
+        statusDestroy();
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
 
-        if (!historyRealm.isClosed()) historyRealm.close();
-        if (!userLogRealm.isClosed()) userLogRealm.close();
-        if (!storeRealm.isClosed()) storeRealm.close();
-        if (!mRealm.isClosed()) mRealm.close();
+        FormatKit.close();
 
-        if (!mEnableCgmService) {
-            stopMasterService();
-        }
+        if (storeRealm !=null && !storeRealm.isClosed()) storeRealm.close();
+        if (userLogRealm != null && !userLogRealm.isClosed()) userLogRealm.close();
+        if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
+        if (mRealm != null && !mRealm.isClosed()) mRealm.close();
     }
 
     @Override
@@ -463,46 +509,61 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void statusStartup() {
         if (!prefs.getBoolean("EnableCgmService", false)) {
-            userLogMessage.add(ICON_HEART + "Nightscout 600 Series Uploader");
-            userLogMessage.add(ICON_SETTING + "Uploading: " + (dataStore.isNightscoutUpload() ? "enabled" : "disabled"));
-            userLogMessage.add(ICON_SETTING + "Treatments: " + (dataStore.isNsEnableTreatments() ? "enabled" : "disabled"));
-            userLogMessage.add(ICON_SETTING + "Poll interval: " + (dataStore.getPollInterval() / 60000) + " min");
-            userLogMessage.add(ICON_SETTING + "Low battery poll interval: " + (dataStore.getLowBatPollInterval() / 60000) + " min");
+            userLogMessage.add(ICON_HEART + getString(R.string.main_hello));
+            userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %s",
+                    getString(R.string.main_uploading),
+                    dataStore.isNightscoutUpload() ? getString(R.string.text_enabled) : getString(R.string.text_disabled)));
+            userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %s",
+                    getString(R.string.main_treatments),
+                    dataStore.isNightscoutUpload() ? getString(R.string.text_enabled) : getString(R.string.text_disabled)));
+            userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %d %s",
+                    getString(R.string.main_poll_interval),
+                    dataStore.getLowBatPollInterval() / 60000,
+                    getString(R.string.time_min)));
+            userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %d %s",
+                    getString(R.string.main_low_battery_poll_interval),
+                    dataStore.getLowBatPollInterval() / 60000,
+                    getString(R.string.time_min)));
             int historyFrequency = dataStore.getSysPumpHistoryFrequency();
-            userLogMessage.add(ICON_SETTING + "Auto Mode update: " + (historyFrequency == 0 ? "events only" : historyFrequency + " min"));
+            if (historyFrequency > 0) {
+                userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %d %s",
+                        getString(R.string.main_auto_mode_update),
+                        historyFrequency,
+                        getString(R.string.time_min)));
+            } else {
+                userLogMessage.add(ICON_SETTING + getString(R.string.main_auto_mode_update) + " " + getString(R.string.main_events_only));
+            }
         }
-    }
-
-    private void statusFinish() {
-        userLogMessage.add(ICON_INFO + "Shutting down CGM Service");
     }
 
     private void statusDestroy() {
         if (!prefs.getBoolean("EnableCgmService", false)) {
-            userLogMessage.add(ICON_HEART + "Goodbye :)");
+            userLogMessage.add(ICON_HEART + getString(R.string.main_goodbye));
             userLogMessage.add("---------------------------------------------------");
         }
     }
 
     private void startMasterService() {
         Log.i(TAG, "startMasterService called");
-
-        if (!mEnableCgmService) {
-            return;
+        if (mEnableCgmService) {
+            prefs.edit().putBoolean("EnableCgmService", true).commit();
+            startService(new Intent(this, MasterService.class));
+        } else {
+            prefs.edit().putBoolean("EnableCgmService", false).commit();
+            Log.i(TAG, "startMasterService: CgmService is disabled");
         }
-
-        prefs.edit().putBoolean("EnableCgmService", true).commit();
-        startService(new Intent(this, MasterService.class));
     }
 
     private void stopMasterService() {
         Log.i(TAG, "stopMasterService called");
+        userLogMessage.add(ICON_INFO + getString(R.string.main_shutting_down_cgm_service));
         prefs.edit().putBoolean("EnableCgmService", false).commit();
         sendBroadcast(new Intent(MasterService.Constants.ACTION_STOP_SERVICE));
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.d(TAG, "onSharedPreferenceChanged called");
         if (key.equals(getString(R.string.preference_eula_accepted))) {
             if (!sharedPreferences.getBoolean(getString(R.string.preference_eula_accepted), false)) {
                 mEnableCgmService = false;
@@ -516,8 +577,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             hasZoomedChart = false;
         } else {
             copyPrefsToDataStore(sharedPreferences);
-            sendBroadcast(new Intent(MasterService.Constants.ACTION_URCHIN_UPDATE));
-
+            if (mEnableCgmService)
+                sendBroadcast(new Intent(MasterService.Constants.ACTION_URCHIN_UPDATE));
         }
     }
 
@@ -525,111 +586,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         // prefs that are in constant use, safe across threads and processes
 
+        final Context context = this.getBaseContext();
+
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
-            public void execute(Realm realm) {
-
-                dataStore.setMmolxl(sharedPreferences.getBoolean("mmolxl", false));
-                dataStore.setMmolxlDecimals(sharedPreferences.getBoolean("mmolDecimals", false));
-                dataStore.setPollInterval(Long.parseLong(sharedPreferences.getString("pollInterval",
-                        Long.toString(MedtronicCnlService.POLL_PERIOD_MS))));
-                dataStore.setLowBatPollInterval(Long.parseLong(sharedPreferences.getString("lowBatPollInterval",
-                        Long.toString(MedtronicCnlService.LOW_BATTERY_POLL_PERIOD_MS))));
-                dataStore.setDoublePollOnPumpAway(sharedPreferences.getBoolean("doublePollOnPumpAway", false));
-
-                dataStore.setNightscoutUpload(sharedPreferences.getBoolean("EnableRESTUpload", false));
-                dataStore.setNightscoutURL(sharedPreferences.getString(getString(R.string.preference_nightscout_url), ""));
-                dataStore.setNightscoutSECRET(sharedPreferences.getString(getString(R.string.preference_api_secret), "YOURAPISECRET"));
-
-                // system
-                dataStore.setSysEnableCgmHistory(sharedPreferences.getBoolean("sysEnableCgmHistory", true));
-                dataStore.setSysCgmHistoryDays(Integer.parseInt(sharedPreferences.getString("sysCgmHistoryDays", "7")));
-                dataStore.setSysEnablePumpHistory(sharedPreferences.getBoolean("sysEnablePumpHistory", true));
-                dataStore.setSysPumpHistoryDays(Integer.parseInt(sharedPreferences.getString("sysPumpHistoryDays", "7")));
-                dataStore.setSysPumpHistoryFrequency(Integer.parseInt(sharedPreferences.getString("sysPumpHistoryFrequency", "90")));
-
-                dataStore.setSysEnableClashProtect(sharedPreferences.getBoolean("sysEnableClashProtect", true));
-                dataStore.setSysEnablePollOverride(sharedPreferences.getBoolean("sysEnablePollOverride", false));
-                dataStore.setSysPollGracePeriod(Long.parseLong(sharedPreferences.getString("sysPollGracePeriod", "30000")));
-                dataStore.setSysPollRecoveryPeriod(Long.parseLong(sharedPreferences.getString("sysPollRecoveryPeriod", "90000")));
-                dataStore.setSysPollWarmupPeriod(Long.parseLong(sharedPreferences.getString("sysPollWarmupPeriod", "90000")));
-                dataStore.setSysPollErrorRetry(Long.parseLong(sharedPreferences.getString("sysPollErrorRetry", "90000")));
-                dataStore.setSysPollOldSgvRetry(Long.parseLong(sharedPreferences.getString("sysPollOldSgvRetry", "90000")));
-                dataStore.setSysEnableWait500ms(sharedPreferences.getBoolean("sysEnableWait500ms", false));
-                dataStore.setSysEnableUsbPermissionDialog(sharedPreferences.getBoolean("sysEnableUsbPermissionDialog", false));
-
-                // debug
-                dataStore.setDbgEnableExtendedErrors(sharedPreferences.getBoolean("dbgEnableExtendedErrors", false));
-                dataStore.setDbgEnableUploadErrors(sharedPreferences.getBoolean("dbgEnableUploadErrors", true));
-
-                // nightscout
-                dataStore.setNsEnableTreatments(sharedPreferences.getBoolean("nsEnableTreatments", true));
-                dataStore.setNsEnableHistorySync(sharedPreferences.getBoolean("nsEnableHistorySync", false));
-                dataStore.setNsEnableFingerBG(sharedPreferences.getBoolean("nsEnableFingerBG", true));
-                dataStore.setNsEnableCalibrationInfo(sharedPreferences.getBoolean("nsEnableCalibrationInfo", false));
-                dataStore.setNsEnableCalibrationInfoNow(sharedPreferences.getBoolean("nsEnableCalibrationInfoNow", false));
-                dataStore.setNsEnableSensorChange(sharedPreferences.getBoolean("nsEnableSensorChange", true));
-                dataStore.setNsEnableReservoirChange(sharedPreferences.getBoolean("nsEnableReservoirChange", true));
-                dataStore.setNsEnableBatteryChange(sharedPreferences.getBoolean("nsEnableBatteryChange", true));
-                dataStore.setNsEnableLifetimes(sharedPreferences.getBoolean("nsEnableLifetimes", false));
-                dataStore.setNsEnableProfileUpload(sharedPreferences.getBoolean("nsEnableProfileUpload", true));
-                dataStore.setNsEnableProfileSingle(sharedPreferences.getBoolean("nsEnableProfileSingle", true));
-                dataStore.setNsEnableProfileOffset(sharedPreferences.getBoolean("nsEnableProfileOffset", true));
-                dataStore.setNsProfileDefault(Integer.parseInt(sharedPreferences.getString("nsProfileDefault", "1")));
-                dataStore.setNsActiveInsulinTime(Float.parseFloat(sharedPreferences.getString("nsActiveInsulinTime", "3")));
-                dataStore.setNsEnablePatternChange(sharedPreferences.getBoolean("nsEnablePatternChange", true));
-                dataStore.setNsGramsPerExchange(Integer.parseInt(sharedPreferences.getString("nsGramsPerExchange", "15")));
-                dataStore.setNsEnableInsertBGasCGM(sharedPreferences.getBoolean("nsEnableInsertBGasCGM", false));
-
-                // pattern and preset naming
-                dataStore.setNameBasalPattern1(sharedPreferences.getString("nameBasalPattern1", "Basal 1"));
-                dataStore.setNameBasalPattern1(sharedPreferences.getString("nameBasalPattern1", "Basal 1"));
-                dataStore.setNameBasalPattern2(sharedPreferences.getString("nameBasalPattern2", "Basal 2"));
-                dataStore.setNameBasalPattern3(sharedPreferences.getString("nameBasalPattern3", "Basal 3"));
-                dataStore.setNameBasalPattern4(sharedPreferences.getString("nameBasalPattern4", "Basal 4"));
-                dataStore.setNameBasalPattern5(sharedPreferences.getString("nameBasalPattern5", "Basal 5"));
-                dataStore.setNameBasalPattern6(sharedPreferences.getString("nameBasalPattern6", "Workday"));
-                dataStore.setNameBasalPattern7(sharedPreferences.getString("nameBasalPattern7", "Day Off"));
-                dataStore.setNameBasalPattern8(sharedPreferences.getString("nameBasalPattern8", "Sick Day"));
-                dataStore.setNameTempBasalPreset1(sharedPreferences.getString("nameTempBasalPreset1", "Temp 1"));
-                dataStore.setNameTempBasalPreset2(sharedPreferences.getString("nameTempBasalPreset2", "Temp 2"));
-                dataStore.setNameTempBasalPreset3(sharedPreferences.getString("nameTempBasalPreset3", "Temp 3"));
-                dataStore.setNameTempBasalPreset4(sharedPreferences.getString("nameTempBasalPreset4", "Temp 4"));
-                dataStore.setNameTempBasalPreset5(sharedPreferences.getString("nameTempBasalPreset5", "High Activity"));
-                dataStore.setNameTempBasalPreset6(sharedPreferences.getString("nameTempBasalPreset6", "Moderate Activity"));
-                dataStore.setNameTempBasalPreset7(sharedPreferences.getString("nameTempBasalPreset7", "Low Activity"));
-                dataStore.setNameTempBasalPreset8(sharedPreferences.getString("nameTempBasalPreset8", "Sick"));
-                dataStore.setNameBolusPreset1(sharedPreferences.getString("nameBolusPreset1", "Bolus 1"));
-                dataStore.setNameBolusPreset2(sharedPreferences.getString("nameBolusPreset2", "Bolus 2"));
-                dataStore.setNameBolusPreset3(sharedPreferences.getString("nameBolusPreset3", "Bolus 3"));
-                dataStore.setNameBolusPreset4(sharedPreferences.getString("nameBolusPreset4", "Bolus 4"));
-                dataStore.setNameBolusPreset5(sharedPreferences.getString("nameBolusPreset5", "Breakfast"));
-                dataStore.setNameBolusPreset6(sharedPreferences.getString("nameBolusPreset6", "Lunch"));
-                dataStore.setNameBolusPreset7(sharedPreferences.getString("nameBolusPreset7", "Dinner"));
-                dataStore.setNameBolusPreset8(sharedPreferences.getString("nameBolusPreset8", "Snack"));
-
-                // urchin
-                dataStore.setUrchinEnable(sharedPreferences.getBoolean("urchinEnable", false));
-                dataStore.setUrchinBasalPeriod(Integer.parseInt(sharedPreferences.getString("urchinBasalPeriod", "23")));
-                dataStore.setUrchinBasalScale(Integer.parseInt(sharedPreferences.getString("urchinBasalScale", "0")));
-                dataStore.setUrchinBolusGraph(sharedPreferences.getBoolean("urchinBolusGraph", false));
-                dataStore.setUrchinBolusTags(sharedPreferences.getBoolean("urchinBolusTags", false));
-                dataStore.setUrchinBolusPop(Integer.parseInt(sharedPreferences.getString("urchinBolusPop", "0")));
-                dataStore.setUrchinTimeStyle(Integer.parseInt(sharedPreferences.getString("urchinTimeStyle", "1")));
-                dataStore.setUrchinDurationStyle(Integer.parseInt(sharedPreferences.getString("urchinDurationStyle", "1")));
-                dataStore.setUrchinUnitsStyle(Integer.parseInt(sharedPreferences.getString("urchinUnitsStyle", "1")));
-                dataStore.setUrchinBatteyStyle(Integer.parseInt(sharedPreferences.getString("urchinBatteyStyle", "1")));
-                dataStore.setUrchinConcatenateStyle(Integer.parseInt(sharedPreferences.getString("urchinConcatenateStyle", "2")));
-                dataStore.setUrchinCustomText1(sharedPreferences.getString("urchinCustomText1", ""));
-                dataStore.setUrchinCustomText2(sharedPreferences.getString("urchinCustomText2", ""));
-
-                int count = 20;
-                byte[] urchinStatusLayout = new byte[count];
-                for (int i=0; i < count; i++) {
-                    urchinStatusLayout[i] = Byte.parseByte(sharedPreferences.getString("urchinStatusLayout" + (i + 1), "0"));
-                }
-                dataStore.setUrchinStatusLayout(urchinStatusLayout);
-
+            public void execute(@NonNull Realm realm) {
+                dataStore.copyPrefs(context, sharedPreferences);
             }
         });
 
@@ -678,11 +640,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "startDisplay");
 
         displayResults = mRealm.where(PumpStatusEvent.class)
-                .findAllSortedAsync("eventDate", Sort.ASCENDING);
+                .sort("eventDate", Sort.ASCENDING)
+                .findAllAsync();
 
         displayResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
             @Override
-            public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
                 if (changeSet != null) {
                     Log.d(TAG, "display listener triggered");
                     if (changeSet.getInsertions().length > 0) {
@@ -718,9 +681,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         TextView textViewBg = findViewById(R.id.textview_bg);
         TextView textViewUnits = findViewById(R.id.textview_units);
         if (dataStore.isMmolxl()) {
-            textViewUnits.setText(R.string.text_unit_mmolxl);
+            textViewUnits.setText(R.string.text_unit_mmol);
         } else {
-            textViewUnits.setText(R.string.text_unit_mgxdl);
+            textViewUnits.setText(R.string.text_unit_mgdl);
         }
         TextView textViewTrend = findViewById(R.id.textview_trend);
         TextView textViewIOB = findViewById(R.id.textview_iob);
@@ -734,7 +697,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         RealmResults<PumpStatusEvent> sgv_results =
                 mRealm.where(PumpStatusEvent.class)
                         .equalTo("validSGV", true)
-                        .findAllSorted("cgmDate", Sort.ASCENDING);
+                        .sort("cgmDate", Sort.ASCENDING)
+                        .findAll();
 
         if (sgv_results.size() > 0) {
             timeLastSGV = sgv_results.last().getCgmDate().getTime();
@@ -774,7 +738,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         RealmResults<PumpStatusEvent> pump_results =
                 mRealm.where(PumpStatusEvent.class)
                         .greaterThan("eventDate", new Date(System.currentTimeMillis() - 60 * 60000L))
-                        .findAllSorted("eventDate", Sort.ASCENDING);
+                        .sort("eventDate", Sort.ASCENDING)
+                        .findAll();
 
         if (pump_results.size() > 0) {
             iob = pump_results.last().getActiveInsulin();
@@ -796,7 +761,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             long nextRun = 60000L;
 
             TextView textViewBgTime = findViewById(R.id.textview_bg_time);
-            String timeString = "never";
+            String timeString = getString(R.string.main_never);
 
             if (timeLastSGV > 0) {
                 nextRun = 60000L - (System.currentTimeMillis() - timeLastSGV) % 60000L;
@@ -851,11 +816,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         displayCgmResults = historyRealm.where(PumpHistoryCGM.class)
                 .notEqualTo("sgv", 0)
-                .findAllSortedAsync("eventDate", Sort.ASCENDING);
+                .sort("eventDate", Sort.ASCENDING)
+                .findAllAsync();
 
         displayCgmResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
             @Override
-            public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
                 if (changeSet == null) {
                     // initial refresh after start
                     refreshDisplayCgm();
@@ -884,7 +850,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             long timeLastSGV = results.last().getEventDate().getTime();
             results = results.where()
                     .greaterThan("eventDate", new Date(timeLastSGV - 24 * 60 * 60 * 1000L))
-                    .findAllSorted("eventDate", Sort.ASCENDING);
+                    .sort("eventDate", Sort.ASCENDING)
+                    .findAll();
         }
 
         updateChart(results);
@@ -921,8 +888,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         RealmResults<PumpHistoryCGM> minmaxY = results.where()
                 .greaterThan("eventDate",  new Date(minX))
-                .findAllSorted("sgv", Sort.ASCENDING);
-
+                .sort("sgv", Sort.ASCENDING)
+                .findAll();
+/*
         long rangeY, minRangeY;
         long minY = minmaxY.first().getSgv();
         long maxY = minmaxY.last().getSgv();
@@ -942,6 +910,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             rangeY = maxY - minY;
             minRangeY = ((rangeY / 20 ) + 1) * 20;
             minY = minY - (long) Math.floor((minRangeY - rangeY) / 2);
+            maxY = minY + minRangeY;
+        }
+*/
+        long rangeY, minRangeY;
+        double minY = minmaxY.first().getSgv();
+        double maxY = minmaxY.last().getSgv();
+
+        if (prefs.getBoolean("mmolxl", false)) {
+            minY = Math.floor((minY / MMOLXLFACTOR) * 2);
+            maxY = Math.ceil((maxY / MMOLXLFACTOR) * 2);
+            rangeY = (long) (maxY - minY);
+            minRangeY = ((rangeY / 4 ) + 1) * 4;
+            minY = minY - Math.floor((minRangeY - rangeY) / 2);
+            maxY = minY + minRangeY;
+            minY = Math.floor(minY * MMOLXLFACTOR / 2);
+            maxY = Math.floor(maxY * MMOLXLFACTOR / 2);
+        } else {
+            minY = Math.floor(minY / 10) * 10;
+            maxY = Math.ceil(maxY / 10) * 10;
+            rangeY = (long) (maxY - minY);
+            minRangeY = ((rangeY / 20 ) + 1) * 20;
+            minY = minY - Math.floor((minRangeY - rangeY) / 2);
             maxY = minY + minRangeY;
         }
 
@@ -997,11 +987,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         paint.setColor(Color.YELLOW);
                     else
                         paint.setColor(Color.RED);
-                    float dotSize = 3.0f;
-                    if (chartZoom == 3) dotSize = 2.0f;
-                    else if (chartZoom == 6) dotSize = 2.0f;
-                    else if (chartZoom == 12) dotSize = 1.65f;
-                    else if (chartZoom == 24) dotSize = 1.25f;
+
+                    float dotSize;
+                    switch (chartZoom) {
+                        case 1:
+                            dotSize = 3.0f;
+                            break;
+                        case 3:
+                            dotSize = 2.0f;
+                            break;
+                        case 6:
+                            dotSize = 2.0f;
+                            break;
+                        case 12:
+                            dotSize = 1.65f;
+                            break;
+                        case 24:
+                            dotSize = 1.25f;
+                            break;
+                        default:
+                            dotSize = 3.0f;
+                    }
+
                     canvas.drawCircle(x, y, dipToPixels(getApplicationContext(), dotSize), paint);
                 }
             });
@@ -1037,11 +1044,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         viewPosition = 0;
 
         userLogResults = userLogRealm.where(UserLog.class)
-                .findAllSortedAsync("timestamp", Sort.DESCENDING);
+                .sort("timestamp", Sort.DESCENDING)
+                .findAllAsync();
 
         userLogResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
             @Override
-            public void onChange(RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
 
                 if (changeSet == null) {
                     changeUserLogViewRecent();
@@ -1107,14 +1115,27 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private String formatMessage(UserLog userLog) {
-        DateFormat df = new SimpleDateFormat("E HH:mm:ss");
+/*
+        SimpleDateFormat sdf = new SimpleDateFormat("E", Locale.getDefault());
+        String clock = sdf.format(userLog.getTimestamp());
+        if (android.text.format.DateFormat.is24HourFormat(this)) {
+            sdf.applyLocalizedPattern(" H:mm:ss");
+            clock += sdf.format(userLog.getTimestamp());
+        } else {
+            sdf.applyLocalizedPattern(" h:mm:ss a");
+            clock += sdf.format(userLog.getTimestamp()).toLowerCase().replace(".", "").replace(",", "");
+        }
+*/
+        SimpleDateFormat sdf = new SimpleDateFormat("E HH:mm:ss");
+        String clock = sdf.format(userLog.getTimestamp());
+
         String split[] = userLog.getMessage().split("¦");
         if (split.length == 2)
-            return df.format(userLog.getTimestamp()) + ": " + split[0] + strFormatSGV(toInt(split[1]));
+            return clock + ": " + split[0] + strFormatSGV(toInt(split[1]));
         else if (split.length == 3)
-            return df.format(userLog.getTimestamp()) + ": " + split[0] + strFormatSGV(toInt(split[1])) + split[2];
+            return clock + ": " + split[0] + strFormatSGV(toInt(split[1])) + split[2];
         else
-            return df.format(userLog.getTimestamp()) + ": " + split[0];
+            return clock + ": " + split[0];
     }
 
     private void changeUserLogViewOlder() {

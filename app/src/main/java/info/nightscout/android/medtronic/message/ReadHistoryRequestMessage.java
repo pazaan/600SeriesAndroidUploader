@@ -22,6 +22,7 @@ import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.utils.HexDump;
 
+import static info.nightscout.android.utils.ToolKit.read16BEtoShort;
 import static info.nightscout.android.utils.ToolKit.read8toUInt;
 import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
 import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
@@ -55,23 +56,39 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
     }
 
     public ReadHistoryResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        byte[] payload;
         blocks = new ByteArrayOutputStream();
 
         sendToPump(mDevice, mPumpSession, TAG);
+
+        byte[] payload;
+        short cmd;
 
         boolean receivedEndHistoryCommand = false;
         while (!receivedEndHistoryCommand) {
             payload = readFromPump(mDevice, mPumpSession, TAG);
 
-            int cmd = read16BEtoUInt(payload, 1);
+            cmd = read16BEtoShort(payload, 1);
             if (MessageType.END_HISTORY_TRANSMISSION.response(cmd)) {
-                // read 0412 = EHSM_SESSION (1)
-                readMessage(mDevice);
+                // pump sends EHSM_SESSION
+                payload = readFromPump(mDevice, mPumpSession, TAG);
+                cmd = read16BEtoShort(payload, 1);
+                if (!MessageType.EHSM_SESSION.response(cmd))
+                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
                 receivedEndHistoryCommand = true;
 
             } else if (MessageType.UNMERGED_HISTORY.response(cmd)) {
-                addHistoryBlock(payload);
+                try {
+                    addHistoryBlock(payload);
+                } catch (UnexpectedMessageException e) {
+                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                    throw e;
+                } catch (ChecksumException e) {
+                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                    throw e;
+                } catch (Exception e) {
+                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                    throw new UnexpectedMessageException("history message block corrupt");
+                }
             }
         }
 
@@ -105,8 +122,9 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
                 LzoAlgorithm algorithm = LzoAlgorithm.LZO1X;
                 LzoDecompressor decompressor = LzoLibrary.getInstance().newDecompressor(algorithm, null);
                 int lzoReturnCode = decompressor.decompress(payload, HEADER_SIZE, historySizeCompressed, blockPayload, 0, new lzo_uintp(historySizeUncompressed));
-                if (lzoReturnCode != LzoTransformer.LZO_E_OK)
+                if (lzoReturnCode != LzoTransformer.LZO_E_OK) {
                     throw new UnexpectedMessageException("Error trying to decompress message (" + decompressor.toErrorString(lzoReturnCode) + ")");
+                }
             } catch (Exception e) {
                 throw new UnexpectedMessageException("Error trying to decompress message");
             }

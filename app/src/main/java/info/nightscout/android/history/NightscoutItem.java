@@ -1,10 +1,14 @@
-package info.nightscout.api;
+package info.nightscout.android.history;
+
+import info.nightscout.api.EntriesEndpoints;
+import info.nightscout.api.ProfileEndpoints;
+import info.nightscout.api.TreatmentsEndpoints;
 
 /**
  * Created by Pogman on 22.11.17.
  */
 
-public class UploadItem {
+public class NightscoutItem {
 
     private TreatmentsEndpoints.Treatment treatment;
     private EntriesEndpoints.Entry entry;
@@ -18,27 +22,27 @@ public class UploadItem {
         DELETE
     }
 
-    public UploadItem mode(MODE mode) {
+    public NightscoutItem mode(MODE mode) {
         this.mode = mode;
         return this;
     }
 
-    public UploadItem ack(boolean uploadACK) {
+    public NightscoutItem ack(boolean uploadACK) {
         mode = uploadACK ? MODE.UPDATE : MODE.CHECK;
         return this;
     }
 
-    public UploadItem update() {
+    public NightscoutItem update() {
         mode = MODE.UPDATE;
         return this;
     }
 
-    public UploadItem check() {
+    public NightscoutItem check() {
         mode = MODE.CHECK;
         return this;
     }
 
-    public UploadItem delete() {
+    public NightscoutItem delete() {
         mode = MODE.DELETE;
         return this;
     }

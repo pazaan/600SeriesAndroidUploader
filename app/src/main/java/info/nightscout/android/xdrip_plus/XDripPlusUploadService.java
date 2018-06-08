@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -21,11 +22,11 @@ import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
-import info.nightscout.android.medtronic.PumpHistoryParser;
+import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
+import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.upload.nightscout.serializer.EntriesSerializer;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -42,6 +43,7 @@ public class XDripPlusUploadService extends Service {
     private static final String TAG = XDripPlusUploadService.class.getSimpleName();
 
     private Context mContext;
+
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
 
     private String device;
@@ -93,39 +95,26 @@ public class XDripPlusUploadService extends Service {
 
                 Realm mRealm = Realm.getDefaultInstance();
 
-                Realm historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
-
-                final RealmResults<PumpHistoryCGM> history_records = historyRealm
-                        .where(PumpHistoryCGM.class)
-                        .equalTo("xdripACK", false)
-                        .notEqualTo("sgv", 0)
-                        .findAllSorted("eventDate", Sort.DESCENDING);
-
-                RealmResults<PumpStatusEvent> records = mRealm
+                RealmResults<PumpStatusEvent> pumpStatusEvents = mRealm
                         .where(PumpStatusEvent.class)
-                        .findAllSorted("eventDate", Sort.DESCENDING);
+                        .sort("eventDate", Sort.DESCENDING)
+                        .findAll();
 
-                if (records.size() > 0) {
-                    device = records.first().getDeviceName();
-                    doXDripUploadStatus(records.first());
+                if (pumpStatusEvents.size() > 0) {
+                    device = pumpStatusEvents.first().getDeviceName();
+                    doXDripUploadStatus(pumpStatusEvents.first());
                 }
 
-                if (history_records.size() > 0) {
-                    historyRealm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(Realm realm) {
+                PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
+                List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ("XD");
 
-                            int limit = 500;
-                            for (PumpHistoryCGM history_record : history_records) {
-                                doXDripUploadCGM(history_record, device);
-                                history_record.setXdripACK(true);
-                                if (--limit == 0) break;
-                            }
-                        }
-                    });
+                for (PumpHistoryInterface record : records) {
+                    if (((PumpHistoryCGM) record).getSgv() > 0) doXDripUploadCGM((PumpHistoryCGM) record, device);
                 }
 
-                historyRealm.close();
+                pumpHistoryHandler.setSenderRecordsACK(records, "XD");
+                pumpHistoryHandler.close();
+
                 mRealm.close();
             }
 
@@ -145,7 +134,7 @@ public class XDripPlusUploadService extends Service {
             json.put("dateString", record.getEventDate());
             json.put("sgv", record.getSgv());
             String trend = record.getCgmTrend();
-            if (trend != null) json.put("direction", PumpHistoryParser.TextEN.valueOf("NS_TREND_" + trend).getText());
+            if (trend != null) json.put("direction", PumpHistoryCGM.NS_TREND.valueOf(trend).string());
 
             entriesBody.put(json);
             sendBundle(mContext, "add", "entries", entriesBody);

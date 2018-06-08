@@ -21,7 +21,7 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
     private static final String TAG = ChannelNegotiateRequestMessage.class.getSimpleName();
 
     public ChannelNegotiateRequestMessage(MedtronicCnlSession pumpSession) throws ChecksumException {
-        super(CommandType.SEND_MESSAGE, CommandAction.CHANNEL_NEGOTIATE, pumpSession, buildPayload(pumpSession));
+        super(CommandType.SEND_MESSAGE, CommandAction.JOIN_NETWORK, pumpSession, buildPayload(pumpSession));
     }
 
     @Override
@@ -31,15 +31,13 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
         clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
         sendMessage(mDevice);
 
-        payload = readMessage_0x81(mDevice);
-
-        // Don't care what the 0x81 response message is at this stage
         Log.d(TAG, "negotiateChannel: Reading 0x81 message");
+        payload = readMessage_0x81(mDevice);
 
         // CNL death with a timeout on close seen after this!
         // usually seen as a 0x81 response with a payload length = 0x21 / byte 0x1B = 0x05 and no internal payload
         // 0x05 = CNL error code? but what error and how to recover?
-        // 0x05 = CommandAction.PUMP_REQUEST, does this relate somehow?
+        // 0x05 = CommandAction.TRANSMIT_PACKET, does this relate somehow?
         // ReadInfoRequestMessage issues this 0x05 cmd as called by cnlReader.requestReadInfo() and right before a channel negotiate
         // note: errors here and then timeout on close and ongoing timeout on following polls
         // unqualified fix: running requestLinkKey each poll seems to stop this happening!
@@ -47,12 +45,22 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
             //clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
 //            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
-            throw new IOException("negotiateChannel 0x81 response * " + HexDump.toHexString(payload));
+//            throw new IOException("negotiateChannel 0x81 response * " + HexDump.toHexString(payload));
+
+
+            try {
+                payload = readMessage(mDevice);
+            } catch (TimeoutException e) {
+                throw new UnexpectedMessageException("*** timeout *** negotiateChannel 0x81 response " + HexDump.toHexString(payload));
+
+            }
+            throw new UnexpectedMessageException("*** read 0x80 *** negotiateChannel 0x81 response " + HexDump.toHexString(payload));
+
         }
 
         Log.d(TAG, "negotiateChannel: Reading 0x80 message");
-        // Read the 0x80
         payload = readMessage(mDevice);
+
         if(payload[0x12] != (byte) 0x80) {
             clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             Log.e(TAG, "Invalid message received for negotiateChannel 0x80 response");

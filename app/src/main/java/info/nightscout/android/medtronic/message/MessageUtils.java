@@ -70,7 +70,7 @@ public class MessageUtils {
         // However, the time the pump *means* is Fri, 13 May 2016 21:07:48 in our own timezone
         long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
 
-        return new Date((( baseTime + rtc + offset ) * 1000 ) - offsetFromUTC );
+        return new Date((( baseTime + rtc + offset ) * 1000L ) - offsetFromUTC );
     }
 
     public static long rtcFromTime( long time, long offset ) {
@@ -81,7 +81,7 @@ public class MessageUtils {
 
         long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
 
-        return ((offsetFromUTC + time) / 1000) - baseTime - offset;
+        return ((offsetFromUTC + time) / 1000L) - baseTime - offset;
     }
 
     public static long offsetFromTime( long time, long rtc ) {
@@ -92,6 +92,6 @@ public class MessageUtils {
 
         long offsetFromUTC = currentTz.getOffset(Calendar.getInstance().getTimeInMillis());
 
-        return ((offsetFromUTC + time) / 1000) - baseTime - rtc;
+        return ((offsetFromUTC + time) / 1000L) - baseTime - rtc;
     }
 }

@@ -3,6 +3,7 @@ package info.nightscout.android.medtronic;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
@@ -49,7 +50,7 @@ public class ManageCNLActivity extends AppCompatActivity {
                             .sizeDp(24)
             );
             getSupportActionBar().setElevation(0);
-            getSupportActionBar().setTitle("Manage your devices");
+            getSupportActionBar().setTitle(R.string.manage_cnl_title);
         }
 
         mRealm = Realm.getDefaultInstance();
@@ -137,8 +138,8 @@ public class ManageCNLActivity extends AppCompatActivity {
                     // deleting CNL form database
                     mRealm.executeTransaction(new Realm.Transaction() {
                         @Override
-                        public void execute(Realm realm) {
-                            ContourNextLinkInfo cnlToDelete = Realm.getDefaultInstance().where(ContourNextLinkInfo.class).equalTo("serialNumber", list.get(position).getSerialNumber()).findFirst();
+                        public void execute(@NonNull Realm realm) {
+                            ContourNextLinkInfo cnlToDelete = realm.where(ContourNextLinkInfo.class).equalTo("serialNumber", list.get(position).getSerialNumber()).findFirst();
                             cnlToDelete.deleteFromRealm();
                             list.remove(position);
                             notifyDataSetChanged();

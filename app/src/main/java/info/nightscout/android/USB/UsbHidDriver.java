@@ -126,7 +126,7 @@ public class UsbHidDriver extends CommonUsbDriver {
                         + " bytes at offset " + offset + " length=" + src.length);
             }
 
-            Log.d(TAG, "Wrote amt=" + amtWritten + " attempted=" + writeLength);
+            //Log.d(TAG, "Wrote amt=" + amtWritten + " attempted=" + writeLength);
             offset += amtWritten;
         }
         return offset;

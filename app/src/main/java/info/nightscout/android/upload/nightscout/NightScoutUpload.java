@@ -13,6 +13,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import info.nightscout.android.history.NightscoutItem;
+import info.nightscout.android.history.PumpHistoryParser;
+import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
@@ -26,7 +29,6 @@ import info.nightscout.api.EntriesEndpoints;
 import info.nightscout.api.ProfileEndpoints;
 import info.nightscout.api.TreatmentsEndpoints;
 import info.nightscout.api.UploadApi;
-import info.nightscout.api.UploadItem;
 import io.realm.Realm;
 import okhttp3.ResponseBody;
 import retrofit2.Response;
@@ -56,15 +58,19 @@ public class NightScoutUpload {
     private Realm storeRealm;
     private DataStore dataStore;
 
+    private PumpHistorySender pumpHistorySender;
+
     NightScoutUpload() {}
 
-    public void doRESTUpload(Realm storeRealm, DataStore dataStore,
+    public void doRESTUpload(PumpHistorySender pumpHistorySender, Realm storeRealm, DataStore dataStore,
                              String url,
                              String secret,
                              int uploaderBatteryLevel,
                              List<PumpStatusEvent> statusRecords,
                              List<PumpHistoryInterface> records)
             throws Exception {
+
+        this.pumpHistorySender = pumpHistorySender;
 
         this.storeRealm = storeRealm;
         this.dataStore = dataStore;
@@ -97,14 +103,14 @@ public class NightScoutUpload {
         List<TreatmentsEndpoints.Treatment> treatments = new ArrayList<>();
 
         for (PumpHistoryInterface record : records) {
-            List<UploadItem> uploadItems = record.nightscout(dataStore);
-            for (UploadItem uploadItem : uploadItems) {
-                if (uploadItem.isEntry())
-                    processEntry(uploadItem.getMode(), uploadItem.getEntry(), entries);
-                else if (uploadItem.isTreatment())
-                    processTreatment(uploadItem.getMode(), uploadItem.getTreatment(), treatments);
-                else if (uploadItem.isProfile())
-                    processProfile(uploadItem.getMode(), uploadItem.getProfile());
+            List<NightscoutItem> nightscoutItems = record.nightscout(pumpHistorySender, "NS");
+            for (NightscoutItem nightscoutItem : nightscoutItems) {
+                if (nightscoutItem.isEntry())
+                    processEntry(nightscoutItem.getMode(), nightscoutItem.getEntry(), entries);
+                else if (nightscoutItem.isTreatment())
+                    processTreatment(nightscoutItem.getMode(), nightscoutItem.getTreatment(), treatments);
+                else if (nightscoutItem.isProfile())
+                    processProfile(nightscoutItem.getMode(), nightscoutItem.getProfile());
             }
         }
 
@@ -120,7 +126,7 @@ public class NightScoutUpload {
         }
     }
 
-    private void processEntry(UploadItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
+    private void processEntry(NightscoutItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
 
         String key = entry.getKey600();
         Response<List<EntriesEndpoints.Entry>> response = entriesEndpoints.checkKey("2017", key).execute();
@@ -131,7 +137,7 @@ public class NightScoutUpload {
             if (count > 0) {
                 Log.d(TAG, "found " + list.size() + " already in nightscout for KEY: " + key);
 
-                if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1) {
+                if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE || count > 1) {
                     Response<ResponseBody> responseBody = entriesEndpoints.deleteKey("2017", key).execute();
                     if (responseBody.isSuccessful()) {
                         Log.d(TAG, "deleted " + count + " with KEY: " + key);
@@ -142,7 +148,7 @@ public class NightScoutUpload {
                 } else return;
             }
 
-            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+            if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
                 Log.d(TAG, "queued item for nightscout entries bulk upload, KEY: " + key);
                 entries.add(entry);
             }
@@ -153,7 +159,7 @@ public class NightScoutUpload {
         }
     }
 
-    private void processTreatment(UploadItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
+    private void processTreatment(NightscoutItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
 
         String key = treatment.getKey600();
         Response<List<TreatmentsEndpoints.Treatment>> response = treatmentsEndpoints.checkKey("2017", key).execute();
@@ -164,7 +170,7 @@ public class NightScoutUpload {
             if (count > 0) {
                 Log.d(TAG, "found " + list.size() + " already in nightscout for KEY: " + key);
 
-                while (count > 0 && (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1)) {
+                while (count > 0 && (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE || count > 1)) {
                     Response<ResponseBody> responseBody = treatmentsEndpoints.deleteID(list.get(count - 1).get_id()).execute();
                     if (responseBody.isSuccessful()) {
                         Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + list.get(count - 1).get_id());
@@ -178,7 +184,7 @@ public class NightScoutUpload {
                 if (count > 0) return;
             }
 
-            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+            if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
                 Log.d(TAG, "queued item for nightscout treatments bulk upload, KEY: " + key);
                 treatments.add(treatment);
             }
@@ -189,7 +195,7 @@ public class NightScoutUpload {
         }
     }
 
-    private void processProfile(UploadItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
+    private void processProfile(NightscoutItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
 
         String key = profile.getKey600();
         Response<List<ProfileEndpoints.Profile>> response = profileEndpoints.getProfiles().execute();
@@ -229,7 +235,7 @@ public class NightScoutUpload {
                     if (count > 0) {
                         Log.d(TAG, "found " + count + " already in nightscout for KEY: " + key);
 
-                        if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1) {
+                        if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE || count > 1) {
                             for (ProfileEndpoints.Profile item : list) {
                                 foundKey = item.getKey600();
                                 if (foundKey != null && foundKey.equals(key)) {
@@ -251,7 +257,7 @@ public class NightScoutUpload {
                 }
             }
 
-            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+            if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
                 Log.d(TAG, "new item sending to nightscout profile, KEY: " + key);
                 Response<ResponseBody> responseBody = profileEndpoints.sendProfile(profile).execute();
                 if (!responseBody.isSuccessful()) {
@@ -319,6 +325,7 @@ public class NightScoutUpload {
 
             String statusCGM = "";
             if (record.isCgmActive()) {
+
                 if (record.getTransmitterBattery() > 80)
                     statusCGM = shorten ? "" : ":::: ";
                 else if (record.getTransmitterBattery() > 55)
@@ -329,22 +336,69 @@ public class NightScoutUpload {
                     statusCGM = shorten ? "" : ":... ";
                 else
                     statusCGM = shorten ? "" : ".... ";
+/*
                 if (record.isCgmCalibrating())
                     statusCGM += shorten ? "CAL" : "calibrating";
                 else if (record.isCgmCalibrationComplete())
                     statusCGM += shorten ? "CAL" : "cal.complete";
-                else {
-                    if (record.isCgmWarmUp())
-                        statusCGM += shorten ? "WU" : "warmup ";
-                    if (record.getCalibrationDueMinutes() > 0) {
-                        if (shorten)
-                            statusCGM += (record.getCalibrationDueMinutes() >= 120 ? record.getCalibrationDueMinutes() / 60 + "h" : record.getCalibrationDueMinutes() + "m");
-                        else
-                            statusCGM += (record.getCalibrationDueMinutes() >= 60 ? record.getCalibrationDueMinutes() / 60 + "h" : "") + record.getCalibrationDueMinutes() % 60 + "m";
+                else if (record.isCgmWarmUp())
+                        statusCGM += shorten ? "WU" : "warmup";
+                else if (record.getSgv() == 0)
+*/
+                if (record.isCgmWarmUp())
+                    statusCGM += shorten ? "WU" : "warmup";
+                else if (record.getCalibrationDueMinutes() == 0)
+                    statusCGM += shorten ? "CAL!" : "calibrate now!";
+                else if (record.isCgmCalibrating())
+                    statusCGM += shorten ? "CAL" : "calibrating";
+                else if (record.getSgv() == 0)
+
+                    switch (PumpHistoryParser.CGM_EXCEPTION.convert(record.getCgmExceptionType())) {
+                        case SENSOR_INIT:
+                            statusCGM += shorten ? "[ini]" : "[sensor init]";
+                            break;
+                        case SENSOR_CAL_NEEDED:
+                            statusCGM += shorten ? "[cal]" : "[calibrate now]";
+                            break;
+                        case SENSOR_ERROR:
+                            statusCGM += shorten ? "[na]" : "[sg not available]";
+                            break;
+                        case SENSOR_CHANGE_SENSOR_ERROR:
+                            statusCGM += shorten ? "[chg]" : "[change sensor]";
+                            break;
+                        case SENSOR_END_OF_LIFE:
+                            statusCGM += shorten ? "[eol]" : "[end of life]";
+                            break;
+                        case SENSOR_NOT_READY:
+                            statusCGM += shorten ? "[rdy]" : "[not ready]";
+                            break;
+                        case SENSOR_READING_HIGH:
+                            statusCGM += shorten ? "[hi]" : "[reading hi]";
+                            break;
+                        case SENSOR_READING_LOW:
+                            statusCGM += shorten ? "[lo]" : "[reading low]";
+                            break;
+                        case SENSOR_CAL_PENDING:
+                            statusCGM += shorten ? "[pnd]" : "[cal pending]";
+                            break;
+                        case SENSOR_CAL_ERROR:
+                            statusCGM += shorten ? "[cer]" : "[cal error])";
+                            break;
+                        case SENSOR_TIME_UNKNOWN:
+                            statusCGM += shorten ? "[tun]" : "[time unknown]";
+                            break;
+                        default:
+                            statusCGM += shorten ? "[err]" : "[sensor error]";
                     }
+
+                if (record.getCalibrationDueMinutes() > 0) {
+                    statusCGM += " ";
+                    if (shorten)
+                        statusCGM += (record.getCalibrationDueMinutes() >= 120 ? record.getCalibrationDueMinutes() / 60 + "h" : record.getCalibrationDueMinutes() + "m");
                     else
-                        statusCGM += shorten ? "cal.now" : "calibrate now!";
+                        statusCGM += (record.getCalibrationDueMinutes() >= 60 ? record.getCalibrationDueMinutes() / 60 + "h" : "") + record.getCalibrationDueMinutes() % 60 + "m";
                 }
+
             } else {
                 statusCGM += shorten ? "n/a" : "cgm n/a";
             }
@@ -426,7 +480,7 @@ public class NightScoutUpload {
 
                     storeRealm.executeTransaction(new Realm.Transaction() {
                         @Override
-                        public void execute(Realm realm) {
+                        public void execute(@NonNull Realm realm) {
                             dataStore.setNightscoutCgmCleanFrom(cgmFrom);
                         }
                     });
@@ -486,7 +540,7 @@ public class NightScoutUpload {
                 if (success) {
                     storeRealm.executeTransaction(new Realm.Transaction() {
                         @Override
-                        public void execute(Realm realm) {
+                        public void execute(@NonNull Realm realm) {
                             dataStore.setNightscoutPumpCleanFrom(pumpFromFinal);
                         }
                     });

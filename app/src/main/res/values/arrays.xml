@@ -1,5 +1,300 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <string-array name="sender">
+        <item>Pump</item>
+        <item>Pump Alert</item>
+        <item>Pump Alarm</item>
+        <item>Sensor</item>
+        <item>Sensor Alert</item>
+        <item>Sensor Alarm</item>
+        <item>Auto Mode</item>
+        <item>Reminder</item>
+    </string-array>
+
+    <!-- priority: LOWEST(-2) LOW(-1) NORMAL(0) HIGH(1) EMERGENCY(2) -->
+    <!-- sender: NA(0) PUMP(1) SENSOR(2) REMINDER(3) MESSAGE(4) AUTOMODE(5) -->
+
+    <!-- alert code | priority | sender | message | extended message -->
+    <string-array name="pump_alerts">
+        <item>0|-1|0|unknown|Please check your pump alarm history and report the full alert message and #code to the dev team.</item>
+        <!-- taken from pump alarm history -->
+        <item>7|2|1|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.</item>
+        <item>8|2|1|Insulin flow blocked|Estimated 0U insulin in reservoir. Change reservoir and infusion set.</item>
+        <item>11|2|1|Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.</item>
+        <item>58|0|1|Battery Failed|Insert a new AA battery.</item>
+        <item>73|1|1|Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.</item>
+        <item>84|-1|1|Insert Battery|Delivery stopped. Insert a new battery now.</item>
+        <item>100|1|1|Bolus Not Delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.</item>
+        <item>104|0|1|Low battery Pump|Replace battery soon.</item>
+        <item>105|0|1|Low Reservoir {dins;0} remain|Change reservoir soon.</item>
+        <item>106|0|1|Low Reservoir {dhrs;0} hours remain|Change reservoir soon.</item>
+        <item>113|1|1|Reservoir estimate at 0U|To ensure insulin delivery change reservoir.</item>
+
+        <item>775|1|2|Calibrate Now|Check BG and calibrate sensor.</item>
+        <item>776|1|2|Calibration not accepted|Recheck BG and calibrate sensor.</item>
+        <item>777|1|2|Change Sensor|Sensor not working properly. Insert new sensor.</item>
+        <item>780|-1|2|Lost sensor signal|Move pump closer to transmitter. May take 15 minutes to find signal.</item>
+        <item>781|-1|2|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.</item>
+        <item>784|1|2|Rise Alert|Sensor glucose rising rapidly.</item>
+        <item>789|-1|2|Change Sensor|Insert new sensor and Start New Sensor.</item>
+        <item>790|-1|2|Cannot find sensor signal|Disconnect and reconnect transmitter. Notice if transmitter light blinks.</item>
+        <item>791|-1|2|Sensor signal not found|Did transmitter light blink when connected to sensor?</item>
+        <item>794|1|2|Sensor expired|Insert new sensor.</item>
+        <item>795|-1|2|Check connection|Ensure transmitter and sensor connection is secure.</item>
+        <item>796|-1|2|Sensor signal not found|See User Guide.</item>
+        <item>797|-2|2|Sensor connected|Start new sensor.</item>
+        <item>798|-2|2|Sensor connected|If new sensor, select Start New. If not, select Reconnect.</item>
+        <item>799|-2|2|Sensor warm-up started|Warm-up takes up to 2 hours. you will be notified when calibration is needed.</item>
+        <item>801|-1|2|SG value not available|If problem continues, see User Guide.</item>
+        <item>802|2|2|Alert On Low {dsgv;1}|Low sensor glucose. Check BG.</item>
+        <item>803|2|2|Alert On Low while suspended|Low sensor glucose. Insulin delivery suspended. Check BG.</item>
+        <item>805|1|2|Alert Before Low {dsgv;1}|Sensor glucose approaching Low Limit. Check BG.</item>
+        <item>806|-2|1|Basal Delivery Resumed|(quiet)</item>
+        <item>808|0|1|Basal Delivery Resumed|Maximum 2 hour suspend time reached. Check BG.</item>
+        <item>809|0|1|Suspend On Low|Delivery stopped. Sensor glucose {dsgv;1}. Check BG.</item>
+        <item>810|-2|1|Suspend Before Low|(quiet)</item>
+        <item>811|0|1|Suspend Before Low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.</item>
+        <item>812|2|1|Suspend Before Low|Patient unresponsive, medical device emergency</item>
+        <item>814|0|1|Basal Delivery Resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.</item>
+        <item>815|0|1|Basal Delivery Resumed|Low settings change caused basal to be resumed. Check BG.</item>
+        <item>816|2|2|Alert On High {dsgv;1}|High sensor glucose. Check BG.</item>
+        <item>817|1|2|Alert Before High {dsgv;1}|Sensor glucose approaching High Limit. Check BG.</item>
+        <item>869|0|3|Calibrate by {dclk;0}|Check BG and calibrate sensor to continue receiving sensor information.</item>
+        <item>870|0|2|Low Transmitter Battery|Recharge transmitter within 24 hours.</item>
+
+        <!-- not shown in the pump alarm history, only as an active alert -->
+        <item>103|0|3|BG Check {dhrs;0} hr since last bolus|Check BG</item>
+        <item>107|0|3|Missed Meal Bolus|No bolus delivered during the time set in the reminder.</item>
+        <item>108|0|3|{dlst;2;NA;Personal 1;Personal 2;Personal 3;Personal 4;Personal 5;Personal 6;BG Check;Medication} at {dclk;0}|?</item>
+        <item>109|0|3|Set Change Reminder: {dlst;0;NA;One day;Two days;Three days} since the last set change|Time to change reservoir and infusion set.</item>
+        <item>110|-2|2|Sensor alert occurred|Check Alarm History for silenced alerts.</item>
+
+        <!-- need verifying -->
+
+        <item>6|-1|1|Power loss|AA battery was removed for more than 10 min or power was lost.</item>
+
+        <!-- auto mode alerts - best guess! ;) -->
+
+        <!--
+        <item>xxx|-1|0|Auto Mode started|Current action canceled.</item>
+        <item>xxx|-1|0|Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</item>
+        <item>xxx|-1|0|Auto Mode exit|Basal X started. Would you like to review the Auto Mode Readiness screen?</item>
+        <item>xxx|-1|0|Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern X resumed.</item>
+        <item>xxx|-1|0|Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.</item>
+        <item>xxx|-1|0|Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode.</item>
+        <item>xxx|-1|0|Auto Mode off|Basal X started. Would you like to review the Auto Mode Readiness screen?</item>
+        <item>xxx|-1|0|BG required|Enter a new BG for Auto Mode.</item>
+        <item>xxx|-1|0|Bolus recommended|For XXX mg/dL entered, a correction bolus is recommended.</item>
+        <item>xxx|-1|0|Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode.</item>
+        <item>xxx|-1|0|High BG XXX mg/dL|Check infusion set. Check ketones. Monitor BG.</item>
+        -->
+
+        <item>820|0|4|Auto Mode exit|{dpat;0} started. Would you like to review the Auto Mode Readiness screen?</item>
+        <item>821|-1|4|Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode.</item>
+        <item>823|0|4|Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern {dpat;0} resumed.</item>
+        <item>824|-1|4|Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.</item>
+
+        <item>830|-1|4|BG required|Enter a new BG for Auto Mode.</item>
+        <item>831|-1|4|Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode.</item>
+
+        <item>833|-2|1|Bolus recommended|For {dsgv;0} entered, a correction bolus is recommended.</item>
+
+    </string-array>
+
+    <!---
+
+    *** 640G User Guide UK/IE - Pump alarms, alerts, and messages ***
+
+    xxx|Active Insulin cleared|Any Active Insulin amount has been cleared.
+    xxx|Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.
+    058|Battery failed|Insert a new AA battery.
+    xxx|Battery not compatible|See User Guide.
+    100|Bolus not delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.
+    xxx|Bolus stopped|Cannot resume bolus or cannula fill. XX.XXX of YY.YYY U delivered. ZZ.ZZZ U not delivered. If needed, enter values again.
+    xxx|Cannot connect device|This device is incompatible with your pump. See User Guide.
+    xxx|Check settings|Startup Wizard settings complete. Check and set up your other settings.
+    xxx|Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.
+    xxx|Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.
+    xxx|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
+    084|Insert battery|Delivery stopped. Insert a new battery now.
+    007|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
+    008|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
+    xxx|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
+    xxx|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
+    xxx|Loading incomplete|Remove reservoir and select Rewind to restart loading.
+    104|Low battery Pump|Replace battery soon.
+    105|Low reservoir|XX hours remaining. Change reservoir.
+    106|Low reservoir|XX units remaining. Change reservoir.
+    xxx|Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.
+    xxx|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
+    xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
+    xxx|No reservoir detected|Rewind before loading reservoir.
+    xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
+    xxx|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
+    xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then reenter your settings. See User Guide.
+    xxx|Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.
+    xxx|Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
+    xxx|Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
+    073|Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.
+    011|Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.
+    113|Reservoir estimate at 0 U|To ensure insulin delivery, change reservoir.
+    xxx|Resume bolus?|XXX of YYY U delivered. Resume delivery of ZZZ U?
+    xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U for XX:XX hr?
+    xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U now, and AA U Square for XX:XX hr?
+    xxx|Resume Square bolus? XX of YY U delivered for XX:XX hr. Resume delivery of ZZ U for XX:XX hr?
+    xxx|Stuck button|Button pressed for more than 3 minutes
+    xxx|Wrong key pressed|Try again
+
+    *** 640G User Guide UK/IE - CGM (sensor) alarms, alerts, and messages ***
+
+    817|Alert before high|Sensor glucose approaching High Limit. Check BG.
+    805|Alert before low|Sensor glucose approaching Low Limit. Check BG.
+    816|Alert on high XX.X mmol/L|High sensor glucose. Check BG.
+    802|Alert on low XX.X mmol/L|Low sensor glucose. Check BG.
+    803|Alert on low XX.X mmol/L|Low sensor glucose. Insulin delivery suspended since XX:XX. Check BG.
+    806|Basal delivery resumed|Basal delivery resumed at XX:XX after suspend by sensor. Check BG.
+    815|Basal delivery resumed|Low settings change caused basal to be resumed at XX:XX. Check BG.
+    808|Basal delivery resumed|Maximum 2 hour suspend time reached. Check BG.
+    814|Basal delivery resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.
+    xxx|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
+    775|Calibrate now|Check BG and calibrate sensor.
+    776|Calibration not accepted|Recheck BG and calibrate sensor.
+    790|Cannot find sensor signal|Disconnect and reconnect transmitter, then select OK. Notice if transmitter light blinks.
+    789|Change sensor|Insert new sensor and Start New Sensor.
+    xxx|Change sensor|Second calibration not accepted. Insert new sensor.
+    777|Change sensor|Sensor not working properly. Insert new sensor.
+    795|Check connection|Ensure transmitter and sensor connection is secure, then select OK.
+    780|Lost sensor signal|Move Pump closer to transmitter. May take 15 minutes to find signal.
+    870|Low battery transmitter|Recharge transmitter within 24 hours.
+    812|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
+    xxx|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX.
+    xxx|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
+    781|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
+    784|Rise Alert|Sensor glucose rising rapidly.
+    110|Sensor alert occurred|Check Alarm History for silenced alerts.
+    798|Sensor connected|If new sensor, select Start New. If not, select Reconnect.
+    797|Sensor connected|Start new sensor.
+    794|Sensor expired|Insert new sensor.
+    791|Sensor signal not found|Did transmitter light blink when connected to sensor?
+    796|Sensor signal not found|See User Guide.
+    801|SG value not available|If problem continues, see User Guide.
+    799|Sensor warm-up started|Warm-up takes up to 2 hours. You will be notified when calibration is needed.
+    811|Suspend before low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.
+    809|Suspend on low|Delivery stopped. Sensor glucose XX.X mmol/L. Check BG.
+    xxx|Transmitter battery depleted|Recharge transmitter now.
+
+    *** 670G User Guide US - Pump alarms, alerts, and messages ***
+
+    xxx|Alert|Active Insulin cleared|Any Active Insulin amount has been cleared.
+    008|Alarm|Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.
+    058|Alarm|Battery failed|Insert a new AA battery.
+    xxx|Alarm|Battery not compatible|See User Guide.
+    100|Alert|Bolus not delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.
+    xxx|Alarm|Bolus stopped|Cannot resume bolus or cannula fill. XX.XXX of YY.YYY U delivered. ZZ.ZZZ U not delivered. If needed, enter values again.
+    xxx|Alert|Cannot connect device|This device is incompatible with your pump. See User Guide.
+    xxx|Alert|Check settings|Startup Wizard settings complete. Check and set up your other settings.
+    xxx|Alarm|Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.
+    xxx|Alarm|Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.
+    xxx|Alarm|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
+    xxx|Message|High BG XXX mg/dL|Check infusion set. Check ketones. Consider insulin injection. Monitor BG.
+    084|Alarm|Insert battery|Delivery stopped. Insert a new battery now.
+    007|Alarm|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
+    008|Alarm|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
+    xxx|Alarm|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
+    xxx|Alarm|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
+    xxx|Alarm|Loading incomplete|Remove reservoir and select Rewind to restart loading.
+    104|Alert|Low battery Pump| Replace battery soon.
+    xxx|Message|Low BG XX mg/dL| Treat Low BG. Do not bolus until BG is normal. Monitor BG.
+    106|Alert|Low reservoir|XX units remaining. Change reservoir.
+    xxx|Alarm|Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.
+    xxx|Alarm|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
+    xxx|Alarm|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
+    xxx|Alarm|No reservoir detected|Rewind before loading reservoir.
+    xxx|Alarm|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
+    xxx|Alarm|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
+    xxx|Alarm|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then re-enter your settings. See User Guide.
+    xxx|Alarm|Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.
+    xxx|Alarm|Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
+    xxx|Alarm|Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
+    073|Alert|Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.
+    011|Alarm|Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.
+    113|Alert|Reservoir estimate at 0 U|To ensure insulin delivery, change reservoir.
+    xxx|Alarm|Resume bolus?|XXX of YYY U delivered. Resume delivery of ZZZ U?
+    xxx|Alarm|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U for XX:XX hr?
+    xxx|Alarm|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U now, and AA U Square for XX:XX hr?
+    xxx|Alarm|Resume Square bolus? XX of YY U delivered for XX:XX hr. Resume delivery of ZZ U for XX:XX hr?
+    xxx|Alarm|Rewind required|Delivery stopped. Rewind was required due to pump error. Select OK to continue. See User Guide.
+    xxx|Alarm|Stuck button|Button pressed for more than 3 minutes.
+
+    *** 670G User Guide US - CGM (sensor) alarms, alerts, and messages ***
+
+    817|Alert|Alert before high|Sensor glucose approaching High Limit. Check BG.
+    805|Alert|Alert before low|Sensor glucose approaching Low Limit. Check BG.
+    816|Alert|Alert on high|XXX mg/dL High sensor glucose. Check BG.
+    802|Alert|Alert on low|XXX mg/dL Low sensor glucose. Check BG.
+    803|Alarm|Alert on low|XXX mg/dL Low sensor glucose. Insulin delivery suspended since XX:XX AM/PM. Check BG.
+    806|Alert|Basal delivery resumed|Basal delivery resumed at XX:XX AM/PM after suspend by sensor. Check BG.
+    815|Alert|Basal delivery resumed|Low settings change caused basal to be resumed at XX:XX AM/PM. Check BG.
+    808|Alert|Basal delivery resumed|Maximum 2 hour suspend time reached. Check BG.
+    814|Alert|Basal delivery resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.
+    xxx|Alert|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
+    775|Alert|Calibrate now|Check BG and calibrate sensor.
+    776|Alert|Calibration not accepted|Wait at least 15 minutes. Wash hands, test BG again and calibrate.
+    790|Alert|Cannot find sensor signal|Disconnect and reconnect transmitter, then select OK. Notice if transmitter light blinks.
+    789|Alert|Change sensor|Insert new sensor and Start New Sensor.
+    xxx|Alert|Change sensor|Second calibration not accepted. Insert new sensor.
+    795|Alert|Check connection|Ensure transmitter and sensor connection is secure, then select OK.
+    780|Alert|Lost sensor signal|Move Pump closer to transmitter. May take 15 minutes to find signal.
+    870|Alert|Low battery transmitter|Recharge transmitter within 24 hours.
+    xxx|Alert|Low SG XX mg/dL|SG is under 50 mg/dL. Check BG and treat.
+    812|Alarm|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
+    xxx|Alert|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX AM/PM.
+    xxx|Alert|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
+    781|Alert|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
+    784|Alert|Rise Alert|Sensor glucose rising rapidly.
+    xxx|Alert|Searching for transmitter
+    110|Alert|Sensor alert occurred|Check Alarm History for silenced alerts.
+    798|Alert|Sensor connected|If new sensor, select Start New. If not, select Reconnect.
+    797|Alert|Sensor connected|Start new sensor.
+    794|Alert|Sensor expired|Insert new sensor.
+    791|Alert|Sensor signal not found|Did transmitter light blink when connected to sensor?
+    796|Alert|Sensor signal not found|See User Guide.
+    799|Alert|Sensor warm-up started|Warm-up takes up to 2 hours. You will be notified when calibration is needed.
+    xxx|Alert|Sensor updating|Do not calibrate unless notified. This could take up to 3 hours.
+    811|Alert|Suspend before low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.
+    809|Alarm|Suspend on low|Delivery stopped. Sensor glucose XXX mg/dL. Check BG.
+    xxx|Alert|Transmitter battery depleted|Recharge transmitter now.
+
+    *** 670G User Guide US - Auto Mode alerts and messages ***
+
+    xxx|Alert|Auto Mode started|Current action canceled.
+    xxx|Alert|Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low
+    xxx|Alert|Auto Mode exit|Basal X started. Would you like to review the Auto Mode Readiness screen?
+    xxx|Alert|Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern X resumed.
+    xxx|Alert|Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.
+    xxx|Alert|Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode.
+    xxx|Alert|Auto Mode off|Basal X started. Would you like to review the Auto Mode Readiness screen?
+    xxx|Alert|BG required|Enter a new BG for Auto Mode.
+    xxx|Alert|Bolus recommended|For XXX mg/dL entered, a correction bolus is recommended.
+    xxx|Alert|Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode.
+
+    xxx|Message|High BG XXX mg/dL|Check infusion set. Check ketones. Monitor BG.
+
+    -->
+
+    <string-array name="debug_log_level">
+        <item>Error</item>
+        <item>Info</item>
+        <item>Debug</item>
+    </string-array>
+
+    <string-array name="debug_log_level_values" translatable="false">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
     <string-array name="poll_interval">
         <item>5 min</item>
         <item>10 min</item>
@@ -7,17 +302,15 @@
         <item>20 min</item>
         <item>30 min</item>
         <item>60 min</item>
-        <!--item>off</item-->
     </string-array>
 
-    <string-array name="poll_interval_millis">
+    <string-array name="poll_interval_values" translatable="false">
         <item>300000</item>
         <item>600000</item>
         <item>900000</item>
         <item>1200000</item>
         <item>1800000</item>
         <item>3600000</item>
-        <!--item>0</item-->
     </string-array>
 
     <string-array name="chart_zoom">
@@ -28,7 +321,7 @@
         <item>24 hours</item>
     </string-array>
 
-    <string-array name="chart_zoom_hours">
+    <string-array name="chart_zoom_values" translatable="false">
         <item>1</item>
         <item>3</item>
         <item>6</item>
@@ -36,7 +329,7 @@
         <item>24</item>
     </string-array>
 
-    <string-array name="cgm_history">
+    <string-array name="backfill_period">
         <item>1 day</item>
         <item>7 days</item>
         <item>30 days</item>
@@ -44,7 +337,7 @@
         <item>90 days</item>
     </string-array>
 
-    <string-array name="cgm_history_days">
+    <string-array name="backfill_period_values" translatable="false">
         <item>1</item>
         <item>7</item>
         <item>30</item>
@@ -52,23 +345,7 @@
         <item>90</item>
     </string-array>
 
-    <string-array name="pump_history">
-        <item>1 day</item>
-        <item>7 days</item>
-        <item>30 days</item>
-        <item>60 days</item>
-        <item>90 days</item>
-    </string-array>
-
-    <string-array name="pump_history_days">
-        <item>1</item>
-        <item>7</item>
-        <item>30</item>
-        <item>60</item>
-        <item>90</item>
-    </string-array>
-
-    <string-array name="pump_history_freq">
+    <string-array name="automode_frequency">
         <item>events only</item>
         <item>15 minutes</item>
         <item>30 minutes</item>
@@ -80,7 +357,7 @@
         <item>120 minutes</item>
     </string-array>
 
-    <string-array name="pump_history_freq_values">
+    <string-array name="automode_frequency_values" translatable="false">
         <item>0</item>
         <item>15</item>
         <item>30</item>
@@ -93,6 +370,7 @@
     </string-array>
 
     <string-array name="profile_default">
+        <item>Active</item>
         <item>Pattern 1</item>
         <item>Pattern 2</item>
         <item>Pattern 3</item>
@@ -103,7 +381,8 @@
         <item>Pattern 8</item>
     </string-array>
 
-    <string-array name="profile_default_values">
+    <string-array name="profile_default_values" translatable="false">
+        <item>0</item>
         <item>1</item>
         <item>2</item>
         <item>3</item>
@@ -112,6 +391,90 @@
         <item>6</item>
         <item>7</item>
         <item>8</item>
+    </string-array>
+
+    <string-array name="insulin_change_threshold">
+        <item>New Reservoir</item>
+        <item>1.8ml Reservoir</item>
+        <item>3.0ml Reservoir</item>
+        <item>100U</item>
+        <item>110U</item>
+        <item>120U</item>
+        <item>130U</item>
+        <item>140U</item>
+        <item>150U</item>
+        <item>160U</item>
+        <item>170U</item>
+        <item>180U</item>
+        <item>190U</item>
+        <item>200U</item>
+        <item>210U</item>
+        <item>220U</item>
+        <item>230U</item>
+        <item>240U</item>
+        <item>250U</item>
+        <item>260U</item>
+        <item>270U</item>
+        <item>280U</item>
+        <item>290U</item>
+        <item>300U</item>
+    </string-array>
+
+    <string-array name="insulin_change_threshold_values" translatable="false">
+        <item>0</item>
+        <item>140</item>
+        <item>240</item>
+        <item>100</item>
+        <item>110</item>
+        <item>120</item>
+        <item>130</item>
+        <item>140</item>
+        <item>150</item>
+        <item>160</item>
+        <item>170</item>
+        <item>180</item>
+        <item>190</item>
+        <item>200</item>
+        <item>210</item>
+        <item>220</item>
+        <item>230</item>
+        <item>240</item>
+        <item>250</item>
+        <item>260</item>
+        <item>270</item>
+        <item>280</item>
+        <item>290</item>
+        <item>300</item>
+    </string-array>
+
+    <string-array name="alarm_ttl">
+        <item>Keep all</item>
+        <item>12 hours</item>
+        <item>24 hours</item>
+        <item>2 days</item>
+        <item>3 days</item>
+        <item>4 days</item>
+        <item>5 days</item>
+        <item>6 days</item>
+        <item>7 days</item>
+        <item>30 days</item>
+        <item>60 days</item>
+        <item>90 days</item>
+    </string-array>
+
+    <string-array name="alarm_ttl_values" translatable="false">
+        <item>0</item>
+        <item>12</item>
+        <item>24</item>
+        <item>48</item>
+        <item>72</item>
+        <item>96</item>
+        <item>120</item>
+        <item>144</item>
+        <item>168</item>
+        <item>720</item>
+        <item>1440</item>
+        <item>2160</item>
     </string-array>
 
     <string-array name="active_insulin_time">
@@ -142,7 +505,7 @@
         <item>8:00 hr</item>
     </string-array>
 
-    <string-array name="active_insulin_time_values">
+    <string-array name="active_insulin_time_values" translatable="false">
         <item>2</item>
         <item>2.25</item>
         <item>2.5</item>
@@ -189,7 +552,7 @@
         <item>20 Grams</item>
     </string-array>
 
-    <string-array name="grams_per_exchange_values">
+    <string-array name="grams_per_exchange_values" translatable="false">
         <item>5</item>
         <item>6</item>
         <item>7</item>
@@ -208,7 +571,7 @@
         <item>20</item>
     </string-array>
 
-    <string-array name="poll_period">
+    <string-array name="poll_override_period">
         <item>10 seconds</item>
         <item>15 seconds</item>
         <item>20 seconds</item>
@@ -231,7 +594,7 @@
         <item>150 seconds</item>
     </string-array>
 
-    <string-array name="poll_period_values">
+    <string-array name="poll_override_period_values" translatable="false">
         <item>10000</item>
         <item>15000</item>
         <item>20000</item>
@@ -333,7 +696,7 @@
         <item>hours/mins: \'1h55m\' \'45m\'</item>
     </string-array>
 
-    <string-array name="urchin_battery">
+    <string-array name="urchin_battery" translatable="false">
         <item>0&#8211;100</item>
         <item>0&#8211;100&#65130;</item>
         <item>0&#8211;99</item>
@@ -397,7 +760,7 @@
         <item>Custom Text 2</item>
     </string-array>
 
-    <string-array name="urchin_values">
+    <string-array name="urchin_values" translatable="false">
         <item>0</item>
         <item>1</item>
         <item>2</item>
@@ -439,6 +802,104 @@
         <item>38</item>
         <item>39</item>
         <item>40</item>
+        <item>41</item>
+        <item>42</item>
+        <item>43</item>
+        <item>44</item>
+        <item>45</item>
+        <item>46</item>
+        <item>47</item>
+        <item>48</item>
+        <item>49</item>
+        <item>50</item>
+    </string-array>
+
+    <string-array name="pushover_sound" translatable="false">
+        <item>none</item>
+        <item>default</item>
+        <item>pushover</item>
+        <item>bike</item>
+        <item>bugle</item>
+        <item>cashregister</item>
+        <item>classical</item>
+        <item>cosmic</item>
+        <item>falling</item>
+        <item>gamelan</item>
+        <item>incoming</item>
+        <item>intermission</item>
+        <item>magic</item>
+        <item>mechanical</item>
+        <item>pianobar</item>
+        <item>siren</item>
+        <item>spacealarm</item>
+        <item>tugboat</item>
+        <item>alien</item>
+        <item>climb</item>
+        <item>persistent</item>
+        <item>echo</item>
+        <item>updown</item>
+    </string-array>
+
+    <string-array name="pushover_priority">
+        <item>lowest</item>
+        <item>low</item>
+        <item>normal</item>
+        <item>high</item>
+        <item>emergency</item>
+    </string-array>
+
+    <string-array name="pushover_priority_values" translatable="false">
+        <item>-2</item>
+        <item>-1</item>
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string-array name="pushover_retry">
+        <item>30 seconds</item>
+        <item>45 seconds</item>
+        <item>60 seconds</item>
+        <item>75 seconds</item>
+        <item>90 seconds</item>
+        <item>2 minutes</item>
+        <item>3 minutes</item>
+        <item>4 minutes</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+    </string-array>
+
+    <string-array name="pushover_retry_values" translatable="false">
+        <item>30</item>
+        <item>45</item>
+        <item>60</item>
+        <item>75</item>
+        <item>90</item>
+        <item>120</item>
+        <item>180</item>
+        <item>240</item>
+        <item>300</item>
+        <item>600</item>
+    </string-array>
+
+    <string-array name="pushover_expire">
+        <item>10 minutes</item>
+        <item>20 minutes</item>
+        <item>30 minutes</item>
+        <item>45 minutes</item>
+        <item>1 hour</item>
+        <item>2 hours</item>
+        <item>3 hours</item>
+    </string-array>
+
+    <string-array name="pushover_expire_values" translatable="false">
+        <item>600</item>
+        <item>1200</item>
+        <item>1800</item>
+        <item>2700</item>
+        <item>3600</item>
+        <item>7200</item>
+        <item>10800</item>
     </string-array>
 
 </resources>

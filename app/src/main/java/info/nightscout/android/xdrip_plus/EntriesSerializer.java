@@ -1,4 +1,4 @@
-package info.nightscout.android.upload.nightscout.serializer;
+package info.nightscout.android.xdrip_plus;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

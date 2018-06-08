@@ -17,6 +17,7 @@ import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
@@ -41,7 +42,7 @@ public class StatusNotification {
     private static final int COLOR_NO_DATA = 0x00444444;
     private static final int COLOR_SGV_STALE = 0x000060A0;
     private static final int COLOR_SGV_RED = 0x00C04040;
-    private static final int COLOR_SGV_YELLOW = 0x00C0C000;
+    private static final int COLOR_SGV_YELLOW = 0x00E0C040;
     private static final int COLOR_SGV_GREEN = 0x0040A040;
 
     private static final String TEXT_AT_TIME = " at ";
@@ -79,6 +80,10 @@ public class StatusNotification {
         if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
         if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
         if (realm != null && !realm.isClosed()) realm.close();
+        dataStore = null;
+        storeRealm = null;
+        historyRealm = null;
+        realm = null;
 
         if (mNotificationManager != null) {
             mNotificationManager.cancelAll();
@@ -101,11 +106,6 @@ public class StatusNotification {
                 .setSmallIcon(R.drawable.ic_notification)
                 .setVisibility(VISIBILITY_PUBLIC)
                 .setContentIntent(pendingIntent);
-
-        realm = Realm.getDefaultInstance();
-        storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-        historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
-        dataStore = storeRealm.where(DataStore.class).findFirst();
     }
 
     public void updateNotification(NOTIFICATION mode) {
@@ -122,51 +122,71 @@ public class StatusNotification {
     private void updateNotification() {
         Log.d(TAG, "updateNotification called");
 
-        if (realm == null || storeRealm == null || historyRealm == null) {
-            Log.e(TAG, "unexpected null for Realm");
-            return;
-        }
+        try {
 
-        long now = System.currentTimeMillis();
+            realm = Realm.getDefaultInstance();
+            storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+            historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+            dataStore = storeRealm.where(DataStore.class).findFirst();
 
-        String poll = "";
-        if (mode == NOTIFICATION.NORMAL && nextpoll > 0)
-            poll = "Next " + dateFormatterFull.format(nextpoll);
+            if (realm == null || storeRealm == null || historyRealm == null || dataStore == null) {
+                Log.e(TAG, "unexpected null for Realm");
+                return;
+            }
 
-        long sgvTime = now;
-        long sgvAge = -1;
-        int sgvValue = 0;
+            long now = System.currentTimeMillis();
 
-        String sgv = "";
-        String delta = "";
+            String poll = "";
+            if (mode == NOTIFICATION.NORMAL && nextpoll > 0)
+                poll = "Next " + dateFormatterFull.format(nextpoll);
 
-        RealmResults<PumpHistoryCGM> results = historyRealm.where(PumpHistoryCGM.class)
-                .greaterThan("eventDate", new Date(now - (24 * 60 * 60000L)))
-                .greaterThan("sgv", 0)
-                .findAllSorted("eventDate", Sort.DESCENDING);
-        if (results.size() > 0) {
-            sgvValue = results.first().getSgv();
-            sgv = "SGV " + strFormatSGV(sgvValue);
-            sgvTime = results.first().getEventDate().getTime();
-            sgvAge = (now - sgvTime) / 60000L;
+            long sgvTime = now;
+            long sgvAge = -1;
+            int sgvValue = 0;
 
-            if (results.size() > 1 && mode != NOTIFICATION.ERROR) {
-                long deltaTime = (sgvTime - results.get(1).getEventDate().getTime()) / 60000L;
-                if (sgvAge < 60 && deltaTime < 30) {
-                    int diff = results.first().getSgv() - results.get(1).getSgv();
-                    if (dataStore.isMmolxl())
-                        delta += "Δ " + (diff > 0 ? "+" : "") + new BigDecimal(diff / MMOLXLFACTOR).setScale(2, BigDecimal.ROUND_HALF_UP).toPlainString();
-                    else
-                        delta += "Δ " + (diff > 0 ? "+" : "") + diff;
-                    if (deltaTime > 6)
-                        delta += " " + deltaTime + "m";
+            String sgv = "";
+            String delta = "";
+
+            RealmResults<PumpHistoryCGM> results = historyRealm.where(PumpHistoryCGM.class)
+                    .greaterThan("eventDate", new Date(now - (24 * 60 * 60000L)))
+                    .greaterThan("sgv", 0)
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findAll();
+            if (results.size() > 0) {
+                sgvValue = results.first().getSgv();
+                sgv = "SGV " + strFormatSGV(sgvValue);
+                sgvTime = results.first().getEventDate().getTime();
+                sgvAge = (now - sgvTime) / 60000L;
+
+                if (results.size() > 1 && mode != NOTIFICATION.ERROR) {
+                    long deltaTime = (sgvTime - results.get(1).getEventDate().getTime()) / 60000L;
+                    if (sgvAge < 60 && deltaTime < 30) {
+                        int diff = results.first().getSgv() - results.get(1).getSgv();
+                        if (dataStore.isMmolxl())
+                            delta += "Δ " + (diff > 0 ? "+" : "") + new BigDecimal(diff / MMOLXLFACTOR).setScale(2, BigDecimal.ROUND_HALF_UP).toPlainString();
+                        else
+                            delta += "Δ " + (diff > 0 ? "+" : "") + diff;
+                        if (deltaTime > 6)
+                            delta += " " + deltaTime + "m";
+                    }
+                }
+
+            } else sgv = "No SGV available";
+
+            String alert = "";
+            String alertmessage = "";
+            RealmResults<PumpStatusEvent> pumpStatusEvents = realm.where(PumpStatusEvent.class)
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findAll();
+            if (pumpStatusEvents.size() > 0) {
+                if (pumpStatusEvents.first().getAlert() > 0) {
+                    alert = "⚠";
+                    alertmessage = "Active Alert on Pump";
                 }
             }
 
-        } else sgv = "No SGV available";
-
-        int color = COLOR_NO_DATA;
-        if (sgvAge >= 0 && sgvAge <= 15) {
+            int color = COLOR_NO_DATA;
+            if (sgvAge >= 0 && sgvAge <= 15) {
                 if (sgvValue < 80)
                     color = COLOR_SGV_RED;
                 else if (sgvValue <= 180)
@@ -175,54 +195,68 @@ public class StatusNotification {
                     color = COLOR_SGV_YELLOW;
                 else
                     color = COLOR_SGV_RED;
-        } else if (realm.where(PumpStatusEvent.class)
-                .greaterThan("eventDate", new Date(now - (15 * 60000L)))
-                .findAll().size() > 0) {
-            color = COLOR_SGV_STALE;
-        }
+            } else if (realm.where(PumpStatusEvent.class)
+                    .greaterThan("eventDate", new Date(now - (15 * 60000L)))
+                    .findAll().size() > 0) {
+                color = COLOR_SGV_STALE;
+            }
 
-        String iob = iob();
-        String basal = basal();
-        String bolus = lastBolus();
-        String bolusing = bolusing();
-        String bg = lastBG();
-        String calibration = calibration();
+            String iob = iob();
+            String basal = basal();
+            String bolus = lastBolus();
+            String bolusing = bolusing();
+            String bg = lastBG();
+            String calibration = calibration();
 
-        String content = iob + "   " + calibration;
-        String summary = (poll.equals("") ? "" : poll + "  ") + calibration;
-        if (mode == NOTIFICATION.ERROR) {
-            content = "connection error";
-            summary = content;
-        }
+            String content = iob + "  " + alert + "  " + calibration;
+            String summary = (poll.equals("") ? "" : poll + "  ") + calibration;
+            if (mode == NOTIFICATION.ERROR) {
+                content = "connection error";
+                summary = content;
+            }
 
-        NotificationCompat.InboxStyle sub = new NotificationCompat.InboxStyle()
-                .addLine(iob)
-                .addLine(basal)
-                .addLine(bg)
-                .addLine(bolus)
-                .addLine(bolusing)
-                .setSummaryText(summary);
+            NotificationCompat.InboxStyle sub = new NotificationCompat.InboxStyle()
+                    .addLine(alertmessage)
+                    .addLine(iob)
+                    .addLine(basal)
+                    .addLine(bg)
+                    .addLine(bolus)
+                    .addLine(bolusing)
+                    .setSummaryText(summary);
 
 //        mNotificationBuilder.setProgress(0, 0, false);
-        if (mode == NOTIFICATION.ERROR) {
-            color = COLOR_NO_DATA;
-            mNotificationBuilder.setSmallIcon(R.drawable.ic_error);
-        } else if (mode == NOTIFICATION.BUSY) {
+            if (mode == NOTIFICATION.ERROR) {
+                color = COLOR_NO_DATA;
+                mNotificationBuilder.setSmallIcon(R.drawable.ic_error);
+            } else if (mode == NOTIFICATION.BUSY) {
 //            mNotificationBuilder.setProgress(0, 0, true);
-            mNotificationBuilder.setSmallIcon(R.drawable.busy_anim);
-        } else
-            mNotificationBuilder.setSmallIcon(R.drawable.ic_notification);
+                mNotificationBuilder.setSmallIcon(R.drawable.busy_anim);
+            } else
+                mNotificationBuilder.setSmallIcon(R.drawable.ic_notification);
 
-        mNotificationBuilder.setStyle(sub);
-        mNotificationBuilder.setWhen(sgvTime);
-        mNotificationBuilder.setColor(color);
+            mNotificationBuilder.setStyle(sub);
+            mNotificationBuilder.setWhen(sgvTime);
+            mNotificationBuilder.setColor(color);
 
-        mNotificationBuilder.setContentTitle(sgv + "   " + delta);
-        mNotificationBuilder.setContentText(content);
+            mNotificationBuilder.setContentTitle(sgv + "   " + delta);
+            mNotificationBuilder.setContentText(content);
 
-        mNotificationManager.notify(
-                SERVICE_NOTIFICATION_ID,
-                mNotificationBuilder.build());
+            mNotificationManager.notify(
+                    SERVICE_NOTIFICATION_ID,
+                    mNotificationBuilder.build());
+
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
+
+        } finally {
+            if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
+            if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
+            if (realm != null && !realm.isClosed()) realm.close();
+            dataStore = null;
+            storeRealm = null;
+            historyRealm = null;
+            realm = null;
+        }
     }
 
     private String strFormatSGV(double sgvValue) {
@@ -238,6 +272,38 @@ public class StatusNotification {
             return sgvFormatter.format(sgvValue);
         }
     }
+    /*
+    private String calibration() {
+        long now = System.currentTimeMillis();
+        String text = "";
+
+        RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
+                .greaterThan("eventDate", new Date(now - (15 * 60000L)))
+                .equalTo("cgmActive", true)
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+
+        if (results.size() > 0) {
+            if (results.first().isCgmCalibrating())
+                text = "Calibrating...";
+            else if (results.first().isCgmCalibrationComplete())
+                text = "Calibration complete";
+            else {
+                if (results.first().isCgmWarmUp())
+                    text = "Warmup ";
+                else
+                    text = "Calibration ";
+                long timer = ((results.first().getCgmDate().getTime() - now) / 60000L) + results.first().getCalibrationDueMinutes();
+                if (timer > 0)
+                    text += (timer >= 60 ? results.first().getCalibrationDueMinutes() / 60 + "h" : "") + timer % 60 + "m";
+                else
+                    text = "Calibrate now!";
+            }
+        }
+
+        return text;
+    }
+    */
 
     private String calibration() {
         long now = System.currentTimeMillis();
@@ -246,20 +312,66 @@ public class StatusNotification {
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(now - (15 * 60000L)))
                 .equalTo("cgmActive", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() > 0) {
-            text = "Calibration ";
-            if (results.first().isCgmCalibrating())
+
+            if (results.first().isCgmWarmUp())
+                text = "Warmup";
+            else if (results.first().isCgmCalibrating())
                 text = "Calibrating...";
             else if (results.first().isCgmCalibrationComplete())
                 text = "Calibration complete";
-            else {
-                if (results.first().isCgmWarmUp())
-                    text = "Warmup ";
+            else if (results.first().getCalibrationDueMinutes() == 0)
+                text = "Calibrate now!";
+            else if (results.first().getSgv() == 0 && results.first().isCgmException() &&
+                    !PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_NEEDED.equals(results.first().getCgmExceptionType()))
+
+                switch (PumpHistoryParser.CGM_EXCEPTION.convert(results.first().getCgmExceptionType())) {
+                    case SENSOR_INIT:
+                        text = "[sensor init]";
+                        break;
+                    case SENSOR_CAL_NEEDED:
+                        text = "[calibrate now]";
+                        break;
+                    case SENSOR_ERROR:
+                        text = "[sg not available]";
+                        break;
+                    case SENSOR_CHANGE_SENSOR_ERROR:
+                        text = "[change sensor]";
+                        break;
+                    case SENSOR_END_OF_LIFE:
+                        text = "[end of life]";
+                        break;
+                    case SENSOR_NOT_READY:
+                        text = "[not ready]";
+                        break;
+                    case SENSOR_READING_HIGH:
+                        text = "[reading hi]";
+                        break;
+                    case SENSOR_READING_LOW:
+                        text = "[reading lo]";
+                        break;
+                    case SENSOR_CAL_PENDING:
+                        text = "[cal pending]";
+                        break;
+                    case SENSOR_CAL_ERROR:
+                        text = "[cal error])";
+                        break;
+                    case SENSOR_TIME_UNKNOWN:
+                        text = "[time unknown]";
+                        break;
+                    default:
+                        text = "[sensor error]";
+                }
+
+            else text = "Calibration";
+
+            if (results.first().getCalibrationDueMinutes() > 0) {
                 long timer = ((results.first().getCgmDate().getTime() - now) / 60000L) + results.first().getCalibrationDueMinutes();
                 if (timer > 0)
-                    text += (timer >= 60 ? results.first().getCalibrationDueMinutes() / 60 + "h" : "") + timer % 60 + "m";
+                    text += " " + (timer >= 60 ? results.first().getCalibrationDueMinutes() / 60 + "h" : "") + timer % 60 + "m";
                 else
                     text = "Calibrate now!";
             }
@@ -274,7 +386,8 @@ public class StatusNotification {
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(now - (4 * 60 * 60000L)))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() > 0) {
             text = "IOB " + results.first().getActiveInsulin() + "u";
@@ -289,7 +402,8 @@ public class StatusNotification {
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(now - (12 * 60 * 60000L)))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() > 0 && !results.first().isBolusingNormal()
                 && (results.first().isBolusingSquare() || results.first().isBolusingDual())) {
@@ -307,7 +421,8 @@ public class StatusNotification {
 
         RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
                 .greaterThan("eventDate", new Date(now - (12 * 60 * 60000L)))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() > 0) {
 
@@ -315,12 +430,13 @@ public class StatusNotification {
                 text += "Basal: suspended";
                 RealmResults<PumpHistoryBasal> suspend = historyRealm.where(PumpHistoryBasal.class)
                         .greaterThan("eventDate", new Date(now - (12 * 60 * 60000L)))
-                        .equalTo("suspend", true)
+                        .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.SUSPEND.value())
                         .or()
-                        .equalTo("resume", true)
-                        .findAllSorted("eventDate", Sort.DESCENDING);
+                        .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.RESUME.value())
+                        .sort("eventDate", Sort.DESCENDING)
+                        .findAll();
                 // check if most recent suspend is in history and show the start time
-                if (suspend.size() > 0 && suspend.first().isSuspend())
+                if (suspend.size() > 0 && PumpHistoryBasal.RECORDTYPE.SUSPEND.equals(suspend.first().getRecordtype()))
                     text += TEXT_AT_TIME + dateFormatterShort.format(suspend.first().getEventDate());
 
             } else if (results.first().isTempBasalActive()) {
@@ -332,7 +448,7 @@ public class StatusNotification {
                 if (PumpHistoryParser.TEMP_BASAL_PRESET.TEMP_BASAL_PRESET_0.equals(preset))
                     text += "Temp Basal: ";
                 else
-                    text += PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.TEMP_BASAL_PRESET.convert(preset).name()).getText() + ": ";
+                    text += dataStore.getNameTempBasalPreset(preset) + ": ";
 
                 if (results.first().getTempBasalPercentage() != 0) {
                     rate += (percent * results.first().getBasalRate()) / 100;
@@ -343,7 +459,7 @@ public class StatusNotification {
             } else {
                 int pattern = results.first().getActiveBasalPattern();
                 if (pattern != 0)
-                    text += PumpHistoryParser.TextEN.valueOf(PumpHistoryParser.BASAL_PATTERN.convert(pattern).name()).getText() + ": ";
+                    text += dataStore.getNameBasalPattern(pattern) + ": ";
                 else
                     text += "Basal: ";
                 text += results.first().getBasalRate() + "u";
@@ -361,7 +477,8 @@ public class StatusNotification {
         RealmResults<PumpHistoryBG> results = historyRealm.where(PumpHistoryBG.class)
                 .notEqualTo("bg",0)
                 .greaterThan("eventDate", new Date(now - (24 * 60 * 60000L)))
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() > 0) {
             text = "BG: " + strFormatSGV(results.first().getBg()) + TEXT_AT_TIME + dateFormatterShort.format(results.first().getBgDate());
@@ -369,7 +486,8 @@ public class StatusNotification {
             if (dataStore.isNsEnableCalibrationInfo()) {
                 results = results.where()
                         .equalTo("calibrationFlag", true)
-                        .findAllSorted("eventDate", Sort.DESCENDING);
+                        .sort("eventDate", Sort.DESCENDING)
+                        .findAll();
                 if (results.size() > 0 && results.first().isCalibration()) {
                     text += "   Cal: ⋊ " + results.first().getCalibrationFactor();
                 }
@@ -386,7 +504,8 @@ public class StatusNotification {
         RealmResults<PumpHistoryBolus> results = historyRealm.where(PumpHistoryBolus.class)
                 .greaterThan("eventDate", new Date(now - (24 * 60 * 60000L)))
                 .equalTo("programmed", true)
-                .findAllSorted("eventDate", Sort.DESCENDING);
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
 
         if (results.size() > 0) {
             text += "Bolus: ";
