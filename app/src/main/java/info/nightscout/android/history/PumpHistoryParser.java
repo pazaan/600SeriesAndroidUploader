@@ -466,7 +466,7 @@ public class PumpHistoryParser {
         byte preset = eventData[index + 0x0B];
         byte type = eventData[index + 0x0C];
         double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
-        byte percentageOfRate = eventData[index + 0x11];
+        int percentageOfRate = eventData[index + 0x11];
         int duration = read16BEtoUInt(eventData, index + 0x12);
         PumpHistoryBasal.programmed(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
                 preset,
@@ -480,7 +480,7 @@ public class PumpHistoryParser {
         byte preset = eventData[index + 0x0B];
         byte type = eventData[index + 0x0C];
         double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
-        byte percentageOfRate = eventData[index + 0x11];
+        int percentageOfRate = eventData[index + 0x11];
         int duration = read16BEtoUInt(eventData, index + 0x12);
         boolean canceled = (eventData[index + 0x14] & 1) == 1;
         PumpHistoryBasal.completed(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,

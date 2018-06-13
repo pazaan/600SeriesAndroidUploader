@@ -2,6 +2,7 @@ package info.nightscout.android.pushover;
 
 import java.util.concurrent.TimeUnit;
 
+import info.nightscout.android.BuildConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -28,7 +29,7 @@ public class PushoverApi {
                 .writeTimeout(60, TimeUnit.SECONDS);
 
         // dev debug logging only
-        if (true) {
+        if (true & BuildConfig.DEBUG) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
             okHttpClient.addInterceptor(logging);

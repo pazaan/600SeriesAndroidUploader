@@ -206,7 +206,8 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             record.bgSource = bgSource;
             record.bgContext = new RealmList<>();
             record.serial = serial;
-            record.key = String.format("BG%08X%02X", eventRTC, bgContext);
+            record.key = String.format("BG%08X", eventRTC);
+            //record.key = String.format("BG%08X%02X", eventRTC, bgContext);
             pumpHistorySender.senderREQ(record);
         }
 

@@ -54,7 +54,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
 
     private byte preset;
     private byte type;
-    private byte percentageOfRate;
+    private int percentageOfRate;
     private double rate;
     private int programmedDuration;
     private int completedDuration;
@@ -516,7 +516,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
         return type;
     }
 
-    public byte getPercentageOfRate() {
+    public int getPercentageOfRate() {
         return percentageOfRate;
     }
 

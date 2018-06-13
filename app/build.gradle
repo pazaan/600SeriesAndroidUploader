@@ -3,8 +3,8 @@ import groovy.json.JsonSlurper
 
 buildscript {
     repositories {
-        jcenter()
         maven { url 'https://maven.fabric.io/public' }
+        jcenter()
     }
 
     dependencies {

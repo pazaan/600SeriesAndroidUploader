@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import info.nightscout.android.BuildConfig;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -71,7 +72,7 @@ public class UploadApi {
             okHttpClient.addInterceptor(new AddAuthHeader(token));
 
         // dev debug logging only
-        if (false) {
+        if (false & BuildConfig.DEBUG) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
             okHttpClient.addInterceptor(logging);

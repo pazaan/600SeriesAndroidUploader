@@ -38,6 +38,8 @@ import info.nightscout.android.medtronic.message.ContourNextLinkCommandMessage;
 import info.nightscout.android.medtronic.message.ContourNextLinkMessage;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.model.medtronicNg.ContourNextLinkInfo;
+import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
+import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
 import info.nightscout.android.model.medtronicNg.PumpHistorySystem;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -321,10 +323,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 readDataStore();
                 pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
-                //pumpHistoryHandler.reupDailyTotal();
                 //if (true) return;
 
                 //pumpHistoryHandler.reupload(PumpHistoryBG.class, "NS");
+                //pumpHistoryHandler.reupload(PumpHistoryMisc.class, "NS");
 
                 //if (debugHistory(true)) return;
 

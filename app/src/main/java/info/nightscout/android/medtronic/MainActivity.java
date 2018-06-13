@@ -333,6 +333,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getViewport().setMaxX(now);
         mChart.getViewport().setMinX(left);
 
+        mChart.getGridLabelRenderer().setTextSize(35f);
+        mChart.getGridLabelRenderer().reloadStyles();
+
 // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setOnXAxisBoundsChangedListener is n/a in this version
 /*
         mChart.getViewport().setOnXAxisBoundsChangedListener(new Viewport.OnXAxisBoundsChangedListener() {
@@ -362,11 +365,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mChart.getGridLabelRenderer().setLabelFormatter(
                 new DefaultLabelFormatter() {
-                    DateFormat mFormat = new SimpleDateFormat("HH:mm", Locale.US);  // 24 hour format forced to fix label overlap
+                    //DateFormat mFormat = new SimpleDateFormat("HH:mm", Locale.US);  // 24 hour format forced to fix label overlap
+                    DateFormat mFormat = new SimpleDateFormat("h:mm", Locale.getDefault());
 
                     @Override
                     public String formatLabel(double value, boolean isValueX) {
                         if (isValueX) {
+                            //return FormatKit.getInstance().formatAsClock((long) value);
                             return mFormat.format(new Date((long) value));
                         } else {
                             return strFormatSGV(value);

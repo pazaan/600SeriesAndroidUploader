@@ -3,9 +3,11 @@ package info.nightscout.android.model.medtronicNg;
 import android.util.Log;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.history.MessageItem;
@@ -272,7 +274,11 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         double vmax = 97;
         double vmid = 42;
 
-        DecimalFormat dfFac = new DecimalFormat("0");
+        DecimalFormat dfFac = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+        dfFac.setMinimumFractionDigits(0);
+        dfFac.setMaximumFractionDigits(1);
+
+        DecimalFormat dfFacLocal = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.GERMANY));
         dfFac.setMinimumFractionDigits(0);
         dfFac.setMaximumFractionDigits(1);
 
@@ -297,7 +303,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
             parts.append(String.format("<div style='left:%s%%;top:%s%%'>%s</div>",
                     dfFac.format(xpos),
                     dfNum.format(100 - ((ymax * r) / 100)),
-                    dfFac.format(v / 10)));
+                    dfFacLocal.format(v / 10)));
 
             xpos += xadd;
         }

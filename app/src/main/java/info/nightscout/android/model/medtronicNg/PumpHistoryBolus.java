@@ -211,12 +211,12 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits)) {
                 carbInputAsGrams = gramsPerExchange * carbInput;
                 carbRatioAsGrams = gramsPerExchange / carbRatio;
-                gramsPerU = String.format("(%s/%s, %s %s/%s)",
+                gramsPerU = String.format("(%s/%s %s %s/%s/%s)",
                         FormatKit.getInstance().formatAsGrams(carbRatioAsGrams),
                         FormatKit.getInstance().getString(R.string.text_insulin_unit),
-                        FormatKit.getInstance().getString(R.string.exchange),
                         FormatKit.getInstance().formatAsInsulin(carbRatio),
-                        FormatKit.getInstance().formatAsGrams(gramsPerExchange));
+                        FormatKit.getInstance().formatAsGrams(gramsPerExchange),
+                        FormatKit.getInstance().getString(R.string.exchange));
             } else {
                 carbInputAsGrams = carbInput;
                 carbRatioAsGrams = carbRatio;
