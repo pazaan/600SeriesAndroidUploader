@@ -274,11 +274,11 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         double vmax = 97;
         double vmid = 42;
 
-        DecimalFormat dfFac = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-        dfFac.setMinimumFractionDigits(0);
-        dfFac.setMaximumFractionDigits(1);
+        DecimalFormat dfFacLocal = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+        dfFacLocal.setMinimumFractionDigits(0);
+        dfFacLocal.setMaximumFractionDigits(1);
 
-        DecimalFormat dfFacLocal = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.GERMANY));
+        DecimalFormat dfFac = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
         dfFac.setMinimumFractionDigits(0);
         dfFac.setMaximumFractionDigits(1);
 

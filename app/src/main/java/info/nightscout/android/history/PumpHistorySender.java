@@ -65,11 +65,14 @@ public class PumpHistorySender {
 
                 .opt(SENDEROPT.SYSTEM_PUMP_DEVICE_ERROR, dataStore.isNsEnableSystemStatus())
                 .opt(SENDEROPT.SYSTEM_CNL_USB_ERROR, dataStore.isNsEnableSystemStatus())
+                /*
+                makes lot of extra noise in NS when a user is in/out of range all day!
                 .opt(SENDEROPT.SYSTEM_PUMP_CONNECTTED, dataStore.isNsEnableSystemStatus())
                 .var(SENDEROPT.SYSTEM_PUMP_CONNECTTED_AT, Integer.toString(15 * 60))
                 .opt(SENDEROPT.SYSTEM_PUMP_LOST, dataStore.isNsEnableSystemStatus())
                 .var(SENDEROPT.SYSTEM_PUMP_LOST_AT, Integer.toString(15 * 60))
                 .var(SENDEROPT.SYSTEM_PUMP_LOST_REPEAT, Integer.toString(30 * 60))
+                 */
 
                 .opt(SENDEROPT.SYSTEM_UPLOADER_BATTERY_LOW, dataStore.isNsEnableSystemStatus())
                 .opt(SENDEROPT.SYSTEM_UPLOADER_BATTERY_VERY_LOW, dataStore.isNsEnableSystemStatus())
