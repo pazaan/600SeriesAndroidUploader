@@ -235,7 +235,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
             markerRecord.carbInput = carbInput;
             markerRecord.insulin = insulin;
             markerRecord.key = String.format("MARK%08X", eventRTC);
-            pumpHistorySender.senderREQ(markerRecord);
+            pumpHistorySender.setSenderREQ(markerRecord);
         }
     }
 

@@ -347,7 +347,7 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
         record.timespan = timespan;
         record.eventspan = eventspan;
 
-        pumpHistorySender.senderREQ(record);
+        pumpHistorySender.setSenderREQ(record);
     }
 
     @Override

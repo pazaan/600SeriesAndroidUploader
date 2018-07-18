@@ -308,7 +308,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         record.carbRatios = carbRatios;
         record.sensitivity = sensitivity;
         record.targets = targets;
-        pumpHistorySender.senderREQ(record);
+        pumpHistorySender.setSenderREQ(record);
     }
 
     @Override

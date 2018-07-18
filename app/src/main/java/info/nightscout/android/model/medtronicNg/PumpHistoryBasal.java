@@ -278,11 +278,11 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
             programedRecord.preset = preset;
             programedRecord.type = type;
             programedRecord.rate = rate;
-            programedRecord.percentageOfRate = (byte) percentageOfRate;
+            programedRecord.percentageOfRate = percentageOfRate;
             programedRecord.completed = false;
             programedRecord.canceled = false;
             programedRecord.key = String.format("BASAL%08X", eventRTC);
-            pumpHistorySender.senderREQ(programedRecord);
+            pumpHistorySender.setSenderREQ(programedRecord);
 
             // look for a corresponding completed temp basal
             PumpHistoryBasal completedRecord = realm.where(PumpHistoryBasal.class)
@@ -303,7 +303,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                 completedRecord.completedDuration = completedDuration;
                 completedRecord.completed = true;
                 // only run completed senders when a temp basal is canceled
-                if (canceled) pumpHistorySender.senderREQ(completedRecord);
+                if (canceled) pumpHistorySender.setSenderREQ(completedRecord);
             }
 
         }
@@ -332,7 +332,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
             completedRecord.preset = preset;
             completedRecord.type = type;
             completedRecord.rate = rate;
-            completedRecord.percentageOfRate = (byte) percentageOfRate;
+            completedRecord.percentageOfRate = percentageOfRate;
             completedRecord.completed = false;
             completedRecord.canceled = canceled;
             completedRecord.key = String.format("BASAL%08X", eventRTC);
@@ -355,7 +355,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                 completedRecord.completedDuration = completedDuration;
                 completedRecord.completed = true;
                 // only run completed senders when a temp basal is canceled
-                if (canceled) pumpHistorySender.senderREQ(completedRecord);
+                if (canceled) pumpHistorySender.setSenderREQ(completedRecord);
             }
         }
     }
@@ -378,7 +378,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
             suspendRecord.programmedDuration = 24 * 60;
             suspendRecord.completed = false;
             suspendRecord.key = String.format("SUSPEND%08X", eventRTC);
-            pumpHistorySender.senderREQ(suspendRecord);
+            pumpHistorySender.setSenderREQ(suspendRecord);
         }
     }
 
@@ -399,7 +399,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
             resumeRecord.resumeReason = reason;
             resumeRecord.programmedDuration = 0;
             resumeRecord.key = String.format("RESUME%08X", eventRTC);
-            pumpHistorySender.senderREQ(resumeRecord);
+            pumpHistorySender.setSenderREQ(resumeRecord);
 
             // look for corresponding suspend and update it's duration
             PumpHistoryBasal suspendRecord = realm.where(PumpHistoryBasal.class)

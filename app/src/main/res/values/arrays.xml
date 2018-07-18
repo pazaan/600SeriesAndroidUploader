@@ -2,18 +2,15 @@
 <resources>
 
     <string-array name="sender">
-        <item>Pump</item>
+        <item>Alert</item>
         <item>Pump Alert</item>
-        <item>Pump Alarm</item>
-        <item>Sensor</item>
         <item>Sensor Alert</item>
-        <item>Sensor Alarm</item>
-        <item>Auto Mode</item>
         <item>Reminder</item>
+        <item>Auto Mode</item>
     </string-array>
 
     <!-- priority: LOWEST(-2) LOW(-1) NORMAL(0) HIGH(1) EMERGENCY(2) -->
-    <!-- sender: NA(0) PUMP(1) SENSOR(2) REMINDER(3) MESSAGE(4) AUTOMODE(5) -->
+    <!-- sender: NA(0) PUMP(1) SENSOR(2) REMINDER(3) AUTOMODE(4) -->
 
     <!-- alert code | priority | sender | message | extended message -->
     <string-array name="pump_alerts">

@@ -319,7 +319,8 @@ public class PumpHistorySender {
         return defaultValue;
     }
 
-    public void senderREQ(PumpHistoryInterface record) {
+    // set history record REQ for all associated senders
+    public void setSenderREQ(PumpHistoryInterface record) {
         String req = record.getSenderREQ();
         String db = record.getClass().getSuperclass().getSimpleName();
 
@@ -331,7 +332,8 @@ public class PumpHistorySender {
         record.setSenderREQ(req);
     }
 
-    public void senderACK(PumpHistoryInterface record) {
+    // set history record ACK for all associated senders
+    public void setSenderACK(PumpHistoryInterface record) {
         String ack = record.getSenderACK();
         String db = record.getClass().getSuperclass().getSimpleName();
 

@@ -646,7 +646,7 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
             record = realm.createObject(PumpHistoryDaily.class);
             record.eventDate = eventDate;
             record.key = String.format("DAILY%08X", eventRTC);
-            pumpHistorySender.senderREQ(record);
+            pumpHistorySender.setSenderREQ(record);
 
             record.eventRTC = eventRTC;
             record.eventOFFSET = eventOFFSET;

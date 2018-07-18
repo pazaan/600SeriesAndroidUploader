@@ -208,7 +208,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             record.serial = serial;
             record.key = String.format("BG%08X", eventRTC);
             //record.key = String.format("BG%08X%02X", eventRTC, bgContext);
-            pumpHistorySender.senderREQ(record);
+            pumpHistorySender.setSenderREQ(record);
         }
 
         if (!record.bgContext.contains(bgContext)) {
@@ -242,7 +242,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                 record.eventDate = eventDate;
             } else {
                 Log.d(TAG, "*update*"  + " bg with calibration");
-                pumpHistorySender.senderREQ(record);
+                pumpHistorySender.setSenderREQ(record);
 
             }
             record.calibration = true;
@@ -291,7 +291,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                         calibrations[i] = (byte) (results3.get(i).calibrationFactor * 10);
                     }
                     results1.first().setCalibrations(calibrations);
-                    pumpHistorySender.senderREQ(results1.first());
+                    pumpHistorySender.setSenderREQ(results1.first());
                 }
 
             }

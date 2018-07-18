@@ -329,7 +329,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
 
             record.eventDate = eventDate;
             record.key = String.format("MISC%08X", eventRTC);
-            pumpHistorySender.senderREQ(record);
+            pumpHistorySender.setSenderREQ(record);
 
             record.eventRTC = eventRTC;
             record.eventOFFSET = eventOFFSET;
@@ -351,7 +351,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
                             lifetimes[lt << 1] = days;
                             lifetimes[(lt << 1) + 1] = hours;
                             realmResults.get(i - lt).lifetimes = lifetimes;
-                            pumpHistorySender.senderREQ(realmResults.get(i - lt));
+                            pumpHistorySender.setSenderREQ(realmResults.get(i - lt));
                         }
                     }
                 }

@@ -127,9 +127,9 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
             record.discardData = discardData;
             record.sensorError = sensorError;
             record.sensorException = sensorException;
-            if (sgv > 0) pumpHistorySender.senderREQ(record);
+            if (sgv > 0) pumpHistorySender.setSenderREQ(record);
 
-        } else if (!record.isHistory()) {
+        } else if (!record.history) {
             // update the entry
             record.history = true;
             record.isig = isig;
@@ -165,7 +165,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
             record.sgv = sgv;
             record.sensorException = sensorException;
             record.cgmTrend = trend;
-            pumpHistorySender.senderREQ(record);
+            pumpHistorySender.setSenderREQ(record);
         }
     }
 

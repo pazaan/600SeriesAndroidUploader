@@ -8,7 +8,6 @@ import java.util.List;
 
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
-import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.utils.ToolKit;
 import info.nightscout.android.utils.FormatKit;
@@ -128,7 +127,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 StringBuilder sb = new StringBuilder();
                 if (extraData && alarmData != null)
                     for (byte b : alarmData) sb.append(String.format("%02X", b));
-                notes += String.format(" [M:%s H:%s D:%s%s]", notificationMode, alarmHistory, extraData, sb.length() == 0 ? "" : " " + sb.toString());
+                notes += String.format(" [Mode:%s History:%s Data:%s%s]", notificationMode, alarmHistory, extraData, sb.length() == 0 ? "" : " " + sb.toString());
             }
         }
 
@@ -308,7 +307,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
             if (record != null) {
                 Log.d(TAG, "*update*" + " alarm (silenced)");
                 record.silenced = true;
-                pumpHistorySender.senderREQ(record);
+                pumpHistorySender.setSenderREQ(record);
             }
 
         } else {
@@ -353,7 +352,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
 
                 // key composed of 2 byte faultNumber and 4 byte eventRTC due to multiple alerts at the same time
                 record.key = String.format("ALARM%04X%08X", faultNumber, eventRTC);
-                pumpHistorySender.senderREQ(record);
+                pumpHistorySender.setSenderREQ(record);
             }
         }
     }
@@ -389,7 +388,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
             } else {
                 Log.d(TAG, "*update*" + " alarm (cleared)");
                 record = results.first();
-                pumpHistorySender.senderREQ(record);
+                pumpHistorySender.setSenderREQ(record);
             }
 
             record.clearedDate = eventDate;

@@ -505,8 +505,8 @@ public class PumpHistoryHandler {
                     @Override
                     public void execute(@NonNull Realm realm) {
                         for (PumpHistoryPattern record : results) {
-                            pumpHistorySender.senderREQ(record);
-                            pumpHistorySender.senderACK(record);
+                            pumpHistorySender.setSenderREQ(record);
+                            pumpHistorySender.setSenderACK(record);
                         }
                     }
                 });
@@ -541,8 +541,8 @@ public class PumpHistoryHandler {
                     @Override
                     public void execute(@NonNull Realm realm) {
                         for (PumpHistoryBolus record : results) {
-                            pumpHistorySender.senderREQ(record);
-                            pumpHistorySender.senderACK(record);
+                            pumpHistorySender.setSenderREQ(record);
+                            pumpHistorySender.setSenderACK(record);
                         }
                     }
                 });

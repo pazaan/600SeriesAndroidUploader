@@ -142,7 +142,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
             record.bolusRef = bolusRef;
             record.deliveredAmount = deliveredAmount;
             record.key = String.format("MB%08X", eventRTC);
-            pumpHistorySender.senderREQ(record);
+            pumpHistorySender.setSenderREQ(record);
         }
     }
 
@@ -169,7 +169,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
                     record.transitionValue = transitionValue;
                     record.transitionReason = transitionReason;
                     record.key = String.format("LOOP%08X", eventRTC);
-                    pumpHistorySender.senderREQ(record);
+                    pumpHistorySender.setSenderREQ(record);
                 }
                 break;
 
@@ -220,7 +220,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
                 record.transitionValue = transitionRecord.transitionValue;
                 record.transitionReason = transitionRecord.transitionReason;
                 record.key = String.format("LOOP%08X", eventRTC);
-                pumpHistorySender.senderREQ(record);
+                pumpHistorySender.setSenderREQ(record);
             }
         }
     }

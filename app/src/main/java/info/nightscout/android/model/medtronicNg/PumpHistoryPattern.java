@@ -102,7 +102,7 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
             record.eventOFFSET = eventOFFSET;
             record.oldPatternNumber = oldPatternNumber;
             record.newPatternNumber = newPatternNumber;
-            pumpHistorySender.senderREQ(record);
+            pumpHistorySender.setSenderREQ(record);
         }
     }
 

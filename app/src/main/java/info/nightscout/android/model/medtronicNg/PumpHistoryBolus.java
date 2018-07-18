@@ -211,7 +211,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits)) {
                 carbInputAsGrams = gramsPerExchange * carbInput;
                 carbRatioAsGrams = gramsPerExchange / carbRatio;
-                gramsPerU = String.format("(%s/%s %s %s/%s/%s)",
+                gramsPerU = String.format("(%s/%s %s/%s/%s)",
                         FormatKit.getInstance().formatAsGrams(carbRatioAsGrams),
                         FormatKit.getInstance().getString(R.string.text_insulin_unit),
                         FormatKit.getInstance().formatAsInsulin(carbRatio),
@@ -461,7 +461,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             record.totalProgrammedAmount = normalProgrammedAmount + squareProgrammedAmount;
             record.squareProgrammedDuration = squareProgrammedDuration;
             record.key = String.format("BOLUS%08X", eventRTC);
-            pumpHistorySender.senderREQ(record);
+            pumpHistorySender.setSenderREQ(record);
         }
 
         if (normalDelivered && !record.isNormalDelivered()) {
@@ -472,7 +472,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             record.normalDeliveredOFFSET = eventOFFSET;
             record.normalDeliveredAmount = normalDeliveredAmount;
             if (record.programmed && normalProgrammedAmount != normalDeliveredAmount)
-                pumpHistorySender.senderREQ(record);
+                pumpHistorySender.setSenderREQ(record);
         }
 
         if (squareDelivered && !record.isSquareDelivered()) {
@@ -484,7 +484,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             record.squareDeliveredAmount = squareDeliveredAmount;
             record.squareDeliveredDuration = squareDeliveredDuration;
             if (record.programmed && squareProgrammedAmount != squareDeliveredAmount)
-                pumpHistorySender.senderREQ(record);
+                pumpHistorySender.setSenderREQ(record);
         }
     }
 
