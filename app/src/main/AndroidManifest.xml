@@ -2,10 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="info.nightscout.android">
-
-    <uses-sdk android:minSdkVersion="14" android:maxSdkVersion="23"
+<!--
+    Pogman: not sure what these are for? are they needed?
+    <uses-sdk android:minSdkVersion="14" android:maxSdkVersion="27"
         tools:overrideLibrary="com.github.mikephil.charting.data.realm"/>
-
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+-->
     <uses-feature android:name="android.hardware.usb.host" />
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -14,10 +17,12 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Android 9 (API level 28) or higher and use foreground services must request the FOREGROUND_SERVICE permission -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <!-- allow to disable battery optimization -->
     <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 

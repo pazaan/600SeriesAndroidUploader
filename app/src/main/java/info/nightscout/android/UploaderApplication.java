@@ -1,11 +1,9 @@
 package info.nightscout.android;
 
 import android.app.Application;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.PowerManager;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -34,6 +32,7 @@ import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.model.store.UserLog;
+import info.nightscout.android.utils.FormatKit;
 import io.fabric.sdk.android.Fabric;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
@@ -56,20 +55,15 @@ public class UploaderApplication extends Application {
 
     private static long startupRealtime;
 
-    public static Context context;
-
     @Override
     public void onCreate() {
+        super.onCreate();
+
         Log.i(TAG, "onCreate Called");
 
         startupRealtime = SystemClock.elapsedRealtime();
 
-        context = this.getBaseContext();
-
-        super.onCreate();
-
         // LeakCanary is only active for debug build variant
-
         if (LeakCanary.isInAnalyzerProcess(this)) {
             // This process is dedicated to LeakCanary for heap analysis.
             // You should not init your app in this process.
@@ -77,30 +71,31 @@ public class UploaderApplication extends Application {
         }
         LeakCanary.install(this);
 
-        // Normal app init code...
-
         CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
                 .setDefaultFontPath("fonts/OpenSans-Regular.ttf")
                 .setFontAttrId(R.attr.fontPath)
                 .build()
         );
 
-        try {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        if (!BuildConfig.DEBUG) {
+            try {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
-            if (prefs.getBoolean(getString(R.string.preferences_enable_crashlytics), true)) {
-                Fabric.with(this, new Crashlytics());
-            }
-            if (prefs.getBoolean(getString(R.string.preferences_enable_answers), true)) {
-                Fabric.with(this, new Answers());
-            }
+                if (prefs.getBoolean(getString(R.string.preferences_enable_crashlytics), true)) {
+                    Fabric.with(this, new Crashlytics());
+                }
+                if (prefs.getBoolean(getString(R.string.preferences_enable_answers), true)) {
+                    Fabric.with(this, new Answers(), new Crashlytics());
+                }
 
-            if (prefs.getBoolean(getString(R.string.preferences_enable_remote_logcat), false)) {
-                Bugfender.init(this, BuildConfig.BUGFENDER_API_KEY, BuildConfig.DEBUG);
-                Bugfender.enableLogcatLogging();
-                Bugfender.setDeviceString("NightscoutURL", prefs.getString(getString(R.string.preference_nightscout_url), "Not set"));
+                if (prefs.getBoolean(getString(R.string.preferences_enable_remote_logcat), false)) {
+                    Bugfender.init(this, BuildConfig.BUGFENDER_API_KEY, BuildConfig.DEBUG);
+                    Bugfender.enableLogcatLogging();
+                    Bugfender.setDeviceString("NightscoutURL", prefs.getString(getString(R.string.preference_nightscout_url), "Not set"));
+                }
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {}
+        }
 
         Realm.init(this);
 
@@ -127,6 +122,9 @@ public class UploaderApplication extends Application {
                 .modules(new HistoryModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
+
+        // Uploader specific string formatting and localisation formatting accessible from any module
+        FormatKit.init(this);
 
         // Some Android versions will leak if ConnectivityManager not attached to app context here
         connectivityManager = (ConnectivityManager) getApplicationContext()

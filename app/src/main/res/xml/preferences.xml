@@ -1292,7 +1292,13 @@
                     android:summary="%s"
                     android:entries="@array/automode_frequency"
                     android:entryValues="@array/automode_frequency_values"/>
+            </PreferenceCategory>
 
+            <PreferenceCategory android:title="Experimental">
+                <CheckBoxPreference android:title="Estimate SGV"
+                    android:key="sysEnableEstimateSGV"
+                    android:defaultValue="false"
+                    android:summary="Calculate an estimated SGV when a calibration is missed (warning: calculation is based on the last pump calibration point and may be unreliable)"/>
             </PreferenceCategory>
 
             <PreferenceCategory android:title="@string/pref_system_category_radio">

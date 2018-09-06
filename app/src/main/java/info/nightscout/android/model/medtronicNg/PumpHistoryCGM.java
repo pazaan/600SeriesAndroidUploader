@@ -34,7 +34,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
-    private boolean history = false; // update or status? we add these initially as polled from status and fill in extra details during update pulls
+    private boolean history = false; // history or status? we add these initially as polled from the status message and fill in extra details during history pulls
 
     @Index
     private int cgmRTC;
@@ -57,6 +57,9 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     private boolean sensorError;
 
     private String cgmTrend; // only available when added via the status message
+
+    private boolean estimate;
+    private byte estimateQuality;
 
     @Override
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
@@ -83,7 +86,10 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
             entry.setDateString(eventDate.toString());
 
             entry.setSgv(sgvNS);
-            if (cgmTrend != null)
+
+            if (estimate)
+                entry.setDirection(NS_TREND.NONE.string()); // setting the trend to NONE in NS shows symbol: <">
+            else if (cgmTrend != null)
                 entry.setDirection(NS_TREND.valueOf(cgmTrend).string());
         }
 
@@ -335,5 +341,29 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
     public String getCgmTrend() {
         return cgmTrend;
+    }
+
+    public void setSgv(int sgv) {
+        this.sgv = sgv;
+    }
+
+    public void setHistory(boolean history) {
+        this.history = history;
+    }
+
+    public boolean isEstimate() {
+        return estimate;
+    }
+
+    public void setEstimate(boolean estimate) {
+        this.estimate = estimate;
+    }
+
+    public void setEstimateQuality(byte estimateQuality) {
+        this.estimateQuality = estimateQuality;
+    }
+
+    public byte getEstimateQuality() {
+        return estimateQuality;
     }
 }

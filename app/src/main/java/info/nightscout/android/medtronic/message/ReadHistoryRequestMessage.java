@@ -58,7 +58,7 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
     public ReadHistoryResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
         blocks = new ByteArrayOutputStream();
 
-        sendToPump(mDevice, mPumpSession, TAG);
+        sendToPump(mDevice, TAG);
 
         byte[] payload;
         short cmd;
@@ -67,28 +67,40 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
         while (!receivedEndHistoryCommand) {
             payload = readFromPump(mDevice, mPumpSession, TAG);
 
-            cmd = read16BEtoShort(payload, 1);
-            if (MessageType.END_HISTORY_TRANSMISSION.response(cmd)) {
-                // pump sends EHSM_SESSION
-                payload = readFromPump(mDevice, mPumpSession, TAG);
-                cmd = read16BEtoShort(payload, 1);
-                if (!MessageType.EHSM_SESSION.response(cmd))
-                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-                receivedEndHistoryCommand = true;
+            if (payload.length >= 3) {
 
-            } else if (MessageType.UNMERGED_HISTORY.response(cmd)) {
-                try {
-                    addHistoryBlock(payload);
-                } catch (UnexpectedMessageException e) {
-                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-                    throw e;
-                } catch (ChecksumException e) {
-                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-                    throw e;
-                } catch (Exception e) {
-                    clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-                    throw new UnexpectedMessageException("history message block corrupt");
+                cmd = read16BEtoShort(payload, 1);
+                if (MessageType.END_HISTORY_TRANSMISSION.response(cmd)) {
+                    receivedEndHistoryCommand = true;
+
+                    // pump sends EHSM_SESSION
+                    payload = readFromPump(mDevice, mPumpSession, TAG);
+                    cmd = read16BEtoShort(payload, 1);
+                    if (payload.length < 3 || !MessageType.EHSM_SESSION.response(cmd)) {
+                        Log.e(TAG, "END HISTORY TRANSMISSION: did not receive expected EHSM message");
+                        clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                    }
+
+                    // unread messages sitting in the input stream for too long can cause the CNL to E86
+                    // clearing them out now before any delays due to history parsing etc (very rare error)
+                    else if (clearMessage(mDevice, 100) > 0)
+                        Log.e(TAG, "END HISTORY TRANSMISSION: cleared unexpected messages");
+
+                } else if (MessageType.UNMERGED_HISTORY.response(cmd)) {
+                    try {
+                        addHistoryBlock(payload);
+                    } catch (UnexpectedMessageException e) {
+                        clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                        throw e;
+                    } catch (ChecksumException e) {
+                        clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                        throw e;
+                    } catch (Exception e) {
+                        clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                        throw new UnexpectedMessageException("history message block corrupt");
+                    }
                 }
+
             }
         }
 

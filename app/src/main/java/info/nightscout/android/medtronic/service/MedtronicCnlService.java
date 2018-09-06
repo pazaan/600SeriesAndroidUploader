@@ -90,7 +90,7 @@ public class MedtronicCnlService extends Service {
     private final static int ERROR_SIGNAL_AT = 6;
     private final static int ERROR_PUMPLOSTSENSOR_AT = 6;
     private final static int ERROR_PUMPBATTERY_AT = 1;
-    private final static int ERROR_PUMPCLOCK_AT = 8;
+    private final static int ERROR_PUMPCLOCK_AT = 4;
     private final static long ERROR_PUMPCLOCK_MS = 10 * 60 * 1000L;
 
     private Context mContext;
@@ -117,11 +117,6 @@ public class MedtronicCnlService extends Service {
     private long pollInterval;
 
     private boolean shutdownProtect = false;
-
-    // debug use: temporary for error investigation
-    public static long cnlClearTimer = 0;
-    public static int cnlClear = 0;
-    public static int cnl0x81 = 0;
 
     private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
@@ -172,7 +167,7 @@ public class MedtronicCnlService extends Service {
         // kill process if it's been around too long, stops android killing us without warning due to process age (if mid-comms can crash the CNL E86/E81)
         long uptime = UploaderApplication.getUptime() / 60000L;
         if (uptime > 60) {
-            Log.d(TAG, "process uptime exceeded, killing process now. Uptime: " + uptime + " minutes");
+            Log.w(TAG, "process uptime exceeded, killing process now. Uptime: " + uptime + " minutes");
             android.os.Process.killProcess(android.os.Process.myPid());
         }
     }
@@ -306,13 +301,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             //long timePollStarted = System.currentTimeMillis();
             timePollStarted = System.currentTimeMillis();
             long nextpoll = 0;
-
-            // debug use:
-            cnlClearTimer = 0;
-            cnlClear = 0;
-            cnl0x81 = 0;
-
-            FormatKit.getInstance(mContext);
 
             try {
                 // note: Realm use only in this thread!
@@ -493,8 +481,19 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                             pumpHistoryHandler.cgm(pumpRecord);
 
+/*
+                            // stress tester
+                            pollInterval = POLL_PERIOD_MS / 2;
+                            storeRealm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(@NonNull Realm realm) {
+                                    //dataStore.setRequestPumpHistory(true);
+                                    dataStore.setRequestCgmHistory(true);
+                                }
+                            });
+*/
+
                             if (dataStore.isSysEnablePumpHistory() && isHistoryNeeded()) {
-//                            if (dataStore.isSysEnablePumpHistory() && isHistoryNeeded() || true) {
                                 storeRealm.executeTransaction(new Realm.Transaction() {
                                     @Override
                                     public void execute(@NonNull Realm realm) {
@@ -508,6 +507,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             // also skip if pump battery is low and interval times are different
 
                             // TODO - if in low battery mode should we run a backfill after a time? 30/60 minutes?
+                            // TODO - consider sgv estimator when in low battery mode as no history will get processed and thus no sgv
 
                             if (!pumpRecord.isOldSgvWhenNewExpected() &&
                                     !(PumpBatteryError > 0 && dataStore.getLowBatPollInterval() > POLL_PERIOD_MS)) {
@@ -592,7 +592,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     CommsError++;
                     Log.e(TAG, "Error connecting to Contour Next Link.", e);
                     if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl) + " " + e.getMessage());
+                        //userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl) + " " + e.getMessage());
+                        userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl) + " " + e.getMessage() + "\n" + Log.getStackTraceString(e));
                     else
                         userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl));
                     if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + getString(R.string.error_cnl_reset_success));
@@ -628,9 +629,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + getString(R.string.error_cnl_reset_success));
                 } finally {
                     shutdownProtect = false;
-
-                    // debug use:
-                    //if (cnlClear > 0 || cnl0x81 > 0) userLogMessage("*** cnlClear=" + cnlClear + " [" + cnlClearTimer + "ms] cnl0x81=" + cnl0x81);
 
                     nextpoll = requestPollTime(timePollStarted, pollInterval);
                     if (dataStore.isDbgEnableExtendedErrors())
@@ -675,7 +673,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 // allow some time for broadcast to be received before releasing wakelock
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                 }
                 releaseWakeLock(wl);
@@ -787,8 +785,11 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         + "  Pump: " + (pumpClockDifference > 0 ? "+" : "") + (pumpClockDifference / 1000L) + "sec");
                 if (pumpRecord.isCgmCalibrating())
                     userLogMessage(ICON_CGM + "sensor is calibrating");
-                if (pumpRecord.isOldSgvWhenNewExpected()) {
-                    userLogMessage(ICON_CGM + "old SGV event received");
+            }
+
+            if (pumpRecord.isOldSgvWhenNewExpected()) {
+                userLogMessage(ICON_CGM + "old cgm event received");
+                if (!pumpRecord.isCgmWarmUp()) {
                     // pump may have missed sensor transmission or be delayed in posting to status message
                     // in most cases the next scheduled poll will have latest sgv, occasionally it is available this period after a delay
                     pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollOldSgvRetry() : POLL_OLDSGV_RETRY_MS;
@@ -1096,35 +1097,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     historyNeeded = true;
                 }
 
-                // recentBGL is in the status message for up to 20 minutes, check for this or if there was a new reading with a different bgl value
-                if (results.first().getRecentBGL() != 0 &&
-                        results.where()
-                                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (20 * 60000L)))
-                                .equalTo("recentBGL", results.first().getRecentBGL())
-                                .findAll()
-                                .size() == 1) {
-                    Log.d(TAG, logTAG + "recent finger bg");
-                    userLogMessage(userlogTAG + getString(R.string.history_recent_finger_bg));
-                    historyNeeded = true;
-                }
-/*
-                // calibration factor info available?
-                if (dataStore.isNsEnableCalibrationInfo() && dataStore.isNsEnableCalibrationInfoNow()
-                        && (results.first().isCgmCalibrationComplete() && !results.get(1).isCgmCalibrationComplete())) {
-                    Log.d(TAG, logTAG + "calibration info");
-                    userLogMessage(userlogTAG + getString(R.string.history_calibration_info));
-                    historyNeeded = true;
-                }
-*/
-                // calibration factor info available?
-                if (dataStore.isNsEnableCalibrationInfo()
-                        && (cgmresults.size() > 1 && results.first().getCalibrationDueMinutes() > 0
-                        && results.first().getCalibrationDueMinutes() > cgmresults.get(1).getCalibrationDueMinutes())) {
-                    Log.d(TAG, logTAG + "calibration info");
-                    userLogMessage(userlogTAG + getString(R.string.history_calibration_info));
-                    historyNeeded = true;
-                }
-
                 // reservoir/battery changes need to pull history after pump has resumed
                 // to ensure that we don't miss the resume entry in the history
                 if (results.first().getActiveBasalPattern() != 0) {
@@ -1161,26 +1133,69 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     }
                 }
 
+                boolean sensor = (dataStore.isNsEnableTreatments() & dataStore.isNsEnableSensorChange())
+                        | (dataStore.isPushoverEnable() & dataStore.isPushoverEnableConsumables());
+
+                boolean fingerbg = (dataStore.isNsEnableTreatments() & dataStore.isNsEnableFingerBG())
+                        | (dataStore.isPushoverEnable() & dataStore.isPushoverEnableBG());
+
+                boolean calibration = (dataStore.isNsEnableTreatments() & dataStore.isNsEnableFingerBG() & dataStore.isNsEnableCalibrationInfo())
+                        | (dataStore.isPushoverEnable() & dataStore.isPushoverEnableBG() & dataStore.isPushoverEnableCalibration());
+
+                boolean dailytotals = (dataStore.isNsEnableTreatments() & dataStore.isNsEnableDailyTotals())
+                        | (dataStore.isPushoverEnable() & dataStore.isPushoverEnableDailyTotals());
+
+                boolean alarms = (dataStore.isNsEnableTreatments() & dataStore.isNsEnableAlarms())
+                        | (dataStore.isPushoverEnable());
+
                 // sensor changed?
-                if (results.first().isCgmWarmUp()
-                        && (cgmresults.size() > 1 && !cgmresults.get(1).isCgmWarmUp())) {
-                    Log.d(TAG, logTAG + "sensor changed");
-                    userLogMessage(userlogTAG + getString(R.string.history_sensor_changed));
-                    historyNeeded = true;
+                if (sensor) {
+                    if (results.first().isCgmWarmUp()
+                            && (cgmresults.size() > 1 && !cgmresults.get(1).isCgmWarmUp())) {
+                        Log.d(TAG, logTAG + "sensor changed");
+                        userLogMessage(userlogTAG + getString(R.string.history_sensor_changed));
+                        historyNeeded = true;
+                    }
+                }
+
+                // recentBGL is in the status message for up to 20 minutes, check for this or if there was a new reading with a different bgl value
+                if (fingerbg) {
+                    if (results.first().getRecentBGL() != 0 &&
+                            results.where()
+                                    .greaterThan("eventDate", new Date(System.currentTimeMillis() - (20 * 60000L)))
+                                    .equalTo("recentBGL", results.first().getRecentBGL())
+                                    .findAll()
+                                    .size() == 1) {
+                        Log.d(TAG, logTAG + "recent finger bg");
+                        userLogMessage(userlogTAG + getString(R.string.history_recent_finger_bg));
+                        historyNeeded = true;
+                    }
+                }
+
+                // calibration factor info available?
+                if (calibration) {
+                    if (cgmresults.size() > 1 && results.first().getCalibrationDueMinutes() > 0
+                            && results.first().getCalibrationDueMinutes() > cgmresults.get(1).getCalibrationDueMinutes()) {
+                        Log.d(TAG, logTAG + "calibration info");
+                        userLogMessage(userlogTAG + getString(R.string.history_calibration_info));
+                        historyNeeded = true;
+                    }
                 }
 
                 // daily totals?
-                SimpleDateFormat sdfDay = new SimpleDateFormat("dd", Locale.getDefault());
-                long dayNow = results.first().getEventDate().getTime() + pumpClockDifference;
-                long dayPre = results.get(1).getEventDate().getTime() + pumpClockDifference;
-                if (!sdfDay.format(dayNow).equals(sdfDay.format(dayPre))) {
-                    Log.d(TAG, logTAG + "daily totals");
-                    userLogMessage(userlogTAG + getString(R.string.history_daily_totals));
-                    historyNeeded = true;
+                if (dailytotals) {
+                    SimpleDateFormat sdfDay = new SimpleDateFormat("dd", Locale.getDefault());
+                    long dayNow = results.first().getEventDate().getTime() + pumpClockDifference;
+                    long dayPre = results.get(1).getEventDate().getTime() + pumpClockDifference;
+                    if (!sdfDay.format(dayNow).equals(sdfDay.format(dayPre))) {
+                        Log.d(TAG, logTAG + "daily totals");
+                        userLogMessage(userlogTAG + getString(R.string.history_daily_totals));
+                        historyNeeded = true;
+                    }
                 }
 
                 // active alerts?
-                if (results.first().getAlert() != 0) {
+                if (alarms && results.first().getAlert() != 0) {
                     if (results.first().getAlertRTC() != results.get(1).getAlertRTC()) {
                         Log.d(TAG, logTAG + "active alert");
                         userLogMessage(userlogTAG + getString(R.string.history_active_alert));

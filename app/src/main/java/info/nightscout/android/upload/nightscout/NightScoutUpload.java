@@ -60,12 +60,15 @@ public class NightScoutUpload {
 
     private PumpHistorySender pumpHistorySender;
 
+    private String device;
+
     NightScoutUpload() {}
 
     public void doRESTUpload(PumpHistorySender pumpHistorySender, Realm storeRealm, DataStore dataStore,
                              String url,
                              String secret,
                              int uploaderBatteryLevel,
+                             String device,
                              List<PumpStatusEvent> statusRecords,
                              List<PumpHistoryInterface> records)
             throws Exception {
@@ -74,6 +77,8 @@ public class NightScoutUpload {
 
         this.storeRealm = storeRealm;
         this.dataStore = dataStore;
+
+        this.device = device;
 
         UploadApi uploadApi = new UploadApi(url, formToken(secret));
 
@@ -150,6 +155,7 @@ public class NightScoutUpload {
 
             if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
                 Log.d(TAG, "queued item for nightscout entries bulk upload, KEY: " + key);
+                entry.setDevice(device);
                 entries.add(entry);
             }
 

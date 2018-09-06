@@ -78,14 +78,15 @@ public class PumpHistorySender {
                 .opt(SENDEROPT.SYSTEM_UPLOADER_BATTERY_VERY_LOW, dataStore.isNsEnableSystemStatus())
                 .opt(SENDEROPT.SYSTEM_UPLOADER_BATTERY_CHARGED, dataStore.isNsEnableSystemStatus())
 
+                .opt(SENDEROPT.BG_INFO, dataStore.isNsEnableFingerBG())
+                .opt(SENDEROPT.CALIBRATION_INFO, dataStore.isNsEnableFingerBG() & dataStore.isNsEnableCalibrationInfo())
+                .opt(SENDEROPT.MISC_LIFETIMES, dataStore.isNsEnableLifetimes())
                 .opt(SENDEROPT.MISC_SENSOR, dataStore.isNsEnableSensorChange())
                 .opt(SENDEROPT.MISC_BATTERY, dataStore.isNsEnableBatteryChange())
                 .opt(SENDEROPT.MISC_CANNULA, dataStore.isNsEnableReservoirChange())
                 .opt(SENDEROPT.MISC_INSULIN, dataStore.isNsEnableInsulinChange())
-                .opt(SENDEROPT.MISC_LIFETIMES, dataStore.isNsEnableLifetimes())
+                .var(SENDEROPT.INSULIN_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsInsulinChangeThreshold()))
 
-                .opt(SENDEROPT.BG_INFO, dataStore.isNsEnableFingerBG())
-                .opt(SENDEROPT.CALIBRATION_INFO, dataStore.isNsEnableFingerBG() & dataStore.isNsEnableCalibrationInfo())
                 .opt(SENDEROPT.INSERT_BG_AS_CGM, dataStore.isNsEnableFingerBG() & dataStore.isNsEnableInsertBGasCGM())
 
                 .opt(SENDEROPT.PROFILE_OFFSET, dataStore.isNsEnableProfileOffset())
@@ -117,13 +118,14 @@ public class PumpHistorySender {
 
                 .opt(SENDEROPT.GLUCOSE_UNITS, true)
 
-                .opt(SENDEROPT.MISC_SENSOR, dataStore.isPushoverEnableConsumables())
-                .opt(SENDEROPT.MISC_BATTERY, dataStore.isPushoverEnableConsumables())
-                .opt(SENDEROPT.MISC_CANNULA, dataStore.isPushoverEnableConsumables())
-                .opt(SENDEROPT.MISC_INSULIN, dataStore.isPushoverEnableConsumables())
-                .opt(SENDEROPT.MISC_LIFETIMES, dataStore.isPushoverLifetimeInfo())
                 .opt(SENDEROPT.BG_INFO, dataStore.isPushoverEnableBG())
                 .opt(SENDEROPT.CALIBRATION_INFO, dataStore.isPushoverEnableCalibration())
+                .opt(SENDEROPT.MISC_LIFETIMES, dataStore.isPushoverLifetimeInfo())
+                .opt(SENDEROPT.MISC_SENSOR, dataStore.isPushoverEnableConsumables())
+                .opt(SENDEROPT.MISC_BATTERY, dataStore.isPushoverEnableConsumables())
+                .opt(SENDEROPT.MISC_CANNULA, dataStore.isPushoverEnableConsumables() & dataStore.isNsEnableReservoirChange())
+                .opt(SENDEROPT.MISC_INSULIN, dataStore.isPushoverEnableConsumables() & dataStore.isNsEnableInsulinChange())
+                .var(SENDEROPT.INSULIN_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsInsulinChangeThreshold()))
 
                 .opt(SENDEROPT.ALARM_CLEARED, dataStore.isPushoverEnableCleared())
                 .opt(SENDEROPT.ALARM_SILENCED, dataStore.isPushoverEnableSilenced())
@@ -189,6 +191,7 @@ public class PumpHistorySender {
         BG_INFO,
         CALIBRATION_INFO,
         INSERT_BG_AS_CGM,
+        INSULIN_CLANGE_THRESHOLD,
 
         PROFILE_OFFSET,
 

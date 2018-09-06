@@ -33,11 +33,10 @@ public abstract class ContourNextLinkMessage {
 
     public static final int CLEAR_TIMEOUT_MS = 1000;
 
-    public static final int ERROR_CLEAR_TIMEOUT_MS = 21000;
-    //public static final int ERROR_CLEAR_TIMEOUT_MS = 10000;
+    public static final int ERROR_CLEAR_TIMEOUT_MS = 25000;
     public static final int PRESEND_CLEAR_TIMEOUT_MS = 100;
 
-    public static final int READ_TIMEOUT_MS = 25000; // interestingly the cnl always(?) seems to send some sort of 0x80 message by the 20 sec mark, it may be important to read this late message to avoid a cnl error
+    public static final int READ_TIMEOUT_MS = 25000; //22000; //25000; // interestingly the cnl always(?) seems to send some sort of 0x80 message by the 20 sec mark, it may be important to read this late message to avoid a cnl error
     public static final int CNL_READ_TIMEOUT_MS = 2000;
 
     private static final int MULTIPACKET_TIMEOUT_MS = 2000; // minimum timeout
@@ -191,23 +190,22 @@ public abstract class ContourNextLinkMessage {
             outputBuffer.put(message, pos, sendLength);
 
             timer = System.currentTimeMillis();
-            mDevice.write(outputBuffer.array(), 500); //200
+            mDevice.write(outputBuffer.array(), 500);
             timer = System.currentTimeMillis() - timer;
             info += " [" + timer + "ms " + USB_BLOCKSIZE + " " + USB_HEADER + " " + sendLength + "]";
 
-            if (debug_write)
-                Log.d(TAG, "WRITE: [" + timer + "ms]" + HexDump.dumpHexString(outputBuffer.array()));
+            if (debug_write) Log.d(TAG, "WRITE: [" + timer + "ms]" + HexDump.dumpHexString(outputBuffer.array()));
 
             pos += sendLength;
         }
 
         runtime = System.currentTimeMillis() - started;
 
-        if (runtime > 100)
-            Log.w(TAG, "WRITE: ??? runtime > 100ms, runtime:" + runtime + info);
-
-        Log.d(TAG, "WRITE: [" + runtime + "ms]" + info);
+        if (runtime < 100) Log.d(TAG, "WRITE: [" + runtime + "ms]" + info);
+        else Log.w(TAG, "WRITE: runtime > 100ms [" + runtime + "ms]" + info);
     }
+
+    // TODO - Look into using a thread that handles usb traffic and is actively reading/writing streams rather then polling piecemeal
 
     protected byte[] readMessage(UsbHidDriver mDevice) throws IOException, TimeoutException {
         return readMessage(mDevice, READ_TIMEOUT_MS, debug_read);
@@ -229,17 +227,162 @@ public abstract class ContourNextLinkMessage {
         long timer;
         String info = "";
 
+        int expectedSize = 0;
+
         do {
             timer = System.currentTimeMillis();
             if (responseMessage.size() == 0)
+                // initial read using the specified timeout
                 bytesRead = mDevice.read(responseBuffer, timeout);
             else
+                // once a read is in progress the additional reads should be immediate
                 bytesRead = mDevice.read(responseBuffer, 500);
             timer = System.currentTimeMillis() - timer;
 
+            // throw timeout exception only for initial read
+            // subsequent timeout may indicate a response payload size on a block boundary
             if (bytesRead == -1 && responseMessage.size() == 0) {
                 runtime = System.currentTimeMillis() - started;
-                Log.d(TAG, "READ: [" + runtime  + "ms/" + timeout + "ms] timeout" + info);
+                info = " [" + runtime + "ms/" + timeout + "ms]" + info;
+                if (runtime > 10000) Log.e(TAG, "READ: runtime > 10000ms TIMEOUT" + info);
+                else Log.d(TAG, "READ: TIMEOUT" + info);
+                throw new TimeoutException("Timeout waiting for response from pump");
+
+            } else if (bytesRead > 0) {
+
+                // Validate the header
+                ByteBuffer header = ByteBuffer.allocate(3);
+                header.put(responseBuffer, 0, 3);
+                String headerString = new String(header.array());
+                if (!headerString.equals(USB_HEADER))
+                    throw new IOException("Unexpected header received" + HexDump.dumpHexString(responseBuffer));
+
+                messageSize = responseBuffer[3];
+                responseMessage.write(responseBuffer, 4, messageSize);
+
+                info += " [" + timer + "ms " + bytesRead + " " + headerString + " " + messageSize + "]";
+
+                // get the expected size for 0x80 or 0x81 messages as they may be on a block boundary
+                if (expectedSize == 0 && messageSize >= 0x21
+                        && ((responseBuffer[0x12 + 4] & 0xFF) == 0x80 || (responseBuffer[0x12 + 4] & 0xFF) == 0x81)) {
+                    expectedSize = 0x21 + responseBuffer[0x1C + 4] & 0x00FF | responseBuffer[0x1D + 4] << 8 & 0xFF00;
+                }
+
+            } else if (bytesRead == 0){
+                Log.e(TAG, "readMessage: got a zero-sized response.");
+                throw new IOException("readMessage: got a zero-sized response");
+            }
+
+        } while (bytesRead > 0 && messageSize == 60 && responseMessage.size() != expectedSize);
+
+        runtime = System.currentTimeMillis() - started;
+        info = " [" + runtime + "ms/" + timeout + "ms]" + info;
+
+        // a 'response divisible by 60' is in general a valid response on a block boundary, noted in log as it may also be due to a usb read error
+        if (responseMessage.size() % 60 == 0)
+            Log.w(TAG, "READ: response divisible by 60, response size:" + responseMessage.size() + " expected size:" + expectedSize + info);
+
+        if (responseMessage.size() > 0 && runtime > 10000)
+            Log.w(TAG, "READ: runtime > 10000ms" + info);
+        else if (responseMessage.size() > 0 && runtime > 21000)
+            Log.e(TAG, "READ: runtime > 21000ms !!! ALERT !!!" + info);
+
+        if (debug_read)
+            Log.d(TAG, "READ:" + info + HexDump.dumpHexString(responseMessage.toByteArray()));
+        else
+            Log.d(TAG, "READ:" + info);
+
+        byte[] payload = responseMessage.toByteArray();
+
+        // debug logging for observations of 0x80 and 0x81 traffic
+        // these responses need to be handled in a considered way to avoid CNL issues
+
+        if (payload.length > 0x12) {
+
+            if ((payload[0x12] & 0xFF) == 0x80) {
+
+                if (payload.length <= 0x21)
+                    Log.e(TAG, "READ: 0x80 message size <= 0x21" + info);
+
+                else if (payload[0x21] != 0x55)
+                    Log.e(TAG, "READ: 0x80 message no internal 0x55" + info + " internal payload: " + HexDump.dumpHexString(payload, 0x21, payload.length - 0x21));
+
+                else if (payload.length != (0x21 +  payload[0x1C] & 0x00FF | payload[0x1D] << 8 & 0xFF00))
+                    Log.e(TAG, "READ: 0x80 message size mismatch" + info);
+
+                else if (payload.length == 0x2E) {
+
+                    if (payload[0x26] == 0x02 && payload[0x27] == 0x00 && payload[0x28] == 0x00 && payload[0x29] == 0x03 && payload[0x2A] == 0x00 && payload[0x2B] == 0x00)
+                        Log.e(TAG, "READ: 0x80 message containing '55 0B 00 00 00 02 00 00 03 00 00' (no pump response)" + info);
+
+                    else if (payload[0x25] == 0x20 && payload[0x26] == 0x00 && payload[0x28] == 0x00 && payload[0x29] == 0x03 && payload[0x2A] == 0x00 && payload[0x2B] == 0x00)
+                        Log.d(TAG, "READ: 0x80 message containing '55 0B 00 00 20 00 00 00 03 00 00' (no connect)" + info);
+
+                    else if (payload[0x24] == 0x06 && payload[0x27] == 0x65 && payload[0x28] == 0x03 && payload[0x29] == 0x03 && payload[0x2A] == 0x00 && payload[0x2B] == 0x00)
+                        Log.d(TAG, "READ: 0x80 message containing '55 0B 00 06 88 00 65 03 03 00 00' (bad response)" + info);
+                }
+
+                else if (payload.length == 0x30 && payload[0x26] == 0x02 && payload[0x27] == 0x00 && payload[0x28] == 0x00 && payload[0x29] == 0x02 && payload[0x2A] == 0x00 && payload[0x2B] == 0x01)
+                    Log.e(TAG, "READ: 0x80 message containing '55 0D 00 00 00 02 00 00 02 00 01 XX XX' (lost pump connection)" + info);
+
+                else if (payload.length == 0x4F && (payload[0x33] & 0xFF) == 0x83 && payload[0x44] == 0x43)
+                    Log.e(TAG, "READ: 0x80 message containing non-standard network connect (lost pump connection)" + info);
+
+            } else if ((payload[0x12] & 0xFF) == 0x81) {
+
+                if (payload.length <= 0x21)
+                    Log.e(TAG, "READ: 0x81 message size <= 0x21" + info);
+
+                else if (payload[0x21] != 0x55)
+                    Log.e(TAG, "READ: 0x81 message no internal 0x55" + info + " internal payload: " + HexDump.dumpHexString(payload, 0x21, payload.length - 0x21));
+
+                else if (payload.length != (0x21 +  payload[0x1C] & 0x00FF | payload[0x1D] << 8 & 0xFF00))
+                    Log.e(TAG, "READ: 0x81 message size mismatch" + info);
+
+                else if (payload.length == 0x30) {
+
+                    if (payload[0x2D] == 0x04)
+                        Log.e(TAG, "READ: 0x81 message [0x2D]==0x04 (noisy/busy)" + info);
+
+                    else if (payload[0x2D] != 0x02)
+                        Log.e(TAG, "READ: 0x81 message [0x2D]!=0x02 (unknown state)" + info);
+                }
+            }
+        }
+
+        return payload;
+    }
+
+    /*
+    protected byte[] readMessage(UsbHidDriver mDevice, int timeout, boolean debug_read) throws IOException, TimeoutException {
+        ByteArrayOutputStream responseMessage = new ByteArrayOutputStream();
+
+        byte[] responseBuffer = new byte[USB_BLOCKSIZE];
+        int bytesRead;
+        int messageSize = 0;
+
+        long started = System.currentTimeMillis();
+        long runtime;
+        long timer;
+        String info = "";
+
+        do {
+            timer = System.currentTimeMillis();
+            if (responseMessage.size() == 0)
+                // initial read using the specified timeout
+                bytesRead = mDevice.read(responseBuffer, timeout);
+            else
+                // once a read is in progress the additional reads should be immediate
+                bytesRead = mDevice.read(responseBuffer, 100);
+            timer = System.currentTimeMillis() - timer;
+
+            // throw timeout exception only for initial read
+            // subsequent timeout indicates a response payload size on a block boundary
+            if (bytesRead == -1 && responseMessage.size() == 0) {
+                runtime = System.currentTimeMillis() - started;
+                info = " [" + runtime + "ms/" + timeout + "ms]" + info;
+                if (runtime > 10000) Log.e(TAG, "READ: runtime > 10000ms timeout" + info);
+                else Log.d(TAG, "READ: timeout" + info);
                 throw new TimeoutException("Timeout waiting for response from pump");
 
             } else if (bytesRead > 0) {
@@ -260,19 +403,183 @@ public abstract class ContourNextLinkMessage {
         } while (bytesRead > 0 && messageSize == 60);
 
         runtime = System.currentTimeMillis() - started;
+        info = " [" + runtime + "ms/" + timeout + "ms]" + info;
 
+        // a 'response divisible by 60' is in general a valid response on a block boundary, noted in log as it may also be due to a usb read error
         if (responseMessage.size() % 60 == 0)
-            Log.w(TAG, "READ: ??? response divisible by 60, response size:" + responseMessage.size() + " " + info + HexDump.dumpHexString(responseMessage.toByteArray()));
+            Log.w(TAG, "READ: response divisible by 60, response size:" + responseMessage.size() + info + HexDump.dumpHexString(responseMessage.toByteArray()));
         if (responseMessage.size() > 0 && runtime > 10000)
-            Log.w(TAG, "READ: ??? runtime > 10000ms, runtime:" + runtime + info + HexDump.dumpHexString(responseMessage.toByteArray()));
+            Log.w(TAG, "READ: runtime > 10000ms" + info);
+
+        if (responseMessage.size() > 0 && runtime > 21000)
+            Log.e(TAG, "READ: runtime > 21000ms !!! ALERT !!! ALERT !!! ALERT !!!" + info);
 
         if (debug_read)
-            Log.d(TAG, "READ: [" + runtime + "ms/" + timeout + "ms]" + info + HexDump.dumpHexString(responseMessage.toByteArray()));
+            Log.d(TAG, "READ:" + info + HexDump.dumpHexString(responseMessage.toByteArray()));
         else
-            Log.d(TAG, "READ: [" + runtime + "ms/" + timeout + "ms]" + info);
+            Log.d(TAG, "READ:" + info);
 
-        return responseMessage.toByteArray();
+
+        byte[] payload = responseMessage.toByteArray();
+
+        if (payload.length > 0x12) {
+
+            if ((payload[0x12] & 0xFF) == 0x80) {
+
+                if (payload.length <= 0x21)
+                    Log.e(TAG, "READ: 0x80 message size <= 0x21" + info);
+
+                else if (payload[0x21] != 0x55)
+                    Log.e(TAG, "READ: 0x80 message no internal 0x55" + info);
+
+                else if (payload.length != (0x21 +  payload[0x1C] & 0x000000FF | payload[0x1D] << 8 & 0x0000FF00))
+                    Log.e(TAG, "READ: 0x80 message size mismatch" + info);
+
+                else if (payload.length == 0x2E) {
+
+                    if (payload[0x26] == 0x02 && payload[0x27] == 0x00 && payload[0x28] == 0x00 && payload[0x29] == 0x03 && payload[0x2A] == 0x00 && payload[0x2B] == 0x00)
+                        Log.e(TAG, "READ: 0x80 message containing '55 0B 00 00 00 02 00 00 03 00 00' (no pump response)" + info);
+
+                    else if (payload[0x25] == 0x20 && payload[0x26] == 0x00 && payload[0x28] == 0x00 && payload[0x29] == 0x03 && payload[0x2A] == 0x00 && payload[0x2B] == 0x00)
+                        Log.d(TAG, "READ: 0x80 message containing '55 0B 00 00 20 00 00 00 03 00 00' (no signal)" + info);
+
+                    else if (payload[0x24] == 0x06 && payload[0x27] == 0x65 && payload[0x28] == 0x03 && payload[0x29] == 0x03 && payload[0x2A] == 0x00 && payload[0x2B] == 0x00)
+                        Log.d(TAG, "READ: 0x80 message containing '55 0B 00 06 88 00 65 03 03 00 00' (bad response)" + info);
+                }
+
+                else if (payload.length == 0x30 && payload[0x26] == 0x02 && payload[0x27] == 0x00 && payload[0x28] == 0x00 && payload[0x29] == 0x02 && payload[0x2A] == 0x00 && payload[0x2B] == 0x01)
+                        Log.e(TAG, "READ: 0x80 message containing '55 0D 00 00 00 02 00 00 02 00 01 XX XX' (lost pump connection)" + info);
+
+                else if (payload.length == 0x4F && (payload[0x33] & 0xFF) == 0x83 && payload[0x44] == 0x43)
+                        Log.e(TAG, "READ: 0x80 message containing non-standard network connect' (lost pump connection)" + info);
+
+            } else if ((payload[0x12] & 0xFF) == 0x81) {
+
+                if (payload.length <= 0x21)
+                    Log.e(TAG, "READ: 0x81 message size <= 0x21" + info);
+
+                else if (payload[0x21] != 0x55)
+                    Log.e(TAG, "READ: 0x81 message no internal 0x55" + info);
+
+                else if (payload.length != (0x21 +  payload[0x1C] & 0x000000FF | payload[0x1D] << 8 & 0x0000FF00))
+                    Log.e(TAG, "READ: 0x81 message size mismatch" + info);
+
+                else if (payload.length == 0x30) {
+
+                    if (payload[0x2D] == 0x04)
+                        Log.e(TAG, "READ: 0x81 message [0x2D]==0x04 (noisy/busy)" + info);
+
+                    else if (payload[0x2D] != 0x02)
+                        Log.e(TAG, "READ: 0x81 message [0x2D]!=0x02 (unknown state)" + info);
+                }
+            }
+        }
+
+        return payload;
+
+        //return responseMessage.toByteArray();
     }
+*/
+
+/*
+
+E86
+
+general CNL software error
+if the usb connection is solid, then caused by mishandling of the in/out streams
+
+E81
+
+rare, seen after a 0x80 response with a 1 byte internal payload = 0xFF
+
+
+CNL Fight Club aka CNL must never go down
+
+- input stream must be kept clear, more then 1 uncleared message will E86 the CNL if we issue a request
+- any unread message can E86 if not read within ~20000ms
+- an empty 0x81 response must be handled with care, clear and end session immediately
+- a pump NAK response: end the session and let the pump sort itself out
+- any error during the read process requires a input stream clear before close
+- an error based clear must wait 20000ms without data, can be shortened as receiving a 'no pump response' message indicates a clear stream
+- if a multipacket has been started and no data or error we must hang around to be sure we can cleanly finish as the pump sends blindly until done
+- get outta Dodge: always be sure of the current comms state and expected responses if not then clear and close
+
+Stress test: constant communication and history reading, double the poll rate, run 24/7, in-out of comms range breaking the link randomly at any point in process
+Current status: 99% stable (caution: as tested!)
+
+It should be noted that this is an aggressive stress test that can occasionally break without due cause
+and when used real world and in-range is personally 100% stable for weeks to months on end
+
+Stability is only fractionally reduced during radio breaks while cnl-pump is mid comms.
+
+Checks:
+
+minimum size?
+payload size >= 0x21
+
+correct size including internal payload? 16bitLE payload[0x1C]
+payload size == 0x21 + payload[0x1C] & 0xFF | payload[0x1D] << 8 & 0xFF00
+
+
+0x81:
+
+response contains the request medtronicSequenceNumber
+response[0x2C] == request[0x2F]
+
+lost pump connection - empty 0x81 - action: end session
+no 0x55 internal payload
+
+standard pump response
+55 | 0D | 00 04 | 00 00 00 00 | 03 00 01 | xx | xx
+
+55 | size | type | ... | ... | seq | state
+state: 0x02 = 'ready'  0x04 = 'noisy/busy'
+
+network no connect
+55 | 04 | 00 00
+
+network connect
+55 | 04 | 00 04
+
+
+0x80:
+
+pump message
+55 | xx | 00 06 | ......
+
+bad response - action: keep reading
+55 | 0B | 00 06 | 88 00 65 03 | 03 00 00
+
+no pump response - action: resend request
+55 | 0B | 00 00 | 00 02 00 00 | 03 00 00
+
+network no connect
+55 | 0B | 00 00 | 20 00 00 00 | 03 00 00
+
+network connect
+55 | xx | 00 04 | xx xx xx xx xx | 02 | xx xx xx xx xx xx xx xx | 82 | 00 00 00 00 00 | 07 | 00 | xx | xx xx xx xx xx xx xx xx | 42 | 00 00 00 00 00 00 00 | xx
+55 | size | type | pump serial | ... | pump mac | ... | ... | ... | rssi | cnl mac | ... | ... | channel
+
+lost pump connection - action: end session - seen as: empty 0x81 --> this 0x80 --> may then receive a non-standard network connect 0x80
+55 | 0D | 00 00 | 00 02 00 00 | 02 00 01 | xx | xx
+
+standard 'network connect' 0x80 response
+55 | 2C | 00 04 | 2C 37 10 EE 45 | 02 | 2C 37 10 EE 45 F7 23 00 | 82 | 00 00 00 00 00 | 07 | 00 | 0A | BE 22 11 82 06 F7 23 00 | 42 | 00 00 00 00 00 00 00 | 14
+
+seen after a 'lost pump connection' 0x80 response
+55 | 2C | 00 00 | 2C 37 10 EE 45 | 02 | 2C 37 10 EE 45 F7 23 00 | 83 | 00 00 00 00 00 | 07 | 02 | 19 | BE 22 11 82 06 F7 23 00 | 43 | 00 00 00 00 00 00 00 | 14
+
+difference to the standard 'network connect' response
+-- | -- | 00 00 | -- -- -- -- -- | -- | -- -- -- -- -- -- -- -- | 83 | -- -- -- -- -- | -- | xx | -- | -- -- -- -- -- -- -- -- | 43 | -- -- -- -- -- -- -- | --
+
+*/
+
+    private boolean check(byte[] data, int range, int compare) {
+        if (data.length != 0x23 + range) return false;
+        int sum = 0;
+        while (range-- > 0) sum += data[0x21 + range];
+        return sum == compare;
+        }
 
     // safety check to make sure a expected 0x81 response is received before next expected 0x80 response
     // very infrequent as clearMessage catches most issues but very important to save a CNL error situation
@@ -283,7 +590,7 @@ public abstract class ContourNextLinkMessage {
     protected byte[] readMessage_0x81(UsbHidDriver mDevice) throws IOException, TimeoutException {
         return readMessage_0x81(mDevice, READ_TIMEOUT_MS);
     }
-
+/*
     protected byte[] readMessage_0x81(UsbHidDriver mDevice, int timeout) throws IOException, TimeoutException {
 
         byte[] responseBytes;
@@ -305,37 +612,105 @@ public abstract class ContourNextLinkMessage {
 
         return responseBytes;
     }
+*/
 
+    protected byte[] readMessage_0x81(UsbHidDriver mDevice, int timeout) throws IOException, TimeoutException {
+
+        byte[] responseBytes;
+        boolean doRetry;
+        do {
+            responseBytes = readMessage(mDevice, timeout);
+            if (responseBytes.length < 0x21) {
+                doRetry = true;
+                Log.e(TAG, "readMessage0x81: response message size less then expected, length = " + responseBytes.length);
+            } else if ((responseBytes[0x12] & 0xFF) != 0x81) {
+                doRetry = true;
+                Log.e(TAG, "readMessage0x81: response message not a 0x81, got a 0x" + HexDump.toHexString(responseBytes[18]) + HexDump.dumpHexString(responseBytes));
+            } else {
+                doRetry = false;
+            }
+
+        } while (doRetry);
+
+        return responseBytes;
+    }
+/*
+    byte payload[];
+        while (true) {
+        payload = readMessage(mDevice);
+        if (payload.length < 0x21)
+            Log.e(TAG, "response message size less then expected, length = " + payload.length);
+        else if ((payload[0x12] & 0xFF) != 0x11)
+            Log.e(TAG, "response message not a 0x11, got a 0x" + HexDump.toHexString(payload[0x12]));
+        else break;
+    }
+*/
     // intercept unexpected messages from the CNL
     // these usually come from pump requests as it can occasionally resend message responses several times (possibly due to a missed CNL ACK during CNL-PUMP comms?)
     // mostly noted on the higher radio channels, channel 26 shows this the most
     // if these messages are not cleared the CNL will likely error needing to be unplugged to reset as it expects them to be read before any further commands are sent
+
+    // testing:
+    // post-clear: send request --> read and drop any message that is not the expected 0x81 response
+    // this works if only one message needs to be cleared with the next being the expected 0x81
+    // if there is more then one message to be cleared then there is no 0x81 response and the CNL will E68 error
+    // pre-clear: clear all messages in stream until timeout --> send request
+    // consistently stable even with a small 100ms timeout, clears multiple messages with very rare miss
+    // which will get caught using the post-clear method as fail-safe
 
     protected int clearMessage(UsbHidDriver mDevice) throws IOException {
         return clearMessage(mDevice, CLEAR_TIMEOUT_MS);
     }
 
     protected int clearMessage(UsbHidDriver mDevice, int timeout) throws IOException {
+        if (timeout > 500) return waitMessage(mDevice, timeout);
+
         Log.d(TAG, "CLEAR: [" + timeout + "ms]");
         int count = 0;
         boolean cleared = false;
 
         do {
             try {
-                long timer = System.currentTimeMillis();
                 readMessage(mDevice, timeout, true);
-                timer = System.currentTimeMillis() - timer;
-                if (timer > MedtronicCnlService.cnlClearTimer) MedtronicCnlService.cnlClearTimer = timer;
-                MedtronicCnlService.cnlClear++;
                 count++;
             } catch (TimeoutException e) {
                 cleared = true;
             }
         } while (!cleared);
 
-        if (count > 0) {
-            Log.w(TAG, "CLEAR: message stream cleared " + count + " messages.");
-        }
+        if (count > 0) Log.w(TAG, "CLEAR: message stream cleared " + count + " messages.");
+
+        return count;
+    }
+
+    protected int waitMessage(UsbHidDriver mDevice, int timeout) throws IOException {
+        Log.d(TAG, "WAIT: [" + timeout + "ms]");
+        int count = 0;
+        boolean cleared = false;
+
+        byte[] payload;
+
+        do {
+            try {
+                payload = readMessage(mDevice, timeout, true);
+                count++;
+
+                // these are always seen as the end of an incoming stream an can be considered as completed clear indicators
+                // no pump response - 55 0B 00 00 00 02 00 00 03 00 00
+                if (payload.length == 0x2E && payload[0x21] == 0x55
+                        && payload[0x26] == 0x02 && payload[0x27] == 0x00 && payload[0x28] == 0x00 && payload[0x29] == 0x03 && payload[0x2A] == 0x00 && payload[0x2B] == 0x00)
+                    cleared = true;
+                // non-standard network connect
+                else if (payload.length == 0x4F && payload[0x21] == 0x55
+                        && payload[0x23] == 0x00 && payload[0x24] == 0x00 && (payload[0x33] & 0xFF) == 0x83 && payload[0x44] == 0x43)
+                    cleared = true;
+
+            } catch (TimeoutException e) {
+                cleared = true;
+            }
+        } while (!cleared);
+
+        if (count > 0) Log.w(TAG, "WAIT: message stream cleared " + count + " messages.");
 
         return count;
     }
@@ -362,14 +737,15 @@ public abstract class ContourNextLinkMessage {
         }
     }
 
-    protected byte[] sendToPump(UsbHidDriver mDevice, MedtronicCnlSession pumpSession, String tag) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
-        return sendToPump(mDevice, pumpSession, tag, PRESEND_CLEAR_TIMEOUT_MS);
+    protected byte[] sendToPump(UsbHidDriver mDevice, String tag) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
+        return sendToPump(mDevice, tag, PRESEND_CLEAR_TIMEOUT_MS);
     }
 
-    protected byte[] sendToPump(UsbHidDriver mDevice, MedtronicCnlSession pumpSession, String tag, int timeout) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
+    protected byte[] sendToPump(UsbHidDriver mDevice, String tag, int timeout) throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
         tag = " (" + tag + ")";
         byte[] payload;
-        byte medtronicSequenceNumber = pumpSession.getMedtronicSequenceNumber();
+
+        byte medtronicSequenceNumber = this.encode()[0x2F - 4];
 
         // extra safety check and delay, CNL is not happy when we miss incoming messages
         // the short delay may also help with state readiness
@@ -382,7 +758,7 @@ public abstract class ContourNextLinkMessage {
         } catch (TimeoutException e) {
             // ugh... there should always be a CNL 0x81 response and if we don't get one it usually ends with a E86 / E81 error on the CNL needing a unplug/plug cycle
             Log.e(TAG, "Timeout waiting for 0x81 response." + tag);
-            clearMessage(mDevice, 20000);
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new TimeoutException("Timeout waiting for 0x81 response" + tag);
         }
 
@@ -398,7 +774,7 @@ public abstract class ContourNextLinkMessage {
             clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new UnexpectedMessageException("0x81 sequence number does not match" + tag);
         } else if (payload[0x2D] == 0x04) {
-            Log.w(TAG, "0x81 response: NOISY / BUSY" + tag);
+            Log.w(TAG, "0x81 response: NOISY / BUSY flag is set" + tag);
         } else if (payload[0x2D] != 0x02) {
             clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
             throw new UnexpectedMessageException("0x81 unknown state flag" + tag);
@@ -459,7 +835,8 @@ public abstract class ContourNextLinkMessage {
                             throw new TimeoutException("Multisession timeout, retry failed" + tag);
                         }
 
-                        Log.w(TAG, "*** Multisession timeout: expecting:" + expectedSegments + " retry: " + retry);
+                        //Log.w(TAG, "*** Multisession timeout: expecting:" + expectedSegments + " retry: " + retry);
+                        Log.w(TAG, "*** Multisession timeout: count: " + multipacketSession.segmentsFilled() + "/" + multipacketSession.packetsToFetch + " expecting: " + expectedSegments + " retry: " + retry);
                         expectedSegments = 0;
                     }
 
@@ -492,6 +869,14 @@ public abstract class ContourNextLinkMessage {
                 clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
                 throw new UnexpectedMessageException("response message size mismatch" + tag);
             }
+
+            // 0xFF response?
+            if ((internal == 1 && payload[0x0021] == 0xFF)) {
+                Log.e(TAG, "*** response message internal payload is 0xFF" + HexDump.dumpHexString(payload));
+                //clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                throw new UnexpectedMessageException("response message internal payload is 0xFF, connection lost" + tag);
+            }
+
             // 0x55 response?
             if (internal == 0 || (internal > 0 && payload[0x0021] != 0x55)) {
                 Log.w(TAG, "*** response message internal payload not a 0x55" + HexDump.dumpHexString(payload));
@@ -499,13 +884,17 @@ public abstract class ContourNextLinkMessage {
                 throw new UnexpectedMessageException("response message internal payload not a 0x55, connection lost" + tag);
             }
             // pump response?
+            // seen as 0x80 message with internal 0x55 message: 0x00000021 = 55 0B 00 00 00 02 00 00 03 00 00
             if (internal == 0x0D && payload[0x26] == 0x02 && payload[0x29] == 0x03) {
-                Log.w(TAG, "*** no response" + HexDump.dumpHexString(payload, 0x12, payload.length - 0x12));
+                //Log.w(TAG, "*** no response" + HexDump.dumpHexString(payload, 0x12, payload.length - 0x12));
+                Log.w(TAG, "*** no response");
                 throw new UnexpectedMessageException("no response from pump" + tag);
             }
             // bad response?
+            // seen as 0x80 message with internal 0x55 message: 0x00000021 = 55 0B 00 06 88 00 65 03 03 00 00
             if (internal < 0x18) {
-                Log.d(TAG, "*** bad response" + HexDump.dumpHexString(payload, 0x12, payload.length - 0x12));
+                //Log.d(TAG, "*** bad response" + HexDump.dumpHexString(payload, 0x12, payload.length - 0x12));
+                Log.d(TAG, "*** bad response");
                 // if in a multipacket session then keep reading packets
                 // this error can be common when run on debug emulator but not on actual devices
                 if (multipacketSession == null)
@@ -578,7 +967,10 @@ public abstract class ContourNextLinkMessage {
                             Log.d(TAG, "*** Multisession Complete - packet not needed");
                         } else {
                             try {
-                                multipacketSession.addSegment(decrypted);
+                                if (multipacketSession.addSegment(decrypted) == multipacketSession.lastPacketNumber())
+                                    expectedSegments = 0;
+                                else
+                                    expectedSegments--;
                             } catch (UnexpectedMessageException e) {
                                 clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
                                 throw e;
@@ -590,8 +982,10 @@ public abstract class ContourNextLinkMessage {
                                 Log.d(TAG, "*** Multisession Complete");
                                 new AckMessage(pumpSession, MedtronicSendMessageRequestMessage.MessageType.MULTIPACKET_SEGMENT_TRANSMISSION.response()).send(mDevice);
                             }
-                            expectedSegments--;
                         }
+                        break;
+
+                    case UNMERGED_HISTORY:
                         break;
 
                     case END_HISTORY_TRANSMISSION:
@@ -693,7 +1087,7 @@ public abstract class ContourNextLinkMessage {
             return segmentsFilled() == packetsToFetch;
         }
 
-        private void addSegment(byte[] data) throws UnexpectedMessageException {
+        private int addSegment(byte[] data) throws UnexpectedMessageException {
             int packetNumber = read16BEtoUInt(data, 0x0003);
             int packetSize = data.length - 7;
             segments[packetNumber] = true;
@@ -711,6 +1105,8 @@ public abstract class ContourNextLinkMessage {
             int to = (packetNumber * this.packetSize) + 1;
             int from = 5;
             while (from < packetSize + 5) this.response[to++] = data[from++];
+
+            return packetNumber;
         }
 
         private byte[] missingSegments() {

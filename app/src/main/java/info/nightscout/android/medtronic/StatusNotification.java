@@ -4,6 +4,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -28,6 +29,9 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
+import static android.support.v4.app.NotificationCompat.PRIORITY_HIGH;
+import static android.support.v4.app.NotificationCompat.PRIORITY_LOW;
+import static android.support.v4.app.NotificationCompat.PRIORITY_MIN;
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
 import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
 import static info.nightscout.android.medtronic.service.MasterService.SERVICE_NOTIFICATION_ID;
@@ -101,7 +105,9 @@ public class StatusNotification {
 
         mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        mNotificationBuilder = new NotificationCompat.Builder(context)
+        String channel = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? "status" : "";
+
+        mNotificationBuilder = new NotificationCompat.Builder(context, channel)
                 .setContentTitle("600 Series Uploader")
                 .setSmallIcon(R.drawable.ic_notification)
                 .setVisibility(VISIBILITY_PUBLIC)
@@ -366,7 +372,8 @@ public class StatusNotification {
                         text = "[sensor error]";
                 }
 
-            else text = "Calibration";
+            //else text = "Calibration";
+            else text = "CAL";
 
             if (results.first().getCalibrationDueMinutes() > 0) {
                 long timer = ((results.first().getCgmDate().getTime() - now) / 60000L) + results.first().getCalibrationDueMinutes();

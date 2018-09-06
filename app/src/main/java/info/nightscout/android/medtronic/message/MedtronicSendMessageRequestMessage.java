@@ -24,6 +24,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
 
     public enum MessageType {
         EHSM_SESSION(0x0412, 0x0412),
+        CHANGE_PUMP_TIME(0x0404, 0x0405),
         READ_PUMP_TIME(0x0403, 0x0407),
         READ_PUMP_STATUS(0x0112, 0x013C),
         READ_BASAL_PATTERN(0x0116, 0x0123),

@@ -21,7 +21,7 @@ public class AckMessage extends MedtronicSendMessageRequestMessage {
     }
 
     public AckMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        sendToPump(mDevice, mPumpSession, TAG, 300);
+        sendToPump(mDevice, TAG, 300);
 
         return null;
     }

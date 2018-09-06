@@ -34,6 +34,7 @@
         <item>780|-1|2|Lost sensor signal|Move pump closer to transmitter. May take 15 minutes to find signal.</item>
         <item>781|-1|2|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.</item>
         <item>784|1|2|Rise Alert|Sensor glucose rising rapidly.</item>
+        <item>786|1|2|No calibration occurred|Confirm sensor signal. Calibrate by {dclk;0}.</item>
         <item>789|-1|2|Change Sensor|Insert new sensor and Start New Sensor.</item>
         <item>790|-1|2|Cannot find sensor signal|Disconnect and reconnect transmitter. Notice if transmitter light blinks.</item>
         <item>791|-1|2|Sensor signal not found|Did transmitter light blink when connected to sensor?</item>
@@ -165,7 +166,7 @@
     780|Lost sensor signal|Move Pump closer to transmitter. May take 15 minutes to find signal.
     870|Low battery transmitter|Recharge transmitter within 24 hours.
     812|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
-    xxx|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX.
+    786|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX.
     xxx|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
     781|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
     784|Rise Alert|Sensor glucose rising rapidly.
@@ -246,7 +247,7 @@
     870|Alert|Low battery transmitter|Recharge transmitter within 24 hours.
     xxx|Alert|Low SG XX mg/dL|SG is under 50 mg/dL. Check BG and treat.
     812|Alarm|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
-    xxx|Alert|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX AM/PM.
+    786|Alert|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX AM/PM.
     xxx|Alert|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
     781|Alert|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
     784|Alert|Rise Alert|Sensor glucose rising rapidly.

@@ -21,7 +21,7 @@ public class NakMessage extends MedtronicSendMessageRequestMessage {
     }
 
     public NakMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        sendToPump(mDevice, mPumpSession, TAG);
+        sendToPump(mDevice, TAG);
 
         return null;
     }

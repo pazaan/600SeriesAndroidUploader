@@ -28,43 +28,65 @@ public class ChannelNegotiateRequestMessage extends MedtronicRequestMessage<Chan
     public ChannelNegotiateResponseMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
         byte[] payload;
 
-        clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
+        //clearMessage(mDevice, PRESEND_CLEAR_TIMEOUT_MS);
         sendMessage(mDevice);
 
         Log.d(TAG, "negotiateChannel: Reading 0x81 message");
         payload = readMessage_0x81(mDevice);
 
-        // CNL death with a timeout on close seen after this!
-        // usually seen as a 0x81 response with a payload length = 0x21 / byte 0x1B = 0x05 and no internal payload
-        // 0x05 = CNL error code? but what error and how to recover?
-        // 0x05 = CommandAction.TRANSMIT_PACKET, does this relate somehow?
-        // ReadInfoRequestMessage issues this 0x05 cmd as called by cnlReader.requestReadInfo() and right before a channel negotiate
-        // note: errors here and then timeout on close and ongoing timeout on following polls
-        // unqualified fix: running requestLinkKey each poll seems to stop this happening!
-        if (payload.length != 0x27) {
-            //clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-            Log.e(TAG, "Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
-//            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x81 response " + HexDump.toHexString(payload));
-//            throw new IOException("negotiateChannel 0x81 response * " + HexDump.toHexString(payload));
-
-
-            try {
-                payload = readMessage(mDevice);
-            } catch (TimeoutException e) {
-                throw new UnexpectedMessageException("*** timeout *** negotiateChannel 0x81 response " + HexDump.toHexString(payload));
-
-            }
-            throw new UnexpectedMessageException("*** read 0x80 *** negotiateChannel 0x81 response " + HexDump.toHexString(payload));
-
+        // minimum size?
+        if (payload.length <= 0x21) {
+            Log.e(TAG, "*** 0x81 response message size less then expected" + HexDump.dumpHexString(payload));
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+            throw new UnexpectedMessageException("0x81 response message size less then expected (negotiateChannel)");
+        }
+        // 0x81 message?
+        if ((payload[0x12] & 0xFF) != 0x81) {
+            Log.e(TAG, "*** 0x81 response message not a 0x81" + HexDump.dumpHexString(payload));
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+            throw new UnexpectedMessageException("0x81 response message not a 0x81 (negotiateChannel)");
+        }
+        int internal = payload[0x1C] & 0x000000FF | payload[0x1D] << 8 & 0x0000FF00; // 16bit LE internal payload size
+        // correct size including internal payload?
+        if (payload.length != (0x21 + internal)) {
+            Log.e(TAG, "*** 0x81 response message size mismatch" + HexDump.dumpHexString(payload));
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+            throw new UnexpectedMessageException("0x81 response message size mismatch (negotiateChannel)");
+        }
+        // 0x55 response?
+        if (internal == 0 || (internal > 0 && payload[0x0021] != 0x55)) {
+            Log.e(TAG, "*** 0x81 response message internal payload not a 0x55" + HexDump.dumpHexString(payload));
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+            throw new UnexpectedMessageException("0x81 response message internal payload not a 0x55 (negotiateChannel)");
         }
 
         Log.d(TAG, "negotiateChannel: Reading 0x80 message");
         payload = readMessage(mDevice);
 
-        if(payload[0x12] != (byte) 0x80) {
+        // minimum size?
+        if (payload.length < 0x21) {
+            Log.e(TAG, "*** 0x80 response message size less then expected" + HexDump.dumpHexString(payload));
             clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-            Log.e(TAG, "Invalid message received for negotiateChannel 0x80 response");
-            throw new UnexpectedMessageException("Invalid message received for negotiateChannel 0x80 response");
+            throw new UnexpectedMessageException("0x80 response message size less then expected (negotiateChannel)");
+        }
+        // 0x80 message?
+        if ((payload[0x12] & 0xFF) != 0x80) {
+            Log.e(TAG, "*** 0x80 response message not a 0x80" + HexDump.dumpHexString(payload));
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+            throw new UnexpectedMessageException("0x80 response message not a 0x80 (negotiateChannel)");
+        }
+        internal = payload[0x1C] & 0x000000FF | payload[0x1D] << 8 & 0x0000FF00; // 16bit LE internal payload size
+        // correct size including internal payload?
+        if (payload.length != (0x21 + internal)) {
+            Log.e(TAG, "*** 0x80 response message size mismatch" + HexDump.dumpHexString(payload));
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+            throw new UnexpectedMessageException("0x80 response message size mismatch (negotiateChannel)");
+        }
+        // 0x55 response?
+        if (internal == 0 || (internal > 0 && payload[0x0021] != 0x55)) {
+            Log.w(TAG, "*** 0x80 response message internal payload not a 0x55" + HexDump.dumpHexString(payload));
+            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+            throw new UnexpectedMessageException("0x80 response message internal payload not a 0x55 (negotiateChannel)");
         }
 
         return this.getResponse(payload);

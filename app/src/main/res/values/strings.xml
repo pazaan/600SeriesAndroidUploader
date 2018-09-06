@@ -248,7 +248,7 @@
     <string name="pref_ns_reservoir_change_title">Reservoir Change</string>
     <string name="pref_ns_reservoir_change_summary">Send reservoir changes to Nightscout (CAGE)</string>
     <string name="pref_ns_battery_change_title">Pump Battery Change</string>
-    <string name="pref_ns_battery_change_summary">Send pump battery changes to Nightscout</string>
+    <string name="pref_ns_battery_change_summary">Send pump battery changes to Nightscout (BAGE)</string>
     <string name="pref_ns_lifetimes_title">Estimate Lifetimes</string>
     <string name="pref_ns_lifetimes_summary">Add lifetime estimate to pump consumables</string>
     <string name="pref_ns_category_profiles">Profiles</string>

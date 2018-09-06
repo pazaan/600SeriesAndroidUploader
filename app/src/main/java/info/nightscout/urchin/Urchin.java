@@ -10,6 +10,8 @@ import com.getpebble.android.kit.util.PebbleDictionary;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
@@ -576,7 +578,11 @@ public class Urchin {
             } else rate = pumpStatusEvent.getBasalRate();
         }
 
-        return rate + styleUnits();
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+        df.setMinimumFractionDigits(1);
+        df.setMaximumFractionDigits(2);
+
+        return df.format(rate) + styleUnits();
     }
 
     private String basalCombo() {

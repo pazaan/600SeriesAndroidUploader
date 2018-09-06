@@ -118,6 +118,9 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
                     FormatKit.getInstance().formatAsInsulin(remaining));
         } else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_INSULIN)) {
+            // only send a IAGE event when insulin reservoir in pump exceeds threshold
+            int threshold = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.INSULIN_CLANGE_THRESHOLD, "0"));
+            if (remaining < threshold) return nightscoutItems;
             type = "Insulin Change";
             notes = String.format("%s: %s%s%s %s (%s)",
                     FormatKit.getInstance().getString(R.string.Pump),
@@ -177,6 +180,9 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
             title = FormatKit.getInstance().getString(R.string.Cannula_Change);
         } else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_INSULIN)) {
+            // only send a IAGE event when insulin reservoir in pump exceeds threshold
+            int threshold = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.INSULIN_CLANGE_THRESHOLD, "0"));
+            if (remaining < threshold) return messageItems;
             title = FormatKit.getInstance().getString(R.string.Insulin_Change);
         } else
             return messageItems;
@@ -216,6 +222,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         // must be less than 1024 bytes.
 
         // This is enough space for around 17 formatted data points
+        // When there are more then this, a log function is used to select points preferring the most recent
 
         int style = 1;
 
@@ -261,13 +268,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         double xpos = border + xadj;
         double xadd = (xmax - segWidth) / (seg - 1);
         double font = fontMax - (((fontMax - fontMin) / (segMax - segMin)) * (seg - segMin));
-/*
-        double scale = 2.0;
-        double smid = 50;
-        double vmin = 22;
-        double vmax = 97;
-        double vmid = 45;
-*/
+
         double scale = 1.5;
         double smid = 50;
         double vmin = 22;
@@ -316,15 +317,15 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
     }
 
     public static PumpHistoryMisc item(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                       RECORDTYPE RECORDTYPE) {
+                                       RECORDTYPE recordtype) {
 
         PumpHistoryMisc record = realm.where(PumpHistoryMisc.class)
-                .equalTo("recordtype", RECORDTYPE.value())
+                .equalTo("recordtype", recordtype.value())
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
 
         if (record == null) {
-            Log.d(TAG, "*new* recordtype: " + RECORDTYPE.name());
+            Log.d(TAG, "*new* recordtype: " + recordtype.name());
             record = realm.createObject(PumpHistoryMisc.class);
 
             record.eventDate = eventDate;
@@ -333,11 +334,11 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
 
             record.eventRTC = eventRTC;
             record.eventOFFSET = eventOFFSET;
-            record.recordtype = RECORDTYPE.value();
+            record.recordtype = recordtype.value();
 
             // lifetime for items
             RealmResults<PumpHistoryMisc> realmResults = realm.where(PumpHistoryMisc.class)
-                    .equalTo("recordtype", RECORDTYPE.value())
+                    .equalTo("recordtype", recordtype.value())
                     .sort("eventDate", Sort.DESCENDING)
                     .findAll();
             if (realmResults.size() > 1) {

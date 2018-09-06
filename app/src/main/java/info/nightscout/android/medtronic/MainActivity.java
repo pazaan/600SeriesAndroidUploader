@@ -37,7 +37,6 @@ import com.github.javiersantos.appupdater.enums.UpdateFrom;
 //import com.jaredrummler.android.device.DeviceName;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.OnDataPointTapListener;
 import com.jjoe64.graphview.series.PointsGraphSeries;
@@ -49,6 +48,7 @@ import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -61,13 +61,11 @@ import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
 import info.nightscout.android.medtronic.service.MasterService;
-import info.nightscout.android.medtronic.service.MedtronicCnlService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.model.store.UserLog;
-import info.nightscout.android.utils.FormatKit;
 import io.realm.OrderedCollectionChangeSet;
 import io.realm.OrderedRealmCollectionChangeListener;
 import io.realm.Realm;
@@ -333,9 +331,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getViewport().setMaxX(now);
         mChart.getViewport().setMinX(left);
 
-        mChart.getGridLabelRenderer().setTextSize(35f);
-        mChart.getGridLabelRenderer().reloadStyles();
-
 // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setOnXAxisBoundsChangedListener is n/a in this version
 /*
         mChart.getViewport().setOnXAxisBoundsChangedListener(new Viewport.OnXAxisBoundsChangedListener() {
@@ -346,19 +341,42 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         });
 */
+
         mChart.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if (!mChart.getSeries().isEmpty() && !mChart.getSeries().get(0).isEmpty()) {
-                    double rightX = mChart.getSeries().get(0).getHighestValueX();
-                    mChart.getViewport().setMaxX(rightX);
-                    mChart.getViewport().setMinX(rightX - chartZoom * 60 * 60 * 1000L);
+                switch (chartZoom) {
+                    case 1:
+                        chartZoom = 3;
+                        break;
+                    case 3:
+                        chartZoom = 6;
+                        break;
+                    case 6:
+                        chartZoom = 12;
+                        break;
+                    case 12:
+                        chartZoom = 24;
+                        break;
+                    default:
+                        chartZoom = 1;
                 }
-                hasZoomedChart = false;
+                prefs.edit().putString("chartZoom", Integer.toString(chartZoom)).commit();
+                refreshDisplayChart();
+
+                String text = chartZoom + " hour chart";
+                Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
+
                 return true;
             }
         });
+
         mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
+
+        float pixels = dipToPixels(getApplicationContext(), 12);
+        mChart.getGridLabelRenderer().setTextSize(pixels);
+        mChart.getGridLabelRenderer().setLabelHorizontalHeight((int) (pixels * 0.65));
+        mChart.getGridLabelRenderer().reloadStyles();
 
 // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setHumanRounding is n/a in this version
 //        mChart.getGridLabelRenderer().setHumanRounding(false);
@@ -399,7 +417,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         });
         */
 
-        FormatKit.getInstance(this);
     }
 
     @Override
@@ -452,8 +469,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         statusDestroy();
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
-
-        FormatKit.close();
 
         if (storeRealm !=null && !storeRealm.isClosed()) storeRealm.close();
         if (userLogRealm != null && !userLogRealm.isClosed()) userLogRealm.close();
@@ -637,107 +652,93 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private RealmResults displayResults;
+    private RealmResults displayPumpResults;
+    private RealmResults displayCgmResults;
     private long timeLastSGV;
     private int pumpBattery;
 
     private void startDisplay() {
         Log.d(TAG, "startDisplay");
-
-        displayResults = mRealm.where(PumpStatusEvent.class)
-                .sort("eventDate", Sort.ASCENDING)
-                .findAllAsync();
-
-        displayResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
-            @Override
-            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
-                if (changeSet != null) {
-                    Log.d(TAG, "display listener triggered");
-                    if (changeSet.getInsertions().length > 0) {
-                        refreshDisplay();
-                    }
-                }
-            }
-        });
-
-        refreshDisplay();
-
+        startDisplayPump();
         startDisplayCgm();
     }
 
     private void stopDisplay() {
         Log.d(TAG, "stopDisplay");
-        displayResults.removeAllChangeListeners();
-        displayResults = null;
-
         mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
-
+        stopDisplayPump();
         stopDisplayCgm();
     }
 
-    private void refreshDisplay() {
-        Log.d(TAG, "refreshDisplay");
+    private void startDisplayPump() {
+        Log.d(TAG, "startDisplayPump");
+        stopDisplayPump();
 
-        mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
+        displayPumpResults = mRealm.where(PumpStatusEvent.class)
+                .sort("eventDate", Sort.ASCENDING)
+                .findAllAsync();
 
-        timeLastSGV = 0;
-        pumpBattery = -1;
-
-        TextView textViewBg = findViewById(R.id.textview_bg);
-        TextView textViewUnits = findViewById(R.id.textview_units);
-        if (dataStore.isMmolxl()) {
-            textViewUnits.setText(R.string.text_unit_mmol);
-        } else {
-            textViewUnits.setText(R.string.text_unit_mgdl);
-        }
-        TextView textViewTrend = findViewById(R.id.textview_trend);
-        TextView textViewIOB = findViewById(R.id.textview_iob);
-
-        String sgvString = "\u2014"; // &mdash;
-        String trendString = "{ion_ios_minus_empty}";
-        int trendRotation = 0;
-        float iob = 0;
-
-        // most recent sgv status
-        RealmResults<PumpStatusEvent> sgv_results =
-                mRealm.where(PumpStatusEvent.class)
-                        .equalTo("validSGV", true)
-                        .sort("cgmDate", Sort.ASCENDING)
-                        .findAll();
-
-        if (sgv_results.size() > 0) {
-            timeLastSGV = sgv_results.last().getCgmDate().getTime();
-            sgvString = strFormatSGV(sgv_results.last().getSgv());
-
-            switch (sgv_results.last().getCgmTrend()) {
-                case DOUBLE_UP:
-                    trendString = "{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}";
-                    break;
-                case SINGLE_UP:
-                    trendString = "{ion_ios_arrow_thin_up}";
-                    break;
-                case FOURTY_FIVE_UP:
-                    trendRotation = -45;
-                    trendString = "{ion_ios_arrow_thin_right}";
-                    break;
-                case FLAT:
-                    trendString = "{ion_ios_arrow_thin_right}";
-                    break;
-                case FOURTY_FIVE_DOWN:
-                    trendRotation = 45;
-                    trendString = "{ion_ios_arrow_thin_right}";
-                    break;
-                case SINGLE_DOWN:
-                    trendString = "{ion_ios_arrow_thin_down}";
-                    break;
-                case DOUBLE_DOWN:
-                    trendString = "{ion_ios_arrow_thin_down}{ion_ios_arrow_thin_down}";
-                    break;
-                default:
-                    trendString = "{ion_ios_minus_empty}";
-                    break;
+        displayPumpResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
+            @Override
+            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+                if (changeSet != null) {
+                    if (changeSet.getInsertions().length > 0) {
+                        refreshDisplayPump();
+                    }
+                }
             }
+        });
+
+        refreshDisplayPump();
+    }
+
+    private void stopDisplayPump() {
+        Log.d(TAG, "stopDisplayPump");
+        if (displayCgmResults != null) {
+            displayPumpResults.removeAllChangeListeners();
+            displayPumpResults = null;
         }
+    }
+
+    private void startDisplayCgm() {
+        Log.d(TAG, "startDisplayCgm");
+        stopDisplayCgm();
+
+        displayCgmResults = historyRealm.where(PumpHistoryCGM.class)
+                .notEqualTo("sgv", 0)
+                .sort("eventDate", Sort.ASCENDING)
+                .findAllAsync();
+
+        displayCgmResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
+            @Override
+            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+                // initial refresh after start
+                if (changeSet == null) {
+                    refreshDisplayCgm();
+                    refreshDisplayChart();
+                }
+                // items added or changed
+                else if (changeSet.getInsertions().length + changeSet.getChanges().length > 0) {
+                    refreshDisplayCgm();
+                    refreshDisplayChart();
+                }
+            }
+        });
+    }
+
+    private void stopDisplayCgm() {
+        Log.d(TAG, "stopDisplayCgm");
+        if (displayCgmResults != null) {
+            displayCgmResults.removeAllChangeListeners();
+            displayCgmResults = null;
+        }
+    }
+
+    private void refreshDisplayPump() {
+        Log.d(TAG, "refreshDisplayPump");
+
+        float iob = 0;
+        pumpBattery = -1;
 
         // most recent pump status
         RealmResults<PumpStatusEvent> pump_results =
@@ -751,8 +752,74 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             pumpBattery = pump_results.last().getBatteryPercentage();
         }
 
-        textViewBg.setText(sgvString);
+        TextView textViewIOB = findViewById(R.id.textview_iob);
         textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", iob));
+    }
+
+    private void refreshDisplayCgm() {
+        Log.d(TAG, "refreshDisplayCgm");
+
+        mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
+
+        timeLastSGV = 0;
+
+        TextView textViewBg = findViewById(R.id.textview_bg);
+        TextView textViewUnits = findViewById(R.id.textview_units);
+        if (dataStore.isMmolxl()) {
+            textViewUnits.setText(R.string.text_unit_mmol);
+        } else {
+            textViewUnits.setText(R.string.text_unit_mgdl);
+        }
+        TextView textViewTrend = findViewById(R.id.textview_trend);
+
+        String sgvString = "\u2014"; // &mdash;
+        String trendString = "{ion_ios_minus_empty}";
+        int trendRotation = 0;
+
+        final RealmResults<PumpHistoryCGM> sgv_results = historyRealm
+                .where(PumpHistoryCGM.class)
+                .notEqualTo("sgv", 0)
+                .sort("eventDate", Sort.ASCENDING)
+                .findAll();
+
+        if (sgv_results.size() > 0) {
+            timeLastSGV = sgv_results.last().getEventDate().getTime();
+            sgvString = strFormatSGV(sgv_results.last().getSgv());
+
+            String trend = sgv_results.last().getCgmTrend();
+            if (trend != null) {
+                switch (sgv_results.last().getCgmTrend()) {
+                    case "DOUBLE_UP":
+                        trendString = "{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}";
+                        break;
+                    case "SINGLE_UP":
+                        trendString = "{ion_ios_arrow_thin_up}";
+                        break;
+                    case "FOURTY_FIVE_UP":
+                        trendRotation = -45;
+                        trendString = "{ion_ios_arrow_thin_right}";
+                        break;
+                    case "FLAT":
+                        trendString = "{ion_ios_arrow_thin_right}";
+                        break;
+                    case "FOURTY_FIVE_DOWN":
+                        trendRotation = 45;
+                        trendString = "{ion_ios_arrow_thin_right}";
+                        break;
+                    case "SINGLE_DOWN":
+                        trendString = "{ion_ios_arrow_thin_down}";
+                        break;
+                    case "DOUBLE_DOWN":
+                        trendString = "{ion_ios_arrow_thin_down}{ion_ios_arrow_thin_down}";
+                        break;
+                    default:
+                        trendString = "{ion_ios_minus_empty}";
+                        break;
+                }
+            }
+        }
+
+        textViewBg.setText(sgvString);
         textViewTrend.setText(trendString);
         textViewTrend.setRotation(trendRotation);
 
@@ -812,42 +879,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
     }
 
-    private RealmResults displayCgmResults;
-
-    private void startDisplayCgm() {
-        stopDisplayCgm();
-
-        Log.d(TAG, "startDisplayCgm");
-
-        displayCgmResults = historyRealm.where(PumpHistoryCGM.class)
-                .notEqualTo("sgv", 0)
-                .sort("eventDate", Sort.ASCENDING)
-                .findAllAsync();
-
-        displayCgmResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
-            @Override
-            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
-                if (changeSet == null) {
-                    // initial refresh after start
-                    refreshDisplayCgm();
-                } else if (changeSet.getInsertions().length > 0) {
-                    // new items added
-                    refreshDisplayCgm();
-                }
-            }
-        });
-    }
-
-    private void stopDisplayCgm() {
-        Log.d(TAG, "stopDisplayCgm");
-        if (displayCgmResults != null) {
-            displayCgmResults.removeAllChangeListeners();
-            displayCgmResults = null;
-        }
-    }
-
-    private void refreshDisplayCgm() {
-        Log.d(TAG, "refreshDisplayCgm");
+    private void refreshDisplayChart() {
+        Log.d(TAG, "refreshDisplayChart");
 
         RealmResults<PumpHistoryCGM> results = displayCgmResults;
 
@@ -895,29 +928,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .greaterThan("eventDate",  new Date(minX))
                 .sort("sgv", Sort.ASCENDING)
                 .findAll();
-/*
-        long rangeY, minRangeY;
-        long minY = minmaxY.first().getSgv();
-        long maxY = minmaxY.last().getSgv();
-
-        if (prefs.getBoolean("mmolxl", false)) {
-            minY = (long) Math.floor((minY / MMOLXLFACTOR) * 2);
-            maxY = (long) Math.ceil((maxY / MMOLXLFACTOR) * 2);
-            rangeY = maxY - minY;
-            minRangeY = ((rangeY / 4 ) + 1) * 4;
-            minY = minY - (long) Math.floor((minRangeY - rangeY) / 2);
-            maxY = minY + minRangeY;
-            minY = (long) (minY * MMOLXLFACTOR / 2);
-            maxY = (long) (maxY * MMOLXLFACTOR / 2);
-        } else {
-            minY = (long) Math.floor(minY / 10) * 10;
-            maxY = (long) Math.ceil((maxY + 5) / 10) * 10;
-            rangeY = maxY - minY;
-            minRangeY = ((rangeY / 20 ) + 1) * 20;
-            minY = minY - (long) Math.floor((minRangeY - rangeY) / 2);
-            maxY = minY + minRangeY;
-        }
-*/
         long rangeY, minRangeY;
         double minY = minmaxY.first().getSgv();
         double maxY = minmaxY.last().getSgv();
@@ -953,7 +963,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         int pos = 0;
         for (PumpHistoryCGM event : results) {
             // turn your data into Entry objects
-            entries[pos++] = new DataPoint(event.getEventDate(), (double) event.getSgv());
+            entries[pos++] = new DataPoint(event.getEventDate(), (double) event.getSgv(), event.isEstimate());
         }
 
         if (mChart.getSeries().size() == 0) {
@@ -984,7 +994,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 @Override
                 public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                     double sgv = dataPoint.getY();
-                    if (sgv < 80)
+
+                    if (((MainActivity.DataPoint) dataPoint).isEstimate())
+                        paint.setColor(Color.BLUE);
+
+                    else if (sgv < 80)
                         paint.setColor(Color.RED);
                     else if (sgv <= 180)
                         paint.setColor(Color.GREEN);
@@ -1025,6 +1039,40 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
 
+    }
+
+    private class DataPoint implements DataPointInterface, Serializable {
+        private static final long serialVersionUID=1428263322645L;
+
+        private double x;
+        private double y;
+
+        private boolean estimate;
+
+        public DataPoint(Date x, double y, boolean estimate) {
+            this.x = x.getTime();
+            this.y = y;
+            this.estimate = estimate;
+        }
+
+        public boolean isEstimate() {
+            return estimate;
+        }
+
+        @Override
+        public double getX() {
+            return x;
+        }
+
+        @Override
+        public double getY() {
+            return y;
+        }
+
+        @Override
+        public String toString() {
+            return "["+x+"/"+y+"]";
+        }
     }
 
     private static float dipToPixels(Context context, float dipValue) {

@@ -19,6 +19,7 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
 import io.realm.Realm;
 import io.realm.RealmResults;
+import io.realm.Sort;
 
 import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_WARN;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
@@ -91,8 +92,17 @@ public class NightscoutUploadService extends Service {
     private void uploadRecords() {
 
         realm = Realm.getDefaultInstance();
-        final RealmResults<PumpStatusEvent> statusRecords = realm
+
+        RealmResults<PumpStatusEvent> pumpRecords = realm
                 .where(PumpStatusEvent.class)
+                .sort("eventDate", Sort.ASCENDING)
+                .findAll();
+
+        String device = "";
+        if (pumpRecords.size() > 0) device = pumpRecords.last().getDeviceName();
+
+        final RealmResults<PumpStatusEvent> statusRecords = pumpRecords
+                .where()
                 .equalTo("uploaded", false)
                 .findAll();
         Log.i(TAG, "Device status records to upload: " + statusRecords.size());
@@ -122,6 +132,7 @@ public class NightscoutUploadService extends Service {
                         urlSetting,
                         secretSetting,
                         uploaderBatteryLevel,
+                        device,
                         statusRecords,
                         records);
 

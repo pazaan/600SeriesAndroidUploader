@@ -1,7 +1,9 @@
 package info.nightscout.android.medtronic.service;
 
+import android.annotation.TargetApi;
 import android.app.AlarmManager;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -9,6 +11,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.BatteryManager;
@@ -37,7 +40,6 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.upload.nightscout.NightscoutUploadService;
-import info.nightscout.android.utils.FormatKit;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadService;
 import info.nightscout.urchin.Urchin;
 import io.realm.Realm;
@@ -45,6 +47,10 @@ import io.realm.RealmList;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
+import static android.support.v4.app.NotificationCompat.PRIORITY_HIGH;
+import static android.support.v4.app.NotificationCompat.PRIORITY_LOW;
+import static android.support.v4.app.NotificationCompat.PRIORITY_MAX;
+import static android.support.v4.app.NotificationCompat.PRIORITY_MIN;
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
 import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_HELP;
 import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
@@ -182,11 +188,7 @@ public class MasterService extends Service {
             usbIntentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
             registerReceiver(usbReceiver, usbIntentFilter);
 
-//            MedtronicCnlAlarmManager.setContext(mContext);
-
             urchin = new Urchin(mContext);
-
-            FormatKit.getInstance(mContext);
         }
     }
 
@@ -222,7 +224,7 @@ public class MasterService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Received start id " + startId + ": " + intent);
-        //userLogMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : ""));
+        //userLogMessage.add(TAG + " Received start id " + startId + ": " + (intent == null ? "null" : intent));
 
         if (dataStore == null) {
             // safety check: don't proceed until main ui has been run and datastore initialised
@@ -235,12 +237,20 @@ public class MasterService extends Service {
 
             Intent notificationIntent = new Intent(this, MainActivity.class);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-            Notification notification = new NotificationCompat.Builder(this)
+
+            String channel;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                createNotificationChannels();
+                channel = "status";
+            } else channel = "";
+
+            Notification notification = new NotificationCompat.Builder(this, channel)
                     .setContentTitle("600 Series Uploader")
                     .setSmallIcon(R.drawable.ic_notification)
                     .setVisibility(VISIBILITY_PUBLIC)
                     .setContentIntent(pendingIntent)
                     .build();
+
             startForeground(SERVICE_NOTIFICATION_ID, notification);
 
             statusNotification.initNotification(mContext);
@@ -251,6 +261,26 @@ public class MasterService extends Service {
         }
 
         return START_STICKY;
+    }
+
+    @TargetApi(26)
+    private synchronized void createNotificationChannels() {
+
+        NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager == null) {
+            Log.e(TAG, "Could not create notification channels. NotificationManager is null");
+            stopSelf();
+        }
+
+        NotificationChannel statusChannel = new NotificationChannel("status", "Status", NotificationManager.IMPORTANCE_LOW);
+        statusChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        notificationManager.createNotificationChannel(statusChannel);
+
+        NotificationChannel errorChannel = new NotificationChannel("error", "Errors", NotificationManager.IMPORTANCE_HIGH);
+        errorChannel.enableLights(true);
+        errorChannel.setLightColor(Color.RED);
+        errorChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        notificationManager.createNotificationChannel(errorChannel);
     }
 
     private class MasterServiceReceiver extends BroadcastReceiver {
@@ -276,11 +306,9 @@ public class MasterService extends Service {
                     long nextpoll = intent.getLongExtra("nextpoll", 0);
 
                     if (nextpoll > 0) {
-//                        MedtronicCnlAlarmManager.setAlarm(nextpoll);
                         setAlarm(nextpoll);
                         statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, nextpoll);
                     } else {
-//                        MedtronicCnlAlarmManager.cancelAlarm();
                         cancelAlarm();
                         statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
                     }
@@ -293,13 +321,11 @@ public class MasterService extends Service {
                 }
 
             } else if (Constants.ACTION_STOP_SERVICE.equals(action)) {
- //               MedtronicCnlAlarmManager.cancelAlarm();
                 cancelAlarm();
                 serviceActive = false;
                 stopSelf();
 
             } else if (Constants.ACTION_READ_NOW.equals(action)) {
-//                MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000L);
                 setAlarm(System.currentTimeMillis() + 1000L);
 
             } else if (Constants.ACTION_READ_PROFILE.equals(action)) {
@@ -309,7 +335,6 @@ public class MasterService extends Service {
                         dataStore.setRequestProfile(true);
                     }
                 });
-//                MedtronicCnlAlarmManager.setAlarm(System.currentTimeMillis() + 1000L);
                 setAlarm(System.currentTimeMillis() + 1000L);
 
             } else if (Constants.ACTION_CNL_COMMS_ACTIVE.equals(action)) {
@@ -377,7 +402,6 @@ public class MasterService extends Service {
         long start = nextPollTime();
 
         if (start - now < delay) start = now + delay;
-//        MedtronicCnlAlarmManager.setAlarm(start);
         setAlarm(start);
         statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, start);
 
@@ -515,16 +539,12 @@ public class MasterService extends Service {
                 showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
                 userLogMessage.add(ICON_WARN + "USB error. Contour Next Link unplugged.");
 
-//                MedtronicCnlAlarmManager.cancelAlarm();
-
                 statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
 
                 // received from CnlService
             } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
                 Log.d(TAG, "No permission to read the USB device.");
                 userLogMessage.add(ICON_WARN + "No permission to read the USB device.");
-
-//                MedtronicCnlAlarmManager.cancelAlarm();
 
                 statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
 
@@ -552,51 +572,27 @@ public class MasterService extends Service {
         usbManager.requestPermission(cnlDevice, permissionIntent);
     }
 
-    /*
     private void showDisconnectionNotification(String title, String message) {
-        android.support.v7.app.NotificationCompat.Builder mBuilder =
-                (android.support.v7.app.NotificationCompat.Builder) new android.support.v7.app.NotificationCompat.Builder(this)
-                        .setPriority(android.support.v7.app.NotificationCompat.PRIORITY_MAX)
-                        .setSmallIcon(android.R.drawable.stat_notify_error)
-                        .setContentTitle(title)
-                        .setContentText(message)
-                        .setTicker(message)
-                        .setVibrate(new long[]{1000, 1000, 1000, 1000, 1000});
-        // Creates an explicit intent for an Activity in your app
-        Intent resultIntent = new Intent(this, MainActivity.class);
 
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        // Adds the back stack for the Intent (but not the Intent itself)
-        stackBuilder.addParentStack(MainActivity.class);
-        // Adds the Intent that starts the Activity to the top of the stack
-        stackBuilder.addNextIntent(resultIntent);
-        PendingIntent resultPendingIntent =
-                stackBuilder.getPendingIntent(
-                        0,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
-        mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(USB_DISCONNECT_NOFICATION_ID, mBuilder.build());
-    }
-    */
+        String channel = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? "error" : "";
 
-    private void showDisconnectionNotification(String title, String message) {
         NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setPriority(NotificationCompat.PRIORITY_MAX)
+                new NotificationCompat.Builder(this, channel)
+                        .setPriority(PRIORITY_MAX)
                         .setSmallIcon(android.R.drawable.stat_notify_error)
                         .setContentTitle(title)
                         .setContentText(message)
                         .setTicker(message)
                         .setVibrate(new long[]{1000, 1000, 1000, 1000, 1000});
+
         // Creates an explicit intent for an Activity in your app
         Intent resultIntent = new Intent(this, MainActivity.class);
 
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+
         // Adds the back stack for the Intent (but not the Intent itself)
         stackBuilder.addParentStack(MainActivity.class);
+
         // Adds the Intent that starts the Activity to the top of the stack
         stackBuilder.addNextIntent(resultIntent);
         PendingIntent resultPendingIntent =
@@ -604,7 +600,9 @@ public class MasterService extends Service {
                         0,
                         PendingIntent.FLAG_UPDATE_CURRENT
                 );
+
         mBuilder.setContentIntent(resultPendingIntent);
+
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(USB_DISCONNECT_NOFICATION_ID, mBuilder.build());

@@ -29,19 +29,23 @@ public class UserLogMessage {
 
         Realm userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
 
-        userLogRealm.executeTransactionAsync(new Realm.Transaction() {
-            @Override
-            public void execute(@NonNull Realm realm) {
+        try {
+            userLogRealm.executeTransactionAsync(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
 
-                realm.createObject(UserLog.class).UserLogMessage(message);
+                    realm.createObject(UserLog.class).UserLogMessage(message);
 
-                // remove stale items
-                RealmResults results = realm.where(UserLog.class)
-                        .lessThan("timestamp", System.currentTimeMillis() - STALE_MS)
-                        .findAll();
-                if (results.size() > 0) results.deleteAllFromRealm();
-            }
-        });
+                    // remove stale items
+                    RealmResults results = realm.where(UserLog.class)
+                            .lessThan("timestamp", System.currentTimeMillis() - STALE_MS)
+                            .findAll();
+                    if (results.size() > 0) results.deleteAllFromRealm();
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Could not add message: ", e);
+        }
 
         userLogRealm.close();
     }

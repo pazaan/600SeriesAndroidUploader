@@ -278,7 +278,7 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
             case UPLOADER_BATTERY:
                 if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY)
                         && data != null && data.size() > 0) {
-                    message = String.format("%s %s. %s",
+                    message = String.format("%s %s.",
                             "Uploader battery at",
                             FormatKit.getInstance().formatAsPercent(Integer.parseInt(data.first())));
                 }

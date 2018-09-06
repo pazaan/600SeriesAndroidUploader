@@ -489,8 +489,8 @@ public class MedtronicCnlReader {
 
                 } catch (UnexpectedMessageException e) {
                     attempt++;
-                    Log.e(TAG, "Attempt: " + attempt + " UnexpectedMessageException: " + e.getMessage());
-                    error += "\nAttempt: " + attempt + " UnexpectedMessageException: " + e.getMessage();
+                    Log.e(TAG, "Attempt " + attempt + ": UnexpectedMessageException: " + e.getMessage());
+                    error += "\nAttempt " + attempt + ": UnexpectedMessageException: " + e.getMessage();
 
                     // needs to end immediately on these errors
                     if (e.getMessage().contains("connection lost") || e.getMessage().contains("NAK")) {
@@ -502,8 +502,8 @@ public class MedtronicCnlReader {
 
                 } catch (TimeoutException e) {
                     attempt++;
-                    Log.e(TAG, "Attempt: " + attempt + " TimeoutException: " + e.getMessage());
-                    error += "\nAttempt: " + attempt + " TimeoutException: " + e.getMessage();
+                    Log.e(TAG, "Attempt " + attempt + ": TimeoutException: " + e.getMessage());
+                    error += "\nAttempt " + attempt + ": TimeoutException: " + e.getMessage();
 
                     // needs to end immediately on these errors
                     if (e.getMessage().contains("Timeout waiting for 0x81 response")) {

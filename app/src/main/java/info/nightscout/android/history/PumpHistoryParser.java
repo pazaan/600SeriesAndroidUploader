@@ -69,20 +69,23 @@ public class PumpHistoryParser {
 
     private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
-    public Date[] process(PumpHistorySender pumpHistorySender, final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference, long startTime, long endTime) {
+    public Date[] process(PumpHistorySender pumpHistorySender, final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference, long startTime, long endTime, long parseFrom, long parseTo) {
 
         this.pumpHistorySender = pumpHistorySender;
 
-        eventOldest = startTime;
-        eventNewest = endTime;
+        //eventOldest = startTime;
+        //eventNewest = endTime;
 
-        parser(pumpRTC, pumpOFFSET, pumpClockDifference);
+        eventOldest = 0;
+        eventNewest = 0;
+
+        parser(pumpRTC, pumpOFFSET, pumpClockDifference, parseFrom, parseTo);
 
         // event date range returned by pump as it is usually more then requested
         return new Date[]{eventOldest == 0 ? null : new Date(eventOldest), eventNewest == 0 ? null : new Date(eventNewest)};
     }
 
-    private void parser(final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference) {
+    private void parser(final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference, final long parseFrom, final long parseTo) {
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
         this.pumpRTC = pumpRTC;
@@ -112,103 +115,107 @@ public class PumpHistoryParser {
                     if (eventTime > eventNewest || eventNewest == 0) eventNewest = eventTime;
                     if (eventTime < eventOldest || eventOldest == 0) eventOldest = eventTime;
 
-                    switch (eventType) {
-                        case SENSOR_GLUCOSE_READINGS_EXTENDED:
-                            sensorGlucoseReadingsExtended();
-                            break;
-                        case NORMAL_BOLUS_PROGRAMMED:
-                            normalBolusProgrammed();
-                            break;
-                        case NORMAL_BOLUS_DELIVERED:
-                            normalBolusDelivered();
-                            break;
-                        case SQUARE_BOLUS_PROGRAMMED:
-                            squareBolusProgrammed();
-                            break;
-                        case SQUARE_BOLUS_DELIVERED:
-                            squareBolusDelivered();
-                            break;
-                        case DUAL_BOLUS_PROGRAMMED:
-                            dualBolusProgrammed();
-                            break;
-                        case DUAL_BOLUS_PART_DELIVERED:
-                            dualBolusPartDelivered();
-                            break;
-                        case BOLUS_WIZARD_ESTIMATE:
-                            bolusWizardEstimate();
-                            break;
-                        case MEAL_WIZARD_ESTIMATE:
-                            mealWizardEstimate();
-                            break;
-                        case TEMP_BASAL_PROGRAMMED:
-                            tempBasalProgrammed();
-                            break;
-                        case TEMP_BASAL_COMPLETE:
-                            tempBasalComplete();
-                            break;
-                        case BASAL_PATTERN_SELECTED:
-                            basalPatternSelected();
-                            break;
-                        case INSULIN_DELIVERY_STOPPED:
-                            insulinDeliveryStopped();
-                            break;
-                        case INSULIN_DELIVERY_RESTARTED:
-                            insulinDeliveryRestarted();
-                            break;
-                        case BG_READING:
-                            bgReading();
-                            break;
-                        case CLOSED_LOOP_BG_READING:
-                            closedLoopBgReading();
-                            break;
-                        case CLOSED_LOOP_TRANSITION:
-                            closedLoopTransition();
-                            break;
-                        case BASAL_SEGMENT_START:
-                            basalSegmentStart();
-                            break;
-                        case CALIBRATION_COMPLETE:
-                            calibrationComplete();
-                            break;
-                        case GLUCOSE_SENSOR_CHANGE:
-                            glucoseSensorChange();
-                            break;
-                        case BATTERY_INSERTED:
-                            batteryInserted();
-                            break;
-                        case CANNULA_FILL_DELIVERED:
-                            cannulaFillDelivered();
-                            break;
-                        case FOOD_EVENT_MARKER:
-                            foodEventMarker();
-                            break;
-                        case EXERCISE_EVENT_MARKER:
-                            exerciseEventMarker();
-                            break;
-                        case INJECTION_EVENT_MARKER:
-                            injectionEventMarker();
-                            break;
-                        case OTHER_EVENT_MARKER:
-                            otherEventMarker();
-                            break;
-                        case ALARM_NOTIFICATION:
-                            alarmNotification();
-                            break;
-                        case ALARM_CLEARED:
-                            alarmCleared();
-                            break;
-                        case DAILY_TOTALS:
-                            dailyTotals();
-                            break;
-                        case CLOSED_LOOP_DAILY_TOTALS:
-                            closedLoopDailyTotals();
-                            break;
+                    if ((parseFrom == 0 || eventTime >= parseFrom) && (parseTo == 0 || eventTime <= parseTo)) {
+
+                        switch (eventType) {
+                            case SENSOR_GLUCOSE_READINGS_EXTENDED:
+                                sensorGlucoseReadingsExtended();
+                                break;
+                            case NORMAL_BOLUS_PROGRAMMED:
+                                normalBolusProgrammed();
+                                break;
+                            case NORMAL_BOLUS_DELIVERED:
+                                normalBolusDelivered();
+                                break;
+                            case SQUARE_BOLUS_PROGRAMMED:
+                                squareBolusProgrammed();
+                                break;
+                            case SQUARE_BOLUS_DELIVERED:
+                                squareBolusDelivered();
+                                break;
+                            case DUAL_BOLUS_PROGRAMMED:
+                                dualBolusProgrammed();
+                                break;
+                            case DUAL_BOLUS_PART_DELIVERED:
+                                dualBolusPartDelivered();
+                                break;
+                            case BOLUS_WIZARD_ESTIMATE:
+                                bolusWizardEstimate();
+                                break;
+                            case MEAL_WIZARD_ESTIMATE:
+                                mealWizardEstimate();
+                                break;
+                            case TEMP_BASAL_PROGRAMMED:
+                                tempBasalProgrammed();
+                                break;
+                            case TEMP_BASAL_COMPLETE:
+                                tempBasalComplete();
+                                break;
+                            case BASAL_PATTERN_SELECTED:
+                                basalPatternSelected();
+                                break;
+                            case INSULIN_DELIVERY_STOPPED:
+                                insulinDeliveryStopped();
+                                break;
+                            case INSULIN_DELIVERY_RESTARTED:
+                                insulinDeliveryRestarted();
+                                break;
+                            case BG_READING:
+                                bgReading();
+                                break;
+                            case CLOSED_LOOP_BG_READING:
+                                closedLoopBgReading();
+                                break;
+                            case CLOSED_LOOP_TRANSITION:
+                                closedLoopTransition();
+                                break;
+                            case BASAL_SEGMENT_START:
+                                basalSegmentStart();
+                                break;
+                            case CALIBRATION_COMPLETE:
+                                calibrationComplete();
+                                break;
+                            case GLUCOSE_SENSOR_CHANGE:
+                                glucoseSensorChange();
+                                break;
+                            case BATTERY_INSERTED:
+                                batteryInserted();
+                                break;
+                            case CANNULA_FILL_DELIVERED:
+                                cannulaFillDelivered();
+                                break;
+                            case FOOD_EVENT_MARKER:
+                                foodEventMarker();
+                                break;
+                            case EXERCISE_EVENT_MARKER:
+                                exerciseEventMarker();
+                                break;
+                            case INJECTION_EVENT_MARKER:
+                                injectionEventMarker();
+                                break;
+                            case OTHER_EVENT_MARKER:
+                                otherEventMarker();
+                                break;
+                            case ALARM_NOTIFICATION:
+                                alarmNotification();
+                                break;
+                            case ALARM_CLEARED:
+                                alarmCleared();
+                                break;
+                            case DAILY_TOTALS:
+                                dailyTotals();
+                                break;
+                            case CLOSED_LOOP_DAILY_TOTALS:
+                                closedLoopDailyTotals();
+                                break;
 
                             /*
-                        case REWIND:
-                            rewind();
-                            break;
+                            case REWIND:
+                                rewind();
+                                break;
                             */
+                        }
+
                     }
 
                     event++;
@@ -230,7 +237,11 @@ public class PumpHistoryParser {
 
             int sgv = read16BEtoUInt(eventData, pos) & 0x03FF;
             double isig = read16BEtoUInt(eventData, pos + 2) / 100.0;
-            double vctr = (((eventData[pos] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF) / 100.0;
+
+            int vctrraw = (((eventData[pos] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF);
+            if ((vctrraw & 0x0200) != 0) vctrraw |= 0xFFFFFE00;
+            double vctr = vctrraw / 100.0;
+
             double rateOfChange = read16BEtoInt(eventData, pos + 5) / 100.0;
             byte sensorStatus = eventData[pos + 7];
             byte readingStatus = eventData[pos + 8];
@@ -1149,7 +1160,11 @@ public class PumpHistoryParser {
 
                     int sg = read16BEtoUInt(eventData, pos) & 0x03FF;
                     double isig = read16BEtoUInt(eventData, pos + 2) / 100.0;
-                    double vctr = (((eventData[pos] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF) / 100.0;
+
+                    int vctrraw = (((eventData[pos] >> 2 & 3) << 8) | eventData[pos + 4] & 0x000000FF);
+                    if ((vctrraw & 0x0200) != 0) vctrraw |= 0xFFFFFE00;
+                    double vctr = vctrraw / 100.0;
+
                     double rateOfChange = read16BEtoInt(eventData, pos + 5) / 100.0;
                     int sensorStatus = read8toUInt(eventData, pos + 7);
                     int readingStatus = read8toUInt(eventData, pos + 8);
@@ -1406,7 +1421,7 @@ public class PumpHistoryParser {
                         totalBWIFoodOnlyBolus, numOfBolusWizardFoodOnlyBoluses, totalBWICorrectionOnlyBolus,numOfBolusWizardCorrectionOnlyBoluses, totalBWIFoodCorrectionBolus, numOfBolusWizardFoodCorrectionBoluses,
                         totalOfMealWizardInsulinDeliveredFoodOnlyBolus, numOfMealWizardFoodOnlyBoluses, totalOfMealWizardInsulinDeliveredCorrectionOnlyBolus, numOfMealWizardCorrectionOnlyBoluses, totalOfMealWizardInsulinDeliveredFoodCorrectionBolus, numOfMealWizardFoodCorrectionBoluses,
                         numOfManualBoluses
-                        );
+                );
 
             } else if (eventType == EventType.FOOD_EVENT_MARKER) {
                 int rtc = read32BEtoInt(eventData, index + 0x0B);

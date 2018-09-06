@@ -31,6 +31,7 @@ public class DataStore extends RealmObject {
     private boolean requestProfile = false;
     private boolean requestPumpHistory = false;
     private boolean requestCgmHistory = false;
+    private boolean requestEstimate = false;
 
     private int pumpCgmNA;
 
@@ -54,6 +55,7 @@ public class DataStore extends RealmObject {
     private boolean sysEnablePumpHistory;
     private int sysPumpHistoryDays;
     private int sysPumpHistoryFrequency;
+    private boolean sysEnableEstimateSGV;
     private boolean sysEnableClashProtect;
     private boolean sysEnablePollOverride;
     private long sysPollGracePeriod;
@@ -74,6 +76,7 @@ public class DataStore extends RealmObject {
     private boolean nsEnableSensorChange;
     private boolean nsEnableReservoirChange;
     private boolean nsEnableInsulinChange;
+    private int nsInsulinChangeThreshold;
     private boolean nsEnableBatteryChange;
     private boolean nsEnableLifetimes;
     private boolean nsEnableProfileUpload;
@@ -254,7 +257,7 @@ public class DataStore extends RealmObject {
         sysEnablePumpHistory = sharedPreferences.getBoolean("sysEnablePumpHistory", true);
         sysPumpHistoryDays = Integer.parseInt(sharedPreferences.getString("sysPumpHistoryDays", "7"));
         sysPumpHistoryFrequency = Integer.parseInt(sharedPreferences.getString("sysPumpHistoryFrequency", "90"));
-
+        sysEnableEstimateSGV = sharedPreferences.getBoolean("sysEnableEstimateSGV", false);
         sysEnableClashProtect = sharedPreferences.getBoolean("sysEnableClashProtect", true);
         sysEnablePollOverride = sharedPreferences.getBoolean("sysEnablePollOverride", false);
         sysPollGracePeriod = Long.parseLong(sharedPreferences.getString("sysPollGracePeriod", "30000"));
@@ -277,6 +280,7 @@ public class DataStore extends RealmObject {
         nsEnableSensorChange = sharedPreferences.getBoolean("nsEnableSensorChange", true);
         nsEnableReservoirChange = sharedPreferences.getBoolean("nsEnableReservoirChange", true);
         nsEnableInsulinChange = sharedPreferences.getBoolean("nsEnableInsulinChange", false);
+        nsInsulinChangeThreshold = Integer.parseInt(sharedPreferences.getString("nsInsulinChangeThreshold", "0"));
         nsEnableBatteryChange = sharedPreferences.getBoolean("nsEnableBatteryChange", true);
         nsEnableLifetimes = sharedPreferences.getBoolean("nsEnableLifetimes", false);
         nsEnableProfileUpload = sharedPreferences.getBoolean("nsEnableProfileUpload", true);
@@ -542,6 +546,14 @@ public class DataStore extends RealmObject {
         this.requestCgmHistory = requestCgmHistory;
     }
 
+    public boolean isRequestEstimate() {
+        return requestEstimate;
+    }
+
+    public void setRequestEstimate(boolean requestEstimate) {
+        this.requestEstimate = requestEstimate;
+    }
+
     public int getPumpCgmNA() {
         return pumpCgmNA;
     }
@@ -666,6 +678,10 @@ public class DataStore extends RealmObject {
         return sysPumpHistoryFrequency;
     }
 
+    public boolean isSysEnableEstimateSGV() {
+        return sysEnableEstimateSGV;
+    }
+
     public boolean isSysEnableClashProtect() {
         return sysEnableClashProtect;
     }
@@ -736,6 +752,10 @@ public class DataStore extends RealmObject {
 
     public boolean isNsEnableInsulinChange() {
         return nsEnableInsulinChange;
+    }
+
+    public int getNsInsulinChangeThreshold() {
+        return nsInsulinChangeThreshold;
     }
 
     public boolean isNsEnableBatteryChange() {

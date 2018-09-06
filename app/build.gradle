@@ -8,7 +8,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'io.fabric.tools:gradle:1.25.1'
+        classpath 'io.fabric.tools:gradle:1.25.4'
         classpath 'io.realm:realm-gradle-plugin:4.4.0'
         classpath 'org.ajoberstar:grgit:1.5.0'
         classpath 'org.codehaus.groovy:groovy-json:2.4.12'
@@ -116,6 +116,11 @@ dependencies {
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.5.4'
     releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
 
+    implementation('com.crashlytics.sdk.android:crashlytics:2.8.0@aar') {
+        transitive = true
+    }
+    implementation 'com.bugfender.sdk:android:0.8.4'
+
     implementation files('libs/slf4j-api-1.7.2.jar')
     implementation files('libs/lzo-core-1.0.5.jar')
 
@@ -131,10 +136,7 @@ dependencies {
 
     implementation 'org.apache.commons:commons-lang3:3.4'
 
-    implementation 'com.mikepenz:google-material-typeface:3.0.1.1.original@aar'
-    implementation 'com.mikepenz:ionicons-typeface:2.0.1.3@aar'
     implementation 'uk.co.chrisjenx:calligraphy:2.2.0'
-    implementation 'com.bugfender.sdk:android:0.8.4'
 
     // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1
     implementation 'com.jjoe64:graphview:4.0.1'
@@ -143,21 +145,17 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.1.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.1.0'
 
-    implementation('com.crashlytics.sdk.android:crashlytics:2.8.0@aar') {
-        transitive = true
-    }
+    implementation 'com.github.javiersantos:AppUpdater:2.6.5'
 
     // The version of okhttp3 *must* be the same as the version in AppUpdater
     implementation 'com.squareup.okhttp3:okhttp:3.9.1'
     implementation 'com.squareup.okhttp3:logging-interceptor:3.9.1'
 
-    implementation('com.crashlytics.sdk.android:crashlytics:2.6.7@aar') {
-        transitive = true
-    }
     implementation('com.mikepenz:materialdrawer:5.2.9@aar') {
         transitive = true
     }
-    implementation 'com.github.javiersantos:AppUpdater:2.6.5'
+    implementation 'com.mikepenz:google-material-typeface:3.0.1.1.original@aar'
+    implementation 'com.mikepenz:ionicons-typeface:2.0.1.3@aar'
 }
 
 apply from: "signing.gradle"

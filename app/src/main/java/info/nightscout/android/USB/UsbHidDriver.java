@@ -83,7 +83,18 @@ public class UsbHidDriver extends CommonUsbDriver {
     public int read(byte[] dest, int timeoutMillis) throws IOException {
         final int numBytesRead;
         synchronized (mReadBufferLock) {
-            mConnection.claimInterface(mInterface, true);
+
+            int retry = 5;
+            while (!mConnection.claimInterface(mInterface, true)) {
+                Log.e(TAG, "*** USB READ: could not claim interface");
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ignored) {
+                }
+                if (--retry == 0) throw new IOException("*** USB READ: could not claim interface");
+            }
+
+            //mConnection.claimInterface(mInterface, true);
             int readAmt = Math.min(dest.length, mReadBuffer.length);
             numBytesRead = mConnection.bulkTransfer(mReadEndpoint, mReadBuffer, readAmt,
                     timeoutMillis);
@@ -91,6 +102,95 @@ public class UsbHidDriver extends CommonUsbDriver {
                 System.arraycopy(mReadBuffer, 0, dest, 0, numBytesRead);
             }
             
+            //mConnection.releaseInterface(mInterface);
+            retry = 5;
+            while (!mConnection.releaseInterface(mInterface)) {
+                Log.e(TAG, "*** USB READ: could not release interface");
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ignored) {
+                }
+                if (--retry == 0) throw new IOException("*** USB READ: could not release interface");
+            }
+        }
+        return numBytesRead;
+    }
+
+    @Override
+    public int write(byte[] src, int timeoutMillis) throws IOException {
+        int offset = 0;
+
+        while (offset < src.length) {
+            final int writeLength;
+            final int amtWritten;
+
+            synchronized (mWriteBufferLock) {
+                final byte[] writeBuffer;
+
+                writeLength = Math.min(src.length - offset, mWriteBuffer.length);
+                if (offset == 0) {
+                    writeBuffer = src;
+                } else {
+                    // bulkTransfer does not support offsets, make a copy.
+                    System.arraycopy(src, offset, mWriteBuffer, 0, writeLength);
+                    writeBuffer = mWriteBuffer;
+                }
+
+                int retry = 5;
+                while (!mConnection.claimInterface(mInterface, true)) {
+                    Log.e(TAG, "*** USB WRITE: could not claim interface");
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException ignored) {
+                    }
+                    if (--retry == 0) throw new IOException("*** USB WRITE: could not claim interface");
+                }
+
+                //mConnection.claimInterface(mInterface, true);
+                amtWritten = mConnection.bulkTransfer(mWriteEndpoint, writeBuffer, writeLength,
+                        timeoutMillis);
+
+                //mConnection.releaseInterface(mInterface);
+                retry = 5;
+                while (!mConnection.releaseInterface(mInterface)) {
+                    Log.e(TAG, "*** USB WRITE: could not release interface");
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException ignored) {
+                    }
+                    if (--retry == 0) throw new IOException("*** USB WRITE: could not release interface");
+                }
+            }
+            if (amtWritten <= 0) {
+                throw new IOException("Error writing " + writeLength
+                        + " bytes at offset " + offset + " length=" + src.length);
+            }
+
+            //Log.d(TAG, "Wrote amt=" + amtWritten + " attempted=" + writeLength);
+            offset += amtWritten;
+        }
+        return offset;
+    }
+
+    @Override
+    public boolean isConnectionOpen() {
+        return isConnectionOpen;
+    }
+}
+
+/*
+    @Override
+    public int read(byte[] dest, int timeoutMillis) throws IOException {
+        final int numBytesRead;
+        synchronized (mReadBufferLock) {
+            mConnection.claimInterface(mInterface, true);
+            int readAmt = Math.min(dest.length, mReadBuffer.length);
+            numBytesRead = mConnection.bulkTransfer(mReadEndpoint, mReadBuffer, readAmt,
+                    timeoutMillis);
+            if (numBytesRead > 0) {
+                System.arraycopy(mReadBuffer, 0, dest, 0, numBytesRead);
+            }
+
             mConnection.releaseInterface(mInterface);
         }
         return numBytesRead;
@@ -132,8 +232,4 @@ public class UsbHidDriver extends CommonUsbDriver {
         return offset;
     }
 
-    @Override
-    public boolean isConnectionOpen() {
-        return isConnectionOpen;
-    }
-}
+ */
