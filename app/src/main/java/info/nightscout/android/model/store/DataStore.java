@@ -33,6 +33,8 @@ public class DataStore extends RealmObject {
     private boolean requestCgmHistory = false;
     private boolean requestEstimate = false;
 
+    private String lastStatReport;
+
     private int pumpCgmNA;
 
     private int commsSuccess;
@@ -43,6 +45,8 @@ public class DataStore extends RealmObject {
     private int pumpLostSensorError;
     private int pumpClockError;
     private int pumpBatteryError;
+
+    // user preferences
 
     private boolean mmolxl;
     private boolean mmolxlDecimals;
@@ -231,7 +235,7 @@ public class DataStore extends RealmObject {
     private boolean pushoverEnableSoundOverride;
     private String pushoverSoundOverride;
 
-    //private byte bump;
+    private byte bump;
 
     public DataStore() {
         this.timestamp = new Date().getTime();
@@ -448,6 +452,14 @@ public class DataStore extends RealmObject {
         if (oldName != null && !oldName.equals(newName))
             nameBasalPatternChanged = true;
         return newName;
+    }
+
+    public String getLastStatReport() {
+        return lastStatReport;
+    }
+
+    public void setLastStatReport(String lastStatReport) {
+        this.lastStatReport = lastStatReport;
     }
 
     public Date getNightscoutLimitDate() {

@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.Locale;
 
 import info.nightscout.android.R;
-import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;

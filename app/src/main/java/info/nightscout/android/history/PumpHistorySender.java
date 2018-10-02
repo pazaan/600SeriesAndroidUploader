@@ -49,6 +49,7 @@ public class PumpHistorySender {
                 .ttl(PumpHistorySystem.class, dataStore.isNsEnableSystemStatus() ? dataStore.getNsAlarmTTL() * 60 * 60000L : 0)
 
                 .limiter(2000)
+                //.limiter(1000)
                 .process(dataStore.isNsEnableHistorySync() ? 180 * 24 * 60 * 60000L : System.currentTimeMillis() - dataStore.getNightscoutLimitDate().getTime())
 
                 .opt(SENDEROPT.TREATMENTS, treatments)
@@ -147,7 +148,6 @@ public class PumpHistorySender {
                 .list(SENDEROPT.BASAL_PATTERN, new String[]{dataStore.getNameBasalPattern1(), dataStore.getNameBasalPattern2(), dataStore.getNameBasalPattern3(), dataStore.getNameBasalPattern4(), dataStore.getNameBasalPattern5(), dataStore.getNameBasalPattern6(), dataStore.getNameBasalPattern7(), dataStore.getNameBasalPattern8()})
                 .list(SENDEROPT.BASAL_PRESET, new String[]{dataStore.getNameTempBasalPreset1(), dataStore.getNameTempBasalPreset2(), dataStore.getNameTempBasalPreset3(), dataStore.getNameTempBasalPreset4(), dataStore.getNameTempBasalPreset5(), dataStore.getNameTempBasalPreset6(), dataStore.getNameTempBasalPreset7(), dataStore.getNameTempBasalPreset8()})
                 .list(SENDEROPT.BOLUS_PRESET, new String[]{dataStore.getNameBolusPreset1(), dataStore.getNameBolusPreset2(), dataStore.getNameBolusPreset3(), dataStore.getNameBolusPreset4(), dataStore.getNameBolusPreset5(), dataStore.getNameBolusPreset6(), dataStore.getNameBolusPreset7(), dataStore.getNameBolusPreset8()});
-        ;
 
         return this;
     }
@@ -321,6 +321,8 @@ public class PumpHistorySender {
         }
         return defaultValue;
     }
+
+    // REQ/ACK setters must only be used as part of a open Realm transaction
 
     // set history record REQ for all associated senders
     public void setSenderREQ(PumpHistoryInterface record) {

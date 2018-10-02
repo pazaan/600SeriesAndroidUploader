@@ -12,7 +12,6 @@ import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
-import info.nightscout.android.utils.HexDump;
 
 /**
  * Created by John on 18.3.18.
@@ -39,10 +38,10 @@ public class DiscoveryRequestMessage extends MedtronicRequestMessage<DiscoveryRe
         sendMessage(mDevice);
 
         Log.d(TAG, "Reading 0x81 message");
-        payload = readMessage_0x81(mDevice);
+        payload = readResponse0x81(mDevice, READ_TIMEOUT_MS, TAG);
 
         Log.d(TAG, "Reading 0x80 message");
-        payload = readMessage(mDevice);
+        payload = readResponse0x80(mDevice, READ_TIMEOUT_MS, TAG);
 
         return this.getResponse(payload);
     }

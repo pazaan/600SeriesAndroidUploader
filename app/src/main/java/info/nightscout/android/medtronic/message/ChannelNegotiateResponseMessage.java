@@ -1,7 +1,5 @@
 package info.nightscout.android.medtronic.message;
 
-import android.util.Log;
-
 import java.io.IOException;
 
 import info.nightscout.android.medtronic.MedtronicCnlSession;
@@ -22,14 +20,12 @@ public class ChannelNegotiateResponseMessage extends ContourNextLinkBinaryRespon
 
         byte[] responseBytes = this.encode();
 
-        Log.d(TAG, "negotiateChannel: Check response length");
         if (responseBytes.length == 0x4F) {
             if (responseBytes[0x4C] == pumpSession.getRadioChannel()) {
                 radioChannel = responseBytes[0x4C];
                 radioRSSI = responseBytes[0x3B];
             }
         }
-
     }
 
     public byte getRadioChannel() {

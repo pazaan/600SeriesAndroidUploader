@@ -147,7 +147,7 @@
     <string name="help_profile_upload_main_menu">Profiles can be uploaded from the main menu.</string>
     <string name="info_basal_pattern_names">Basal pattern names have changed, your profile should be updated.</string>
     <string name="warn_pump_battery_low">Warning: pump battery low</string>
-    <string name="info_pump_low_battery_mode_change">Poll interval increased, history and backfill processing disabled.</string>
+    <string name="info_pump_low_battery_mode_change">Poll interval increased, history and backfill processing reduced.</string>
     <string name="info_low_battery_interval">Low battery poll interval:</string>
     <string name="warn_pump_time_difference">Warning: Time difference between Pump and Uploader excessive. Pump is over %d %s %s of time used by uploader.</string>
     <string name="help_pump_time_difference">The uploader phone/device should have the current time provided by network. Pump clock drifts forward and needs to be set to correct time occasionally.</string>

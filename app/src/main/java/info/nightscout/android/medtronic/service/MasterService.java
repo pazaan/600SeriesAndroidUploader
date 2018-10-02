@@ -29,7 +29,9 @@ import java.util.Date;
 import java.util.Locale;
 
 import info.nightscout.android.history.PumpHistoryHandler;
+import info.nightscout.android.medtronic.Stats;
 import info.nightscout.android.model.medtronicNg.PumpHistorySystem;
+import info.nightscout.android.model.store.StatCnl;
 import info.nightscout.android.pushover.PushoverUploadService;
 import info.nightscout.android.R;
 import info.nightscout.android.USB.UsbHidDriver;
@@ -47,10 +49,7 @@ import io.realm.RealmList;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-import static android.support.v4.app.NotificationCompat.PRIORITY_HIGH;
-import static android.support.v4.app.NotificationCompat.PRIORITY_LOW;
 import static android.support.v4.app.NotificationCompat.PRIORITY_MAX;
-import static android.support.v4.app.NotificationCompat.PRIORITY_MIN;
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
 import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_HELP;
 import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
@@ -197,7 +196,6 @@ public class MasterService extends Service {
         super.onDestroy();
         Log.d(TAG, "onDestroy called");
 
-//        MedtronicCnlAlarmManager.cancelAlarm();
         cancelAlarm();
 
         if (userLogMessageReceiver != null) unregisterReceiver(userLogMessageReceiver);
@@ -213,12 +211,12 @@ public class MasterService extends Service {
 
     @Override
     public void onTaskRemoved(Intent intent) {
-        Log.i(TAG, "onTaskRemoved called");
+        Log.w(TAG, "onTaskRemoved called");
     }
 
     @Override
     public void onLowMemory() {
-        Log.i(TAG, "onLowMemory called");
+        Log.w(TAG, "onLowMemory called");
     }
 
     @Override
@@ -326,7 +324,9 @@ public class MasterService extends Service {
                 stopSelf();
 
             } else if (Constants.ACTION_READ_NOW.equals(action)) {
-                setAlarm(System.currentTimeMillis() + 1000L);
+                cancelAlarm();
+                startService(new Intent(mContext, MedtronicCnlService.class)
+                        .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
 
             } else if (Constants.ACTION_READ_PROFILE.equals(action)) {
                 storeRealm.executeTransaction(new Realm.Transaction() {
@@ -524,6 +524,9 @@ public class MasterService extends Service {
                     }
                 });
 
+                ((StatCnl) Stats.open().readRecord(StatCnl.class)).connected();
+                Stats.close();
+
                 if (hasUsbPermission()) {
 
                     statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
@@ -540,6 +543,9 @@ public class MasterService extends Service {
                 userLogMessage.add(ICON_WARN + "USB error. Contour Next Link unplugged.");
 
                 statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+
+                ((StatCnl) Stats.open().readRecord(StatCnl.class)).disconnected();
+                Stats.close();
 
                 // received from CnlService
             } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {

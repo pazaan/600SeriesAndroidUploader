@@ -296,7 +296,8 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
             l = Math.log10((i + 1) * (100 / seg));
             p = i + ((l * (total - count)) / 2);
 
-            v = calibrations[(int) Math.round(p)];
+            v = calibrations[(int) Math.round(p)] & 0xFF; // cal factor as 8bit div 10
+            if (v > 100) v = 10 * (int) (v / 10); // keep cal factors > 10 as integers due to html space limitations
 
             r = vmid + ((v - smid) * scale);
             r = r < vmin ? vmin : (r > vmax ? vmax : r);

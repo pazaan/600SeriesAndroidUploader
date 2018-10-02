@@ -31,6 +31,10 @@ import info.nightscout.android.model.medtronicNg.PumpHistorySettings;
 import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.model.store.StatCnl;
+import info.nightscout.android.model.store.StatPoll;
+import info.nightscout.android.model.store.StatNightscout;
+import info.nightscout.android.model.store.StatPushover;
 import info.nightscout.android.model.store.UserLog;
 import info.nightscout.android.utils.FormatKit;
 import io.fabric.sdk.android.Fabric;
@@ -38,8 +42,6 @@ import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.annotations.RealmModule;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
-
-import static info.nightscout.android.utils.ToolKit.getWakeLock;
 
 /**
  * Created by lgoedhart on 9/06/2016.
@@ -159,12 +161,16 @@ public class UploaderApplication extends Application {
     @RealmModule(classes = {
             ContourNextLinkInfo.class,
             PumpInfo.class,
-            PumpStatusEvent.class,
+            PumpStatusEvent.class
     })
     private class MainModule {}
 
     @RealmModule(classes = {
             DataStore.class,
+            StatPoll.class,
+            StatCnl.class,
+            StatNightscout.class,
+            StatPushover.class
     })
     private class StoreModule {}
 
@@ -187,7 +193,7 @@ public class UploaderApplication extends Application {
             PumpHistoryLoop.class,
             PumpHistoryDaily.class,
             PumpHistoryAlarm.class,
-            PumpHistorySystem.class,
+            PumpHistorySystem.class
     })
     private class HistoryModule {}
 

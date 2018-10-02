@@ -35,6 +35,8 @@
         <item>781|-1|2|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.</item>
         <item>784|1|2|Rise Alert|Sensor glucose rising rapidly.</item>
         <item>786|1|2|No calibration occurred|Confirm sensor signal. Calibrate by {dclk;0}.</item>
+        <item>787|1|2|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.</item>
+        <item>788|1|2|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.</item>
         <item>789|-1|2|Change Sensor|Insert new sensor and Start New Sensor.</item>
         <item>790|-1|2|Cannot find sensor signal|Disconnect and reconnect transmitter. Notice if transmitter light blinks.</item>
         <item>791|-1|2|Sensor signal not found|Did transmitter light blink when connected to sensor?</item>
@@ -49,6 +51,7 @@
         <item>803|2|2|Alert On Low while suspended|Low sensor glucose. Insulin delivery suspended. Check BG.</item>
         <item>805|1|2|Alert Before Low {dsgv;1}|Sensor glucose approaching Low Limit. Check BG.</item>
         <item>806|-2|1|Basal Delivery Resumed|(quiet)</item>
+        <item>807|-2|1|Basal delivery resumed|Basal delivery resumed at {dclk;4} after suspend by sensor. Check BG.</item>
         <item>808|0|1|Basal Delivery Resumed|Maximum 2 hour suspend time reached. Check BG.</item>
         <item>809|0|1|Suspend On Low|Delivery stopped. Sensor glucose {dsgv;1}. Check BG.</item>
         <item>810|-2|1|Suspend Before Low|(quiet)</item>
@@ -151,11 +154,11 @@
     816|Alert on high XX.X mmol/L|High sensor glucose. Check BG.
     802|Alert on low XX.X mmol/L|Low sensor glucose. Check BG.
     803|Alert on low XX.X mmol/L|Low sensor glucose. Insulin delivery suspended since XX:XX. Check BG.
-    806|Basal delivery resumed|Basal delivery resumed at XX:XX after suspend by sensor. Check BG.
+    807|Basal delivery resumed|Basal delivery resumed at XX:XX after suspend by sensor. Check BG.
     815|Basal delivery resumed|Low settings change caused basal to be resumed at XX:XX. Check BG.
     808|Basal delivery resumed|Maximum 2 hour suspend time reached. Check BG.
     814|Basal delivery resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.
-    xxx|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
+    788|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
     775|Calibrate now|Check BG and calibrate sensor.
     776|Calibration not accepted|Recheck BG and calibrate sensor.
     790|Cannot find sensor signal|Disconnect and reconnect transmitter, then select OK. Notice if transmitter light blinks.
@@ -167,7 +170,7 @@
     870|Low battery transmitter|Recharge transmitter within 24 hours.
     812|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
     786|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX.
-    xxx|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
+    787|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
     781|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
     784|Rise Alert|Sensor glucose rising rapidly.
     110|Sensor alert occurred|Check Alarm History for silenced alerts.
@@ -232,11 +235,11 @@
     816|Alert|Alert on high|XXX mg/dL High sensor glucose. Check BG.
     802|Alert|Alert on low|XXX mg/dL Low sensor glucose. Check BG.
     803|Alarm|Alert on low|XXX mg/dL Low sensor glucose. Insulin delivery suspended since XX:XX AM/PM. Check BG.
-    806|Alert|Basal delivery resumed|Basal delivery resumed at XX:XX AM/PM after suspend by sensor. Check BG.
+    807|Alert|Basal delivery resumed|Basal delivery resumed at XX:XX AM/PM after suspend by sensor. Check BG.
     815|Alert|Basal delivery resumed|Low settings change caused basal to be resumed at XX:XX AM/PM. Check BG.
     808|Alert|Basal delivery resumed|Maximum 2 hour suspend time reached. Check BG.
     814|Alert|Basal delivery resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.
-    xxx|Alert|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
+    788|Alert|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
     775|Alert|Calibrate now|Check BG and calibrate sensor.
     776|Alert|Calibration not accepted|Wait at least 15 minutes. Wash hands, test BG again and calibrate.
     790|Alert|Cannot find sensor signal|Disconnect and reconnect transmitter, then select OK. Notice if transmitter light blinks.
@@ -248,7 +251,7 @@
     xxx|Alert|Low SG XX mg/dL|SG is under 50 mg/dL. Check BG and treat.
     812|Alarm|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
     786|Alert|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX AM/PM.
-    xxx|Alert|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
+    787|Alert|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
     781|Alert|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
     784|Alert|Rise Alert|Sensor glucose rising rapidly.
     xxx|Alert|Searching for transmitter

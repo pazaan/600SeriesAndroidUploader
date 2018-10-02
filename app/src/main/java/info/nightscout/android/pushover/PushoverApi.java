@@ -29,7 +29,7 @@ public class PushoverApi {
                 .writeTimeout(60, TimeUnit.SECONDS);
 
         // dev debug logging only
-        if (true & BuildConfig.DEBUG) {
+        if (false & BuildConfig.DEBUG) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
             okHttpClient.addInterceptor(logging);

@@ -12,11 +12,12 @@ import java.util.List;
 
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.PumpHistoryHandler;
-import info.nightscout.android.history.PumpHistorySender;
+import info.nightscout.android.medtronic.Stats;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.model.store.StatNightscout;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -33,6 +34,10 @@ public class NightscoutUploadService extends Service {
     private Realm realm;
     private Realm storeRealm;
     private DataStore dataStore;
+    private PumpHistoryHandler pumpHistoryHandler;
+    private StatNightscout statNightscout;
+
+    private int worker;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -45,12 +50,15 @@ public class NightscoutUploadService extends Service {
         Log.d(TAG, "onCreate called");
 
         mContext = this.getBaseContext();
+        Stats.open();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy called");
+
+        Stats.close();
     }
 
     @Override
@@ -58,11 +66,12 @@ public class NightscoutUploadService extends Service {
         Log.i(TAG, "Received start id " + startId + "  : " + intent);
 
         if (intent != null) {
-            if (startId == 1)
+            if (startId == 1) {
+                worker = 1;
                 new Upload().start();
-            else {
-                Log.d(TAG, "Service already in progress with previous task");
-                userLogMessage(ICON_WARN + "Uploading service is busy completing previous task. New records will be uploaded after the next poll.");
+            } else {
+                worker++;
+                Log.i(TAG, "Uploading service already in progress with previous task. Worker count = " + worker);
             }
         }
 
@@ -77,9 +86,25 @@ public class NightscoutUploadService extends Service {
             storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
             dataStore = storeRealm.where(DataStore.class).findFirst();
 
+            statNightscout = (StatNightscout) Stats.getInstance().readRecord(StatNightscout.class);
+            statNightscout.incRun();
+
             if (dataStore.isNightscoutUpload()) {
                 new NightscoutStatus(mContext).check();
-                if (dataStore.isNightscoutAvailable()) uploadRecords();
+
+                if (dataStore.isNightscoutAvailable()) {
+                    realm = Realm.getDefaultInstance();
+                    pumpHistoryHandler = new PumpHistoryHandler(mContext);
+
+                    do {
+                        uploadRecords();
+                    } while (--worker > 0);
+
+                    pumpHistoryHandler.close();
+                    realm.close();
+                } else {
+                    statNightscout.incSiteUnavailable();
+                }
             }
 
             storeRealm.close();
@@ -90,8 +115,6 @@ public class NightscoutUploadService extends Service {
     }
 
     private void uploadRecords() {
-
-        realm = Realm.getDefaultInstance();
 
         RealmResults<PumpStatusEvent> pumpRecords = realm
                 .where(PumpStatusEvent.class)
@@ -107,7 +130,6 @@ public class NightscoutUploadService extends Service {
                 .findAll();
         Log.i(TAG, "Device status records to upload: " + statusRecords.size());
 
-        PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
         pumpHistoryHandler.processSenderTTL("NS");
         List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ("NS");
 
@@ -146,13 +168,18 @@ public class NightscoutUploadService extends Service {
                     }
                 });
 
-                if (dataStore.isDbgEnableExtendedErrors())
-                    userLogMessage("Uploaded " + total + " records [" + (System.currentTimeMillis() - start) + "ms]");
+                long timer = System.currentTimeMillis() - start;
+                statNightscout.timer(timer);
+                statNightscout.settotalRecords(statNightscout.getTotalRecords() + total);
 
-                Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", total, System.currentTimeMillis() - start));
+                if (dataStore.isDbgEnableExtendedErrors())
+                    userLogMessage("Uploaded " + total + " records [" + timer + "ms]");
+
+                Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", total, timer));
 
             } catch (Exception e) {
                 Log.e(TAG, "ERROR uploading to Nightscout", e);
+                statNightscout.incError();
 
                 storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
@@ -167,9 +194,6 @@ public class NightscoutUploadService extends Service {
         } else {
             Log.i(TAG, "No records have to be uploaded");
         }
-
-        pumpHistoryHandler.close();
-        realm.close();
     }
 
     protected void userLogMessage(String message) {

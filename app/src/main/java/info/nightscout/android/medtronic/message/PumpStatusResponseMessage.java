@@ -5,13 +5,11 @@ import android.util.Log;
 import java.math.BigDecimal;
 import java.util.Date;
 
-import info.nightscout.android.BuildConfig;
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.utils.HexDump;
 
 import static info.nightscout.android.utils.ToolKit.read32BEtoInt;
 import static info.nightscout.android.utils.ToolKit.read32BEtoULong;

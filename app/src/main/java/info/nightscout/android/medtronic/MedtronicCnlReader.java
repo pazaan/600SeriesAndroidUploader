@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
@@ -190,13 +191,11 @@ public class MedtronicCnlReader {
     public byte negotiateChannel(byte lastRadioChannel) throws IOException, ChecksumException, TimeoutException, EncryptionException, UnexpectedMessageException {
         ArrayList<Byte> radioChannels = new ArrayList<>(Arrays.asList(ArrayUtils.toObject(RADIO_CHANNELS)));
 
-        // retry strategy: last,chan0,last,chan1,last,chan2,last,chan3,last
+        // retry strategy: last,chan0,chan1,last,chan2,chan3,last
         if (lastRadioChannel != 0x00) {
             radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
             radioChannels.add(4, lastRadioChannel);
-            radioChannels.add(3, lastRadioChannel);
             radioChannels.add(2, lastRadioChannel);
-            radioChannels.add(1, lastRadioChannel);
             radioChannels.add(0, lastRadioChannel);
         }
 
@@ -245,7 +244,7 @@ public class MedtronicCnlReader {
 
         sessionRTC = response.getPumpTimeRTC();
         sessionOFFSET = response.getPumpTimeOFFSET();
-        sessionDate = new Date(System.currentTimeMillis());
+        sessionDate = new Date(Calendar.getInstance().getTimeInMillis());
         sessionClockDifference = response.getPumpTime().getTime() - sessionDate.getTime();
 
         Log.d(TAG, "Finished getPumpTime with date " + response.getPumpTime());

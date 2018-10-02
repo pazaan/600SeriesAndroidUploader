@@ -97,6 +97,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         // 0x01 optional but using this does increase comms speed without needing to engage EHSM session request
         // 0x01 must be set when EHSM session is operational or risk pump radio channel changing
         // I suspect that BeginEHSM / EndEHSM are only ever needed if bulk data is being sent to pump!
+        // The 0x01 flag may only be absolutely required when the pump sends a EHSM request during multi-packet transfers
 
         byte modeFlags = 0x10; // encrypted mode
 
@@ -125,7 +126,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         payloadBuffer.put((byte) sendPayloadBuffer.capacity());
 
         String outputString = HexDump.dumpHexString(sendPayloadBuffer.array());
-        Log.d(TAG, "*** REQUEST: " + messageType.name() + " (" + HexDump.toHexString(messageType.request) + ") PAYLOAD:" + outputString);
+        Log.d(TAG, String.format("*** REQUEST: %s (%04X) PAYLOAD: %s", messageType.name(), messageType.request, outputString));
 
         payloadBuffer.put(encrypt( pumpSession.getKey(), pumpSession.getIV(), sendPayloadBuffer.array()));
 

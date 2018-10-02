@@ -16,9 +16,11 @@ import java.util.Locale;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.PumpHistoryHandler;
+import info.nightscout.android.medtronic.Stats;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.model.store.StatPushover;
 import io.realm.Realm;
 import okhttp3.Headers;
 import retrofit2.Response;
@@ -37,8 +39,8 @@ public class PushoverUploadService extends Service {
 
     private Realm storeRealm;
     private DataStore dataStore;
-
-    PumpHistoryHandler pumpHistoryHandler;
+    private StatPushover statPushover;
+    private PumpHistoryHandler pumpHistoryHandler;
 
     PushoverApi pushoverApi;
 
@@ -61,12 +63,15 @@ public class PushoverUploadService extends Service {
         Log.d(TAG, "onCreate called");
 
         mContext = this.getBaseContext();
+        Stats.open();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy called");
+
+        Stats.close();
     }
 
     @Override
@@ -78,7 +83,6 @@ public class PushoverUploadService extends Service {
                 new Upload().start();
             else {
                 Log.d(TAG, "Service already in progress with previous task");
-                //userLogMessage(ICON_WARN + "Uploading service is busy completing previous task. New records will be uploaded after the next poll.");
             }
         }
 
@@ -94,8 +98,12 @@ public class PushoverUploadService extends Service {
             dataStore = storeRealm.where(DataStore.class).findFirst();
 
             if (UploaderApplication.isOnline() && dataStore.isPushoverEnable()) {
+                statPushover = (StatPushover) Stats.getInstance().readRecord(StatPushover.class);
+                statPushover.incRun();
+
                 pushoverApi = new PushoverApi(url);
                 if (isValid()) process();
+                else statPushover.incValidError();
             }
 
             storeRealm.close();
@@ -164,11 +172,14 @@ public class PushoverUploadService extends Service {
 
                     String[] devices = response.body().getDevices();
                     if (devices != null) {
-                        String result = "";
+                        StringBuilder sb = new StringBuilder();
                         for (String s : devices) {
-                            result += " '" + s + "'";
+                            sb.append(sb.length() > 0 ? " '" : "'");
+                            sb.append(s);
+                            sb.append("'");
                         }
-                        userLogMessage(ICON_INFO + "Pushover devices:" + result);
+                        if (sb.length() > 0)
+                            userLogMessage(ICON_INFO + "Pushover devices: " + sb.toString());
                     }
                 }
             }
@@ -218,6 +229,7 @@ public class PushoverUploadService extends Service {
             if (success) {
                 pumpHistoryHandler.setSenderRecordACK(record, "PO");
             } else {
+                statPushover.incError();
                 break;
             }
 
@@ -226,6 +238,10 @@ public class PushoverUploadService extends Service {
         pumpHistoryHandler.close();
 
         if (messagesSent > 0) {
+            statPushover.setMessagesSent(statPushover.getMessagesSent() + messagesSent);
+            statPushover.setLimit(appLimit);
+            statPushover.setRemaining(appRemaining);
+            statPushover.setResetTime(appReset * 1000);
             DateFormat df = new SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH);
             Log.i(TAG, String.format(Locale.ENGLISH, "Sent: %d Limit: %d Remaining: %d Reset: %s",
                     messagesSent, appLimit, appRemaining, df.format(appReset * 1000)));

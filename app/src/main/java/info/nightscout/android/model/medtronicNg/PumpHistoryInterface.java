@@ -6,7 +6,6 @@ import java.util.List;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistorySender;
-import info.nightscout.android.model.store.DataStore;
 import io.realm.RealmModel;
 
 /**

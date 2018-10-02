@@ -61,48 +61,47 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
         sendToPump(mDevice, TAG);
 
         byte[] payload;
-        short cmd;
 
+        boolean fetchMoreData = true;
         boolean receivedEndHistoryCommand = false;
-        while (!receivedEndHistoryCommand) {
+
+        while (fetchMoreData) {
             payload = readFromPump(mDevice, mPumpSession, TAG);
 
             if (payload.length >= 3) {
 
-                cmd = read16BEtoShort(payload, 1);
-                if (MessageType.END_HISTORY_TRANSMISSION.response(cmd)) {
-                    receivedEndHistoryCommand = true;
+                switch (MedtronicSendMessageRequestMessage.MessageType.convert(read16BEtoShort(payload, NGP_RESPONSE_COMMAND))) {
 
-                    // pump sends EHSM_SESSION
-                    payload = readFromPump(mDevice, mPumpSession, TAG);
-                    cmd = read16BEtoShort(payload, 1);
-                    if (payload.length < 3 || !MessageType.EHSM_SESSION.response(cmd)) {
-                        Log.e(TAG, "END HISTORY TRANSMISSION: did not receive expected EHSM message");
-                        clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-                    }
+                    case END_HISTORY_TRANSMISSION:
+                        receivedEndHistoryCommand = true;
+                        break;
 
-                    // unread messages sitting in the input stream for too long can cause the CNL to E86
-                    // clearing them out now before any delays due to history parsing etc (very rare error)
-                    else if (clearMessage(mDevice, 100) > 0)
-                        Log.e(TAG, "END HISTORY TRANSMISSION: cleared unexpected messages");
+                    case EHSM_SESSION:
+                        if (receivedEndHistoryCommand) fetchMoreData = false;
+                        break;
 
-                } else if (MessageType.UNMERGED_HISTORY.response(cmd)) {
-                    try {
-                        addHistoryBlock(payload);
-                    } catch (UnexpectedMessageException e) {
-                        clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-                        throw e;
-                    } catch (ChecksumException e) {
-                        clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-                        throw e;
-                    } catch (Exception e) {
-                        clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
-                        throw new UnexpectedMessageException("history message block corrupt");
-                    }
+                    case UNMERGED_HISTORY:
+                        try {
+                            addHistoryBlock(payload);
+                        } catch (UnexpectedMessageException e) {
+                            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                            throw e;
+                        } catch (ChecksumException e) {
+                            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                            throw e;
+                        } catch (Exception e) {
+                            clearMessage(mDevice, ERROR_CLEAR_TIMEOUT_MS);
+                            throw new UnexpectedMessageException("history message block corrupt");
+                        }
                 }
 
             }
         }
+
+        // unread messages sitting in the input stream for too long can cause the CNL to E86
+        // clearing them out now before any delays due to history parsing etc (very rare error)
+        if (clearMessage(mDevice, 100) > 0)
+            Log.w(TAG, "END HISTORY TRANSMISSION: cleared unexpected messages");
 
         return getResponse(blocks.toByteArray());
     }
@@ -156,7 +155,7 @@ public class ReadHistoryRequestMessage extends MedtronicSendMessageRequestMessag
 
             int calculatedChecksum = MessageUtils.CRC16CCITT(blockPayload, blockStart, 0xFFFF, 0x1021, blockSize);
             if (blockChecksum != calculatedChecksum) {
-                throw new ChecksumException("Unexpected checksum in block " + i + " (" + HexDump.toHexString(blockChecksum) + "/" + HexDump.toHexString(calculatedChecksum) + ")");
+                throw new ChecksumException("Bad checksum in block " + i + " (" + HexDump.toHexString(blockChecksum) + "/" + HexDump.toHexString(calculatedChecksum) + ")");
             } else {
                 blocks.write(blockPayload, blockStart, blockSize);
             }

@@ -29,9 +29,6 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-import static android.support.v4.app.NotificationCompat.PRIORITY_HIGH;
-import static android.support.v4.app.NotificationCompat.PRIORITY_LOW;
-import static android.support.v4.app.NotificationCompat.PRIORITY_MIN;
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
 import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
 import static info.nightscout.android.medtronic.service.MasterService.SERVICE_NOTIFICATION_ID;
@@ -373,7 +370,7 @@ public class StatusNotification {
                 }
 
             //else text = "Calibration";
-            else text = "CAL";
+            else text = "Cal";
 
             if (results.first().getCalibrationDueMinutes() > 0) {
                 long timer = ((results.first().getCgmDate().getTime() - now) / 60000L) + results.first().getCalibrationDueMinutes();

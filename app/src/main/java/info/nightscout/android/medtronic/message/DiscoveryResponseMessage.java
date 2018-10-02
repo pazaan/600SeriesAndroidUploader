@@ -1,9 +1,6 @@
 package info.nightscout.android.medtronic.message;
 
-import android.util.Log;
-
 import java.io.IOException;
-import java.util.Locale;
 
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;

@@ -44,7 +44,8 @@ public class UserLogMessage {
                 }
             });
         } catch (Exception e) {
-            Log.e(TAG, "Could not add message: ", e);
+            // rare, can throw when there are too many messages to be handled using concurrent async realm processes
+            Log.e(TAG, "Could not add message");
         }
 
         userLogRealm.close();

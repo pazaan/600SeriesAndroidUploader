@@ -42,7 +42,7 @@ public class FormatKit {
     }
 
     public static FormatKit getInstance() {
-        if (sInstance == null) new NullPointerException(TAG + "instance not initialised");
+        if (sInstance == null) throw new NullPointerException(TAG + " instance not initialised");
         return sInstance;
     }
 
@@ -189,6 +189,16 @@ public class FormatKit {
 
     public String formatAsWeekdayMonthDay(Date date) {
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE MMMM dd", Locale.getDefault());
+        return sdf.format(date);
+    }
+
+    public String formatAsYMD(long time) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        return sdf.format(time);
+    }
+
+    public String formatAsYMD(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
         return sdf.format(date);
     }
 
