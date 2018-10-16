@@ -32,6 +32,7 @@ import info.nightscout.android.medtronic.MedtronicCnlReader;
 import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.medtronic.Stats;
+import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
@@ -44,18 +45,11 @@ import info.nightscout.android.model.medtronicNg.PumpInfo;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.model.store.StatPoll;
-import info.nightscout.android.utils.FormatKit;
 import info.nightscout.android.utils.HexDump;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_CGM;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_HELP;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_REFRESH;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_SETTING;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_WARN;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
 import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
@@ -118,18 +112,6 @@ public class MedtronicCnlService extends Service {
     private int pumpLostSensorError;
     private int pumpClockError;
     private int pumpBatteryError;
-
-    private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
-
-    protected void userLogMessage(String message) {
-        try {
-            Intent intent =
-                    new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
-                            .putExtra(MasterService.Constants.EXTENDED_DATA, message);
-            sendBroadcast(intent);
-        } catch (Exception ignored) {
-        }
-    }
 
     protected void sendMessage(String action) {
         try {
@@ -341,16 +323,19 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 long due = checkPollTime();
                 if (due > 0) {
                     if (dataStore.isSysEnableClashProtect()) {
-                        userLogMessage(String.format(Locale.getDefault(),
-                                getString(R.string.please_wait) + ": " + getString(R.string.pump_is_expecting_sensor_communication),
-                                (due - System.currentTimeMillis()) / 1000L));
+                        UserLogMessage.send(mContext, String.format("{id;%s}: {id;%s} %s {id;%s}.",
+                                R.string.please_wait,
+                                R.string.pump_is_expecting_sensor_communication,
+                                (due - System.currentTimeMillis()) / 1000L,
+                                R.string.time_seconds));
                         nextpoll = due;
                         return;
                     } else {
-                        userLogMessage(String.format(Locale.getDefault(),
-                                getString(R.string.pump_is_expecting_sensor_communication),
-                                (due - System.currentTimeMillis()) / 1000L));
-                        userLogMessage(ICON_SETTING + getString(R.string.radio_clash_protection_is_disabled));
+                        UserLogMessage.send(mContext, String.format("{id;%s} %s {id;%s}.",
+                                R.string.pump_is_expecting_sensor_communication,
+                                (due - System.currentTimeMillis()) / 1000L,
+                                R.string.time_seconds));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.OPTION, R.string.radio_clash_protection_is_disabled);
                     }
                 }
 
@@ -361,7 +346,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 try {
                     Log.d(TAG, "Connecting to Contour Next Link [pid" + android.os.Process.myPid() + "]");
-                    userLogMessage(getString(R.string.connecting_to_contour_next_link));
+                    UserLogMessage.send(mContext, R.string.connecting_to_contour_next_link);
 
                     shutdownProtect = true;
                     cnlReader.requestDeviceInfo();
@@ -419,7 +404,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         final byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                         if (radioChannel == 0) {
                             Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
-                            userLogMessage(ICON_WARN + getString(R.string.could_not_communicate_with_the_pump));
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.could_not_communicate_with_the_pump);
                             statPoll.incPollNoConnect();
                             commsConnectError++;
                             pollInterval = pollInterval / (dataStore.isDoublePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
@@ -427,9 +412,12 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             pumpHistoryHandler.systemStatus(PumpHistorySystem.STATUS.COMMS_PUMP_LOST);
 
                         } else if (cnlReader.getPumpSession().getRadioRSSIpercentage() < 5) {
-                            userLogMessage(String.format(Locale.getDefault(), "Connected on channel %d  RSSI: %d%%", (int) radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
-                            userLogMessage(ICON_WARN + "Warning: pump signal too weak. Is it nearby?");
                             Log.i(TAG, "Warning: pump signal too weak. Is it nearby?");
+                            UserLogMessage.send(mContext, String.format("{id;%s} %s  RSSI: %s%%",
+                                    R.string.connected_on_channel,
+                                    radioChannel,
+                                    cnlReader.getPumpSession().getRadioRSSIpercentage()));
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "Warning: pump signal too weak. Is it nearby?");
                             commsConnectError++;
                             commsSignalError++;
                             pollInterval = POLL_PERIOD_MS / (dataStore.isDoublePollOnPumpAway() ? 2L : 1L); // reduce polling interval to half until pump is available
@@ -444,8 +432,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             statPoll.setPollRSSI(statPoll.getPollRSSI() + cnlReader.getPumpSession().getRadioRSSIpercentage());
 
                             Log.d(TAG, String.format("Connected on channel %d  RSSI: %d%%", radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
-                            userLogMessage(String.format(Locale.getDefault(), getString(R.string.connected_on_channel_rssi),
-                                    radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
+                            UserLogMessage.send(mContext, String.format("{id;%s} %s  RSSI: %s%%",
+                                    R.string.connected_on_channel,
+                                    radioChannel,
+                                    cnlReader.getPumpSession().getRadioRSSIpercentage()));
 
                             // read pump status
                             final PumpStatusEvent pumpRecord = new PumpStatusEvent();
@@ -524,7 +514,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                             if (!pumpRecord.isOldSgvWhenNewExpected() &&
                                     !(pumpBatteryError > 0 && dataStore.getLowBatPollInterval() > POLL_PERIOD_MS
-                                    && pumpHistoryHandler.pumpHistoryRecency() < 60 * 60000L)) {
+                                            && pumpHistoryHandler.pumpHistoryRecency() < 60 * 60000L)) {
 
                                 if (dataStore.isRequestProfile()) {
                                     pumpHistoryHandler.profile(cnlReader);
@@ -562,38 +552,34 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                         if (nak == ContourNextLinkMessage.NAK.DEVICE_HAS_ERROR) {
                             pumpHistoryHandler.systemStatus(PumpHistorySystem.STATUS.PUMP_DEVICE_ERROR);
-                            userLogMessage(ICON_WARN + "Pump has a device error. No data can be read until this error has been cleared on the Pump.");
-                        } else if (dataStore.isDbgEnableExtendedErrors()) {
-                            userLogMessage(ICON_WARN + getString(R.string.error_communication) + " " + e.getMessage());
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                                    "Pump has a device error. No data can be read until this error has been cleared on the Pump.");
                         } else {
-                            userLogMessage(ICON_WARN + getString(R.string.error_communication_busy_noisy));
+                            UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_communication_busy_noisy);
+                            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s}: %s", R.string.error_communication, e.getMessage()));
                         }
+
                     } catch (TimeoutException e) {
                         commsError++;
                         pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollErrorRetry() : POLL_ERROR_RETRY_MS;
                         Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
-                        if (dataStore.isDbgEnableExtendedErrors())
-                            userLogMessage(ICON_WARN + getString(R.string.error_timeout) + " " + e.getMessage());
-                        else
-                            userLogMessage(ICON_WARN + getString(R.string.error_timeout_pump));
+                        UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_timeout_pump);
+                        UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_timeout, e.getMessage()));
                     } catch (ChecksumException e) {
                         commsError++;
                         Log.e(TAG, "Checksum error getting message from the Contour Next Link.", e);
-                        if (dataStore.isDbgEnableExtendedErrors())
-                            userLogMessage(ICON_WARN + getString(R.string.error_checksum) + " " + e.getMessage());
-                        else
-                            userLogMessage(ICON_WARN + getString(R.string.error_checksum_cnl));
+                        UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_checksum_cnl);
+                        UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_checksum, e.getMessage()));
                     } catch (EncryptionException e) {
                         commsError++;
                         Log.e(TAG, "Error decrypting messages from Contour Next Link.", e);
-                        if (dataStore.isDbgEnableExtendedErrors())
-                            userLogMessage(ICON_WARN + getString(R.string.error_decryption) + " " + e.getMessage());
-                        else
-                            userLogMessage(ICON_WARN + getString(R.string.error_decryption_cnl));
+                        UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_decryption_cnl);
+                        UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_decryption, e.getMessage()));
                     } catch (NoSuchAlgorithmException e) {
                         commsError++;
                         Log.e(TAG, "Could not determine CNL HMAC", e);
-                        userLogMessage(ICON_WARN + getString(R.string.error_hashing));
+                        UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_hashing);
+                        UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_hashing, e.getMessage()));
                     } finally {
                         try {
                             cnlReader.closeConnection();
@@ -607,52 +593,40 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 } catch (IOException e) {
                     commsError++;
                     Log.e(TAG, "Error connecting to Contour Next Link.", e);
-                    if (dataStore.isDbgEnableExtendedErrors())
-                        //userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl) + " " + e.getMessage());
-                        userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl) + " " + e.getMessage() + "\n" + Log.getStackTraceString(e));
-                    else
-                        userLogMessage(ICON_WARN + getString(R.string.error_connecting_cnl));
-                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + getString(R.string.error_cnl_reset_success));
+                    UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_connecting_cnl);
+                    UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_connecting_cnl, e.getMessage()));
+                    if (cnlReader.resetCNL()) UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.error_cnl_reset_success);
                 } catch (ChecksumException e) {
                     commsError++;
                     Log.e(TAG, "Checksum error getting message from the Contour Next Link.", e);
-                    if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(ICON_WARN + getString(R.string.error_checksum) + " " + e.getMessage());
-                    else
-                        userLogMessage(ICON_WARN + getString(R.string.error_checksum_cnl));
+                    UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_checksum_cnl);
+                    UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_checksum, e.getMessage()));
                 } catch (EncryptionException e) {
                     commsError++;
                     Log.e(TAG, "Error decrypting messages from Contour Next Link.", e);
-                    if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(ICON_WARN + getString(R.string.error_decryption) + " " + e.getMessage());
-                    else
-                        userLogMessage(ICON_WARN + getString(R.string.error_decryption_cnl));
+                    UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_decryption_cnl);
+                    UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_decryption, e.getMessage()));
                 } catch (TimeoutException e) {
                     commsError++;
                     Log.e(TAG, "Timeout communicating with the Contour Next Link.", e);
-                    if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(ICON_WARN + getString(R.string.error_timeout) + " " + e.getMessage());
-                    else
-                        userLogMessage(ICON_WARN + getString(R.string.error_timeout_cnl));
-                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + getString(R.string.error_cnl_reset_success));
+                    UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_timeout_cnl);
+                    UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_timeout, e.getMessage()));
+                    if (cnlReader.resetCNL()) UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.error_cnl_reset_success);
                 } catch (UnexpectedMessageException e) {
                     commsError++;
                     Log.e(TAG, "Could not close connection.", e);
-                    if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(ICON_WARN + getString(R.string.error_close_connection) + " " + e.getMessage());
-                    else
-                        userLogMessage(ICON_WARN + getString(R.string.error_close_connection));
-                    if (cnlReader.resetCNL()) userLogMessage(ICON_INFO + getString(R.string.error_cnl_reset_success));
+                    UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.error_close_connection);
+                    UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.error_close_connection, e.getMessage()));
+                    if (cnlReader.resetCNL()) UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.error_cnl_reset_success);
                 } finally {
                     shutdownProtect = false;
 
                     nextpoll = requestPollTime(timePollStarted, pollInterval);
                     long timer = System.currentTimeMillis() - timePollStarted;
-                    if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(String.format(Locale.getDefault(), getString(R.string.next_poll_due_at) + " [%dms]",
-                                dateFormatter.format(nextpoll), timer));
-                    else
-                        userLogMessage(String.format(Locale.getDefault(), getString(R.string.next_poll_due_at), dateFormatter.format(nextpoll)));
+
+                    UserLogMessage.sendN(mContext, String.format("{id;%s} {time.poll;%s}", R.string.next_poll_due_at, nextpoll));
+                    UserLogMessage.sendE(mContext, String.format("{id;%s} {time.poll.e;%s} [%sms]", R.string.next_poll_due_at, nextpoll, timer));
+
                     statPoll.timer(timer);
 
                     RemoveOutdatedRecords();
@@ -661,13 +635,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             } catch (Exception e) {
                 Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
-                try {
-                    if (dataStore.isDbgEnableExtendedErrors())
-                        userLogMessage(ICON_WARN + getString(R.string.unexpected_error) + "\n" + Log.getStackTraceString(e));
-                } catch (Exception ignored) {}
-                int retry = 60;
-                userLogMessage(String.format(Locale.getDefault(), getString(R.string.polling_service_could_not_complete), retry));
-                nextpoll = System.currentTimeMillis() + (retry * 1000L);
+                UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.polling_service_could_not_complete);
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.unexpected_error, e.getMessage()));
+                nextpoll = System.currentTimeMillis() + 60000L;
 
             } finally {
 
@@ -709,24 +679,26 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         String todayKey = Stats.sdfDateToKey.format(timePollStarted);
         Log.i(TAG, "STATS: " + Stats.report(todayKey));
 
-        if (dataStore.isDbgEnableExtendedErrors()) {
-            long yesterday = timePollStarted - 24 * 60 * 60000L;
-            final String yesterdayKey = Stats.sdfDateToKey.format(yesterday);
+        long yesterday = timePollStarted - 24 * 60 * 60000L;
+        final String yesterdayKey = Stats.sdfDateToKey.format(yesterday);
 
-            String last = dataStore.getLastStatReport();
-            if (last == null || !last.equals(yesterdayKey)) {
+        String last = dataStore.getLastStatReport();
+        if (last == null || !last.equals(yesterdayKey)) {
 
-                String report = Stats.report(yesterdayKey);
-                if (report.length() > 0)
-                    userLogMessage(ICON_INFO + FormatKit.getInstance().formatAsWeekday(yesterday) + " Stats: " + report);
+            String report = Stats.report(yesterdayKey);
+            if (report.length() > 0)
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.NOTE,
+                        String.format("{weekday;%s} Stats: %s",
+                                yesterday,
+                                report
+                        ));
 
-                storeRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(@NonNull Realm realm) {
-                        dataStore.setLastStatReport(yesterdayKey);
-                    }
-                });
-            }
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
+                    dataStore.setLastStatReport(yesterdayKey);
+                }
+            });
         }
     }
 
@@ -770,70 +742,73 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             pumpCgmNA = 0; // poll clash detection
             pumpLostSensorError = 0;
 
-            Log.d(TAG, "&&& CgmWarmUp=" + pumpRecord.isCgmWarmUp() +
-                    " CalibrationDueMinutes=" + pumpRecord.getCalibrationDueMinutes() +
-                    " CgmCalibrating=" + pumpRecord.isCgmCalibrating() +
-                    " ExceptionType=" + pumpRecord.getCgmExceptionType() +
-                    " CgmStatus=" + pumpRecord.getCgmStatus()
-            );
-
             if (pumpRecord.isCgmWarmUp())
-                userLogMessage(ICON_CGM + "sensor is in warm-up phase");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor is in warm-up phase");
             else if (pumpRecord.getCalibrationDueMinutes() == 0)
-                userLogMessage(ICON_CGM + "sensor calibration is due now!");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor calibration is due now!");
             else if (pumpRecord.getSgv() == 0 && pumpRecord.isCgmCalibrating())
-                userLogMessage(ICON_CGM + "sensor is calibrating");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor is calibrating");
             else if (pumpRecord.getSgv() == 0)
 
                 switch (PumpHistoryParser.CGM_EXCEPTION.convert(pumpRecord.getCgmExceptionType())) {
                     case SENSOR_INIT:
-                        userLogMessage(ICON_CGM + "sensor error (init)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (init)");
                         break;
                     case SENSOR_CAL_NEEDED:
-                        userLogMessage(ICON_CGM + "sensor error (cal needed)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (cal needed)");
                         break;
                     case SENSOR_ERROR:
-                        userLogMessage(ICON_CGM + "sensor error (sgv not available)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (sgv not available)");
                         break;
                     case SENSOR_CHANGE_SENSOR_ERROR:
-                        userLogMessage(ICON_CGM + "sensor error (change sensor)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (change sensor)");
                         break;
                     case SENSOR_END_OF_LIFE:
-                        userLogMessage(ICON_CGM + "sensor error (end of life)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (end of life)");
                         break;
                     case SENSOR_NOT_READY:
-                        userLogMessage(ICON_CGM + "sensor error (not ready)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (not ready)");
                         break;
                     case SENSOR_READING_HIGH:
-                        userLogMessage(ICON_CGM + "sensor error (reading high)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (reading high)");
                         break;
                     case SENSOR_READING_LOW:
-                        userLogMessage(ICON_CGM + "sensor error (reading low)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (reading low)");
                         break;
                     case SENSOR_CAL_PENDING:
-                        userLogMessage(ICON_CGM + "sensor error (cal pending)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (cal pending)");
                         break;
                     case SENSOR_CAL_ERROR:
-                        userLogMessage(ICON_CGM + "sensor error (cal error)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (cal error)");
                         break;
                     case SENSOR_TIME_UNKNOWN:
-                        userLogMessage(ICON_CGM + "sensor error (time unknown)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (time unknown)");
                         break;
                     default:
-                        userLogMessage(ICON_CGM + "sensor error (n/a)");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor error (n/a)");
                 }
 
             else {
                 commsSgvSuccess++;
-                userLogMessage("SGV: ¦" + pumpRecord.getSgv()
-                        + "¦  At: " + dateFormatter.format(pumpRecord.getCgmDate().getTime())
-                        + "  Pump: " + (pumpClockDifference > 0 ? "+" : "") + (pumpClockDifference / 1000L) + "sec");
+                UserLogMessage.sendN(mContext, UserLogMessage.TYPE.SGV,
+                        String.format("SGV {sgv;%s} at {time.sgv;%s} Pump {diff;%s}",
+                                pumpRecord.getSgv(),
+                                pumpRecord.getCgmDate().getTime(),
+                                pumpClockDifference / 1000L
+                        ));
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.SGV,
+                        String.format("SGV {sgv;%s} at {time.sgv.e;%s} Pump {diff;%s}",
+                                pumpRecord.getSgv(),
+                                pumpRecord.getCgmDate().getTime(),
+                                pumpClockDifference / 1000L
+                        ));
+
                 if (pumpRecord.isCgmCalibrating())
-                    userLogMessage(ICON_CGM + "sensor is calibrating");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"sensor is calibrating");
             }
 
             if (pumpRecord.isOldSgvWhenNewExpected()) {
-                userLogMessage(ICON_CGM + "old cgm event received");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"old cgm event received");
                 if (!pumpRecord.isCgmWarmUp()) {
                     // pump may have missed sensor transmission or be delayed in posting to status message
                     // in most cases the next scheduled poll will have latest sgv, occasionally it is available this period after a delay
@@ -845,46 +820,41 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             pumpCgmNA++; // poll clash detection
             if (commsSgvSuccess > 0) {
                 pumpLostSensorError++; // only count errors if cgm is being used
-                userLogMessage(ICON_CGM + "cgm n/a (pump lost sensor)");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"cgm n/a (pump lost sensor)");
             } else {
-                userLogMessage(ICON_CGM + "cgm n/a");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,"cgm n/a");
             }
         }
     }
 
     private void statusWarnings() {
-/*
-        if (pumpHistoryHandler.isLoopActive()) {
-            userLogMessage(ICON_INFO + "Auto mode is active");
-        }
 
-        if (dataStore.isNsEnableTreatments() && !dataStore.isNsEnableHistorySync()) {
-            userLogMessage(ICON_HELP + "Past historical data can be uploaded to Nightscout via the History Sync option in Advanced Nightscout Settings.");
-        }
-*/
         if (dataStore.isNightscoutUpload() && dataStore.isNsEnableProfileUpload() && commsSuccess > 0) {
             if (!pumpHistoryHandler.isProfileUploaded()) {
-                userLogMessage(ICON_INFO + getString(R.string.info_no_profile_uploaded));
-                userLogMessage(ICON_HELP + getString(R.string.help_profile_upload_main_menu));
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.info_no_profile_uploaded);
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.help_profile_upload_main_menu);
             } else if (dataStore.isNameBasalPatternChanged() &&
                     (dataStore.isNsEnableProfileSingle() || dataStore.isNsEnableProfileOffset())) {
-                userLogMessage(ICON_INFO + getString(R.string.info_basal_pattern_names));
-                userLogMessage(ICON_HELP + getString(R.string.help_profile_upload_main_menu));
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.info_basal_pattern_names);
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.help_profile_upload_main_menu);
             }
         }
 
         if (pumpBatteryError >= ERROR_PUMPBATTERY_AT) {
             pumpBatteryError = 0;
             if (dataStore.getLowBatPollInterval() > POLL_PERIOD_MS) {
-                userLogMessage(ICON_WARN + String.format(Locale.getDefault(), "%s %s",
-                        getString(R.string.warn_pump_battery_low),
-                        getString(R.string.info_pump_low_battery_mode_change)));
-                userLogMessage(ICON_SETTING + String.format(Locale.getDefault(), "%s %d %s",
-                        getString(R.string.info_low_battery_interval),
-                        dataStore.getLowBatPollInterval() / 60000,
-                        getString(R.string.time_minutes)));
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                        String.format("{id;%s}. {id;%s}",
+                                R.string.warn_pump_battery_low,
+                                R.string.info_pump_low_battery_mode_change));
+
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.OPTION,
+                        String.format("{id;%s} %s {id;%s}",
+                                R.string.info_low_battery_interval,
+                                dataStore.getLowBatPollInterval() / 60000,
+                                R.string.time_minutes));
             } else {
-                userLogMessage(ICON_WARN + getString(R.string.warn_pump_battery_low));
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.warn_pump_battery_low);
             }
         }
 
@@ -892,34 +862,36 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             pumpClockError++;
         if (pumpClockError >= ERROR_PUMPCLOCK_AT) {
             pumpClockError = 0;
-            userLogMessage(ICON_WARN + String.format(Locale.getDefault(), getString(R.string.warn_pump_time_difference),
-                    (int) (Math.abs(pumpClockDifference) / 60000L),
-                    getString(R.string.time_minutes),
-                    pumpClockDifference > 0 ? getString(R.string.time_ahead) : getString(R.string.time_behind)));
-            userLogMessage(ICON_HELP + getString(R.string.help_pump_time_difference));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                    String.format("{id;%s} %s {id;%s} {id;%s}",
+                            R.string.warn_pump_time_difference,
+                            (int) (Math.abs(pumpClockDifference) / 60000L),
+                            R.string.time_minutes,
+                            pumpClockDifference > 0 ? R.string.warn_pump_time_difference_ahead : R.string.warn_pump_time_difference_behind));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.help_pump_time_difference);
         }
 
         if (commsError >= ERROR_COMMS_AT) {
-            userLogMessage(ICON_WARN + getString(R.string.warn_multiple_comms_errors));
-            userLogMessage(ICON_HELP + getString(R.string.help_multiple_comms_errors));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.warn_multiple_comms_errors);
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.help_multiple_comms_errors);
         }
 
         if (pumpLostSensorError >= ERROR_PUMPLOSTSENSOR_AT) {
             pumpLostSensorError = 0;
-            userLogMessage(ICON_WARN + getString(R.string.warn_missing_transmissions));
-            userLogMessage(ICON_HELP + getString(R.string.help_missing_transmissions));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.warn_missing_transmissions);
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.help_missing_transmissions);
         }
 
         if (commsConnectError >= ERROR_CONNECT_AT * (dataStore.isDoublePollOnPumpAway() ? 2 : 1)) {
             commsConnectError = 0;
-            userLogMessage(ICON_WARN + getString(R.string.warn_connection_fail));
-            userLogMessage(ICON_HELP + getString(R.string.help_connection_fail));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.warn_connection_fail);
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.help_connection_fail);
         }
 
         if (commsSignalError >= ERROR_SIGNAL_AT) {
             commsSignalError = 0;
-            userLogMessage(ICON_WARN + getString(R.string.warn_rssi_signal));
-            userLogMessage(ICON_HELP + getString(R.string.help_rssi_signal));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.warn_rssi_signal);
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.help_rssi_signal);
         }
     }
 
@@ -963,22 +935,26 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     private boolean isHistoryNeeded() {
         boolean historyNeeded = false;
         String logTAG = "historyNeeded: ";
-        String userlogTAG = ICON_REFRESH + getString(R.string.history_text) + ": ";
 
         int recency = Math.round((float) pumpHistoryHandler.pumpHistoryRecency() / 60000L);
         if (recency == -1 || recency > 24 * 60) {
             Log.d(TAG, logTAG + "no recent data");
-            userLogMessage(userlogTAG + getString(R.string.history_no_recent_data));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                    String.format("{id;%s}: no recent data", R.string.history_text));
             historyNeeded = true;
             statPoll.incHistoryReqRecency();
         } else if (recency >= 3 * 60) {
             Log.d(TAG, logTAG + "recency " + (recency < 120 ? recency + " minutes" : ">" + recency / 60 + " hours"));
-            userLogMessage(userlogTAG + getString(R.string.history_recency) + " " + (recency < 120 ? recency + " " + getString(R.string.time_minutes) : ">" + recency / 60 + " " + getString(R.string.time_hours)));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                    String.format("{id;%s}: {id;%s} %s {id;%s}", R.string.history_text, R.string.history_recency,
+                            recency < 120 ? recency : ">" + recency / 60,
+                            recency < 120 ? R.string.time_minutes : R.string.time_hours));
             historyNeeded = true;
             statPoll.incHistoryReqRecency();
         } else if (dataStore.getSysPumpHistoryFrequency() > 0 && (recency >= dataStore.getSysPumpHistoryFrequency() && pumpHistoryHandler.isLoopActivePotential())) {
             Log.d(TAG, logTAG + "auto mode");
-            userLogMessage(userlogTAG + getString(R.string.history_auto_mode));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                    String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_auto_mode));
             historyNeeded = true;
             statPoll.incHistoryReqAutoMode();
         }
@@ -1057,7 +1033,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
             if (ageMinutes > 15) {
                 Log.d(TAG, logTAG + "stale status " + (ageMinutes < 120 ? ageMinutes + " minutes" : ">" + ageMinutes / 60 + " hours"));
-                userLogMessage(userlogTAG + getString(R.string.history_stale_status) + " " + (ageMinutes < 120 ? ageMinutes + " " + getString(R.string.time_minutes) : ">" + ageMinutes / 60 + " " + getString(R.string.time_hours)));
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                        String.format("{id;%s}: {id;%s} %s {id;%s}", R.string.history_text, R.string.history_stale_status,
+                                ageMinutes < 120 ? ageMinutes : ">" + ageMinutes / 60,
+                                ageMinutes < 120 ? R.string.time_minutes : R.string.time_hours));
                 historyNeeded = true;
                 statPoll.incHistoryReqStale();
 
@@ -1066,7 +1045,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // basal pattern changed?
                 if (basalPatNow != 0 && basalPatPre != 0 && basalPatNow != basalPatPre) {
                     Log.d(TAG, logTAG + "basal pattern changed");
-                    userLogMessage(userlogTAG + getString(R.string.history_basal_pattern_changed));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                            String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_basal_pattern_changed));
                     historyNeeded = true;
                     statPoll.incHistoryReqTreatment();
                 }
@@ -1074,12 +1054,14 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // suspend/resume?
                 if (results.first().isSuspended() && !results.get(1).isSuspended()) {
                     Log.d(TAG, logTAG + "basal suspend");
-                    userLogMessage(userlogTAG + getString(R.string.history_basal_suspend));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                            String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_basal_suspend));
                     historyNeeded = true;
                     statPoll.incHistoryReqTreatment();
                 } else if (!results.first().isSuspended() && results.get(1).isSuspended()) {
                     Log.d(TAG, logTAG + "basal resume");
-                    userLogMessage(userlogTAG + getString(R.string.history_basal_resume));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                            String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_basal_resume));
                     historyNeeded = true;
                     statPoll.incHistoryReqTreatment();
                 }
@@ -1087,7 +1069,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // new temp basal?
                 if (results.first().isTempBasalActive() && !results.get(1).isTempBasalActive()) {
                     Log.d(TAG, logTAG + "temp basal");
-                    userLogMessage(userlogTAG + getString(R.string.history_temp_basal));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                            String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_temp_basal));
                     historyNeeded = true;
                     statPoll.incHistoryReqTreatment();
                 }
@@ -1096,7 +1079,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (!results.first().isTempBasalActive() && results.get(1).isTempBasalActive()
                         && Math.abs(tempMinsPre - ageMinutes) > 4) {
                     Log.d(TAG, logTAG + "temp ended");
-                    userLogMessage(userlogTAG + getString(R.string.history_temp_ended));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                            String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_temp_ended));
                     historyNeeded = true;
                     statPoll.incHistoryReqTreatment();
                 }
@@ -1105,7 +1089,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (results.first().isTempBasalActive() && results.get(1).isTempBasalActive()
                         && Math.abs(tempMinsDiff - ageMinutes) > 4) {
                     Log.d(TAG, logTAG + "temp extended");
-                    userLogMessage(userlogTAG + getString(R.string.history_temp_extended));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                            String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_temp_extended));
                     historyNeeded = true;
                     statPoll.incHistoryReqTreatment();
                 }
@@ -1117,7 +1102,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                         if (Math.abs(bolusMinsPre - ageMinutes) > 4) {
                             Log.d(TAG, logTAG + "dual ended");
-                            userLogMessage(userlogTAG + getString(R.string.history_dual_ended));
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                    String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_dual_ended));
                             historyNeeded = true;
                             statPoll.incHistoryReqTreatment();
                         }
@@ -1126,7 +1112,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     else if (!results.first().isBolusingSquare() && results.get(1).isBolusingSquare() && !results.get(1).isBolusingNormal()) {
                         if (Math.abs(bolusMinsPre - ageMinutes) > 4) {
                             Log.d(TAG, logTAG + "square ended");
-                            userLogMessage(userlogTAG + getString(R.string.history_square_ended));
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                    String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_square_ended));
                             historyNeeded = true;
                             statPoll.incHistoryReqTreatment();
                         }
@@ -1134,14 +1121,16 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     // dual bolus normal part delivered?
                     else if (!results.first().isBolusingSquare() && !results.get(1).isBolusingDual() && results.first().isBolusingDual()) {
                         Log.d(TAG, logTAG + "dual bolus");
-                        userLogMessage(userlogTAG + getString(R.string.history_dual_bolus));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_dual_bolus));
                         historyNeeded = true;
                         statPoll.incHistoryReqTreatment();
                     }
                     // normal bolus delivered
                     else {
                         Log.d(TAG, logTAG + "normal bolus");
-                        userLogMessage(userlogTAG + getString(R.string.history_normal_bolus));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_normal_bolus));
                         historyNeeded = true;
                         statPoll.incHistoryReqTreatment();
                     }
@@ -1150,7 +1139,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()
                         && Math.abs(bolusMinsPre - ageMinutes) > 4) {
                     Log.d(TAG, logTAG + "bolus ended");
-                    userLogMessage(userlogTAG + getString(R.string.history_bolus_ended));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                            String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_bolus_ended));
                     historyNeeded = true;
                     statPoll.incHistoryReqTreatment();
                 }
@@ -1158,7 +1148,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // square bolus started?
                 if (!results.first().isBolusingNormal() && results.first().isBolusingSquare() && !results.get(1).isBolusingSquare()) {
                     Log.d(TAG, logTAG + "square bolus");
-                    userLogMessage(userlogTAG + getString(R.string.history_square_bolus));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                            String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_square_bolus));
                     historyNeeded = true;
                     statPoll.incHistoryReqTreatment();
                 }
@@ -1169,21 +1160,24 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                     if (results.first().getReservoirAmount() > results.get(1).getReservoirAmount()) {
                         Log.d(TAG, logTAG + "reservoir changed");
-                        userLogMessage(userlogTAG + getString(R.string.history_reservoir_changed));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_reservoir_changed));
                         historyNeeded = true;
                         statPoll.incHistoryReqConsumable();
                     }
 
                     if (results.first().getBatteryPercentage() > results.get(1).getBatteryPercentage()) {
                         Log.d(TAG, logTAG + "battery changed");
-                        userLogMessage(userlogTAG + getString(R.string.history_battery_changed));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_battery_changed));
                         historyNeeded = true;
                         statPoll.incHistoryReqConsumable();
                     }
 
                     if (!historyNeeded && results.get(1).getActiveBasalPattern() == 0) {
                         Log.d(TAG, logTAG + "pattern resume");
-                        userLogMessage(userlogTAG + getString(R.string.history_pattern_resume));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_pattern_resume));
                         historyNeeded = true;
                         statPoll.incHistoryReqConsumable();
                     }
@@ -1197,7 +1191,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             && bolusRefNow == bolusRefPre
                             && basalChange >= 0 && sumChange < -0.1) {
                         Log.d(TAG, logTAG + "cannula fill");
-                        userLogMessage(userlogTAG + getString(R.string.history_cannula_fill));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_cannula_fill));
                         historyNeeded = true;
                         statPoll.incHistoryReqConsumable();
                     }
@@ -1224,7 +1219,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     if (results.first().isCgmWarmUp()
                             && (cgmresults.size() > 1 && !cgmresults.get(1).isCgmWarmUp())) {
                         Log.d(TAG, logTAG + "sensor changed");
-                        userLogMessage(userlogTAG + getString(R.string.history_sensor_changed));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_sensor_changed));
                         historyNeeded = true;
                         statPoll.incHistoryReqConsumable();
                     }
@@ -1239,7 +1235,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                                     .findAll()
                                     .size() == 1) {
                         Log.d(TAG, logTAG + "recent finger bg");
-                        userLogMessage(userlogTAG + getString(R.string.history_recent_finger_bg));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_recent_finger_bg));
                         historyNeeded = true;
                         statPoll.incHistoryReqBG();
                     }
@@ -1251,7 +1248,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             && results.first().getCalibrationDueMinutes() > 0
                             && results.first().getCalibrationDueMinutes() > cgmresults.get(1).getCalibrationDueMinutes()) {
                         Log.d(TAG, logTAG + "calibration info");
-                        userLogMessage(userlogTAG + getString(R.string.history_calibration_info));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_calibration_info));
                         historyNeeded = true;
                         statPoll.incHistoryReqCalibration();
                     }
@@ -1264,7 +1262,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     long dayPre = results.get(1).getEventDate().getTime() + pumpClockDifference;
                     if (!sdfDay.format(dayNow).equals(sdfDay.format(dayPre))) {
                         Log.d(TAG, logTAG + "daily totals");
-                        userLogMessage(userlogTAG + getString(R.string.history_daily_totals));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_daily_totals));
                         historyNeeded = true;
                     }
                 }
@@ -1273,13 +1272,15 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 if (alarms && results.first().getAlert() != 0) {
                     if (results.first().getAlertRTC() != results.get(1).getAlertRTC()) {
                         Log.d(TAG, logTAG + "active alert");
-                        userLogMessage(userlogTAG + getString(R.string.history_active_alert));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_active_alert));
                         historyNeeded = true;
                         statPoll.incHistoryReqAlert();
                     } else if (recency >= 15) {
                         // recheck at interval to catch stacked alerts as pump will only show the oldest uncleared active alert
                         Log.d(TAG, logTAG + "alert recheck");
-                        userLogMessage(userlogTAG + getString(R.string.history_alert_recheck));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_alert_recheck));
                         historyNeeded = true;
                         statPoll.incHistoryReqAlertRecheck();
                     }
@@ -1408,20 +1409,20 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     private boolean openUsbDevice() {
         if (!hasUsbHostFeature()) {
             Log.e(TAG, "Device does not support USB OTG");
-            userLogMessage(ICON_WARN + getString(R.string.error_usb_no_support));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.error_usb_no_support));
             return false;
         }
 
         if (mUsbManager == null) {
             Log.e(TAG, "USB connection error. mUsbManager == null");
-            userLogMessage(ICON_WARN + getString(R.string.error_usb_no_connection));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.error_usb_no_connection));
             return false;
         }
 
         UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
         if (cnlStick == null) {
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
-            userLogMessage(ICON_WARN + getString(R.string.error_usb_no_connection));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.error_usb_no_connection));
             return false;
         }
 
@@ -1435,7 +1436,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             mHidDevice.open();
         } catch (Exception e) {
             Log.e(TAG, "Unable to open serial device", e);
-            userLogMessage(ICON_WARN + getString(R.string.error_usb_no_open));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.error_usb_no_open));
             return false;
         }
 
@@ -1494,17 +1495,19 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     private boolean debugHistory(boolean debug) {
         if (debug) {
             if (pumpHistoryHandler.records() == 0) {
-                userLogMessage("Getting history from file");
+                UserLogMessage.send(mContext, "Getting history from file");
                 new HistoryDebug(mContext, pumpHistoryHandler).run();
-                userLogMessage("Processing done");
+                UserLogMessage.send(mContext, "Processing done");
             } else {
-                userLogMessage("History file already processed");
+                UserLogMessage.send(mContext, "History file already processed");
             }
         }
         return debug;
     }
 
     private void debugStatusMessage() {
+        DateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.US);
+
         long now = System.currentTimeMillis();
 
         Date lastDate = pumpHistoryHandler.debugNoteLastDate();
@@ -1522,7 +1525,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         byte[] payload;
 
         for (PumpStatusEvent record : results) {
-            note += " [" + dateFormatter.format(record.getEventDate()) + "] ";
+            note += " [" + sdf.format(record.getEventDate()) + "] ";
 
             byte status = record.getPumpStatus();
 

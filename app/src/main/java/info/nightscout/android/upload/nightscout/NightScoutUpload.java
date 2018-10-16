@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
@@ -19,16 +20,11 @@ import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
-import info.nightscout.api.DeviceEndpoints;
-import info.nightscout.api.DeviceEndpoints.Iob;
-import info.nightscout.api.DeviceEndpoints.Battery;
-import info.nightscout.api.DeviceEndpoints.PumpStatus;
-import info.nightscout.api.DeviceEndpoints.PumpInfo;
-import info.nightscout.api.DeviceEndpoints.DeviceStatus;
-import info.nightscout.api.EntriesEndpoints;
-import info.nightscout.api.ProfileEndpoints;
-import info.nightscout.api.TreatmentsEndpoints;
-import info.nightscout.api.UploadApi;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.Iob;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.Battery;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.PumpStatus;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.PumpInfo;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.DeviceStatus;
 import io.realm.Realm;
 import okhttp3.ResponseBody;
 import retrofit2.Response;
@@ -91,13 +87,11 @@ public class NightScoutUpload {
         uploadEvents(records);
     }
 
+    // Format date to Zulu (UTC) time
     public static String formatDateForNS(Date date) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-        SimpleDateFormat dftz = new SimpleDateFormat("Z", Locale.getDefault());
-        String tz = dftz.format(date);
-        if (tz.length() == 5 && (tz.startsWith("+") || tz.startsWith("-")))
-            return df.format(date) + tz.subSequence(0,3) + ":" + tz.subSequence(3,5);
-        return df.format(date);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdf.format(date) + "Z";
     }
 
     private void uploadEvents(List<PumpHistoryInterface> records) throws Exception {
@@ -439,7 +433,7 @@ public class NightScoutUpload {
 
         if (dataStore.isNsEnableHistorySync()) {
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US);
 
             long now = System.currentTimeMillis();
 

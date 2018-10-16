@@ -1,7 +1,6 @@
-package info.nightscout.urchin;
+package info.nightscout.android.urchin;
 
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 
 import com.getpebble.android.kit.PebbleKit;
@@ -20,6 +19,7 @@ import java.util.UUID;
 
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.PumpHistoryParser;
+import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBasal;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
@@ -56,6 +56,8 @@ public class Urchin {
     private Realm historyRealm;
     private DataStore dataStore;
     private PumpStatusEvent pumpStatusEvent;
+
+    private int receivedCount = 0;
 
     private long ignoreACK = 0;
     private int updateID = 0;
@@ -160,6 +162,15 @@ public class Urchin {
         PebbleKit.sendDataToPebbleWithTransactionId(mContext, URCHIN_UUID, out, updateID);
 
         messageReceiver();
+    }
+
+    public void recieved() {
+        receivedCount++;
+
+        if (receivedCount == 1) {
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
+                    "Urchin is active");
+        }
     }
 
     public void update() {
@@ -284,7 +295,8 @@ public class Urchin {
 
                     if (transactionId != updateID && System.currentTimeMillis() > ignoreACK)
                         refresh();
-
+                    else
+                        recieved();
                 }
             };
 
@@ -1007,13 +1019,4 @@ public class Urchin {
         return text;
     }
 
-    protected void userLogMessage(String message) {
-        try {
-            Intent intent =
-                    new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
-                            .putExtra(MasterService.Constants.EXTENDED_DATA, message);
-            mContext.sendBroadcast(intent);
-        } catch (Exception ignored) {
-        }
-    }
 }

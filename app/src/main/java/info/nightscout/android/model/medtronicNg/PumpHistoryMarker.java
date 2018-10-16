@@ -12,7 +12,7 @@ import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.utils.FormatKit;
-import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -204,7 +204,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
         messageItems.add(new MessageItem()
                 .key(key)
                 .date(eventDate)
-                .clock(FormatKit.getInstance().formatAsClock(eventDate))
+                .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
                 .title(title)
                 .message(message));
 

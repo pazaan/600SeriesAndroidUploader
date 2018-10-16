@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -16,8 +17,11 @@ import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.menu.MenuView;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateUtils;
 import android.util.DisplayMetrics;
@@ -26,15 +30,14 @@ import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.TextView.BufferType;
 import android.widget.Toast;
 
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
-//import com.jaredrummler.android.device.DeviceName;
+import com.jaredrummler.android.device.DeviceName;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPointInterface;
@@ -49,13 +52,10 @@ import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.io.Serializable;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import co.moonmonkeylabs.realmrecyclerview.RealmRecyclerView;
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.eula.Eula;
@@ -66,6 +66,8 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.settings.SettingsActivity;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.model.store.UserLog;
+import info.nightscout.android.utils.FormatKit;
+import info.nightscout.android.utils.RealmKit;
 import io.realm.OrderedCollectionChangeSet;
 import io.realm.OrderedRealmCollectionChangeListener;
 import io.realm.Realm;
@@ -73,84 +75,57 @@ import io.realm.RealmResults;
 import io.realm.Sort;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_HEART;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_SETTING;
-import static org.apache.commons.lang3.math.NumberUtils.toInt;
-
 public class MainActivity extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnEulaAgreedTo {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     public static final float MMOLXLFACTOR = 18.016f;
 
-    private UserLogMessage userLogMessage = UserLogMessage.getInstance();
+    private Context mContext;
 
-    private int chartZoom = 3;
-    private boolean hasZoomedChart = false;
+    private boolean mEnableCgmService;
+    private SharedPreferences mPrefs;
 
-    private boolean mEnableCgmService;// = true;
-    private SharedPreferences prefs;// = null;
-
-    private TextView mTextViewLog; // This will eventually move to a status page.
-    private TextView mTextViewLogButtonTop;
-    private TextView mTextViewLogButtonTopRecent;
-    private TextView mTextViewLogButtonBottom;
-    private TextView mTextViewLogButtonBottomRecent;
-
-    private ScrollView mScrollView;
     private GraphView mChart;
+    private int chartZoom;
+
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
 
     private Realm mRealm;
     private Realm storeRealm;
-    private Realm userLogRealm;
     private Realm historyRealm;
 
     private DataStore dataStore;
+
+    private UserLogDisplay userLogDisplay;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
 
-        try {
-            if (Realm.compactRealm(Realm.getDefaultConfiguration()))
-                Log.i(TAG, "compactRealm: default successful");
-            if (Realm.compactRealm(UploaderApplication.getStoreConfiguration()))
-                Log.i(TAG, "compactRealm: store successful");
-            if (Realm.compactRealm(UploaderApplication.getUserLogConfiguration()))
-                Log.i(TAG, "compactRealm: userlog successful");
-            if (Realm.compactRealm(UploaderApplication.getHistoryConfiguration()))
-                Log.i(TAG, "compactRealm: history successful");
-        } catch (Exception e) {
-            Log.e(TAG, "Error trying to compact realm" + Log.getStackTraceString(e));
-        }
+        mContext = this.getBaseContext();
+
+        RealmKit.compact(mContext);
 
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-        dataStore = storeRealm.where(DataStore.class).findFirst();
-        if (dataStore == null) {
-            storeRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(@NonNull Realm realm) {
+        storeRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
+                dataStore = storeRealm.where(DataStore.class).findFirst();
+
+                if (dataStore == null)
                     dataStore = realm.createObject(DataStore.class);
-                }
-            });
-        }
 
-        // limit date for NS backfill sync period, set to this init date to stop overwrite of older NS data (pref option to override)
-        if (dataStore.getNightscoutLimitDate() == null) {
-            storeRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(@NonNull Realm realm) {
+                // limit date for NS backfill sync period, set to this init date to stop overwrite of older NS data (pref option to override)
+                if (dataStore.getNightscoutLimitDate() == null)
                     dataStore.setNightscoutLimitDate(new Date(System.currentTimeMillis()));
-                }
-            });
-        }
+            }
+        });
 
-        prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        prefs.registerOnSharedPreferenceChangeListener(this);
-        copyPrefsToDataStore(prefs);
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        mPrefs.registerOnSharedPreferenceChangeListener(this);
+        copyPrefsToDataStore(mPrefs);
 
         setContentView(R.layout.activity_main);
 
@@ -175,8 +150,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         }
 
-        mEnableCgmService = Eula.show(this, prefs)
-                && prefs.getBoolean(getString(R.string.preference_eula_accepted), false);
+        mEnableCgmService = Eula.show(this, mPrefs)
+                && mPrefs.getBoolean(getString(R.string.preference_eula_accepted), false);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -250,24 +225,22 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         } else if (drawerItem.equals(itemGetNow)) {
                             // It was triggered by user so start reading of data now and not based on last poll.
                             if (mEnableCgmService) {
-                                userLogMessage.add(getString(R.string.main_requesting_poll_now));
                                 sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_NOW));
                             } else {
-                                userLogMessage.add(getString(R.string.main_cgm_service_disabled));
+                                UserLogMessage.getInstance().add(R.string.main_cgm_service_disabled);
                             }
                         } else if (drawerItem.equals(itemUpdateProfile)) {
                             if (mEnableCgmService) {
                                 if (dataStore.isNsEnableProfileUpload()) {
-                                    userLogMessage.add(getString(R.string.main_requesting_pump_profile));
                                     sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_PROFILE));
                                 } else {
-                                    userLogMessage.add(getString(R.string.main_pump_profile_disabled));
+                                    UserLogMessage.getInstance().add(getString(R.string.main_pump_profile_disabled));
                                 }
                             } else {
-                                userLogMessage.add(getString(R.string.main_cgm_service_disabled));
+                                UserLogMessage.getInstance().add(R.string.main_cgm_service_disabled);
                             }
                         } else if (drawerItem.equals(itemClearLog)) {
-                            userLogMessage.clear();
+                            UserLogMessage.getInstance().clear();
                         } else if (drawerItem.equals(itemCheckForUpdate)) {
                             checkForUpdateNow();
                         }
@@ -277,44 +250,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 })
                 .build();
 
-        mTextViewLog = findViewById(R.id.textview_log);
-        mScrollView = findViewById(R.id.scrollView);
-        mScrollView.setSmoothScrollingEnabled(true);
-        mTextViewLogButtonTop = findViewById(R.id.button_log_top);
-        mTextViewLogButtonTop.setVisibility(View.GONE);
-        mTextViewLogButtonTop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                changeUserLogViewOlder();
-            }
-        });
-        mTextViewLogButtonTopRecent = findViewById(R.id.button_log_top_recent);
-        mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-        mTextViewLogButtonTopRecent.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                changeUserLogViewRecent();
-            }
-        });
-
-        mTextViewLogButtonBottom = findViewById(R.id.button_log_bottom);
-        mTextViewLogButtonBottom.setVisibility(View.GONE);
-        mTextViewLogButtonBottom.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                changeUserLogViewNewer();
-            }
-        });
-        mTextViewLogButtonBottomRecent = findViewById(R.id.button_log_bottom_recent);
-        mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
-        mTextViewLogButtonBottomRecent.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                changeUserLogViewRecent();
-            }
-        });
-
-        chartZoom = Integer.parseInt(prefs.getString("chartZoom", "3"));
+        chartZoom = Integer.parseInt(mPrefs.getString("chartZoom", "3"));
 
         mChart = findViewById(R.id.chart);
 
@@ -361,11 +297,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     default:
                         chartZoom = 1;
                 }
-                prefs.edit().putString("chartZoom", Integer.toString(chartZoom)).commit();
+                mPrefs.edit().putString("chartZoom", Integer.toString(chartZoom)).apply();
                 refreshDisplayChart();
 
                 String text = chartZoom + " hour chart";
-                Toast.makeText(getBaseContext(), text, Toast.LENGTH_SHORT).show();
+                Snackbar.make(v, text, Snackbar.LENGTH_SHORT)
+                        .setAction("Action", null).show();
 
                 return true;
             }
@@ -381,62 +318,44 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setHumanRounding is n/a in this version
 //        mChart.getGridLabelRenderer().setHumanRounding(false);
 
+        final int orientation = getResources().getConfiguration().orientation;
         mChart.getGridLabelRenderer().setLabelFormatter(
                 new DefaultLabelFormatter() {
-                    //DateFormat mFormat = new SimpleDateFormat("HH:mm", Locale.US);  // 24 hour format forced to fix label overlap
-                    DateFormat mFormat = new SimpleDateFormat("h:mm", Locale.getDefault());
-
                     @Override
                     public String formatLabel(double value, boolean isValueX) {
-                        if (isValueX) {
-                            //return FormatKit.getInstance().formatAsClock((long) value);
-                            return mFormat.format(new Date((long) value));
-                        } else {
-                            return strFormatSGV(value);
-                        }
+                        if (!isValueX)
+                            return FormatKit.getInstance().formatAsGlucose((int) value);
+                        else if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+                            return FormatKit.getInstance().formatAsClock((long) value);
+                        else
+                            return FormatKit.getInstance().formatAsClockNoAmPm((long) value);
                     }
                 }
         );
 
-        /*
-        DeviceName.with(this).request(new DeviceName.Callback() {
-
-            @Override public void onFinished(DeviceName.DeviceInfo info, Exception error) {
-                String manufacturer = info.manufacturer;  // "Samsung"
-                String name = info.marketName;            // "Galaxy S8+"
-                String model = info.model;                // "SM-G955W"
-                String codename = info.codename;          // "dream2qltecan"
-                String deviceName = info.getName();       // "Galaxy S8+"
-
-                Log.i(TAG, "manufacturer = " + info.manufacturer);
-                Log.i(TAG, "name = " + info.marketName);
-                Log.i(TAG, "model = " + info.model);
-                Log.i(TAG, "codename = " + info.codename);
-                Log.i(TAG, "deviceName = " + info.getName());
-            }
-        });
-        */
-
+        userLogDisplay = new UserLogDisplay(mContext);
     }
 
     @Override
     protected void onStart() {
         Log.d(TAG, "onStart called");
         super.onStart();
-        if (userLogRealm == null) userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
-        if (historyRealm == null) historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+        if (historyRealm == null)
+            historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
         if (mRealm == null) mRealm = Realm.getDefaultInstance();
 
         checkForUpdateBackground(5);
 
         startDisplay();
-        startUserLogView();
+        userLogDisplay.start(dataStore.isDbgEnableExtendedErrors());
     }
 
     @Override
     protected void onResume() {
         Log.d(TAG, "onResume called");
         super.onResume();
+
+        if (userLogDisplay != null) userLogDisplay.focusCurrent();
     }
 
     protected void onPause() {
@@ -449,13 +368,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "onStop called");
         super.onStop();
 
-        stopUserLogView();
+        if (userLogDisplay != null) userLogDisplay.stop();
         stopDisplay();
 
-        if (userLogRealm != null && !userLogRealm.isClosed()) userLogRealm.close();
         if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
         if (mRealm != null && !mRealm.isClosed()) mRealm.close();
-        userLogRealm = null;
         historyRealm = null;
         mRealm = null;
     }
@@ -467,11 +384,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         if (!mEnableCgmService) stopMasterService();
 
-        statusDestroy();
+        shutdownMessage();
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
 
-        if (storeRealm !=null && !storeRealm.isClosed()) storeRealm.close();
-        if (userLogRealm != null && !userLogRealm.isClosed()) userLogRealm.close();
+        if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
         if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
         if (mRealm != null && !mRealm.isClosed()) mRealm.close();
     }
@@ -480,7 +396,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     protected void onPostCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onPostCreate called");
         super.onPostCreate(savedInstanceState);
-        statusStartup();
+        startupMessage();
         startMasterService();
     }
 
@@ -527,57 +443,112 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 .start();
     }
 
-    private void statusStartup() {
-        if (!prefs.getBoolean("EnableCgmService", false)) {
-            userLogMessage.add(ICON_HEART + getString(R.string.main_hello));
-            userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %s",
-                    getString(R.string.main_uploading),
-                    dataStore.isNightscoutUpload() ? getString(R.string.text_enabled) : getString(R.string.text_disabled)));
-            userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %s",
-                    getString(R.string.main_treatments),
-                    dataStore.isNightscoutUpload() ? getString(R.string.text_enabled) : getString(R.string.text_disabled)));
-            userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %d %s",
-                    getString(R.string.main_poll_interval),
-                    dataStore.getLowBatPollInterval() / 60000,
-                    getString(R.string.time_min)));
-            userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %d %s",
-                    getString(R.string.main_low_battery_poll_interval),
-                    dataStore.getLowBatPollInterval() / 60000,
-                    getString(R.string.time_min)));
+    private void startupMessage() {
+        // userlog message at startup when no service is running
+        if (!mPrefs.getBoolean("EnableCgmService", false)) {
+
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.HEART, R.string.main_hello);
+
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
+                    String.format("{id;%s} {id;%s}",
+                            R.string.main_uploading,
+                            dataStore.isNightscoutUpload() ? R.string.text_enabled : R.string.text_disabled));
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
+                    String.format("{id;%s} {id;%s}",
+                            R.string.main_treatments,
+                            dataStore.isNsEnableTreatments() ? R.string.text_enabled : R.string.text_disabled
+                    ));
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
+                    String.format("{id;%s} %s {id;%s}",
+                            R.string.main_poll_interval,
+                            dataStore.getPollInterval() / 60000L,
+                            R.string.time_min
+                    ));
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
+                    String.format("{id;%s} %s {id;%s}",
+                            R.string.main_low_battery_poll_interval,
+                            dataStore.getLowBatPollInterval() / 60000L,
+                            R.string.time_min
+                    ));
+
             int historyFrequency = dataStore.getSysPumpHistoryFrequency();
             if (historyFrequency > 0) {
-                userLogMessage.add(ICON_SETTING + String.format(Locale.getDefault(), "%s %d %s",
-                        getString(R.string.main_auto_mode_update),
-                        historyFrequency,
-                        getString(R.string.time_min)));
+                UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
+                        String.format("{id;%s} %s {id;%s}",
+                                R.string.main_auto_mode_update,
+                                historyFrequency,
+                                R.string.time_min
+                        ));
             } else {
-                userLogMessage.add(ICON_SETTING + getString(R.string.main_auto_mode_update) + " " + getString(R.string.main_events_only));
+                UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
+                        String.format("{id;%s} {id;%s}",
+                                R.string.main_auto_mode_update,
+                                R.string.main_events_only
+                        ));
             }
+
+            deviceMessage();
         }
     }
 
-    private void statusDestroy() {
-        if (!prefs.getBoolean("EnableCgmService", false)) {
-            userLogMessage.add(ICON_HEART + getString(R.string.main_goodbye));
-            userLogMessage.add("---------------------------------------------------");
+    private void shutdownMessage() {
+        // userlog message at shutdown when 'stop collecting data' selected
+        if (!mPrefs.getBoolean("EnableCgmService", false)) {
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.HEART, R.string.main_goodbye);
+            UserLogMessage.getInstance().add("---------------------------------------------------");
         }
+    }
+
+    private void deviceMessage() {
+        DeviceName.with(this).request(new DeviceName.Callback() {
+
+            @Override
+            public void onFinished(DeviceName.DeviceInfo info, Exception error) {
+                String manufacturer = info.manufacturer;  // "Samsung"
+                String marketName = info.marketName;      // "Galaxy S8+"
+                String model = info.model;                // "SM-G955W"
+                String codename = info.codename;          // "dream2qltecan"
+                String deviceName = info.getName();       // "Galaxy S8+"
+                String androidSDK = String.valueOf(Build.VERSION.SDK_INT);
+                String androidVERSION = Build.VERSION.RELEASE;
+
+                Log.i(TAG, "manufacturer = " + manufacturer);
+                Log.i(TAG, "name = " + marketName);
+                Log.i(TAG, "model = " + model);
+                Log.i(TAG, "codename = " + codename);
+                Log.i(TAG, "deviceName = " + deviceName);
+                Log.i(TAG, "androidSDK = " + androidSDK);
+                Log.i(TAG, "androidVERSION = " + androidVERSION);
+
+                UserLogMessage.getInstance().add(UserLogMessage.TYPE.NOTE, UserLogMessage.FLAG.EXTENDED,
+                        String.format("Uploader device details:\n  mfr: %s\n  name: %s\n  model: %s\n  code: %s\n  device: %s\n  android sdk: %s ver: %s",
+                                manufacturer,
+                                marketName,
+                                model,
+                                codename,
+                                deviceName,
+                                androidSDK,
+                                androidVERSION
+                        ));
+            }
+        });
     }
 
     private void startMasterService() {
         Log.i(TAG, "startMasterService called");
         if (mEnableCgmService) {
-            prefs.edit().putBoolean("EnableCgmService", true).commit();
+            mPrefs.edit().putBoolean("EnableCgmService", true).commit();
             startService(new Intent(this, MasterService.class));
         } else {
-            prefs.edit().putBoolean("EnableCgmService", false).commit();
+            mPrefs.edit().putBoolean("EnableCgmService", false).commit();
             Log.i(TAG, "startMasterService: CgmService is disabled");
         }
     }
 
     private void stopMasterService() {
         Log.i(TAG, "stopMasterService called");
-        userLogMessage.add(ICON_INFO + getString(R.string.main_shutting_down_cgm_service));
-        prefs.edit().putBoolean("EnableCgmService", false).commit();
+        UserLogMessage.getInstance().add(UserLogMessage.TYPE.INFO, R.string.main_shutting_down_cgm_service);
+        mPrefs.edit().putBoolean("EnableCgmService", false).commit();
         sendBroadcast(new Intent(MasterService.Constants.ACTION_STOP_SERVICE));
     }
 
@@ -594,7 +565,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         } else if (key.equals("chartZoom")) {
             chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
-            hasZoomedChart = false;
         } else {
             copyPrefsToDataStore(sharedPreferences);
             if (mEnableCgmService)
@@ -603,18 +573,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     public void copyPrefsToDataStore(final SharedPreferences sharedPreferences) {
-
-        // prefs that are in constant use, safe across threads and processes
-
-        final Context context = this.getBaseContext();
-
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(@NonNull Realm realm) {
-                dataStore.copyPrefs(context, sharedPreferences);
+                dataStore.copyPrefs(mContext, sharedPreferences);
             }
         });
-
     }
 
     @Override
@@ -635,21 +599,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     public void openUsbRegistration() {
         Intent manageCNLIntent = new Intent(this, ManageCNLActivity.class);
         startActivity(manageCNLIntent);
-    }
-
-    private String strFormatSGV(double sgvValue) {
-        NumberFormat sgvFormatter;
-        if (dataStore.isMmolxl()) {
-            if (dataStore.isMmolxlDecimals()) {
-                sgvFormatter = new DecimalFormat("0.00");
-            } else {
-                sgvFormatter = new DecimalFormat("0.0");
-            }
-            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
-        } else {
-            sgvFormatter = new DecimalFormat("0");
-            return sgvFormatter.format(sgvValue);
-        }
     }
 
     private RealmResults displayPumpResults;
@@ -676,15 +625,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         displayPumpResults = mRealm.where(PumpStatusEvent.class)
                 .sort("eventDate", Sort.ASCENDING)
-                .findAllAsync();
+                .findAll();
 
         displayPumpResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
             @Override
             public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
-                if (changeSet != null) {
-                    if (changeSet.getInsertions().length > 0) {
-                        refreshDisplayPump();
-                    }
+                if (changeSet != null && changeSet.getInsertions().length > 0) {
+                    refreshDisplayPump();
                 }
             }
         });
@@ -707,23 +654,21 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         displayCgmResults = historyRealm.where(PumpHistoryCGM.class)
                 .notEqualTo("sgv", 0)
                 .sort("eventDate", Sort.ASCENDING)
-                .findAllAsync();
+                .findAll();
 
         displayCgmResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
             @Override
             public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
-                // initial refresh after start
-                if (changeSet == null) {
-                    refreshDisplayCgm();
-                    refreshDisplayChart();
-                }
-                // items added or changed
-                else if (changeSet.getInsertions().length + changeSet.getChanges().length > 0) {
+                if (changeSet != null &&
+                        changeSet.getInsertions().length + changeSet.getChanges().length > 0) {
                     refreshDisplayCgm();
                     refreshDisplayChart();
                 }
             }
         });
+
+        refreshDisplayCgm();
+        refreshDisplayChart();
     }
 
     private void stopDisplayCgm() {
@@ -784,7 +729,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         if (sgv_results.size() > 0) {
             timeLastSGV = sgv_results.last().getEventDate().getTime();
-            sgvString = strFormatSGV(sgv_results.last().getSgv());
+            sgvString = FormatKit.getInstance().formatAsGlucose(sgv_results.last().getSgv(), false, true);
 
             String trend = sgv_results.last().getCgmTrend();
             if (trend != null) {
@@ -925,18 +870,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         long maxX = timeLastSGV + 90000L;
 
         RealmResults<PumpHistoryCGM> minmaxY = results.where()
-                .greaterThan("eventDate",  new Date(minX))
+                .greaterThan("eventDate", new Date(minX))
                 .sort("sgv", Sort.ASCENDING)
                 .findAll();
         long rangeY, minRangeY;
         double minY = minmaxY.first().getSgv();
         double maxY = minmaxY.last().getSgv();
 
-        if (prefs.getBoolean("mmolxl", false)) {
+        if (mPrefs.getBoolean("mmolxl", false)) {
             minY = Math.floor((minY / MMOLXLFACTOR) * 2);
             maxY = Math.ceil((maxY / MMOLXLFACTOR) * 2);
             rangeY = (long) (maxY - minY);
-            minRangeY = ((rangeY / 4 ) + 1) * 4;
+            minRangeY = ((rangeY / 4) + 1) * 4;
             minY = minY - Math.floor((minRangeY - rangeY) / 2);
             maxY = minY + minRangeY;
             minY = Math.floor(minY * MMOLXLFACTOR / 2);
@@ -945,7 +890,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             minY = Math.floor(minY / 10) * 10;
             maxY = Math.ceil(maxY / 10) * 10;
             rangeY = (long) (maxY - minY);
-            minRangeY = ((rangeY / 20 ) + 1) * 20;
+            minRangeY = ((rangeY / 20) + 1) * 20;
             minY = minY - Math.floor((minRangeY - rangeY) / 2);
             maxY = minY + minRangeY;
         }
@@ -978,15 +923,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             PointsGraphSeries sgvSeries = new PointsGraphSeries(entries);
 
             sgvSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
-                DateFormat mFormat = DateFormat.getTimeInstance(DateFormat.MEDIUM);
-
                 @Override
                 public void onTap(Series series, DataPointInterface dataPoint) {
-                    double sgv = dataPoint.getY();
-
-                    StringBuilder sb = new StringBuilder(mFormat.format(new Date((long) dataPoint.getX())) + ": ");
-                    sb.append(strFormatSGV(sgv));
-                    Toast.makeText(getBaseContext(), sb.toString(), Toast.LENGTH_SHORT).show();
+                    String s = String.format("%s ~ %s",
+                            FormatKit.getInstance().formatAsDayClock((long) dataPoint.getX()),
+                            FormatKit.getInstance().formatAsGlucose((int) dataPoint.getY(), true, true)
+                    );
+                    Toast.makeText(getBaseContext(), s, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -996,7 +939,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     double sgv = dataPoint.getY();
 
                     if (((MainActivity.DataPoint) dataPoint).isEstimate())
-                        paint.setColor(Color.BLUE);
+                        paint.setColor(0xFF0080FF);
 
                     else if (sgv < 80)
                         paint.setColor(Color.RED);
@@ -1042,7 +985,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private class DataPoint implements DataPointInterface, Serializable {
-        private static final long serialVersionUID=1428263322645L;
+        private static final long serialVersionUID = 1428263322645L;
 
         private double x;
         private double y;
@@ -1071,7 +1014,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         @Override
         public String toString() {
-            return "["+x+"/"+y+"]";
+            return "[" + x + "/" + y + "]";
         }
     }
 
@@ -1080,161 +1023,261 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dipValue, metrics);
     }
 
+    private class UserLogDisplay {
 
-    private final int PAGE_SIZE = 300;
-    private final int FIRSTPAGE_SIZE = 75; //100;
-    private int viewPosition = 0;
-    private RealmResults userLogResults;
+        private Context context;
 
-    private void stopUserLogView() {
-        Log.d(TAG, "stopUserLogView");
-        if (userLogResults != null) userLogResults.removeAllChangeListeners();
-        userLogResults = null;
-    }
+        private FloatingActionButton fabCurrent;
+        private FloatingActionButton fabSearch;
 
-    private void startUserLogView() {
-        Log.d(TAG, "startUserLogView");
-        viewPosition = 0;
+        private RealmRecyclerView realmRecyclerView;
+        private UserLogAdapter adapter;
 
-        userLogResults = userLogRealm.where(UserLog.class)
-                .sort("timestamp", Sort.DESCENDING)
-                .findAllAsync();
+        private Realm userLogRealm;
+        private RealmResults<UserLog> userLogResults;
 
-        userLogResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
-            @Override
-            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+        private boolean autoScroll;
+        private boolean extended;
 
-                if (changeSet == null) {
-                    changeUserLogViewRecent();
-                    return;
-                }
+        public UserLogDisplay(Context context) {
+            this.context = context;
 
-                if (userLogResults.size() > 0) {
-                    if (viewPosition > 0)
-                        viewPosition++; // move the view pointer when not on first page to keep aligned
-                } else {
-                    Log.d(TAG, "UserLogView listener reset!!!");
-                    changeUserLogViewRecent();
-                    return;
-                }
+            realmRecyclerView = findViewById(R.id.recyclerview_log);
+            realmRecyclerView.getRecycleView().setHasFixedSize(true);
+            //realmRecyclerView.setItemViewCacheSize(30);
+            realmRecyclerView.setDrawingCacheEnabled(true);
+            realmRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
-                buildUserLogView();
+            fabCurrent = findViewById(R.id.fab_log_current);
+            fabCurrent.hide();
 
-                if (viewPosition == 0) {
-                    // auto scroll status log
-                    if ((mScrollView.getChildAt(0).getBottom() < mScrollView.getHeight()) || ((mScrollView.getChildAt(0).getBottom() - mScrollView.getScrollY() - mScrollView.getHeight()) < (mScrollView.getHeight() / 3))) {
-                        mScrollView.post(new Runnable() {
-                            public void run() {
-                                mScrollView.fullScroll(View.FOCUS_DOWN);
-                            }
-                        });
+            fabCurrent.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    if (userLogResults != null && adapter != null && realmRecyclerView != null) {
+
+                        int t = adapter.getItemCount();
+                        int c = realmRecyclerView.getChildCount();
+                        if (c == 0) return;
+                        int p = realmRecyclerView.findFirstVisibleItemPosition();
+                        if (p < 0 || p > userLogResults.size() - 1) return;
+
+                        if (t - c - p > 200) {
+                            realmRecyclerView.scrollToPosition(t - 1);
+                        } else {
+                            realmRecyclerView.smoothScrollToPosition(t - 1);
+                        }
+
                     }
                 }
-            }
-        });
-    }
+            });
 
-    private void buildUserLogView() {
-        int remain = userLogResults.size() - viewPosition;
-        int segment = remain;
-        if (viewPosition == 0 && segment > FIRSTPAGE_SIZE) segment = FIRSTPAGE_SIZE;
-        else if (segment > PAGE_SIZE) segment = PAGE_SIZE;
+            fabSearch = findViewById(R.id.fab_log_search);
+            fabSearch.hide();
 
-        RealmResults<UserLog> ul = userLogResults;
-        StringBuilder sb = new StringBuilder();
-        if (segment > 0) {
-            for (int index = viewPosition; index < viewPosition + segment; index++)
-                sb.insert(0, formatMessage(ul.get(index)) + (sb.length() > 0 ? "\n" : ""));
-        }
-        mTextViewLog.setText(sb.toString(), BufferType.EDITABLE);
+            fabSearch.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
 
-        if (viewPosition > 0) {
-            mTextViewLogButtonBottom.setVisibility(View.VISIBLE);
-            mTextViewLogButtonBottomRecent.setVisibility(View.VISIBLE);
-        } else {
-            mTextViewLogButtonBottom.setVisibility(View.GONE);
-            mTextViewLogButtonBottomRecent.setVisibility(View.GONE);
-        }
-        if (remain > segment) {
-            mTextViewLogButtonTop.setVisibility(View.VISIBLE);
-        } else {
-            mTextViewLogButtonTop.setVisibility(View.GONE);
-        }
-        if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-            mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-        } else {
-            mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-        }
-    }
+                    if (userLogResults != null && adapter != null && realmRecyclerView != null) {
+                        int p = realmRecyclerView.findFirstVisibleItemPosition();
+                        if (p >= 0 && p < userLogResults.size()) {
 
-    private String formatMessage(UserLog userLog) {
-/*
-        SimpleDateFormat sdf = new SimpleDateFormat("E", Locale.getDefault());
-        String clock = sdf.format(userLog.getTimestamp());
-        if (android.text.format.DateFormat.is24HourFormat(this)) {
-            sdf.applyLocalizedPattern(" H:mm:ss");
-            clock += sdf.format(userLog.getTimestamp());
-        } else {
-            sdf.applyLocalizedPattern(" h:mm:ss a");
-            clock += sdf.format(userLog.getTimestamp()).toLowerCase().replace(".", "").replace(",", "");
-        }
-*/
-        SimpleDateFormat sdf = new SimpleDateFormat("E HH:mm:ss");
-        String clock = sdf.format(userLog.getTimestamp());
+                            RealmResults<UserLog> rr = userLogResults.where()
+                                    .lessThan("timestamp", userLogResults.get(p).getTimestamp())
+                                    .beginGroup()
+                                    .equalTo("type", UserLogMessage.TYPE.WARN.value())
+                                    .or()
+                                    .equalTo("type", UserLogMessage.TYPE.NOTE.value())
+                                    .endGroup()
+                                    .sort("timestamp", Sort.DESCENDING)
+                                    .findAll();
 
-        String split[] = userLog.getMessage().split("¦");
-        if (split.length == 2)
-            return clock + ": " + split[0] + strFormatSGV(toInt(split[1]));
-        else if (split.length == 3)
-            return clock + ": " + split[0] + strFormatSGV(toInt(split[1])) + split[2];
-        else
-            return clock + ": " + split[0];
-    }
-
-    private void changeUserLogViewOlder() {
-        if (viewPosition == 0) viewPosition += FIRSTPAGE_SIZE;
-        else viewPosition += PAGE_SIZE;
-        buildUserLogView();
-        mScrollView.post(new Runnable() {
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                } else {
-                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
+                            if (rr.size() > 0) {
+                                int ss = userLogResults.indexOf(rr.first());
+                                int c = realmRecyclerView.getRecycleView().getLayoutManager().getChildCount() / 4;
+                                int to = ss - (c < 1 ? 1 : c);
+                                if (to < 0) to = 0;
+                                if (Math.abs(p - to) > 400)
+                                    realmRecyclerView.scrollToPosition(to);
+                                else
+                                    realmRecyclerView.smoothScrollToPosition(to);
+                            }
+                        }
+                    }
                 }
+            });
+
+            fabSearch.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View view) {
+
+                    if (userLogResults != null && adapter != null && realmRecyclerView != null) {
+                        int p = realmRecyclerView.findFirstVisibleItemPosition();
+                        if (p >= 0 && p < userLogResults.size()) {
+
+                            RealmResults<UserLog> rr = userLogResults.where()
+                                    .lessThan("timestamp", userLogResults.get(p).getTimestamp())
+                                    .equalTo("type", extended ? UserLogMessage.TYPE.NOTE.value() : UserLogMessage.TYPE.WARN.value())
+                                    .sort("timestamp", Sort.DESCENDING)
+                                    .findAll();
+
+                            if (rr.size() > 0) {
+                                int ss = userLogResults.indexOf(rr.first());
+                                int c = realmRecyclerView.getRecycleView().getLayoutManager().getChildCount() / 4;
+                                int to = ss - (c < 1 ? 1 : c);
+                                if (to < 0) to = 0;
+                                if (Math.abs(p - to) > 400)
+                                    realmRecyclerView.scrollToPosition(to);
+                                else
+                                    realmRecyclerView.smoothScrollToPosition(to);
+                            }
+                        }
+                    }
+                    return true;
+                }
+            });
+
+            RecyclerView rv = realmRecyclerView.getRecycleView();
+            rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                    boolean fab = false;
+                    if (userLogResults != null && adapter != null && realmRecyclerView != null) {
+                        int t = adapter.getItemCount();
+                        int p = realmRecyclerView.findFirstVisibleItemPosition();
+                        if (p >= 0 && p < t && t - p > 20)
+                            fab = true;
+                    }
+                    if (fab) {
+                        fabCurrent.show();
+                        fabSearch.show();
+                    } else {
+                        fabCurrent.hide();
+                        fabSearch.hide();
+                    }
+                }
+            });
+
+            rv.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
+                @Override
+                public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+                    if (e.getAction() == MotionEvent.ACTION_DOWN || e.getAction() == MotionEvent.ACTION_MOVE)
+                        autoScroll = false;
+                    else
+                        autoScroll = true;
+                    return false;
+                }
+
+                @Override
+                public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+                }
+
+                @Override
+                public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+                }
+            });
+
+        }
+
+        public void stop() {
+            Log.d(TAG, "stop");
+
+            fabCurrent.hide();
+            fabSearch.hide();
+
+            if (adapter != null) {
+                if (realmRecyclerView.getRecycleView() != null && realmRecyclerView.getRecycleView().getLayoutManager() != null)
+                    realmRecyclerView.getRecycleView().getLayoutManager().removeAllViews();
+                realmRecyclerView.setAdapter(null);
+                adapter.close();
+                adapter = null;
             }
-        });
+
+            if (userLogResults != null) {
+                userLogResults.removeAllChangeListeners();
+                userLogResults = null;
+            }
+
+            if (userLogRealm != null) {
+                if (!userLogRealm.isClosed()) userLogRealm.close();
+                userLogRealm = null;
+            }
+        }
+
+        public void focusCurrent() {
+            int lastPosition = userLogResults.size() - 1;
+            adapter.setLastAnimPosition(lastPosition);
+            realmRecyclerView.scrollToPosition(lastPosition);
+        }
+
+        public void start() {
+            start(false);
+        }
+
+        public void start(Boolean extended) {
+            Log.d(TAG, "start");
+
+            this.extended = extended;
+            autoScroll = true;
+            fabCurrent.hide();
+            fabSearch.hide();
+
+            if (userLogRealm == null)
+                userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
+
+            UserLogMessage.getInstance().stale();
+
+            userLogResults = userLogRealm.where(UserLog.class)
+                    .beginGroup()
+                    .equalTo("flag", UserLogMessage.FLAG.NA.value())
+                    .or()
+                    .equalTo("flag", extended ? UserLogMessage.FLAG.EXTENDED.value() : UserLogMessage.FLAG.NORMAL.value())
+                    .endGroup()
+                    .sort("timestamp", Sort.ASCENDING)
+                    .findAll();
+
+            adapter = new UserLogAdapter(context, userLogResults, true);
+            realmRecyclerView.setAdapter(adapter);
+
+            userLogResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults<UserLog>>() {
+                @Override
+                public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+
+                    if (changeSet != null && adapter != null && realmRecyclerView != null) {
+
+                        final int i = changeSet.getInsertions().length;
+                        final int d = changeSet.getDeletions().length;
+                        if (d > 0) {
+                            adapter.setLastAnimPosition(adapter.getLastAnimPosition() - d);
+                        }
+
+                        RecyclerView rv = realmRecyclerView.getRecycleView();
+
+                        int r = rv.computeVerticalScrollRange();
+                        int o = rv.computeVerticalScrollOffset();
+                        int e = rv.computeVerticalScrollExtent();
+
+                        if (autoScroll && (r - o - e < e / 2)) {
+                            rv.post(new Runnable() {
+                                public void run() {
+                                    try {
+                                        if (d - i > 2)
+                                            realmRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
+                                        else
+                                            realmRecyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+                                    } catch (Exception ignored) {
+                                    }
+                                }
+                            });
+                        }
+
+                    }
+                }
+            });
+        }
+
     }
 
-    private void changeUserLogViewNewer() {
-        viewPosition -= PAGE_SIZE;
-        if (viewPosition < 0) viewPosition = 0;
-        buildUserLogView();
-        mScrollView.post(new Runnable() {
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_UP);
-                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                } else {
-                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-                }
-            }
-        });
-    }
-
-    private void changeUserLogViewRecent() {
-        viewPosition = 0;
-        buildUserLogView();
-        mScrollView.post(new Runnable() {
-            public void run() {
-                mScrollView.fullScroll(View.FOCUS_DOWN);
-                if (viewPosition > 0 || mScrollView.getChildAt(0).getBottom() > mScrollView.getHeight() + 100) {
-                    mTextViewLogButtonTopRecent.setVisibility(View.VISIBLE);
-                } else {
-                    mTextViewLogButtonTopRecent.setVisibility(View.GONE);
-                }
-            }
-        });
-    }
 }

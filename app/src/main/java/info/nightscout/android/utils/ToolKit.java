@@ -94,11 +94,11 @@ public class ToolKit {
     }
 
     public static String readString(byte[] data, int offset, int size) {
-        String string = "";
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < size; i++) {
-            string += (char) data[offset + i];
+            sb.append((char) data[offset + i]);
         }
-        return string;
+        return sb.toString();
     }
 
 }

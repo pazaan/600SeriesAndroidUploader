@@ -475,7 +475,7 @@ public class MedtronicCnlReader {
             long starttime = System.currentTimeMillis();
             long retrytime = 30000L;
 
-            String error = "";
+            StringBuilder sb = new StringBuilder();
 
             int attempt = 0;
 
@@ -488,29 +488,31 @@ public class MedtronicCnlReader {
 
                 } catch (UnexpectedMessageException e) {
                     attempt++;
-                    Log.e(TAG, "Attempt " + attempt + ": UnexpectedMessageException: " + e.getMessage());
-                    error += "\nAttempt " + attempt + ": UnexpectedMessageException: " + e.getMessage();
+                    String error = String.format("Attempt %s: UnexpectedMessageException: %s", attempt, e.getMessage());
+                    Log.e(TAG, error);
+                    sb.append("\n").append(error);
 
                     // needs to end immediately on these errors
                     if (e.getMessage().contains("connection lost") || e.getMessage().contains("NAK")) {
-                        throw new UnexpectedMessageException(error);
+                        throw new UnexpectedMessageException(sb.toString());
                     }
 
                     if (System.currentTimeMillis() - starttime >= retrytime)
-                        throw new UnexpectedMessageException(error);
+                        throw new UnexpectedMessageException(sb.toString());
 
                 } catch (TimeoutException e) {
                     attempt++;
-                    Log.e(TAG, "Attempt " + attempt + ": TimeoutException: " + e.getMessage());
-                    error += "\nAttempt " + attempt + ": TimeoutException: " + e.getMessage();
+                    String error = String.format("Attempt %s: TimeoutException: %s", attempt, e.getMessage());
+                    Log.e(TAG, error);
+                    sb.append("\n").append(error);
 
                     // needs to end immediately on these errors
                     if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
-                        throw new TimeoutException(error);
+                        throw new TimeoutException(sb.toString());
                     }
 
                     if (System.currentTimeMillis() - starttime >= retrytime)
-                        throw new TimeoutException(error);
+                        throw new TimeoutException(sb.toString());
                 }
 
             } while (attempt > 0);

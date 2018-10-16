@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.model.store.StatCnl;
@@ -26,7 +27,7 @@ public class Stats {
     public static final Class[] STAT_CLASSES = new Class[] {StatPoll.class, StatCnl.class, StatNightscout.class, StatPushover.class};
     private static final long STAT_STALE = 30 * 24 * 60 * 60000L;
 
-    public static final SimpleDateFormat sdfDateToKey = new SimpleDateFormat("yyyyMMdd");
+    public static final SimpleDateFormat sdfDateToKey = new SimpleDateFormat("yyyyMMdd", Locale.US);
 
     private int open;
     private List<LoadedRecord> loadedRecords = new ArrayList<>();

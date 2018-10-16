@@ -1,7 +1,6 @@
 package info.nightscout.android.history;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.Pair;
@@ -22,11 +21,11 @@ import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.MedtronicCnlReader;
 import info.nightscout.android.medtronic.Stats;
+import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.medtronic.message.ReadHistoryResponseMessage;
-import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.HistorySegment;
 import info.nightscout.android.model.medtronicNg.PumpHistoryAlarm;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
@@ -49,8 +48,6 @@ import io.realm.Realm;
 import io.realm.RealmList;
 import io.realm.RealmResults;
 import io.realm.Sort;
-
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_REFRESH;
 
 /**
  * Created by Pogman on 5.11.17.
@@ -138,8 +135,9 @@ public class PumpHistoryHandler {
         long now = System.currentTimeMillis();
         Date limitDate = new Date(now - sender.process);
 
-        String log = String.format("sender[%s] limitdate: %s",senderID, dateFormatter.format(limitDate));
-        String logdb = "";
+        StringBuilder log = new StringBuilder();
+        StringBuilder logdb = new StringBuilder();
+        log.append(String.format("sender[%s] limitdate: %s",senderID, dateFormatter.format(limitDate)));
 
         List<PumpHistoryInterface> records = new ArrayList<>();
 
@@ -154,11 +152,11 @@ public class PumpHistoryHandler {
 
                 records.addAll(requested);
 
-                if (requested.size() > 0) logdb += " " + dBitem.historydb + ": " + requested.size();
+                if (requested.size() > 0) logdb.append(String.format(" %s: %s", dBitem.historydb, requested.size()));
             }
         }
 
-        log += " requested: " + records.size();
+        log.append(String.format(" requested: %s", records.size()));
 
         // sort complete list from oldest to newest
         Collections.sort(records, new Comparator<PumpHistoryInterface>() {
@@ -173,8 +171,9 @@ public class PumpHistoryHandler {
         if (records.size() > sender.limiter)
             records = records.subList(records.size() - sender.limiter, records.size());
 
-        log += " limiter: " + sender.limiter + " final: " + records.size();
-        Log.d(TAG, log + logdb);
+        log.append(String.format(" limiter: %s final: %s", sender.limiter, records.size()));
+        log.append(logdb.toString());
+        Log.d(TAG, log.toString());
 
         return records;
     }
@@ -275,16 +274,6 @@ public class PumpHistoryHandler {
             });
         }
 
-    }
-
-    protected void userLogMessage(String message) {
-        try {
-            Intent intent =
-                    new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
-                            .putExtra(MasterService.Constants.EXTENDED_DATA, message);
-            mContext.sendBroadcast(intent);
-        } catch (Exception ignored) {
-        }
     }
 
     public int records() {
@@ -441,13 +430,13 @@ public class PumpHistoryHandler {
 
     public void profile(final MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
 
-        userLogMessage(mContext.getString(R.string.history_reading_pump_basal));
+        UserLogMessage.send(mContext, R.string.history_reading_pump_basal);
         final byte[] basalPatterns = cnlReader.getBasalPatterns();
-        userLogMessage(mContext.getString(R.string.history_reading_carb));
+        UserLogMessage.send(mContext, R.string.history_reading_carb);
         final byte[] carbRatios = cnlReader.getBolusWizardCarbRatios();
-        userLogMessage(mContext.getString(R.string.history_reading_sensitivity));
+        UserLogMessage.send(mContext, R.string.history_reading_sensitivity);
         final byte[] sensitivity = cnlReader.getBolusWizardSensitivity();
-        userLogMessage(mContext.getString(R.string.history_reading_targets));
+        UserLogMessage.send(mContext, R.string.history_reading_targets);
         final byte[] targets = cnlReader.getBolusWizardTargets();
 
         // user settings
@@ -495,7 +484,7 @@ public class PumpHistoryHandler {
             }
         });
 
-        userLogMessage(mContext.getString(R.string.history_sending_profile));
+        UserLogMessage.send(mContext, R.string.history_sending_profile);
 
         // update NS historical treatments when pattern naming has changed
 
@@ -508,7 +497,7 @@ public class PumpHistoryHandler {
 
             if (results.size() > 0) {
                 Log.d(TAG, "NameBasalPatternChanged: Found " + results.size() + " pattern switch treatments to update");
-                userLogMessage(mContext.getString(R.string.history_pattern_names_changed));
+                UserLogMessage.send(mContext, R.string.history_pattern_names_changed);
 
                 historyRealm.executeTransaction(new Realm.Transaction() {
                     @Override
@@ -544,7 +533,7 @@ public class PumpHistoryHandler {
 
             if (results.size() > 0) {
                 Log.d(TAG, "GramsPerExchangeChanged: Found " + results.size() + " carb/bolus treatments to update");
-                userLogMessage(mContext.getString(R.string.history_grams_changed));
+                UserLogMessage.send(mContext, R.string.history_grams_changed);
 
                 historyRealm.executeTransaction(new Realm.Transaction() {
                     @Override
@@ -604,8 +593,8 @@ public class PumpHistoryHandler {
                 // estimate sgv?
                 if (dataStore.isSysEnableEstimateSGV() &&
                         (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_NEEDED.equals(exception)
-                        || PumpHistoryParser.CGM_EXCEPTION.SENSOR_END_OF_LIFE.equals(exception)
-                        || (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_PENDING.equals(exception) && sgv == 0))
+                                || PumpHistoryParser.CGM_EXCEPTION.SENSOR_END_OF_LIFE.equals(exception)
+                                || (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_PENDING.equals(exception) && sgv == 0))
                         ) {
 
                     RealmResults<PumpHistoryMisc> miscResults = historyRealm
@@ -632,7 +621,8 @@ public class PumpHistoryHandler {
                             backfill = true;
                             estimate = true;
                             ((StatPoll) Stats.getInstance().readRecord(StatPoll.class)).incHistoryReqEstimate();
-                            userLogMessage(ICON_REFRESH + mContext.getString(R.string.history_text) + ": " + "estimate sgv");
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                    String.format("{id;%s}: estimate sgv", R.string.history_text));
                         }
                     }
                 }
@@ -645,7 +635,8 @@ public class PumpHistoryHandler {
                             !PumpHistoryParser.CGM_EXCEPTION.SENSOR_INIT.equals(cgmResults.first().getSensorException())) {
                         backfill = true;
                         ((StatPoll) Stats.getInstance().readRecord(StatPoll.class)).incHistoryReqBackfill();
-                        userLogMessage(ICON_REFRESH + mContext.getString(R.string.history_text) + ": " + mContext.getString(R.string.history_cgm_backfill));
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_cgm_backfill));
                     }
 
                 }
@@ -820,31 +811,41 @@ public class PumpHistoryHandler {
             if (sgv > 0 && cgmResults.get(i).getSgv() == 0 && !cgmResults.get(i).isEstimate()) {
 
                 // don't flood the userlog during extensive backfills
-                if (cgmResults.size() - i <= 1) {
-                    userLogMessage(String.format("estimated SGV: ¦%s¦ at: %s",
-                            (int) Math.round(sgv),
-                            dfUserlog.format(cgmResults.get(i).getEventDate())
-                    ));
+                if (cgmResults.size() - i <= 5) {
 
-                    if (dataStore.isDbgEnableExtendedErrors()) {
-                        userLogMessage(String.format("isig:%s vctr:%s roc:%s s:%s/%s %s%s%s%s%s",
-                                cgmResults.get(i).getIsig(),
-                                cgmResults.get(i).getVctr(),
-                                cgmResults.get(i).getRateOfChange(),
-                                cgmResults.get(i).getSensorStatus(),
-                                cgmResults.get(i).getReadingStatus(),
-                                cgmResults.get(i).isNoisyData() ? "N" : "",
-                                cgmResults.get(i).isDiscardData() ? "D" : "",
-                                cgmResults.get(i).isSensorError() ? "E" : "",
-                                cgmResults.get(i).isBackfilledData() ? "B" : "",
-                                cgmResults.get(i).isSettingsChanged() ? "S" : ""
-                        ));
-                        userLogMessage(String.format("t+%s f:%s o:%s x:%s",
-                                t,
-                                factor,
-                                dfNumber.format(offsetAvg),
-                                dfNumber.format(x)
-                        ));
+                    UserLogMessage.sendN(mContext, UserLogMessage.TYPE.ESTIMATE,
+                            String.format("estimated SGV {sgv;%s} at {time.sgv;%s}",
+                                    (int) Math.round(sgv),
+                                    cgmResults.get(i).getEventDate().getTime()
+                            ));
+                    UserLogMessage.sendE(mContext, UserLogMessage.TYPE.ESTIMATE,
+                            String.format("estimated SGV {sgv;%s} at {time.sgv.e;%s}",
+                                    (int) Math.round(sgv),
+                                    cgmResults.get(i).getEventDate().getTime()
+                            ));
+
+                    if (cgmResults.size() - i <= 1) {
+
+                        UserLogMessage.sendE(mContext,
+                                String.format("isig: %s vctr: %s roc: %s s: %s/%s %s%s%s%s%s",
+                                        cgmResults.get(i).getIsig(),
+                                        cgmResults.get(i).getVctr(),
+                                        cgmResults.get(i).getRateOfChange(),
+                                        cgmResults.get(i).getSensorStatus(),
+                                        cgmResults.get(i).getReadingStatus(),
+                                        cgmResults.get(i).isNoisyData() ? "N" : "",
+                                        cgmResults.get(i).isDiscardData() ? "D" : "",
+                                        cgmResults.get(i).isSensorError() ? "E" : "",
+                                        cgmResults.get(i).isBackfilledData() ? "B" : "",
+                                        cgmResults.get(i).isSettingsChanged() ? "S" : ""
+                                ));
+                        UserLogMessage.sendE(mContext,
+                                String.format("t+%s f: %s o: %s x: %s",
+                                        t,
+                                        factor,
+                                        dfNumber.format(offsetAvg),
+                                        dfNumber.format(x)
+                                ));
                     }
                 }
 
@@ -873,7 +874,8 @@ public class PumpHistoryHandler {
                 .sort("eventDate", Sort.ASCENDING)
                 .findAll();
         if (cgmResults.size() > 0) {
-            userLogMessage(String.format("isig:%s vctr:%s roc:%s s:%s/%s %s%s%s%s%s",
+            UserLogMessage.send(mContext,
+                    String.format("isig: %s vctr: %s roc: %s s: %s/%s %s%s%s%s%s",
                     cgmResults.last().getIsig(),
                     cgmResults.last().getVctr(),
                     cgmResults.last().getRateOfChange(),
@@ -1075,12 +1077,11 @@ public class PumpHistoryHandler {
                     dateFormatter.format(end)
             ));
 
-            userLogMessage(String.format(Locale.getDefault(), "%s: %s \n      %s - %s",
-                    userlogTAG,
-                    mContext.getString(R.string.history_requested),
-                    dateFormatter.format(start),
-                    dateFormatter.format(end))
-            );
+            UserLogMessage.sendN(mContext, UserLogMessage.TYPE.REQUESTED,
+                    String.format("%s {id;%s}", userlogTAG, R.string.history_requested));
+            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.REQUESTED,
+                    String.format("%s {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
+                            userlogTAG, R.string.history_requested, start, end));
 
             Date[] range;
             ReadHistoryResponseMessage response = cnlReader.getHistory(start, end, historyType);
@@ -1095,7 +1096,7 @@ public class PumpHistoryHandler {
                 long parseFrom = 0;
                 if (segment.get(0).getFromDate().getTime() == segment.get(0).getToDate().getTime()
                         && segment.get(1).getFromDate().getTime() != segment.get(1).getToDate().getTime())
-                    parseFrom = segment.get(1).getToDate().getTime();
+                    parseFrom = segment.get(1).getToDate().getTime() - 30 * 60000L;
 
                 long timer = System.currentTimeMillis();
                 range = new PumpHistoryParser(response.getEventData()).process(
@@ -1111,18 +1112,15 @@ public class PumpHistoryHandler {
                 Log.d(TAG, logTAG + " parser processing took " + timer + "ms");
             }
 
-            Log.d(TAG, String.format("%s received: %s - %s",
-                    logTAG,
+            Log.d(TAG, String.format("%s received: %s - %s", logTAG,
                     range[0] == null ? "null" : dateFormatter.format(range[0]),
-                    range[1] == null ? "null" : dateFormatter.format(range[1])
-            ));
+                    range[1] == null ? "null" : dateFormatter.format(range[1])));
 
-            if (dataStore.isDbgEnableExtendedErrors())
-                userLogMessage(String.format(Locale.getDefault(), "%s: %s \n      %s - %s",
-                        userlogTAG,
-                        mContext.getString(R.string.history_received),
-                        range[0] == null ? "null" : dateFormatter.format(range[0]),
-                        range[1] == null ? "null" : dateFormatter.format(range[1])));
+            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.RECEIVED,
+                    String.format("%s {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
+                    userlogTAG, R.string.history_received,
+                    range[0] == null ? 0 : range[0].getTime(),
+                    range[1] == null ? 0 : range[1].getTime()));
 
 //            final Date haveFrom = range[0] != null && range[0].getTime() < start ? range[0] : new Date(start);
 //            final Date haveTo = range[1] != null && range[1].getTime() - start > -1000L ? range[1] : new Date(end);
@@ -1134,21 +1132,6 @@ public class PumpHistoryHandler {
                     dateFormatter.format(haveFrom),
                     dateFormatter.format(haveTo)
             ));
-
-/*
-
-=== CGM history: adding history pull marker
-=== CGM history: segment: 1/4 start: 30/09/2018 08:06:04 end: 30/09/2018 08:06:04
-=== CGM history: segment: 2/4 start: 30/09/2018 08:01:09 end: 30/09/2018 08:01:09
-=== CGM history: segment: 3/4 start: 11/07/2018 17:36:57 end: 30/09/2018 07:57:49
-=== CGM history: segment: 4/4 start: 02/06/2018 08:06:04 end: 02/06/2018 08:06:04
-=== CGM history: requested: 30/09/2018 08:01:09 - 30/09/2018 08:06:04
-=== CGM history: parser processing took 25ms
-=== CGM history: received: 29/09/2018 20:12:50 - 30/09/2018 07:57:49
-=== CGM history: segment: 1/2 start: 11/07/2018 17:36:57 end: 30/09/2018 08:06:04
-=== CGM history: segment: 2/2 start: 02/06/2018 08:06:04 end: 02/06/2018 08:06:04
-
-*/
 
             historyRealm.executeTransaction(new Realm.Transaction() {
                 @Override

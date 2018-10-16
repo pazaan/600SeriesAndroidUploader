@@ -14,7 +14,7 @@ import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.utils.FormatKit;
-import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 import info.nightscout.android.history.NightscoutItem;
 
 import io.realm.Realm;
@@ -196,7 +196,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
                 .key(key)
                 .type(MessageItem.TYPE.CONSUMABLE)
                 .date(eventDate)
-                .clock(FormatKit.getInstance().formatAsClock(eventDate))
+                .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
                 .title(title)
                 .message(message));
 
@@ -204,15 +204,18 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
     }
 
     private String formatLifetimes() {
-        String text = String.format("%s ",
-                FormatKit.getInstance().getString(R.string.Lifetimes));
+        StringBuilder sb = new StringBuilder(
+                String.format("%s ",
+                FormatKit.getInstance().getString(R.string.Lifetimes)));
+
         for (int lt = 0; lt < LIFETIMES_TOTAL; lt++) {
             byte days = lifetimes[lt << 1];
             byte hours = lifetimes[(lt << 1) + 1];
-            text += (lt == 0 ? "" : " ") + ((days | hours) == 0 ? "---" :
-                    FormatKit.getInstance().formatHoursAsDH((days * 24) + hours));
+            if (lt > 0) sb.append(" ");
+            sb.append((days | hours) == 0 ? "---" : FormatKit.getInstance().formatHoursAsDH((days * 24) + hours));
         }
-        return text;
+
+        return sb.toString();
     }
 
     private String formatCalibrations() {

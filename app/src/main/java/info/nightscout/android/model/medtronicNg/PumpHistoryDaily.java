@@ -14,7 +14,7 @@ import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.utils.FormatKit;
-import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;

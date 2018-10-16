@@ -1,8 +1,8 @@
 package info.nightscout.android.history;
 
-import info.nightscout.api.EntriesEndpoints;
-import info.nightscout.api.ProfileEndpoints;
-import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.android.upload.nightscout.EntriesEndpoints;
+import info.nightscout.android.upload.nightscout.ProfileEndpoints;
+import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 
 /**
  * Created by Pogman on 22.11.17.

@@ -4,6 +4,7 @@ import groovy.json.JsonSlurper
 buildscript {
     repositories {
         maven { url 'https://maven.fabric.io/public' }
+        maven { url "https://jitpack.io" }
         jcenter()
     }
 
@@ -49,7 +50,7 @@ def generateVersionName() {
 def getBugfenderApiKey() {
     String bugfenderApiKey = System.getenv("BUGFENDER_API_KEY")
 
-    if(bugfenderApiKey == null) {
+    if (bugfenderApiKey == null) {
         File file = new File("app/bugfender.properties")
         if (file.exists()) {
             Properties properties = new Properties()
@@ -65,8 +66,8 @@ def getBugfenderApiKey() {
 }
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '28.0.2'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 /*
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -80,15 +81,17 @@ android {
     defaultConfig {
         applicationId "info.nightscout.android"
         minSdkVersion 14
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionName generateVersionName()
-        versionCode generateVersionCode() // FIXME - this forces a need for an online lookup and compile fails when offline
+        versionCode generateVersionCode()
+        // FIXME - this forces a need for an online lookup and compile fails when offline
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
     buildTypes {
         release {
-            minifyEnabled false // Set to true once we set up proguard-rules without breaking anything
+            minifyEnabled false
+            // Set to true once we set up proguard-rules without breaking anything
             zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             ext.enableCrashlytics = file("fabric.properties").exists()
@@ -125,14 +128,17 @@ dependencies {
     implementation files('libs/lzo-core-1.0.5.jar')
 
     implementation 'com.getpebble:pebblekit:4.0.1@aar'
-    //implementation 'com.jaredrummler:android-device-names:1.1.7'
+    implementation 'com.jaredrummler:android-device-names:1.1.7'
 
-    implementation 'com.android.support:percent:27.1.1'
-    implementation 'com.android.support:support-v13:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support:recyclerview-v7:27.1.1'
-    implementation 'com.android.support:cardview-v7:27.1.1'
+    implementation 'com.github.thorbenprimke:realm-recyclerview:0.9.25'
+
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.android.support:support-v13:28.0.0'
+    implementation 'com.android.support:design:28.0.0'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:recyclerview-v7:28.0.0'
+    implementation 'com.android.support:cardview-v7:28.0.0'
+    implementation 'com.android.support:support-v4:28.0.0'
 
     implementation 'org.apache.commons:commons-lang3:3.4'
 
@@ -141,7 +147,7 @@ dependencies {
     // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1
     implementation 'com.jjoe64:graphview:4.0.1'
 
-    implementation 'com.google.code.gson:gson:2.8.0'
+    implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'com.squareup.retrofit2:retrofit:2.1.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.1.0'
 

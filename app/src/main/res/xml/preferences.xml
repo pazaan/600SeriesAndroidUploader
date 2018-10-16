@@ -1438,6 +1438,7 @@
             android:title="@string/pref_disclaimer_title"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_category_app_version">
+        <!--suppress AndroidDomInspection -->
         <Preference
             android:key="version"
             android:title="@string/versionName" />

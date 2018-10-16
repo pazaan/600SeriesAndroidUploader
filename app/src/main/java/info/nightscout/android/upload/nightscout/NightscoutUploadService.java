@@ -13,6 +13,7 @@ import java.util.List;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.medtronic.Stats;
+import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -22,7 +23,6 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_WARN;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
 import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
@@ -172,8 +172,7 @@ public class NightscoutUploadService extends Service {
                 statNightscout.timer(timer);
                 statNightscout.settotalRecords(statNightscout.getTotalRecords() + total);
 
-                if (dataStore.isDbgEnableExtendedErrors())
-                    userLogMessage("Uploaded " + total + " records [" + timer + "ms]");
+                UserLogMessage.sendE(mContext, String.format("Uploaded %s records [%sms]", total, timer));
 
                 Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", total, timer));
 
@@ -188,7 +187,8 @@ public class NightscoutUploadService extends Service {
                 });
 
                 if (dataStore.isDbgEnableUploadErrors())
-                    userLogMessage(ICON_WARN + "Uploading to nightscout was unsuccessful: " + e.getMessage());
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                            "Uploading to nightscout was unsuccessful: " + e.getMessage());
             }
 
         } else {
@@ -196,13 +196,4 @@ public class NightscoutUploadService extends Service {
         }
     }
 
-    protected void userLogMessage(String message) {
-        try {
-            Intent intent =
-                    new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
-                            .putExtra(MasterService.Constants.EXTENDED_DATA, message);
-            sendBroadcast(intent);
-        } catch (Exception ignored) {
-        }
-    }
 }

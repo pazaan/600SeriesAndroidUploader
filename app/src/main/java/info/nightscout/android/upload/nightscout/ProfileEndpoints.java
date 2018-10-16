@@ -1,4 +1,4 @@
-package info.nightscout.api;
+package info.nightscout.android.upload.nightscout;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import info.nightscout.android.upload.nightscout.NightScoutUpload;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;

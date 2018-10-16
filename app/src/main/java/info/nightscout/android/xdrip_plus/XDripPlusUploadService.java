@@ -3,12 +3,11 @@ package info.nightscout.android.xdrip_plus;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -19,12 +18,14 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
-import info.nightscout.android.R;
+import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.PumpHistoryHandler;
+import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
+import info.nightscout.android.model.store.DataStore;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -41,6 +42,10 @@ public class XDripPlusUploadService extends Service {
     private static final String TAG = XDripPlusUploadService.class.getSimpleName();
 
     private Context mContext;
+
+    private Realm mRealm;
+    private Realm storeRealm;
+    private DataStore dataStore;
 
     private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
 
@@ -84,130 +89,144 @@ public class XDripPlusUploadService extends Service {
 
             PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 60000);
 
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-            Boolean enableXdripPlusUpload = prefs.getBoolean(getString(R.string.preference_enable_xdrip_plus), false);
+            storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+            dataStore = storeRealm.where(DataStore.class).findFirst();
 
-            if (enableXdripPlusUpload) {
+            if (dataStore.isEnableXdripPlusUpload()) {
 
                 device = "NA";
 
-                Realm mRealm = Realm.getDefaultInstance();
-
-                RealmResults<PumpStatusEvent> pumpStatusEvents = mRealm
-                        .where(PumpStatusEvent.class)
-                        .sort("eventDate", Sort.DESCENDING)
-                        .findAll();
-
-                if (pumpStatusEvents.size() > 0) {
-                    device = pumpStatusEvents.first().getDeviceName();
-                    doXDripUploadStatus(pumpStatusEvents.first());
-                }
-
+                mRealm = Realm.getDefaultInstance();
                 PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
-                List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ("XD");
 
-                for (PumpHistoryInterface record : records) {
-                    if (((PumpHistoryCGM) record).getSgv() > 0) doXDripUploadCGM((PumpHistoryCGM) record, device);
+                try {
+
+                    RealmResults<PumpStatusEvent> pumpStatusEvents = mRealm
+                            .where(PumpStatusEvent.class)
+                            .sort("eventDate", Sort.DESCENDING)
+                            .findAll();
+
+                    if (pumpStatusEvents.size() > 0) {
+                        device = pumpStatusEvents.first().getDeviceName();
+                        doXDripUploadStatus(pumpStatusEvents.first());
+                    }
+
+                    List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ("XD");
+
+                    for (PumpHistoryInterface record : records) {
+                        if (((PumpHistoryCGM) record).getSgv() > 0) doXDripUploadCGM((PumpHistoryCGM) record, device);
+                    }
+
+                    pumpHistoryHandler.setSenderRecordsACK(records, "XD");
+
+                    if (!dataStore.isXdripPlusUploadAvailable()) {
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
+                                "Xdrip is available");
+                        storeRealm.executeTransaction(new Realm.Transaction() {
+                            @Override
+                            public void execute(@NonNull Realm realm) {
+                                dataStore.setXdripPlusUploadAvailable(true);
+                            }
+                        });
+                    }
+
+                } catch (Exception e) {
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                            "Xdrip is not available");
+                    storeRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(@NonNull Realm realm) {
+                            dataStore.setXdripPlusUploadAvailable(false);
+                        }
+                    });
                 }
 
-                pumpHistoryHandler.setSenderRecordsACK(records, "XD");
                 pumpHistoryHandler.close();
-
                 mRealm.close();
             }
+
+            storeRealm.close();
 
             releaseWakeLock(wl);
             stopSelf();
         }
     }
 
-    private void doXDripUploadCGM(PumpHistoryCGM record, String device) {
-        try {
-            JSONArray entriesBody = new JSONArray();
-            JSONObject json = new JSONObject();
+    private void doXDripUploadCGM(PumpHistoryCGM record, String device) throws Exception {
+        JSONArray entriesBody = new JSONArray();
+        JSONObject json = new JSONObject();
 
-            json.put("device", device);
-            json.put("type", "sgv");
-            json.put("date", record.getEventDate().getTime());
-            json.put("dateString", record.getEventDate());
-            json.put("sgv", record.getSgv());
-            String trend = record.getCgmTrend();
-            if (trend != null) json.put("direction", PumpHistoryCGM.NS_TREND.valueOf(trend).string());
+        json.put("device", device);
+        json.put("type", "sgv");
+        json.put("date", record.getEventDate().getTime());
+        json.put("dateString", record.getEventDate());
+        json.put("sgv", record.getSgv());
+        String trend = record.getCgmTrend();
+        if (trend != null) json.put("direction", PumpHistoryCGM.NS_TREND.valueOf(trend).string());
 
-            entriesBody.put(json);
+        entriesBody.put(json);
+        sendBundle(mContext, "add", "entries", entriesBody);
+    }
+
+    private void doXDripUploadStatus(PumpStatusEvent record) throws Exception {
+        final JSONArray devicestatusBody = new JSONArray();
+
+        JSONObject json = new JSONObject();
+        json.put("uploaderBattery", MasterService.getUploaderBatteryLevel());
+        json.put("device", record.getDeviceName());
+        json.put("created_at", ISO8601_DATE_FORMAT.format(record.getEventDate()));
+
+        JSONObject pumpInfo = new JSONObject();
+        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getEventDate()));
+        pumpInfo.put("reservoir", new BigDecimal(record.getReservoirAmount()).setScale(3, BigDecimal.ROUND_HALF_UP));
+
+        JSONObject iob = new JSONObject();
+        iob.put("timestamp", record.getEventDate());
+        iob.put("bolusiob", record.getActiveInsulin());
+
+        JSONObject battery = new JSONObject();
+        battery.put("percent", record.getBatteryPercentage());
+
+        pumpInfo.put("iob", iob);
+        pumpInfo.put("battery", battery);
+        json.put("pump", pumpInfo);
+
+        devicestatusBody.put(json);
+        sendBundle(mContext, "add", "devicestatus", devicestatusBody);
+    }
+
+    private void doXDripUpload(List<PumpStatusEvent> records) throws Exception {
+        final JSONArray devicestatusBody = new JSONArray();
+        final JSONArray entriesBody = new JSONArray();
+
+        for (PumpStatusEvent record : records) {
+            addDeviceStatus(devicestatusBody, record);
+            addSgvEntry(entriesBody, record);
+            addMbgEntry(entriesBody, record);
+        }
+
+        if (entriesBody.length() > 0) {
             sendBundle(mContext, "add", "entries", entriesBody);
-        } catch (Exception e) {
-            Log.e(TAG, "Unable to send bundle: " + e);
         }
-    }
-
-    private void doXDripUploadStatus(PumpStatusEvent record) {
-        try {
-            final JSONArray devicestatusBody = new JSONArray();
-
-            JSONObject json = new JSONObject();
-            json.put("uploaderBattery", MasterService.getUploaderBatteryLevel());
-            json.put("device", record.getDeviceName());
-            json.put("created_at", ISO8601_DATE_FORMAT.format(record.getEventDate()));
-
-            JSONObject pumpInfo = new JSONObject();
-            pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getEventDate()));
-            pumpInfo.put("reservoir", new BigDecimal(record.getReservoirAmount()).setScale(3, BigDecimal.ROUND_HALF_UP));
-
-            JSONObject iob = new JSONObject();
-            iob.put("timestamp", record.getEventDate());
-            iob.put("bolusiob", record.getActiveInsulin());
-
-            JSONObject battery = new JSONObject();
-            battery.put("percent", record.getBatteryPercentage());
-
-            pumpInfo.put("iob", iob);
-            pumpInfo.put("battery", battery);
-            json.put("pump", pumpInfo);
-
-            devicestatusBody.put(json);
+        if (devicestatusBody.length() > 0) {
             sendBundle(mContext, "add", "devicestatus", devicestatusBody);
-        } catch (Exception e) {
-            Log.e(TAG, "Unable to send bundle: " + e);
         }
     }
 
-
-
-    private void doXDripUpload(List<PumpStatusEvent> records) {
-        try {
-
-            final JSONArray devicestatusBody = new JSONArray();
-            final JSONArray entriesBody = new JSONArray();
-
-            for (PumpStatusEvent record : records) {
-                addDeviceStatus(devicestatusBody, record);
-                addSgvEntry(entriesBody, record);
-                addMbgEntry(entriesBody, record);
-            }
-
-            if (entriesBody.length() > 0) {
-                sendBundle(mContext, "add", "entries", entriesBody);
-            }
-            if (devicestatusBody.length() > 0) {
-                sendBundle(mContext, "add", "devicestatus", devicestatusBody);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Unable to send bundle: " + e);
-        }
-    }
-
-    private void sendBundle(Context context, String action, String collection, JSONArray json) {
+    private void sendBundle(Context context, String action, String collection, JSONArray json) throws Exception {
         final Bundle bundle = new Bundle();
         bundle.putString("action", action);
         bundle.putString("collection", collection);
         bundle.putString("data", json.toString());
+
         final Intent intent = new Intent(Constants.XDRIP_PLUS_NS_EMULATOR);
         intent.putExtras(bundle).addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
         context.sendBroadcast(intent);
+
         List<ResolveInfo> receivers = context.getPackageManager().queryBroadcastReceivers(intent, 0);
         if (receivers.size() < 1) {
-            Log.w(TAG, "No xDrip receivers found. ");
+            Log.w(TAG, "No xDrip receivers found.");
+            throw new Exception("No xDrip receivers found.");
         } else {
             Log.d(TAG, receivers.size() + " xDrip receivers");
         }

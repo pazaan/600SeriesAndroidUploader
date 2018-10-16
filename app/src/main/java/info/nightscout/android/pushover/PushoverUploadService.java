@@ -17,7 +17,7 @@ import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.medtronic.Stats;
-import info.nightscout.android.medtronic.service.MasterService;
+import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.model.store.StatPushover;
@@ -25,15 +25,13 @@ import io.realm.Realm;
 import okhttp3.Headers;
 import retrofit2.Response;
 
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_WARN;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
 import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
 public class PushoverUploadService extends Service {
     private static final String TAG = PushoverUploadService.class.getSimpleName();
 
-    private final String url = "https://api.pushover.net/";
+    private static final String PUSHOVER_URL = "https://api.pushover.net/";
 
     private Context mContext;
 
@@ -101,7 +99,7 @@ public class PushoverUploadService extends Service {
                 statPushover = (StatPushover) Stats.getInstance().readRecord(StatPushover.class);
                 statPushover.incRun();
 
-                pushoverApi = new PushoverApi(url);
+                pushoverApi = new PushoverApi(PUSHOVER_URL);
                 if (isValid()) process();
                 else statPushover.incValidError();
             }
@@ -110,16 +108,6 @@ public class PushoverUploadService extends Service {
 
             releaseWakeLock(wl);
             stopSelf();
-        }
-    }
-
-    protected void userLogMessage(String message) {
-        try {
-            Intent intent =
-                    new Intent(MasterService.Constants.ACTION_USERLOG_MESSAGE)
-                            .putExtra(MasterService.Constants.EXTENDED_DATA, message);
-            mContext.sendBroadcast(intent);
-        } catch (Exception ignored) {
         }
     }
 
@@ -134,7 +122,7 @@ public class PushoverUploadService extends Service {
         try {
 
             if (!valid && apiToken.equals(apiCheck) && userToken.equals(userCheck)) {
-                userLogMessage(ICON_WARN + "Pushover: validation failed. Check that your Pushover account is active and your account settings are correct.");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,"Pushover validation failed. Check that your Pushover account is active and your account settings are correct.");
                 throw new Exception("account error");
             }
 
@@ -162,13 +150,15 @@ public class PushoverUploadService extends Service {
 
                 String status = response.body().getStatus();
                 if (response.code() == 400 || status == null || !status.equals("1")) {
-                    userLogMessage(ICON_WARN + "Pushover: validation failed. Check that your Pushover account is active and your account settings are correct.");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                            "Pushover validation failed. Check that your Pushover account is active and your account settings are correct.");
                     throw new Exception("account error");
                 } else {
 
                     valid = true;
 
-                    userLogMessage(ICON_INFO + "Pushover: validation success");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
+                            "Pushover is available");
 
                     String[] devices = response.body().getDevices();
                     if (devices != null) {
@@ -179,7 +169,8 @@ public class PushoverUploadService extends Service {
                             sb.append("'");
                         }
                         if (sb.length() > 0)
-                            userLogMessage(ICON_INFO + "Pushover devices: " + sb.toString());
+                            UserLogMessage.sendE(mContext,
+                                    "Pushover devices: " + sb.toString());
                     }
                 }
             }
@@ -245,7 +236,9 @@ public class PushoverUploadService extends Service {
             DateFormat df = new SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH);
             Log.i(TAG, String.format(Locale.ENGLISH, "Sent: %d Limit: %d Remaining: %d Reset: %s",
                     messagesSent, appLimit, appRemaining, df.format(appReset * 1000)));
-
+            UserLogMessage.sendN(mContext,
+                    String.format("Pushover messages sent: %s",
+                            messagesSent));
         }
     }
 
@@ -420,6 +413,15 @@ public class PushoverUploadService extends Service {
                     }
                 }
             } catch (Exception ignored) {}
+
+            UserLogMessage.sendE(mContext,
+                    String.format("Pushover: %s/%s {date.time;%s} '%s' '%s'",
+                            appLimit - appRemaining,
+                            appLimit,
+                            messageItem.getDate().getTime(),
+                            title,
+                            message
+                    ));
 
             messagesSent++;
 

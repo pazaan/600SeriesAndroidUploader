@@ -10,7 +10,7 @@ import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.utils.FormatKit;
-import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmList;
 import io.realm.RealmObject;
@@ -174,7 +174,7 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 .date(updateDate)
                 .type(type)
                 .priority(priority)
-                .clock(FormatKit.getInstance().formatAsClock(updateDate))
+                .clock(FormatKit.getInstance().formatAsClock(updateDate.getTime()).replace(" ", ""))
                 .title(title)
                 .message(message));
 

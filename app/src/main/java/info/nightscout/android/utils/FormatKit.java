@@ -15,6 +15,8 @@ import java.util.Locale;
 
 import info.nightscout.android.R;
 
+import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
+
 /**
  * Created by Pogman on 19.04.18.
  */
@@ -24,8 +26,6 @@ public class FormatKit {
 
     private static FormatKit sInstance;
     private final Application mApplication;
-
-    private final float MMOLXLFACTOR = 18.016f;
 
     private FormatKit(Application application) {
         Log.d(TAG, "initialise instance");
@@ -73,8 +73,14 @@ public class FormatKit {
 
     public String formatAsGlucose(int value, boolean units) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mApplication.getApplicationContext());
-        if (sharedPreferences.getBoolean("mmolxl", false)) return formatAsGlucoseMMOL(value, units);
-        return formatAsGlucoseMGDL(value, units);
+        if (!sharedPreferences.getBoolean("mmolxl", false)) return formatAsGlucoseMGDL(value, units);
+        return formatAsGlucoseMMOL(value, units, false);
+    }
+
+    public String formatAsGlucose(int value, boolean units, boolean decimals) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mApplication.getApplicationContext());
+        if (!sharedPreferences.getBoolean("mmolxl", false)) return formatAsGlucoseMGDL(value, units);
+        return formatAsGlucoseMMOL(value, units, decimals ? sharedPreferences.getBoolean("mmolDecimals", false) : false);
     }
 
     public String formatAsGlucoseMGDL(int value, boolean units) {
@@ -82,8 +88,17 @@ public class FormatKit {
         return df.format(value) + (units ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mgdl) : "");
     }
 
+    public String formatAsGlucoseMMOL(int value, boolean units, boolean decimals) {
+        DecimalFormat df;
+        if (decimals)
+            df = new DecimalFormat("0.00", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+        else
+            df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+        return df.format(value / MMOLXLFACTOR) + (units ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mmol) : "");
+    }
+
     public String formatAsGlucoseMMOL(int value, boolean units) {
-        DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+        DecimalFormat df = new DecimalFormat("0.00", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         return df.format(value / MMOLXLFACTOR) + (units ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mmol) : "");
     }
 
@@ -94,6 +109,26 @@ public class FormatKit {
         }
         DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         return df.format(value);
+    }
+/*
+    public String formatSecondsAsDiff(int seconds) {
+        int d = Math.abs(seconds) / 86400;
+        int h = (Math.abs(seconds) % 86400) / 3600;
+        int m = (Math.abs(seconds) % 3600) / 60;
+        int s = Math.abs(seconds) % 60;
+
+        String t = seconds < 0 ? "-" : "+";
+        if (d > 0) t += d + mApplication.getApplicationContext().getString(R.string.time_d);
+        else if (h > 0) t += h + mApplication.getApplicationContext().getString(R.string.time_h);
+        else if (m > 0) t += m + mApplication.getApplicationContext().getString(R.string.time_m);
+        else t += s + mApplication.getApplicationContext().getString(R.string.time_s);
+
+        return t;
+    }
+    */
+
+    public String formatSecondsAsDiff(int seconds) {
+        return (seconds < 0 ? "-" : "+") + formatSecondsAsDHMS(Math.abs(seconds));
     }
 
     public String formatSecondsAsDHMS(int seconds) {
@@ -142,18 +177,50 @@ public class FormatKit {
         return Integer.toString(value) + "%";
     }
 
-    public String formatAsClock(Date date) {
-        return formatAsClock(date.getTime());
+    public String formatAsClock(long time) {
+        if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
+            return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(time);
+        else
+            return new SimpleDateFormat("h:mm a", Locale.getDefault()).format(time)
+                    .replace(".", "").replace(",", "");
     }
 
-    public String formatAsClock(long time) {
-        if (DateFormat.is24HourFormat(mApplication.getApplicationContext())) {
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            return sdf.format(time);
-        } else {
-            SimpleDateFormat sdf = new SimpleDateFormat("h:mma", Locale.getDefault());
-            return sdf.format(time).toLowerCase().replace(".", "").replace(",", "");
-        }
+    public String formatAsClockNoAmPm(long time) {
+        if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
+            return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(time);
+        else
+            return new SimpleDateFormat("h:mm", Locale.getDefault()).format(time);
+    }
+
+    public String formatAsClockSeconds(long time) {
+        if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
+            return new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(time);
+        else
+            return new SimpleDateFormat("h:mm:ss a", Locale.getDefault()).format(time)
+                    .replace(".", "").replace(",", "");
+    }
+
+    public String formatAsClockSecondsNoAmPm(long time) {
+        if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
+            return new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(time);
+        else
+            return new SimpleDateFormat("h:mm:ss", Locale.getDefault()).format(time);
+    }
+
+    public String formatAsDayClock(long time) {
+        if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
+            return new SimpleDateFormat("E HH:mm", Locale.getDefault()).format(time);
+        else
+            return new SimpleDateFormat("E h:mm a", Locale.getDefault()).format(time)
+                    .replace(".", "").replace(",", "");
+    }
+
+    public String formatAsDayClockSeconds(long time) {
+        if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
+            return new SimpleDateFormat("E HH:mm:ss", Locale.getDefault()).format(time);
+        else
+            return new SimpleDateFormat("E h:mm:ss a", Locale.getDefault()).format(time)
+                    .replace(".", "").replace(",", "");
     }
 
     public String formatAsClock(int hours, int minutes) {
@@ -163,7 +230,7 @@ public class FormatKit {
         } else {
             return (hours > 12 ? hours - 12 : hours) + ":" + df.format(minutes)
                     + DateFormatSymbols.getInstance().getAmPmStrings()[hours < 12 ? 0 : 1]
-                    .toLowerCase().replace(".", "").replace(",", "");
+                    .replace(".", "").replace(",", "");
         }
     }
 
@@ -177,11 +244,6 @@ public class FormatKit {
         return sdf.format(time);
     }
 
-    public String formatAsWeekday(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("EEEE", Locale.getDefault());
-        return sdf.format(date);
-    }
-
     public String formatAsWeekdayMonthDay(long time) {
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE MMMM dd", Locale.getDefault());
         return sdf.format(time);
@@ -193,7 +255,7 @@ public class FormatKit {
     }
 
     public String formatAsYMD(long time) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
         return sdf.format(time);
     }
 

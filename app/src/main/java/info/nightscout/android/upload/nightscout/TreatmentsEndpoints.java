@@ -1,4 +1,4 @@
-package info.nightscout.api;
+package info.nightscout.android.upload.nightscout;
 
 import com.google.gson.annotations.SerializedName;
 

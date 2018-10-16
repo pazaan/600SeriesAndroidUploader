@@ -330,8 +330,8 @@ public class PumpHistorySender {
         String db = record.getClass().getSuperclass().getSimpleName();
 
         for (Sender sender : senders) {
-            if (sender.active.contains(db))
-                if (!req.contains(sender.id)) req += sender.id;
+            if (sender.active.contains(db) && !req.contains(sender.id))
+                req = req.concat(sender.id);
         }
 
         record.setSenderREQ(req);
@@ -343,8 +343,8 @@ public class PumpHistorySender {
         String db = record.getClass().getSuperclass().getSimpleName();
 
         for (Sender sender : senders) {
-            if (sender.active.contains(db))
-                if (!ack.contains(sender.id)) ack += sender.id;
+            if (sender.active.contains(db) && !ack.contains(sender.id))
+                ack = ack.concat(sender.id);
         }
 
         record.setSenderACK(ack);

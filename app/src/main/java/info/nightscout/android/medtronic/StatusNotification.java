@@ -434,9 +434,11 @@ public class StatusNotification {
                 text += "Basal: suspended";
                 RealmResults<PumpHistoryBasal> suspend = historyRealm.where(PumpHistoryBasal.class)
                         .greaterThan("eventDate", new Date(now - (12 * 60 * 60000L)))
+                        .beginGroup()
                         .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.SUSPEND.value())
                         .or()
                         .equalTo("recordtype", PumpHistoryBasal.RECORDTYPE.RESUME.value())
+                        .endGroup()
                         .sort("eventDate", Sort.DESCENDING)
                         .findAll();
                 // check if most recent suspend is in history and show the start time

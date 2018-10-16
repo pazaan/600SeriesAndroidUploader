@@ -286,7 +286,7 @@ public abstract class ContourNextLinkMessage {
         if (bytesRead == -1) {
             if (runtime > 10000) Log.w(TAG, "READ: runtime > 10000ms TIMEOUT" + info);
             else Log.d(TAG, "READ: TIMEOUT" + info);
-            throw new TimeoutException("Timeout waiting for response from pump");
+            throw new TimeoutException("Timeout waiting for a read response " + info);
         }
 
         // a 'response divisible by 60' is in general a valid response on a block boundary, noted in log as it may also be due to a usb read error
@@ -295,8 +295,6 @@ public abstract class ContourNextLinkMessage {
 
         if (runtime > 10000)
             Log.w(TAG, "READ: runtime > 10000ms" + info);
-        else if (runtime > 21000)
-            Log.w(TAG, "READ: !!! runtime > 21000ms !!!" + info);
 
         if (DEBUG_READ)
             Log.d(TAG, "READ:" + info + HexDump.dumpHexString(responseMessage.toByteArray()));

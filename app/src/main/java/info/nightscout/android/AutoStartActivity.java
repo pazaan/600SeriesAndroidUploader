@@ -41,22 +41,7 @@ public class AutoStartActivity extends AppCompatActivity {
         }
 
         if (service) {
-
-            try {
-                if (Realm.compactRealm(Realm.getDefaultConfiguration()))
-                    Log.i(TAG, "compactRealm: default successful");
-                if (Realm.compactRealm(UploaderApplication.getStoreConfiguration()))
-                    Log.i(TAG, "compactRealm: store successful");
-                if (Realm.compactRealm(UploaderApplication.getUserLogConfiguration()))
-                    Log.i(TAG, "compactRealm: userlog successful");
-                if (Realm.compactRealm(UploaderApplication.getHistoryConfiguration()))
-                    Log.i(TAG, "compactRealm: history successful");
-            } catch (Exception e) {
-                Log.e(TAG, "Error trying to compact realm" + Log.getStackTraceString(e));
-            }
-
             Log.d(TAG, "MasterService auto starter, starting!");
-
             startService(new Intent(getBaseContext(), MasterService.class));
         }
 

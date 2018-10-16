@@ -54,6 +54,9 @@ public class DataStore extends RealmObject {
     private long lowBatPollInterval;
     private boolean doublePollOnPumpAway;
 
+    private boolean enableXdripPlusUpload;
+    private boolean xdripPlusUploadAvailable;
+
     private boolean sysEnableCgmHistory;
     private int sysCgmHistoryDays;
     private boolean sysEnablePumpHistory;
@@ -254,6 +257,8 @@ public class DataStore extends RealmObject {
         nightscoutUpload = sharedPreferences.getBoolean("EnableRESTUpload", false);
         nightscoutURL = sharedPreferences.getString(context.getString(R.string.preference_nightscout_url), "");
         nightscoutSECRET = sharedPreferences.getString(context.getString(R.string.preference_api_secret), "YOURAPISECRET");
+
+        enableXdripPlusUpload = sharedPreferences.getBoolean(context.getString(R.string.preference_enable_xdrip_plus), false);
 
         // system
         sysEnableCgmHistory = sharedPreferences.getBoolean("sysEnableCgmHistory", true);
@@ -648,6 +653,18 @@ public class DataStore extends RealmObject {
         this.pumpLostSensorError = 0;
         this.pumpClockError = 0;
         this.pumpBatteryError = 0;
+    }
+
+    public boolean isEnableXdripPlusUpload() {
+        return enableXdripPlusUpload;
+    }
+
+    public boolean isXdripPlusUploadAvailable() {
+        return xdripPlusUploadAvailable;
+    }
+
+    public void setXdripPlusUploadAvailable(boolean xdripPlusUploadAvailable) {
+        this.xdripPlusUploadAvailable = xdripPlusUploadAvailable;
     }
 
     public boolean isMmolxl() {

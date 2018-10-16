@@ -11,7 +11,7 @@ import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.utils.ToolKit;
 import info.nightscout.android.utils.FormatKit;
-import info.nightscout.api.TreatmentsEndpoints;
+import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.RealmResults;
@@ -273,7 +273,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 .type(type)
                 .date(alarmedDate)
                 .priority(priority)
-                .clock(FormatKit.getInstance().formatAsClock(alarmedDate))
+                .clock(FormatKit.getInstance().formatAsClock(alarmedDate.getTime()).replace(" ", ""))
                 .title(title)
                 .message(message)
                 .extended(extended)

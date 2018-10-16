@@ -8,7 +8,7 @@ import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.history.PumpHistorySender;
-import info.nightscout.api.EntriesEndpoints;
+import info.nightscout.android.upload.nightscout.EntriesEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;

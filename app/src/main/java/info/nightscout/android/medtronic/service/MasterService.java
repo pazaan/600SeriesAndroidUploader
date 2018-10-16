@@ -23,10 +23,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.medtronic.Stats;
@@ -42,8 +39,9 @@ import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.upload.nightscout.NightscoutUploadService;
+import info.nightscout.android.utils.RealmKit;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadService;
-import info.nightscout.urchin.Urchin;
+import info.nightscout.android.urchin.Urchin;
 import io.realm.Realm;
 import io.realm.RealmList;
 import io.realm.RealmResults;
@@ -51,9 +49,6 @@ import io.realm.Sort;
 
 import static android.support.v4.app.NotificationCompat.PRIORITY_MAX;
 import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_HELP;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_INFO;
-import static info.nightscout.android.medtronic.UserLogMessage.Icons.ICON_WARN;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_GRACE_PERIOD_MS;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_PERIOD_MS;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_PRE_GRACE_PERIOD_MS;
@@ -77,13 +72,12 @@ public class MasterService extends Service {
     private Realm storeRealm;
     private DataStore dataStore;
 
-    private MasterServiceReceiver masterServiceReceiver = new MasterServiceReceiver();
-    private UserLogMessageReceiver userLogMessageReceiver = new UserLogMessageReceiver();
-    private BatteryReceiver batteryReceiver = new BatteryReceiver();
-    private UsbReceiver usbReceiver = new UsbReceiver();
+    private MasterServiceReceiver masterServiceReceiver;
+    private UserLogMessageReceiver userLogMessageReceiver;
+    private BatteryReceiver batteryReceiver;
+    private UsbReceiver usbReceiver;
 
-    private UserLogMessage userLogMessage = UserLogMessage.getInstance();
-    private StatusNotification statusNotification = StatusNotification.getInstance();
+    private StatusNotification statusNotification;
 
     private Urchin urchin;
 
@@ -130,8 +124,6 @@ public class MasterService extends Service {
 
     private boolean serviceActive = true;
 
-    private DateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US);
-
     @Override
     public IBinder onBind(Intent intent) {
         throw new UnsupportedOperationException("Not yet implemented");
@@ -141,9 +133,10 @@ public class MasterService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate called");
-        //userLogMessage.add(TAG + " onCreate called");
 
         mContext = this.getBaseContext();
+
+        RealmKit.compact(mContext);
 
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
         dataStore = storeRealm.where(DataStore.class).findFirst();
@@ -154,12 +147,19 @@ public class MasterService extends Service {
             storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(@NonNull Realm realm) {
+                    dataStore.clearAllCommsErrors();
+                    // check Xdrip available
+                    dataStore.setXdripPlusUploadAvailable(false);
+                    // check Nightscout site available
                     dataStore.setNightscoutReportTime(0);
                     dataStore.setNightscoutAvailable(false);
-                    dataStore.clearAllCommsErrors();
+                    // revalidate Pushover account
+                    dataStore.setPushoverAPItokenCheck("");
+                    dataStore.setPushoverUSERtokenCheck("");
                 }
             });
 
+            masterServiceReceiver = new MasterServiceReceiver();
             IntentFilter masterServiceIntentFilter = new IntentFilter();
             masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_ACTIVE);
             masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_FINISHED);
@@ -170,16 +170,19 @@ public class MasterService extends Service {
             masterServiceIntentFilter.addAction(Constants.ACTION_ALARM_RECEIVED);
             registerReceiver(masterServiceReceiver, masterServiceIntentFilter);
 
+            userLogMessageReceiver = new UserLogMessageReceiver();
             registerReceiver(
                     userLogMessageReceiver,
                     new IntentFilter(Constants.ACTION_USERLOG_MESSAGE));
 
+            batteryReceiver = new BatteryReceiver();
             IntentFilter batteryIntentFilter = new IntentFilter();
             batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
             batteryIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
             batteryIntentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
             registerReceiver(batteryReceiver, batteryIntentFilter);
 
+            usbReceiver = new UsbReceiver();
             IntentFilter usbIntentFilter = new IntentFilter();
             usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
             usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
@@ -188,6 +191,8 @@ public class MasterService extends Service {
             registerReceiver(usbReceiver, usbIntentFilter);
 
             urchin = new Urchin(mContext);
+
+            statusNotification = StatusNotification.getInstance();
         }
     }
 
@@ -324,11 +329,13 @@ public class MasterService extends Service {
                 stopSelf();
 
             } else if (Constants.ACTION_READ_NOW.equals(action)) {
+                UserLogMessage.send(mContext, R.string.main_requesting_poll_now);
                 cancelAlarm();
                 startService(new Intent(mContext, MedtronicCnlService.class)
                         .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
 
             } else if (Constants.ACTION_READ_PROFILE.equals(action)) {
+                UserLogMessage.send(mContext, R.string.main_requesting_pump_profile);
                 storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(@NonNull Realm realm) {
@@ -342,14 +349,14 @@ public class MasterService extends Service {
 
             } else if (Constants.ACTION_URCHIN_UPDATE.equals(action)) {
                 urchin.update();
-
+/*
             } else if (Constants.ACTION_ALARM_RECEIVED.equals(action)) {
                 long time = intent.getLongExtra("time", 0);
                 Log.d(TAG, "Received alarm broadcast message at " + new Date(time));
                 userLogMessage.add("* alarm: " + new Date(time));
                 startService(new Intent(mContext, MedtronicCnlService.class)
                         .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
-
+*/
             }
 
         }
@@ -406,7 +413,7 @@ public class MasterService extends Service {
         statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, start);
 
         if (start - now > 10000L)
-            userLogMessage.add("Next poll due at: " + dateFormatter.format(start));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, String.format("{id;%s} {time.poll;%s}", R.string.next_poll_due_at, start));
     }
 
     private long nextPollTime() {
@@ -480,9 +487,10 @@ public class MasterService extends Service {
     private class UserLogMessageReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String message = intent.getStringExtra(Constants.EXTENDED_DATA);
-            Log.i(TAG, "Message Receiver: " + message);
-            userLogMessage.add(message);
+            UserLogMessage.getInstance().addAsync(
+                    (UserLogMessage.TYPE) intent.getSerializableExtra("type"),
+                    (UserLogMessage.FLAG) intent.getSerializableExtra("flag"),
+                    intent.getStringExtra("message"));
         }
     }
 
@@ -506,7 +514,7 @@ public class MasterService extends Service {
             if (Constants.ACTION_HAS_USB_PERMISSION.equals(action)) {
 
                 if (hasUsbPermission()) {
-                    userLogMessage.add(ICON_INFO + "Got permission for USB.");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Got permission for USB.");
                     statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
                     startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
                 }
@@ -514,7 +522,7 @@ public class MasterService extends Service {
                 // received from OS
             } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 Log.d(TAG, "USB plugged in");
-                userLogMessage.add(ICON_INFO + "Contour Next Link plugged in.");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Contour Next Link plugged in.");
                 clearDisconnectionNotification();
 
                 storeRealm.executeTransaction(new Realm.Transaction() {
@@ -533,14 +541,14 @@ public class MasterService extends Service {
 
                 } else {
                     Log.d(TAG, "No permission for USB. Waiting.");
-                    userLogMessage.add(ICON_INFO + "Waiting for USB permission.");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Waiting for USB permission.");
                 }
 
                 // received from OS
             } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
                 Log.d(TAG, "USB unplugged");
                 showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
-                userLogMessage.add(ICON_WARN + "USB error. Contour Next Link unplugged.");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "USB error. Contour Next Link unplugged.");
 
                 statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
 
@@ -550,14 +558,14 @@ public class MasterService extends Service {
                 // received from CnlService
             } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
                 Log.d(TAG, "No permission to read the USB device.");
-                userLogMessage.add(ICON_WARN + "No permission to read the USB device.");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "No permission to read the USB device.");
 
                 statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
 
                 if (dataStore.isSysEnableUsbPermissionDialog()) {
                     requestUsbPermission();
                 } else {
-                    userLogMessage.add(ICON_HELP + "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
                 }
 
             }

@@ -93,15 +93,16 @@
     <string name="newer_log_entries">newer log entries</string>
 
     <string name="connecting_to_contour_next_link">Connecting to Contour Next Link</string>
-    <string name="connected_on_channel_rssi">Connected on channel %d  RSSI: %d%%</string>
+    <string name="connected_on_channel">Connected on channel</string>
+    <string name="rssi">RSSI</string>
 
     <string name="please_wait">Please wait</string>
-    <string name="pump_is_expecting_sensor_communication">Pump is expecting sensor communication. Poll due in %d seconds."</string>
+    <string name="pump_is_expecting_sensor_communication">Pump is expecting sensor communication. Poll due in</string>
     <string name="radio_clash_protection_is_disabled">Radio clash protection is disabled.</string>
     <string name="could_not_communicate_with_the_pump">Could not communicate with the pump. Is it nearby?</string>
-    <string name="polling_service_could_not_complete">Polling service could not complete. Will try again in %d seconds.</string>
+    <string name="polling_service_could_not_complete">Polling service could not complete. Will try again in 60 seconds.</string>
     <string name="unexpected_error">Unexpected Error!</string>
-    <string name="next_poll_due_at">Next poll due at: %s</string>
+    <string name="next_poll_due_at">Next poll due at</string>
 
     <string name="history_text">history</string>
     <string name="history_read_pump">PUMP history</string>
@@ -149,7 +150,9 @@
     <string name="warn_pump_battery_low">Warning: pump battery low</string>
     <string name="info_pump_low_battery_mode_change">Poll interval increased, history and backfill processing reduced.</string>
     <string name="info_low_battery_interval">Low battery poll interval:</string>
-    <string name="warn_pump_time_difference">Warning: Time difference between Pump and Uploader excessive. Pump is over %d %s %s of time used by uploader.</string>
+    <string name="warn_pump_time_difference">Warning: Time difference between Pump and Uploader excessive. Pump is over</string>
+    <string name="warn_pump_time_difference_ahead">ahead of the time used by uploader.</string>
+    <string name="warn_pump_time_difference_behind">behind the time used by uploader.</string>
     <string name="help_pump_time_difference">The uploader phone/device should have the current time provided by network. Pump clock drifts forward and needs to be set to correct time occasionally.</string>
     <string name="warn_multiple_comms_errors">Warning: multiple comms/timeout errors detected.</string>
     <string name="help_multiple_comms_errors">Try: disconnecting and reconnecting the Contour Next Link to phone / restarting phone / check pairing of CNL with Pump.</string>
