@@ -447,7 +447,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         // userlog message at startup when no service is running
         if (!mPrefs.getBoolean("EnableCgmService", false)) {
 
-            UserLogMessage.getInstance().add(UserLogMessage.TYPE.HEART, R.string.main_hello);
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.STARTUP, R.string.main_hello);
 
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
                     String.format("{id;%s} {id;%s}",
@@ -494,7 +494,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void shutdownMessage() {
         // userlog message at shutdown when 'stop collecting data' selected
         if (!mPrefs.getBoolean("EnableCgmService", false)) {
-            UserLogMessage.getInstance().add(UserLogMessage.TYPE.HEART, R.string.main_goodbye);
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.SHUTDOWN, R.string.main_goodbye);
             UserLogMessage.getInstance().add("---------------------------------------------------");
         }
     }
@@ -1051,6 +1051,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             fabCurrent = findViewById(R.id.fab_log_current);
             fabCurrent.hide();
 
+            // return to most recent log entry
             fabCurrent.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -1076,6 +1077,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             fabSearch = findViewById(R.id.fab_log_search);
             fabSearch.hide();
 
+            // search click: in normal mode will scroll to errors/warnings, in extended mode this includes notes
             fabSearch.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -1109,6 +1111,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             });
 
+            // search long click: in normal mode will scroll to the start of a session, in extended mode to notes
             fabSearch.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View view) {
@@ -1119,26 +1122,29 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
                             RealmResults<UserLog> rr = userLogResults.where()
                                     .lessThan("timestamp", userLogResults.get(p).getTimestamp())
-                                    .equalTo("type", extended ? UserLogMessage.TYPE.NOTE.value() : UserLogMessage.TYPE.WARN.value())
+                                    .equalTo("type", extended ? UserLogMessage.TYPE.NOTE.value() : UserLogMessage.TYPE.STARTUP.value())
                                     .sort("timestamp", Sort.DESCENDING)
                                     .findAll();
 
+                            int to = 0;
                             if (rr.size() > 0) {
                                 int ss = userLogResults.indexOf(rr.first());
                                 int c = realmRecyclerView.getRecycleView().getLayoutManager().getChildCount() / 4;
-                                int to = ss - (c < 1 ? 1 : c);
+                                to = ss - (c < 1 ? 1 : c);
                                 if (to < 0) to = 0;
-                                if (Math.abs(p - to) > 400)
-                                    realmRecyclerView.scrollToPosition(to);
-                                else
-                                    realmRecyclerView.smoothScrollToPosition(to);
                             }
+
+                            if (Math.abs(p - to) > 400)
+                                realmRecyclerView.scrollToPosition(to);
+                            else
+                                realmRecyclerView.smoothScrollToPosition(to);
                         }
                     }
                     return true;
                 }
             });
 
+            // show/hide the floating log buttons
             RecyclerView rv = realmRecyclerView.getRecycleView();
             rv.addOnScrollListener(new RecyclerView.OnScrollListener() {
                 @Override
@@ -1160,6 +1166,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
             });
 
+            // don't autoscroll the log when screen is being touched by user
             rv.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
                 @Override
                 public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {

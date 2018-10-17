@@ -46,6 +46,12 @@ public class FormatKit {
         return sInstance;
     }
 
+    // set the language to use for formatting
+    public FormatKit mode(int mode) {
+
+        return this;
+    }
+
     public String formatAsGrams(Double value) {
         DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(0);
@@ -110,22 +116,6 @@ public class FormatKit {
         DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         return df.format(value);
     }
-/*
-    public String formatSecondsAsDiff(int seconds) {
-        int d = Math.abs(seconds) / 86400;
-        int h = (Math.abs(seconds) % 86400) / 3600;
-        int m = (Math.abs(seconds) % 3600) / 60;
-        int s = Math.abs(seconds) % 60;
-
-        String t = seconds < 0 ? "-" : "+";
-        if (d > 0) t += d + mApplication.getApplicationContext().getString(R.string.time_d);
-        else if (h > 0) t += h + mApplication.getApplicationContext().getString(R.string.time_h);
-        else if (m > 0) t += m + mApplication.getApplicationContext().getString(R.string.time_m);
-        else t += s + mApplication.getApplicationContext().getString(R.string.time_s);
-
-        return t;
-    }
-    */
 
     public String formatSecondsAsDiff(int seconds) {
         return (seconds < 0 ? "-" : "+") + formatSecondsAsDHMS(Math.abs(seconds));
@@ -151,14 +141,6 @@ public class FormatKit {
                 m + mApplication.getApplicationContext().getString(R.string.time_m);
     }
 
-    /*
-    public String formatMinutesAsHM(int minutes) {
-        int h = minutes / 60;
-        int m = minutes % 60;
-        return (h > 0 ? h + mContext.getString(R.string.time_h) : "") +
-                m + mContext.getString(R.string.time_m);
-    }
-    */
     public String formatMinutesAsHM(int minutes) {
         int h = minutes / 60;
         int m = minutes % 60;

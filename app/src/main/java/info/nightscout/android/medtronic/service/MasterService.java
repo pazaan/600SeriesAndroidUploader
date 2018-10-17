@@ -258,9 +258,10 @@ public class MasterService extends Service {
 
             statusNotification.initNotification(mContext);
 
-            startCgmService();
-
             serviceActive = true;
+
+            uploadPollResults();
+            startCgmService();
         }
 
         return START_STICKY;

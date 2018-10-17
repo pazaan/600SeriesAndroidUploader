@@ -30,6 +30,7 @@ public class UserLogAdapter
 
     private final static int FADE_DURATION_MS = 400;
 
+    private final static int cDEFAULT = 0xFFC0C0C0;
     private final static int cHIGHLIGHT = 0xFFE0E0E0;
     private final static int cCLOCK = 0xFFA0A0A0;
     private final static int cWARN = 0xFFE0E000;
@@ -154,6 +155,8 @@ public class UserLogAdapter
                 ssb.setSpan(new ImageSpan(iSETTING, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 ssb.setSpan(new ForegroundColorSpan(cHIGHLIGHT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
+            case STARTUP:
+            case SHUTDOWN:
             case HEART:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iHEART, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -180,6 +183,7 @@ public class UserLogAdapter
                 break;
             default:
                 ssb.append(" ").append(text);
+                ssb.setSpan(new ForegroundColorSpan(cDEFAULT), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
         ssb.insert(0, clock);
@@ -191,22 +195,20 @@ public class UserLogAdapter
 
     private void initIcons(TextView tv) {
 
-        cDefault = tv.getCurrentTextColor();
         iBounds = (int) (tv.getTextSize() * 1.2);
         iOffsetXDp = 0;
         iOffsetYDp = 3;
 
         iWARN = icon("ion_alert_circled", cWARN);
         iINFO = icon("ion_information_circled", cHIGHLIGHT);
-        //iNOTE = icon("ion_clipboard", cHIGHLIGHT);
         iNOTE = icon("ion_document", cHIGHLIGHT);
         //iNOTE = icon("ion_stats_bars", cHIGHLIGHT);
         iHELP = icon("ion_ios_lightbulb", cHIGHLIGHT);
         iCGM = icon("ion_ios_pulse_strong", cCGM);
         iHEART = icon("ion_heart", cHEART);
         iSHARE = icon("ion_android_share_alt", cHIGHLIGHT);
-        //iREFRESH = icon("ion_loop", cDefault);
-        iREFRESH = icon("ion_refresh", cDefault);
+        //iREFRESH = icon("ion_loop", cDEFAULT);
+        iREFRESH = icon("ion_refresh", cDEFAULT);
         iSETTING = icon("ion_android_settings", cHIGHLIGHT);
     }
 

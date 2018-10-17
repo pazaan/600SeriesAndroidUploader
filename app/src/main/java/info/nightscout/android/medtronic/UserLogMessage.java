@@ -187,6 +187,8 @@ public class UserLogMessage {
         REQUESTED(11),
         RECEIVED(12),
         SHARE(13),
+        STARTUP(14),
+        SHUTDOWN(15),
         NA(-1);
 
         private int value;

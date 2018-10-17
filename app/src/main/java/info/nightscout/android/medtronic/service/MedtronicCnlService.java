@@ -513,7 +513,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             // skip if pump battery is low and interval time is higher then poll period, process history once per hour
 
                             if (!pumpRecord.isOldSgvWhenNewExpected() &&
-                                    !(pumpBatteryError > 0 && dataStore.getLowBatPollInterval() > POLL_PERIOD_MS
+                                    !(pumpBatteryError > 0
+                                            && dataStore.getLowBatPollInterval() > POLL_PERIOD_MS
                                             && pumpHistoryHandler.pumpHistoryRecency() < 60 * 60000L)) {
 
                                 if (dataStore.isRequestProfile()) {
