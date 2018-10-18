@@ -49,7 +49,6 @@ public class UserLogAdapter
     private IconicsDrawable iHEART;
     private IconicsDrawable iSHARE;
 
-    private int cDefault;
     private int iBounds;
     private int iOffsetXDp;
     private int iOffsetYDp;
@@ -144,6 +143,7 @@ public class UserLogAdapter
             case HISTORY:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iREFRESH, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(cDEFAULT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case CGM:
                 ssb.append(" * ").append(text);

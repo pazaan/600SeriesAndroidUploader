@@ -20,6 +20,7 @@
         <item>8|2|1|Insulin flow blocked|Estimated 0U insulin in reservoir. Change reservoir and infusion set.</item>
         <item>11|2|1|Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.</item>
         <item>58|0|1|Battery Failed|Insert a new AA battery.</item>
+        <item>70|-1|1|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.</item>
         <item>73|1|1|Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.</item>
         <item>84|-1|1|Insert Battery|Delivery stopped. Insert a new battery now.</item>
         <item>100|1|1|Bolus Not Delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.</item>
@@ -117,7 +118,7 @@
     xxx|Check settings|Startup Wizard settings complete. Check and set up your other settings.
     xxx|Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.
     xxx|Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.
-    xxx|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
+    070|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
     084|Insert battery|Delivery stopped. Insert a new battery now.
     007|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
     008|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
@@ -197,7 +198,7 @@
     xxx|Alert|Check settings|Startup Wizard settings complete. Check and set up your other settings.
     xxx|Alarm|Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.
     xxx|Alarm|Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.
-    xxx|Alarm|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
+    070|Alarm|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
     xxx|Message|High BG XXX mg/dL|Check infusion set. Check ketones. Consider insulin injection. Monitor BG.
     084|Alarm|Insert battery|Delivery stopped. Insert a new battery now.
     007|Alarm|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
@@ -394,6 +395,42 @@
         <item>8</item>
     </string-array>
 
+    <string-array name="cannula_change_threshold">
+        <item>Fill Cannula</item>
+        <item>Prime Cannula 0.1U+</item>
+        <item>Prime Cannula 0.2U+</item>
+        <item>Prime Cannula 0.3U+</item>
+        <item>Prime Cannula 0.4U+</item>
+        <item>Prime Cannula 0.5U+</item>
+        <item>Prime Cannula 0.6U+</item>
+        <item>Prime Cannula 0.7U+</item>
+        <item>Prime Cannula 0.8U+</item>
+        <item>Prime Cannula 0.9U+</item>
+        <item>Prime Cannula 1.0U+</item>
+        <item>Prime Cannula 2.0U+</item>
+        <item>Prime Cannula 3.0U+</item>
+        <item>Prime Cannula 4.0U+</item>
+        <item>Prime Cannula 5.0U+</item>
+    </string-array>
+
+    <string-array name="cannula_change_threshold_values" translatable="false">
+        <item>0</item>
+        <item>100</item>
+        <item>200</item>
+        <item>300</item>
+        <item>400</item>
+        <item>500</item>
+        <item>600</item>
+        <item>700</item>
+        <item>800</item>
+        <item>900</item>
+        <item>1000</item>
+        <item>2000</item>
+        <item>3000</item>
+        <item>4000</item>
+        <item>5000</item>
+    </string-array>
+
     <string-array name="insulin_change_threshold">
         <item>New Reservoir</item>
         <item>1.8ml Reservoir</item>
@@ -423,8 +460,8 @@
 
     <string-array name="insulin_change_threshold_values" translatable="false">
         <item>0</item>
-        <item>140</item>
-        <item>240</item>
+        <item>1</item>
+        <item>2</item>
         <item>100</item>
         <item>110</item>
         <item>120</item>

@@ -87,6 +87,7 @@ public class PumpHistorySender {
                 .opt(SENDEROPT.MISC_CANNULA, dataStore.isNsEnableReservoirChange())
                 .opt(SENDEROPT.MISC_INSULIN, dataStore.isNsEnableInsulinChange())
                 .var(SENDEROPT.INSULIN_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsInsulinChangeThreshold()))
+                .var(SENDEROPT.CANNULA_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsCannulaChangeThreshold()))
 
                 .opt(SENDEROPT.INSERT_BG_AS_CGM, dataStore.isNsEnableFingerBG() & dataStore.isNsEnableInsertBGasCGM())
 
@@ -127,6 +128,7 @@ public class PumpHistorySender {
                 .opt(SENDEROPT.MISC_CANNULA, dataStore.isPushoverEnableConsumables() & dataStore.isNsEnableReservoirChange())
                 .opt(SENDEROPT.MISC_INSULIN, dataStore.isPushoverEnableConsumables() & dataStore.isNsEnableInsulinChange())
                 .var(SENDEROPT.INSULIN_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsInsulinChangeThreshold()))
+                .var(SENDEROPT.CANNULA_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsCannulaChangeThreshold()))
 
                 .opt(SENDEROPT.ALARM_CLEARED, dataStore.isPushoverEnableCleared())
                 .opt(SENDEROPT.ALARM_SILENCED, dataStore.isPushoverEnableSilenced())
@@ -192,6 +194,7 @@ public class PumpHistorySender {
         CALIBRATION_INFO,
         INSERT_BG_AS_CGM,
         INSULIN_CLANGE_THRESHOLD,
+        CANNULA_CLANGE_THRESHOLD,
 
         PROFILE_OFFSET,
 

@@ -100,14 +100,19 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
             notes = String.format("%s: %s",
                     FormatKit.getInstance().getString(R.string.Pump),
                     FormatKit.getInstance().getString(R.string.new_sensor_started));
-        } else if (RECORDTYPE.CHANGE_BATTERY.equals(recordtype)
+        }
+        else if (RECORDTYPE.CHANGE_BATTERY.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_BATTERY)) {
             type = "Pump Battery Change";
             notes = String.format("%s: %s",
                     FormatKit.getInstance().getString(R.string.Pump),
                     FormatKit.getInstance().getString(R.string.battery_inserted));
-        } else if (RECORDTYPE.CHANGE_CANNULA.equals(recordtype)
+        }
+        else if (RECORDTYPE.CHANGE_CANNULA.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_CANNULA)) {
+            double threshold = Double.parseDouble(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.CANNULA_CLANGE_THRESHOLD, "0")) / 1000;
+            // only send a CAGE event when primed amount exceeds threshold
+            if (delivered < threshold) return nightscoutItems;
             type = "Site Change";
             notes = String.format("%s: %s%s%s %s (%s)",
                     FormatKit.getInstance().getString(R.string.Pump),
@@ -116,10 +121,13 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
                     FormatKit.getInstance().getString(R.string.Prime),
                     FormatKit.getInstance().formatAsInsulin(delivered),
                     FormatKit.getInstance().formatAsInsulin(remaining));
-        } else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
+        }
+        else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_INSULIN)) {
             // only send a IAGE event when insulin reservoir in pump exceeds threshold
             int threshold = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.INSULIN_CLANGE_THRESHOLD, "0"));
+            if (threshold == 1) threshold = 140; // 1.8ml Reservoir
+            else if (threshold == 2) threshold = 240; // 3.0ml Reservoir
             if (remaining < threshold) return nightscoutItems;
             type = "Insulin Change";
             notes = String.format("%s: %s%s%s %s (%s)",
@@ -129,7 +137,8 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
                     FormatKit.getInstance().getString(R.string.Prime),
                     FormatKit.getInstance().formatAsInsulin(delivered),
                     FormatKit.getInstance().formatAsInsulin(remaining));
-        } else {
+        }
+        else {
             Log.e(TAG, "unknown misc event");
             return nightscoutItems;
         }
@@ -172,19 +181,28 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         if (RECORDTYPE.CHANGE_SENSOR.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_SENSOR)) {
             title = FormatKit.getInstance().getString(R.string.Sensor_Change);
-        } else if (RECORDTYPE.CHANGE_BATTERY.equals(recordtype)
+        }
+        else if (RECORDTYPE.CHANGE_BATTERY.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_BATTERY)) {
             title = FormatKit.getInstance().getString(R.string.Battery_Change);
-        } else if (RECORDTYPE.CHANGE_CANNULA.equals(recordtype)
+        }
+        else if (RECORDTYPE.CHANGE_CANNULA.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_CANNULA)) {
+            double threshold = Double.parseDouble(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.CANNULA_CLANGE_THRESHOLD, "0")) / 1000;
+            // only send a CAGE event when primed amount exceeds threshold
+            if (delivered < threshold) return messageItems;
             title = FormatKit.getInstance().getString(R.string.Cannula_Change);
-        } else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
+        }
+        else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
                 && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_INSULIN)) {
             // only send a IAGE event when insulin reservoir in pump exceeds threshold
             int threshold = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.INSULIN_CLANGE_THRESHOLD, "0"));
+            if (threshold == 1) threshold = 140; // 1.8ml Reservoir
+            else if (threshold == 2) threshold = 240; // 3.0ml Reservoir
             if (remaining < threshold) return messageItems;
             title = FormatKit.getInstance().getString(R.string.Insulin_Change);
-        } else
+        }
+        else
             return messageItems;
 
         if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.MISC_LIFETIMES))
@@ -206,7 +224,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
     private String formatLifetimes() {
         StringBuilder sb = new StringBuilder(
                 String.format("%s ",
-                FormatKit.getInstance().getString(R.string.Lifetimes)));
+                        FormatKit.getInstance().getString(R.string.Lifetimes)));
 
         for (int lt = 0; lt < LIFETIMES_TOTAL; lt++) {
             byte days = lifetimes[lt << 1];

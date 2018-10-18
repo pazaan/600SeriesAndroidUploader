@@ -83,6 +83,7 @@ public class DataStore extends RealmObject {
     private boolean nsEnableSensorChange;
     private boolean nsEnableReservoirChange;
     private boolean nsEnableInsulinChange;
+    private int nsCannulaChangeThreshold;
     private int nsInsulinChangeThreshold;
     private boolean nsEnableBatteryChange;
     private boolean nsEnableLifetimes;
@@ -289,6 +290,7 @@ public class DataStore extends RealmObject {
         nsEnableSensorChange = sharedPreferences.getBoolean("nsEnableSensorChange", true);
         nsEnableReservoirChange = sharedPreferences.getBoolean("nsEnableReservoirChange", true);
         nsEnableInsulinChange = sharedPreferences.getBoolean("nsEnableInsulinChange", false);
+        nsCannulaChangeThreshold = Integer.parseInt(sharedPreferences.getString("nsCannulaChangeThreshold", "0"));
         nsInsulinChangeThreshold = Integer.parseInt(sharedPreferences.getString("nsInsulinChangeThreshold", "0"));
         nsEnableBatteryChange = sharedPreferences.getBoolean("nsEnableBatteryChange", true);
         nsEnableLifetimes = sharedPreferences.getBoolean("nsEnableLifetimes", false);
@@ -781,6 +783,10 @@ public class DataStore extends RealmObject {
 
     public boolean isNsEnableInsulinChange() {
         return nsEnableInsulinChange;
+    }
+
+    public int getNsCannulaChangeThreshold() {
+        return nsCannulaChangeThreshold;
     }
 
     public int getNsInsulinChangeThreshold() {
