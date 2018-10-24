@@ -2,6 +2,14 @@
 <resources>
     <string name="app_name" translatable="false">600 Series Uploader</string>
 
+    <!-- Defaults -->
+<!--
+    <string name="default_mmolxl" translatable="false">false</string>
+    <string name="default_mmolDecimals" translatable="false">false</string>
+    <string name="default_pollInterval" translatable="false">300000</string>
+    <string name="default_doublePollOnPumpAway" translatable="false">false</string>
+    <string name="default_lowBatPollInterval" translatable="false">900000</string>
+-->
     <!-- Strings related to login -->
 
     <string name="preferences_enable_crashlytics" translatable="false">prefs_enable_crashlytics</string>
@@ -83,7 +91,7 @@
     <string name="main_menu_clear_log">Clear log</string>
     <string name="main_menu_check_for_app_update">Check for App update</string>
 
-    <string name="main_active_insulin">Active Insulin:</string>
+    <string name="main_active_insulin">Active Insulin</string>
     <string name="main_never">never</string>
 
     <!-- Userlog -->

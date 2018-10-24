@@ -50,6 +50,13 @@
             android:summary="%s"
             android:entries="@array/chart_zoom"
             android:entryValues="@array/chart_zoom_values"/>
+        <ListPreference
+            android:key="screenSleep"
+            android:defaultValue="1"
+            android:title="Screen Sleep"
+            android:summary="%s"
+            android:entries="@array/screen_sleep"
+            android:entryValues="@array/screen_sleep_values"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_category_sharing">

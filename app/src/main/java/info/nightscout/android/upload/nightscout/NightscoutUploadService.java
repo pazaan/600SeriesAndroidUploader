@@ -183,7 +183,8 @@ public class NightscoutUploadService extends Service {
                 storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(@NonNull Realm realm) {
-                        dataStore.setNightscoutAvailable(false);                        }
+                        dataStore.setNightscoutAvailable(false);
+                    }
                 });
 
                 if (dataStore.isDbgEnableUploadErrors())

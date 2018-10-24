@@ -10,7 +10,7 @@ buildscript {
 
     dependencies {
         classpath 'io.fabric.tools:gradle:1.25.4'
-        classpath 'io.realm:realm-gradle-plugin:4.4.0'
+        classpath "io.realm:realm-gradle-plugin:5.7.0"
         classpath 'org.ajoberstar:grgit:1.5.0'
         classpath 'org.codehaus.groovy:groovy-json:2.4.12'
     }
@@ -68,12 +68,7 @@ def getBugfenderApiKey() {
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
-/*
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-*/
+
     applicationVariants.all { variant ->
         variant.resValue "string", "versionName", variant.versionName
     }
@@ -84,7 +79,6 @@ android {
         targetSdkVersion 28
         versionName generateVersionName()
         versionCode generateVersionCode()
-        // FIXME - this forces a need for an online lookup and compile fails when offline
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 
@@ -128,7 +122,6 @@ dependencies {
     implementation files('libs/lzo-core-1.0.5.jar')
 
     implementation 'com.getpebble:pebblekit:4.0.1@aar'
-    implementation 'com.jaredrummler:android-device-names:1.1.7'
 
     implementation 'com.github.thorbenprimke:realm-recyclerview:0.9.25'
 

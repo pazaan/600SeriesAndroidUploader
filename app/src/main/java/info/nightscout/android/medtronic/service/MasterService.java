@@ -186,7 +186,7 @@ public class MasterService extends Service {
             IntentFilter usbIntentFilter = new IntentFilter();
             usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
             usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-            usbIntentFilter.addAction(Constants.ACTION_HAS_USB_PERMISSION);
+            usbIntentFilter.addAction(Constants.ACTION_USB_ACTIVITY);
             usbIntentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
             registerReceiver(usbReceiver, usbIntentFilter);
 
@@ -511,19 +511,10 @@ public class MasterService extends Service {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
-            // received from UsbActivity via OS / app requested permission dialog
-            if (Constants.ACTION_HAS_USB_PERMISSION.equals(action)) {
+            // received from UsbActivity
+            if (Constants.ACTION_USB_ACTIVITY.equals(action) || Constants.ACTION_HAS_USB_PERMISSION.equals(action)) {
+                Log.i(TAG, "USB device activity intent received");
 
-                if (hasUsbPermission()) {
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Got permission for USB.");
-                    statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
-                    startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
-                }
-
-                // received from OS
-            } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                Log.d(TAG, "USB plugged in");
-                UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Contour Next Link plugged in.");
                 clearDisconnectionNotification();
 
                 storeRealm.executeTransaction(new Realm.Transaction() {
@@ -537,17 +528,30 @@ public class MasterService extends Service {
                 Stats.close();
 
                 if (hasUsbPermission()) {
-
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Got permission for USB.");
                     statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
-
+                    startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
                 } else {
+                    noPermission();
+                }
+            }
+
+            // received from OS
+            else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
+                Log.i(TAG, "USB device attached intent received");
+
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Contour Next Link plugged in.");
+
+                if (!hasUsbPermission()) {
                     Log.d(TAG, "No permission for USB. Waiting.");
                     UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Waiting for USB permission.");
                 }
+            }
 
-                // received from OS
-            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                Log.d(TAG, "USB unplugged");
+            // received from OS
+            else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                Log.w(TAG, "USB device detached intent received");
+
                 showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
                 UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "USB error. Contour Next Link unplugged.");
 
@@ -555,21 +559,25 @@ public class MasterService extends Service {
 
                 ((StatCnl) Stats.open().readRecord(StatCnl.class)).disconnected();
                 Stats.close();
-
-                // received from CnlService
-            } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
-                Log.d(TAG, "No permission to read the USB device.");
-                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "No permission to read the USB device.");
-
-                statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
-
-                if (dataStore.isSysEnableUsbPermissionDialog()) {
-                    requestUsbPermission();
-                } else {
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
-                }
-
             }
+
+            // received from CnlService
+            else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
+                noPermission();
+            }
+        }
+    }
+
+    private void noPermission() {
+        Log.w(TAG, "No permission to read the USB device.");
+        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "No permission to read the USB device.");
+
+        statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+
+        if (dataStore.isSysEnableUsbPermissionDialog()) {
+            requestUsbPermission();
+        } else {
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
         }
     }
 
@@ -642,6 +650,9 @@ public class MasterService extends Service {
         public static final String ACTION_NO_USB_PERMISSION = "info.nightscout.android.medtronic.NO_USB_PERMISSION";
         public static final String ACTION_HAS_USB_PERMISSION = "info.nightscout.android.medtronic.HAS_USB_PERMISSION";
 
+        public static final String ACTION_USB_ACTIVITY = "info.nightscout.android.medtronic.ACTION_USB_ACTIVITY";
+
+
         public static final String ACTION_USB_REGISTER = "info.nightscout.android.medtronic.USB_REGISTER";
 
         public static final String ACTION_CNL_READPUMP = "info.nightscout.android.medtronic.CNL_READPUMP";
@@ -654,3 +665,78 @@ public class MasterService extends Service {
         public static final String EXTENDED_DATA = "info.nightscout.android.medtronic.DATA";
     }
 }
+
+/*
+
+    private class UsbReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+
+            // received from UsbActivity via OS / app requested permission dialog
+            if (Constants.ACTION_HAS_USB_PERMISSION.equals(action)) {
+                Log.i(TAG, "USB device permission intent received");
+
+                if (hasUsbPermission()) {
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Got permission for USB.");
+                    statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
+                    startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
+                }
+
+                // received from OS
+            } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
+                Log.i(TAG, "USB device attached intent received");
+
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Contour Next Link plugged in.");
+                clearDisconnectionNotification();
+
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.clearAllCommsErrors();
+                    }
+                });
+
+                ((StatCnl) Stats.open().readRecord(StatCnl.class)).connected();
+                Stats.close();
+
+                if (hasUsbPermission()) {
+
+                    statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
+
+                } else {
+                    Log.d(TAG, "No permission for USB. Waiting.");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Waiting for USB permission.");
+                }
+
+                // received from OS
+            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                Log.w(TAG, "USB device detached intent received");
+
+                showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "USB error. Contour Next Link unplugged.");
+
+                statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+
+                ((StatCnl) Stats.open().readRecord(StatCnl.class)).disconnected();
+                Stats.close();
+
+                // received from CnlService
+            } else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
+                Log.w(TAG, "No permission to read the USB device.");
+
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "No permission to read the USB device.");
+
+                statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+
+                if (dataStore.isSysEnableUsbPermissionDialog()) {
+                    requestUsbPermission();
+                } else {
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
+                }
+
+            }
+        }
+    }
+
+ */

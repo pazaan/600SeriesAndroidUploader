@@ -42,7 +42,7 @@ public class Stats {
     }
 
     private Stats() {
-        Log.d(TAG, "STATS: init called [Pid=" + android.os.Process.myPid() + "]");
+        Log.d(TAG, "init called [Pid=" + android.os.Process.myPid() + "]");
     }
 
     private static class LazyHolder {
@@ -57,14 +57,14 @@ public class Stats {
         synchronized (Stats.class) {
             LazyHolder.instance.open++;
         }
-        //Log.d(TAG, "STATS: open called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
+        //Log.d(TAG, "open called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
         return LazyHolder.instance;
     }
 
     public static void close() {
         synchronized (Stats.class) {
             LazyHolder.instance.open--;
-            //Log.d(TAG, "STATS: close called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
+            //Log.d(TAG, "close called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
             if (LazyHolder.instance.open < 1) {
                 LazyHolder.instance.writeRecords();
                 LazyHolder.instance.loadedRecords.clear();
@@ -119,7 +119,7 @@ public class Stats {
                         .findFirst();
 
                 if (record == null) {
-                    Log.d(TAG, String.format("STATS: create: %s key: %s write: %s", clazz.getSimpleName(), key, isWrite));
+                    Log.d(TAG, String.format("create: %s key: %s write: %s", clazz.getSimpleName(), key, isWrite));
                     try {
                         record = (StatInterface) clazz.getConstructor().newInstance();
                     } catch (Exception e) {
@@ -128,7 +128,7 @@ public class Stats {
                     record.setKey(key);
                     record.setDate(new Date(System.currentTimeMillis()));
                 } else {
-                    Log.d(TAG, String.format("STATS: read: %s key: %s write: %s", clazz.getSimpleName(), key, isWrite));
+                    Log.d(TAG, String.format("read: %s key: %s write: %s", clazz.getSimpleName(), key, isWrite));
                     record = storeRealm.copyFromRealm(record);
                 }
 
@@ -145,18 +145,24 @@ public class Stats {
         if (loadedRecords != null && loadedRecords.size() > 0) {
             final Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
 
-            storeRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(@NonNull Realm realm) {
-                    for (LoadedRecord loadedRecord : loadedRecords) {
-                        if (loadedRecord.isWrite) {
-                            if (open < 1) loadedRecord.isWrite = false;
-                            storeRealm.copyToRealmOrUpdate(loadedRecord.statRecord);
-                            Log.d(TAG, String.format("STATS: write: %s key: %s", loadedRecord.statRecord.getClass().getSimpleName(), loadedRecord.statRecord.getKey()));
+            try {
+
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        for (LoadedRecord loadedRecord : loadedRecords) {
+                            if (loadedRecord.isWrite) {
+                                if (open < 1) loadedRecord.isWrite = false;
+                                storeRealm.copyToRealmOrUpdate(loadedRecord.statRecord);
+                                Log.d(TAG, String.format("write: %s key: %s", loadedRecord.statRecord.getClass().getSimpleName(), loadedRecord.statRecord.getKey()));
+                            }
                         }
                     }
-                }
-            });
+                });
+
+            } catch (Exception e) {
+                Log.w(TAG, "Stats write records, Realm task could not complete");
+            }
 
             storeRealm.close();
         }
@@ -177,7 +183,7 @@ public class Stats {
     }
 
     public static void stale() {
-        if (LazyHolder.instance.open > 0) Log.w(TAG, "STATS: stale called while stats are open [open=" + LazyHolder.instance.open + "]");
+        if (LazyHolder.instance.open > 0) Log.w(TAG, "stale called while stats are open [open=" + LazyHolder.instance.open + "]");
 
         long now = System.currentTimeMillis();
 
@@ -186,25 +192,31 @@ public class Stats {
 
         final Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
 
-        storeRealm.executeTransaction(new Realm.Transaction() {
-            @Override
-            public void execute(@NonNull Realm realm) {
+        try {
 
-                int count = 0;
-                for (Class clazz : classes) {
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
 
-                    RealmResults stale = storeRealm.where(clazz)
-                            .lessThan("date", staledate)
-                            .findAll();
+                    int count = 0;
+                    for (Class clazz : classes) {
 
-                    count += stale.size();
-                    stale.deleteAllFromRealm();
+                        RealmResults stale = storeRealm.where(clazz)
+                                .lessThan("date", staledate)
+                                .findAll();
 
+                        count += stale.size();
+                        stale.deleteAllFromRealm();
+
+                    }
+
+                    if (count > 0) Log.d(TAG, "deleted " + count + " stale records");
                 }
+            });
 
-                if (count > 0) Log.d(TAG, "STATS: deleted " + count + " stale records");
-            }
-        });
+        } catch (Exception e) {
+            Log.w(TAG, "Stats stale cleanup, Realm task could not complete");
+        }
 
         storeRealm.close();
     }
@@ -214,7 +226,7 @@ public class Stats {
     }
 
     public static String report(String key) {
-        if (LazyHolder.instance.open > 0) Log.w(TAG, "STATS: report called while stats are open [open=" + LazyHolder.instance.open + "]");
+        if (LazyHolder.instance.open > 0) Log.w(TAG, "report called while stats are open [open=" + LazyHolder.instance.open + "]");
 
         StringBuilder sb = new StringBuilder();
 

@@ -164,7 +164,7 @@ public class FormatKit {
             return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(time);
         else
             return new SimpleDateFormat("h:mm a", Locale.getDefault()).format(time)
-                    .replace(".", "").replace(",", "");
+                    .toLowerCase().replace(".", "").replace(",", "");
     }
 
     public String formatAsClockNoAmPm(long time) {
@@ -179,7 +179,7 @@ public class FormatKit {
             return new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(time);
         else
             return new SimpleDateFormat("h:mm:ss a", Locale.getDefault()).format(time)
-                    .replace(".", "").replace(",", "");
+                    .toLowerCase().replace(".", "").replace(",", "");
     }
 
     public String formatAsClockSecondsNoAmPm(long time) {
@@ -190,19 +190,11 @@ public class FormatKit {
     }
 
     public String formatAsDayClock(long time) {
-        if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
-            return new SimpleDateFormat("E HH:mm", Locale.getDefault()).format(time);
-        else
-            return new SimpleDateFormat("E h:mm a", Locale.getDefault()).format(time)
-                    .replace(".", "").replace(",", "");
+        return new SimpleDateFormat("E ", Locale.getDefault()).format(time) + formatAsClock(time);
     }
 
     public String formatAsDayClockSeconds(long time) {
-        if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
-            return new SimpleDateFormat("E HH:mm:ss", Locale.getDefault()).format(time);
-        else
-            return new SimpleDateFormat("E h:mm:ss a", Locale.getDefault()).format(time)
-                    .replace(".", "").replace(",", "");
+        return new SimpleDateFormat("E ", Locale.getDefault()).format(time) + formatAsClockSeconds(time);
     }
 
     public String formatAsClock(int hours, int minutes) {
@@ -212,7 +204,7 @@ public class FormatKit {
         } else {
             return (hours > 12 ? hours - 12 : hours) + ":" + df.format(minutes)
                     + DateFormatSymbols.getInstance().getAmPmStrings()[hours < 12 ? 0 : 1]
-                    .replace(".", "").replace(",", "");
+                    .toLowerCase().replace(".", "").replace(",", "");
         }
     }
 
@@ -222,28 +214,15 @@ public class FormatKit {
     }
 
     public String formatAsWeekday(long time) {
-        SimpleDateFormat sdf = new SimpleDateFormat("EEEE", Locale.getDefault());
-        return sdf.format(time);
+        return new SimpleDateFormat("EEEE", Locale.getDefault()).format(time);
     }
 
     public String formatAsWeekdayMonthDay(long time) {
-        SimpleDateFormat sdf = new SimpleDateFormat("EEEE MMMM dd", Locale.getDefault());
-        return sdf.format(time);
-    }
-
-    public String formatAsWeekdayMonthDay(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("EEEE MMMM dd", Locale.getDefault());
-        return sdf.format(date);
+        return new SimpleDateFormat("EEEE MMMM dd", Locale.getDefault()).format(time);
     }
 
     public String formatAsYMD(long time) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
-        return sdf.format(time);
-    }
-
-    public String formatAsYMD(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
-        return sdf.format(date);
+        return new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(time);
     }
 
     public String getString(int ref) {

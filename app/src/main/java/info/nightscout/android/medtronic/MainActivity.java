@@ -37,7 +37,6 @@ import android.widget.Toast;
 
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
-import com.jaredrummler.android.device.DeviceName;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPointInterface;
@@ -52,6 +51,7 @@ import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -250,6 +250,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 })
                 .build();
 
+        final Boolean landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+
         chartZoom = Integer.parseInt(mPrefs.getString("chartZoom", "3"));
 
         mChart = findViewById(R.id.chart);
@@ -257,15 +259,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         // disable scrolling at the moment
         mChart.getViewport().setScalable(false);
         mChart.getViewport().setScrollable(false);
-        mChart.getViewport().setYAxisBoundsManual(true);
-        mChart.getViewport().setMinY(80);
-        mChart.getViewport().setMaxY(120);
-        mChart.getViewport().setXAxisBoundsManual(true);
-        final long now = System.currentTimeMillis(),
-                left = now - chartZoom * 60 * 60 * 1000L;
 
-        mChart.getViewport().setMaxX(now);
-        mChart.getViewport().setMinX(left);
+        emptyChart();
 
 // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setOnXAxisBoundsChangedListener is n/a in this version
 /*
@@ -310,7 +305,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
 
-        float pixels = dipToPixels(getApplicationContext(), 12);
+        float factor = 1.0f;
+        if (landscape) factor = 1.2f;
+
+        float pixels = dipToPixels(getApplicationContext(), 12 * factor);
         mChart.getGridLabelRenderer().setTextSize(pixels);
         mChart.getGridLabelRenderer().setLabelHorizontalHeight((int) (pixels * 0.65));
         mChart.getGridLabelRenderer().reloadStyles();
@@ -318,14 +316,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setHumanRounding is n/a in this version
 //        mChart.getGridLabelRenderer().setHumanRounding(false);
 
-        final int orientation = getResources().getConfiguration().orientation;
         mChart.getGridLabelRenderer().setLabelFormatter(
                 new DefaultLabelFormatter() {
                     @Override
                     public String formatLabel(double value, boolean isValueX) {
                         if (!isValueX)
                             return FormatKit.getInstance().formatAsGlucose((int) value);
-                        else if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+                        else if (landscape)
                             return FormatKit.getInstance().formatAsClock((long) value);
                         else
                             return FormatKit.getInstance().formatAsClockNoAmPm((long) value);
@@ -333,7 +330,28 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 }
         );
 
-        userLogDisplay = new UserLogDisplay(mContext);
+        String screenSleep = mPrefs.getString("screenSleep", "1");
+        if (screenSleep.equals("3")
+                || (screenSleep.equals("1") && landscape)
+                || (screenSleep.equals("2") && !landscape))
+            mChart.setKeepScreenOn(true);
+        else
+            mChart.setKeepScreenOn(false);
+
+        if (!landscape)
+            userLogDisplay = new UserLogDisplay(mContext);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        Log.d(TAG, "onSaveInstanceState called");
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        Log.d(TAG, "onRestoreInstanceState called");
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     @Override
@@ -347,15 +365,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         checkForUpdateBackground(5);
 
         startDisplay();
-        userLogDisplay.start(dataStore.isDbgEnableExtendedErrors());
+        if (userLogDisplay != null) userLogDisplay.start(dataStore.isDbgEnableExtendedErrors());
     }
 
     @Override
     protected void onResume() {
         Log.d(TAG, "onResume called");
         super.onResume();
-
-        if (userLogDisplay != null) userLogDisplay.focusCurrent();
     }
 
     protected void onPause() {
@@ -500,38 +516,19 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void deviceMessage() {
-        DeviceName.with(this).request(new DeviceName.Callback() {
-
-            @Override
-            public void onFinished(DeviceName.DeviceInfo info, Exception error) {
-                String manufacturer = info.manufacturer;  // "Samsung"
-                String marketName = info.marketName;      // "Galaxy S8+"
-                String model = info.model;                // "SM-G955W"
-                String codename = info.codename;          // "dream2qltecan"
-                String deviceName = info.getName();       // "Galaxy S8+"
-                String androidSDK = String.valueOf(Build.VERSION.SDK_INT);
-                String androidVERSION = Build.VERSION.RELEASE;
-
-                Log.i(TAG, "manufacturer = " + manufacturer);
-                Log.i(TAG, "name = " + marketName);
-                Log.i(TAG, "model = " + model);
-                Log.i(TAG, "codename = " + codename);
-                Log.i(TAG, "deviceName = " + deviceName);
-                Log.i(TAG, "androidSDK = " + androidSDK);
-                Log.i(TAG, "androidVERSION = " + androidVERSION);
-
-                UserLogMessage.getInstance().add(UserLogMessage.TYPE.NOTE, UserLogMessage.FLAG.EXTENDED,
-                        String.format("Uploader device details:\n  mfr: %s\n  name: %s\n  model: %s\n  code: %s\n  device: %s\n  android sdk: %s ver: %s",
-                                manufacturer,
-                                marketName,
-                                model,
-                                codename,
-                                deviceName,
-                                androidSDK,
-                                androidVERSION
-                        ));
-            }
-        });
+        String device = String.format("Uploader device: BRAND: %s DEVICE: %s ID: %s HARDWARE: %s MANUFACTURER: %s MODEL: %s PRODUCT: %s SDK: %s VERSION: %s",
+                Build.BRAND,
+                Build.DEVICE,
+                Build.ID,
+                Build.HARDWARE,
+                Build.MANUFACTURER,
+                Build.MODEL,
+                Build.PRODUCT,
+                Build.VERSION.SDK_INT,
+                Build.VERSION.RELEASE
+        );
+        Log.i(TAG, device);
+        UserLogMessage.getInstance().add(UserLogMessage.TYPE.NOTE, UserLogMessage.FLAG.EXTENDED, device);
     }
 
     private void startMasterService() {
@@ -601,8 +598,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         startActivity(manageCNLIntent);
     }
 
-    private RealmResults displayPumpResults;
-    private RealmResults displayCgmResults;
+    private RealmResults<PumpStatusEvent> displayPumpResults;
+    private RealmResults<PumpHistoryCGM> displayCgmResults;
     private long timeLastSGV;
     private int pumpBattery;
 
@@ -621,27 +618,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void startDisplayPump() {
         Log.d(TAG, "startDisplayPump");
-        stopDisplayPump();
 
         displayPumpResults = mRealm.where(PumpStatusEvent.class)
                 .sort("eventDate", Sort.ASCENDING)
-                .findAll();
+                .findAllAsync();
 
-        displayPumpResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
+        displayPumpResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults<PumpStatusEvent>>() {
             @Override
-            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
-                if (changeSet != null && changeSet.getInsertions().length > 0) {
+            public void onChange(@NonNull RealmResults realmResults, @NonNull OrderedCollectionChangeSet changeSet) {
+                if (changeSet.getState().equals(OrderedCollectionChangeSet.State.INITIAL)
+                        || (changeSet.getState().equals(OrderedCollectionChangeSet.State.UPDATE)
+                        && changeSet.getInsertions().length > 0)) {
                     refreshDisplayPump();
                 }
             }
         });
-
-        refreshDisplayPump();
     }
 
     private void stopDisplayPump() {
         Log.d(TAG, "stopDisplayPump");
-        if (displayCgmResults != null) {
+        if (displayPumpResults != null) {
             displayPumpResults.removeAllChangeListeners();
             displayPumpResults = null;
         }
@@ -649,26 +645,23 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void startDisplayCgm() {
         Log.d(TAG, "startDisplayCgm");
-        stopDisplayCgm();
 
         displayCgmResults = historyRealm.where(PumpHistoryCGM.class)
                 .notEqualTo("sgv", 0)
                 .sort("eventDate", Sort.ASCENDING)
-                .findAll();
+                .findAllAsync();
 
-        displayCgmResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults>() {
+        displayCgmResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults<PumpHistoryCGM>>() {
             @Override
-            public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
-                if (changeSet != null &&
-                        changeSet.getInsertions().length + changeSet.getChanges().length > 0) {
+            public void onChange(@NonNull RealmResults realmResults, @NonNull OrderedCollectionChangeSet changeSet) {
+                if (changeSet.getState().equals(OrderedCollectionChangeSet.State.INITIAL)
+                        || (changeSet.getState().equals(OrderedCollectionChangeSet.State.UPDATE)
+                        && changeSet.getInsertions().length > 0)) {
                     refreshDisplayCgm();
                     refreshDisplayChart();
                 }
             }
         });
-
-        refreshDisplayCgm();
-        refreshDisplayChart();
     }
 
     private void stopDisplayCgm() {
@@ -682,23 +675,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void refreshDisplayPump() {
         Log.d(TAG, "refreshDisplayPump");
 
-        float iob = 0;
+        double iob = 0;
         pumpBattery = -1;
 
         // most recent pump status
-        RealmResults<PumpStatusEvent> pump_results =
-                mRealm.where(PumpStatusEvent.class)
-                        .greaterThan("eventDate", new Date(System.currentTimeMillis() - 60 * 60000L))
-                        .sort("eventDate", Sort.ASCENDING)
-                        .findAll();
-
-        if (pump_results.size() > 0) {
-            iob = pump_results.last().getActiveInsulin();
-            pumpBattery = pump_results.last().getBatteryPercentage();
+        if (displayPumpResults.size() > 0
+                && displayPumpResults.last().getEventDate().getTime() > System.currentTimeMillis() - 60 * 60000L) {
+            iob = displayPumpResults.last().getActiveInsulin();
+            pumpBattery = displayPumpResults.last().getBatteryPercentage();
         }
 
         TextView textViewIOB = findViewById(R.id.textview_iob);
-        textViewIOB.setText(String.format(Locale.getDefault(), "%.2f", iob));
+        textViewIOB.setText(String.format(Locale.getDefault(), "%s: %.2f %s", getString(R.string.main_active_insulin), iob, getString(R.string.text_insulin_unit)));
     }
 
     private void refreshDisplayCgm() {
@@ -721,19 +709,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         String trendString = "{ion_ios_minus_empty}";
         int trendRotation = 0;
 
-        final RealmResults<PumpHistoryCGM> sgv_results = historyRealm
-                .where(PumpHistoryCGM.class)
-                .notEqualTo("sgv", 0)
-                .sort("eventDate", Sort.ASCENDING)
-                .findAll();
+        if (displayCgmResults.size() > 0) {
+            timeLastSGV = displayCgmResults.last().getEventDate().getTime();
+            sgvString = FormatKit.getInstance().formatAsGlucose(displayCgmResults.last().getSgv(), false, true);
 
-        if (sgv_results.size() > 0) {
-            timeLastSGV = sgv_results.last().getEventDate().getTime();
-            sgvString = FormatKit.getInstance().formatAsGlucose(sgv_results.last().getSgv(), false, true);
-
-            String trend = sgv_results.last().getCgmTrend();
+            String trend = displayCgmResults.last().getCgmTrend();
             if (trend != null) {
-                switch (sgv_results.last().getCgmTrend()) {
+                switch (trend) {
                     case "DOUBLE_UP":
                         trendString = "{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}";
                         break;
@@ -827,47 +809,46 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void refreshDisplayChart() {
         Log.d(TAG, "refreshDisplayChart");
 
-        RealmResults<PumpHistoryCGM> results = displayCgmResults;
+        if (displayCgmResults.size() > 0)
 
-        if (results.size() > 0) {
-            long timeLastSGV = results.last().getEventDate().getTime();
-            results = results.where()
-                    .greaterThan("eventDate", new Date(timeLastSGV - 24 * 60 * 60 * 1000L))
+            updateChart(displayCgmResults.where()
+                    .greaterThan("eventDate", new Date(
+                            displayCgmResults.last().getEventDate().getTime() - 24 * 60 * 60000L))
                     .sort("eventDate", Sort.ASCENDING)
-                    .findAll();
-        }
+                    .findAll());
 
-        updateChart(results);
+        else emptyChart();
+    }
+
+    private void emptyChart() {
+        long now = System.currentTimeMillis();
+        long left = now - chartZoom * 60 * 60000L;
+
+        mChart.getViewport().setXAxisBoundsManual(true);
+        mChart.getViewport().setMaxX(now);
+        mChart.getViewport().setMinX(left);
+
+        mChart.getViewport().setYAxisBoundsManual(true);
+        mChart.getViewport().setMinY(80);
+        mChart.getViewport().setMaxY(180);
+
+        mChart.postInvalidate();
     }
 
     private void updateChart(RealmResults<PumpHistoryCGM> results) {
 
-        mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
-
         // empty chart when no data available
-        int size = results.size();
-        if (size == 0) {
-            final long now = System.currentTimeMillis(),
-                    left = now - chartZoom * 60 * 60 * 1000L;
-
-            mChart.getViewport().setXAxisBoundsManual(true);
-            mChart.getViewport().setMaxX(now);
-            mChart.getViewport().setMinX(left);
-
-            mChart.getViewport().setYAxisBoundsManual(true);
-            mChart.getViewport().setMinY(80);
-            mChart.getViewport().setMaxY(120);
-
-            mChart.postInvalidate();
+        if (results.size() == 0) {
+            emptyChart();
             return;
         }
 
-        long timeLastSGV = results.last().getEventDate().getTime();
+        long current = results.last().getEventDate().getTime();
 
         // calc X & Y chart bounds with readable stepping for mmol & mg/dl
         // X needs offsetting as graphview will not always show points near edges
-        long minX = (((timeLastSGV + 150000L - (chartZoom * 60 * 60 * 1000L)) / 60000L) * 60000L);
-        long maxX = timeLastSGV + 90000L;
+        long minX = (((current + 150000L - (chartZoom * 60 * 60 * 1000L)) / 60000L) * 60000L);
+        long maxX = current + 90000L;
 
         RealmResults<PumpHistoryCGM> minmaxY = results.where()
                 .greaterThan("eventDate", new Date(minX))
@@ -903,7 +884,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getViewport().setMaxX(maxX);
 
         // create chart
-        DataPoint[] entries = new DataPoint[size];
+        DataPoint[] entries = new DataPoint[results.size()];
 
         int pos = 0;
         for (PumpHistoryCGM event : results) {
@@ -938,6 +919,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
                     double sgv = dataPoint.getY();
 
+                    float factor = 1.0f;
+                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE)
+                        factor = 1.3f;
+
                     if (((MainActivity.DataPoint) dataPoint).isEstimate())
                         paint.setColor(0xFF0080FF);
 
@@ -953,22 +938,22 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     float dotSize;
                     switch (chartZoom) {
                         case 1:
-                            dotSize = 3.0f;
+                            dotSize = 3.5f * factor;
                             break;
                         case 3:
-                            dotSize = 2.0f;
+                            dotSize = 2.5f * factor;
                             break;
                         case 6:
-                            dotSize = 2.0f;
+                            dotSize = 2.0f * factor;
                             break;
                         case 12:
-                            dotSize = 1.65f;
+                            dotSize = 1.65f * factor;
                             break;
                         case 24:
-                            dotSize = 1.25f;
+                            dotSize = 1.25f * factor;
                             break;
                         default:
-                            dotSize = 3.0f;
+                            dotSize = 3.0f * factor;
                     }
 
                     canvas.drawCircle(x, y, dipToPixels(getApplicationContext(), dotSize), paint);
@@ -976,10 +961,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             });
 
             mChart.addSeries(sgvSeries);
-        } else {
-            if (entries.length > 0) {
-                ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
-            }
+        }
+
+        else if (entries.length > 0) {
+            ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
         }
 
     }
@@ -1040,6 +1025,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         private boolean extended;
 
         public UserLogDisplay(Context context) {
+            Log.d(TAG, "UserLogDisplay init");
+
             this.context = context;
 
             realmRecyclerView = findViewById(R.id.recyclerview_log);
@@ -1119,12 +1106,30 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     if (userLogResults != null && adapter != null && realmRecyclerView != null) {
                         int p = realmRecyclerView.findFirstVisibleItemPosition();
                         if (p >= 0 && p < userLogResults.size()) {
-
+/*
                             RealmResults<UserLog> rr = userLogResults.where()
                                     .lessThan("timestamp", userLogResults.get(p).getTimestamp())
                                     .equalTo("type", extended ? UserLogMessage.TYPE.NOTE.value() : UserLogMessage.TYPE.STARTUP.value())
                                     .sort("timestamp", Sort.DESCENDING)
                                     .findAll();
+*/
+                            RealmResults<UserLog> rr;
+                            if (extended) {
+                                rr = userLogResults.where()
+                                        .lessThan("timestamp", userLogResults.get(p).getTimestamp())
+                                        .equalTo("type", UserLogMessage.TYPE.NOTE.value())
+                                        .sort("timestamp", Sort.DESCENDING)
+                                        .findAll();
+                            } else {
+                                // skip to start of day
+                                long skip = 24 * 60 * 60000L;
+                                long tz = Calendar.getInstance().getTimeZone().getRawOffset() + Calendar.getInstance().getTimeZone().getDSTSavings();
+                                long t = (((userLogResults.get(p).getTimestamp() + tz) / skip) * skip) - tz;
+                                rr = userLogResults.where()
+                                        .greaterThanOrEqualTo("timestamp", t)
+                                        .sort("timestamp", Sort.ASCENDING)
+                                        .findAll();
+                            }
 
                             int to = 0;
                             if (rr.size() > 0) {
@@ -1153,7 +1158,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     if (userLogResults != null && adapter != null && realmRecyclerView != null) {
                         int t = adapter.getItemCount();
                         int p = realmRecyclerView.findFirstVisibleItemPosition();
-                        if (p >= 0 && p < t && t - p > 20)
+                        int c = realmRecyclerView.getRecycleView().getLayoutManager().getChildCount();
+
+                        //Log.i("TEST", "p = " + p + " t = " + t + " c = " + c);
+                        //if (p >= 0 && p < t && t - p > 20)
+                        if (p >= 0 && p < t && t - p - c > 7)
                             fab = true;
                     }
                     if (fab) {
@@ -1189,10 +1198,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         public void stop() {
-            Log.d(TAG, "stop");
-
-            fabCurrent.hide();
-            fabSearch.hide();
+            Log.d(TAG, "UserLogDisplay stop");
 
             if (adapter != null) {
                 if (realmRecyclerView.getRecycleView() != null && realmRecyclerView.getRecycleView().getLayoutManager() != null)
@@ -1224,12 +1230,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         public void start(Boolean extended) {
-            Log.d(TAG, "start");
+            Log.d(TAG, "UserLogDisplay start");
 
             this.extended = extended;
             autoScroll = true;
-            fabCurrent.hide();
-            fabSearch.hide();
 
             if (userLogRealm == null)
                 userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
@@ -1243,7 +1247,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     .equalTo("flag", extended ? UserLogMessage.FLAG.EXTENDED.value() : UserLogMessage.FLAG.NORMAL.value())
                     .endGroup()
                     .sort("timestamp", Sort.ASCENDING)
-                    .findAll();
+                    .findAllAsync();
 
             adapter = new UserLogAdapter(context, userLogResults, true);
             realmRecyclerView.setAdapter(adapter);
@@ -1251,8 +1255,13 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             userLogResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults<UserLog>>() {
                 @Override
                 public void onChange(@NonNull RealmResults realmResults, OrderedCollectionChangeSet changeSet) {
+                    if (adapter == null || realmRecyclerView == null) return;
 
-                    if (changeSet != null && adapter != null && realmRecyclerView != null) {
+                    if (changeSet.getState().equals(OrderedCollectionChangeSet.State.INITIAL)) {
+                        focusCurrent();
+                    }
+
+                    else if (changeSet.getState().equals(OrderedCollectionChangeSet.State.UPDATE)) {
 
                         final int i = changeSet.getInsertions().length;
                         final int d = changeSet.getDeletions().length;

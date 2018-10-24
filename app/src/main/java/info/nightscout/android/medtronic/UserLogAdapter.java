@@ -1,15 +1,17 @@
 package info.nightscout.android.medtronic;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.support.annotation.NonNull;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
-import android.text.style.AbsoluteSizeSpan;
 import android.text.style.DynamicDrawableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
+import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
@@ -27,17 +29,29 @@ import io.realm.RealmViewHolder;
 
 public class UserLogAdapter
         extends RealmBasedRecyclerViewAdapter<UserLog, UserLogAdapter.ViewHolder> {
+    private static final String TAG = UserLogAdapter.class.getSimpleName();
 
     private final static int FADE_DURATION_MS = 400;
 
-    private final static int cDEFAULT = 0xFFC0C0C0;
-    private final static int cHIGHLIGHT = 0xFFE0E0E0;
-    private final static int cCLOCK = 0xFFA0A0A0;
-    private final static int cWARN = 0xFFE0E000;
-    private final static int cCGM = 0xFFCCA3A3;
-    private final static int cESTIMATE = 0xFFB7DAE5;
-    private final static int cHISTORY = 0xFFABAFCC;
-    private final static int cHEART = 0xFFFF0000;
+    // HSV Hue 0-360 Saturation 0-1 Value 0-1
+    private final static float[] WARN_HSV = new float[] {60f, .85f, 1f};
+    private final static float[] CGM_HSV =new float[] {0f, .22f, 1f};
+    private final static float[] ESTIMATE_HSV = new float[] {185f, .22f, 1f};
+    private final static float[] HISTORY_HSV = new float[] {270f, .22f, 1f};
+    private final static float[] HEART_HSV = new float[] {0f, 1f, 1f};
+    private final static float[] SHARE_HSV = new float[] {125f, .22f, 1f};
+    private final static float[] PUSHOVER_HSV = new float[] {40f, .22f, 1f};
+    private final static float[] NOTE_HSV = new float[] {0f, 0f, .9f};
+
+    private final static float HIGHLIGHT = 1.35f;
+    private final static float LOWLIGHT = 0.65f;
+
+    private int cNormal;
+    private int cHigh;
+    private int cLow;
+    private int cEestimate;
+    private int cHistory;
+    private int cPushover;
 
     private IconicsDrawable iWARN;
     private IconicsDrawable iINFO;
@@ -52,6 +66,8 @@ public class UserLogAdapter
     private int iBounds;
     private int iOffsetXDp;
     private int iOffsetYDp;
+
+    private boolean init = false;
 
     private int lastAnimPosition = -1;
 
@@ -111,7 +127,7 @@ public class UserLogAdapter
 
     private void setContent(TextView tv, UserLog ul) {
 
-        if (iWARN == null) initIcons(tv);
+        if (!init) initDrawables(tv);
 
         SpannableStringBuilder ssb = new SpannableStringBuilder();
 
@@ -123,93 +139,121 @@ public class UserLogAdapter
             case WARN:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iWARN, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cWARN), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(iWARN.getColor()), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case HELP:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iHELP, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cHIGHLIGHT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(iHELP.getColor()), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case INFO:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iINFO, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cHIGHLIGHT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(iINFO.getColor()), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case NOTE:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iNOTE, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cHIGHLIGHT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(iNOTE.getColor()), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case HISTORY:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iREFRESH, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cDEFAULT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(iREFRESH.getColor()), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case CGM:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iCGM, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cCGM), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(iCGM.getColor()), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case OPTION:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iSETTING, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cHIGHLIGHT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(iSETTING.getColor()), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case STARTUP:
             case SHUTDOWN:
             case HEART:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iHEART, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cHIGHLIGHT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(cHigh), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 ssb.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case SGV:
                 ssb.append(" ").append(text);
-                ssb.setSpan(new ForegroundColorSpan(cHIGHLIGHT), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(cHigh), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case ESTIMATE:
                 ssb.append(" ").append(text);
-                ssb.setSpan(new ForegroundColorSpan(cESTIMATE), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(cEestimate), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case REQUESTED:
             case RECEIVED:
                 ssb.append(" ").append(text);
-                ssb.setSpan(new ForegroundColorSpan(cHISTORY), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(cHistory), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             case SHARE:
                 ssb.append(" * ").append(text);
                 ssb.setSpan(new ImageSpan(iSHARE, DynamicDrawableSpan.ALIGN_BASELINE), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new ForegroundColorSpan(cHIGHLIGHT), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(iSHARE.getColor()), 3, text.length() + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                break;
+            case PUSHOVER:
+                ssb.append(" ").append(text);
+                ssb.setSpan(new ForegroundColorSpan(cPushover), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
             default:
                 ssb.append(" ").append(text);
-                ssb.setSpan(new ForegroundColorSpan(cDEFAULT), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(cNormal), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
         ssb.insert(0, clock);
-        ssb.setSpan(new ForegroundColorSpan(cCLOCK), 0, clock.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        ssb.setSpan(new AbsoluteSizeSpan(11, true), 0, clock.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        ssb.setSpan(new ForegroundColorSpan(cLow), 0, clock.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        ssb.setSpan(new RelativeSizeSpan(0.78f), 0, clock.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         tv.setText(ssb);
     }
 
-    private void initIcons(TextView tv) {
+    private void initDrawables(TextView tv) {
 
-        iBounds = (int) (tv.getTextSize() * 1.2);
+        int c = tv.getCurrentTextColor();
+        float s = tv.getTextSize();
+
+        float[] hsv = new float[3];
+        Color.colorToHSV(c, hsv);
+
+        int normal = c >> 24 & 0xFF;
+        if (normal == 0xFF) normal = Color.HSVToColor(new float[] {0.f, 0.f, hsv[2]}) & 0xFF;
+        int high = (int) (HIGHLIGHT *normal);
+        int low = (int) (LOWLIGHT * normal);
+        if (high > 0xFF) high = 0xFF;
+        if (low > 0xFF) low = 0xFF;
+
+        cNormal = Color.HSVToColor(normal, new float[] {hsv[0], hsv[1], 1.f});
+        cHigh = Color.HSVToColor(high, new float[] {hsv[0], hsv[1], 1.f});
+        cLow = Color.HSVToColor(low, new float[] {hsv[0], hsv[1], 1.f});
+
+        Log.d(TAG, String.format("textColor: %8x textSize: %s normal: %8x high: %8x low: %8x", c, s, cNormal, cHigh, cLow));
+
+        cEestimate = Color.HSVToColor(high, ESTIMATE_HSV);
+        cHistory = Color.HSVToColor(normal, HISTORY_HSV);
+        cPushover = Color.HSVToColor(normal, PUSHOVER_HSV);
+
+        iBounds = (int) (s * 1.2);
         iOffsetXDp = 0;
         iOffsetYDp = 3;
 
-        iWARN = icon("ion_alert_circled", cWARN);
-        iINFO = icon("ion_information_circled", cHIGHLIGHT);
-        iNOTE = icon("ion_document", cHIGHLIGHT);
-        //iNOTE = icon("ion_stats_bars", cHIGHLIGHT);
-        iHELP = icon("ion_ios_lightbulb", cHIGHLIGHT);
-        iCGM = icon("ion_ios_pulse_strong", cCGM);
-        iHEART = icon("ion_heart", cHEART);
-        iSHARE = icon("ion_android_share_alt", cHIGHLIGHT);
-        //iREFRESH = icon("ion_loop", cDEFAULT);
-        iREFRESH = icon("ion_refresh", cDEFAULT);
-        iSETTING = icon("ion_android_settings", cHIGHLIGHT);
+        iWARN = icon("ion_alert_circled", Color.HSVToColor(high, WARN_HSV));
+        iINFO = icon("ion_information_circled", cHigh);
+        iNOTE = icon("ion_document", Color.HSVToColor(high, NOTE_HSV));
+        iHELP = icon("ion_ios_lightbulb", cHigh);
+        iCGM = icon("ion_ios_pulse_strong", Color.HSVToColor(high, CGM_HSV));
+        iHEART = icon("ion_heart", Color.HSVToColor(high, HEART_HSV));
+        iSHARE = icon("ion_android_share_alt", Color.HSVToColor(normal, SHARE_HSV));
+        //iREFRESH = icon("ion_loop", defaultColor | defaultAlpha);
+        iREFRESH = icon("ion_refresh", cNormal);
+        iSETTING = icon("ion_android_settings", cHigh);
+
+        init = true;
     }
 
     private IconicsDrawable icon(String icon, int color) {

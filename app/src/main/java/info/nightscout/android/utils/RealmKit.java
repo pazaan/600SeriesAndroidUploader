@@ -60,7 +60,7 @@ public class RealmKit {
 
             if (sb.length() > 0) {
                 UserLogMessage.getInstance().addAsync(UserLogMessage.TYPE.NOTE, UserLogMessage.FLAG.EXTENDED,
-                        "Compact Realm:" + sb.toString());
+                        "Realm: compacted " + sb.toString());
             }
 
         } catch (Exception e) {

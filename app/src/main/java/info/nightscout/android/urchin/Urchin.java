@@ -762,14 +762,14 @@ public class Urchin {
     }
 
     private String buildStatusLayout() {
-        String text = "";
+        StringBuilder sb = new StringBuilder();
 
         byte[] statusLayout = dataStore.getUrchinStatusLayout();
         for (int i=0; i < 20; i++) {
-            text += addStatusItem(statusLayout[i]);
+            sb.append(addStatusItem(statusLayout[i]));
         }
 
-        return text;
+        return sb.toString();
     }
 
     // Pebble font available chars = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz°•·-`~!@#$%^&*()_+=[]\\{}|;':\",./<>?";

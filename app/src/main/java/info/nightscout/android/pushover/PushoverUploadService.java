@@ -169,8 +169,8 @@ public class PushoverUploadService extends Service {
                             sb.append("'");
                         }
                         if (sb.length() > 0)
-                            UserLogMessage.sendE(mContext,
-                                    "Pushover devices: " + sb.toString());
+                            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.PUSHOVER,
+                                    "Pushover: devices " + sb.toString());
                     }
                 }
             }
@@ -234,9 +234,9 @@ public class PushoverUploadService extends Service {
             statPushover.setRemaining(appRemaining);
             statPushover.setResetTime(appReset * 1000);
             DateFormat df = new SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH);
-            Log.i(TAG, String.format(Locale.ENGLISH, "Sent: %d Limit: %d Remaining: %d Reset: %s",
+            Log.i(TAG, String.format("Sent: %s Limit: %s Remaining: %d Reset: %s",
                     messagesSent, appLimit, appRemaining, df.format(appReset * 1000)));
-            UserLogMessage.sendN(mContext,
+            UserLogMessage.sendN(mContext, UserLogMessage.TYPE.PUSHOVER,
                     String.format("Pushover messages sent: %s",
                             messagesSent));
         }
@@ -414,7 +414,7 @@ public class PushoverUploadService extends Service {
                 }
             } catch (Exception ignored) {}
 
-            UserLogMessage.sendE(mContext,
+            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.PUSHOVER,
                     String.format("Pushover: %s/%s {date.time;%s} '%s' '%s'",
                             appLimit - appRemaining,
                             appLimit,

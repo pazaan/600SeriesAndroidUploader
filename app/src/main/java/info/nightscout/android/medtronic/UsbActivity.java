@@ -50,7 +50,10 @@ public class UsbActivity extends AppCompatActivity {
         if (service) {
             Log.d(TAG, "starting master service");
             startService(new Intent(this, MasterService.class));
-            sendBroadcast(new Intent(MasterService.Constants.ACTION_HAS_USB_PERMISSION));
+            // notify usb activity received
+            // may only receive intent from os after permission has been accepted or set as default for app
+            // older os versions will send intent on usb connect whatever permission state
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_USB_ACTIVITY));
         } else {
             Log.d(TAG, "starting main activity");
             Intent intent = new Intent(this, MainActivity.class);

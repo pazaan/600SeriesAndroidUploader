@@ -10,8 +10,6 @@ import android.util.Log;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -25,6 +23,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryBolus;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.utils.FormatKit;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -147,6 +146,8 @@ public class StatusNotification {
             long sgvAge = -1;
             int sgvValue = 0;
 
+            String note = "";
+
             String sgv = "";
             String delta = "";
 
@@ -157,7 +158,11 @@ public class StatusNotification {
                     .findAll();
             if (results.size() > 0) {
                 sgvValue = results.first().getSgv();
-                sgv = "SGV " + strFormatSGV(sgvValue);
+                sgv = "SGV "+ FormatKit.getInstance().formatAsGlucose(sgvValue, false, true);
+                if (results.first().isEstimate()) {
+                    sgv += "*";
+                    note = "* estimated sgv";
+                }
                 sgvTime = results.first().getEventDate().getTime();
                 sgvAge = (now - sgvTime) / 60000L;
 
@@ -225,6 +230,7 @@ public class StatusNotification {
                     .addLine(bg)
                     .addLine(bolus)
                     .addLine(bolusing)
+                    .addLine(note)
                     .setSummaryText(summary);
 
 //        mNotificationBuilder.setProgress(0, 0, false);
@@ -262,19 +268,6 @@ public class StatusNotification {
         }
     }
 
-    private String strFormatSGV(double sgvValue) {
-        NumberFormat sgvFormatter;
-        if (dataStore.isMmolxl()) {
-            if (dataStore.isMmolxlDecimals())
-                sgvFormatter = new DecimalFormat("0.00");
-            else
-                sgvFormatter = new DecimalFormat("0.0");
-            return sgvFormatter.format(sgvValue / MMOLXLFACTOR);
-        } else {
-            sgvFormatter = new DecimalFormat("0");
-            return sgvFormatter.format(sgvValue);
-        }
-    }
     /*
     private String calibration() {
         long now = System.currentTimeMillis();
@@ -487,7 +480,8 @@ public class StatusNotification {
                 .findAll();
 
         if (results.size() > 0) {
-            text = "BG: " + strFormatSGV(results.first().getBg()) + TEXT_AT_TIME + dateFormatterShort.format(results.first().getBgDate());
+            text = "BG: " + FormatKit.getInstance().formatAsGlucose(results.first().getBg())
+                    + TEXT_AT_TIME + dateFormatterShort.format(results.first().getBgDate());
 
             if (dataStore.isNsEnableCalibrationInfo()) {
                 results = results.where()

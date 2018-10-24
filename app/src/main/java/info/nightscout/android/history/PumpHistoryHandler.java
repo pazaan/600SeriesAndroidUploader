@@ -591,10 +591,12 @@ public class PumpHistoryHandler {
             else if (status) {
 
                 // estimate sgv?
-                if (dataStore.isSysEnableEstimateSGV() &&
+                if (dataStore.isSysEnableEstimateSGV()
+                        && (
                         (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_NEEDED.equals(exception)
                                 || PumpHistoryParser.CGM_EXCEPTION.SENSOR_END_OF_LIFE.equals(exception)
-                                || (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_PENDING.equals(exception) && sgv == 0))
+                                || (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_PENDING.equals(exception) && sgv == 0)
+                        ) && pumpHistoryRecency() < 6 * 60 * 60000L)
                         ) {
 
                     RealmResults<PumpHistoryMisc> miscResults = historyRealm
@@ -751,7 +753,6 @@ public class PumpHistoryHandler {
         int t = 0;
 
         DateFormat dfLog = new SimpleDateFormat("MM/dd HH:mm", Locale.US);
-        DateFormat dfUserlog = new SimpleDateFormat("HH:mm:ss", Locale.US);
         DecimalFormat dfNumber = new DecimalFormat("0.00");
 
         for (int i = 0; i < cgmResults.size(); i++) {
@@ -791,7 +792,8 @@ public class PumpHistoryHandler {
 
             if (factor > 0) x = k * z + (1 - k) * x;
 
-            sgv = (x - offset) * factor;
+            //sgv = (x - offset) * factor;
+            sgv = (x - offsetAvg) * factor;
 
             if (!cgmResults.get(i).isEstimate() && cgmResults.get(i).getSgv() > 0) {
                 offsetCount++;
@@ -876,17 +878,17 @@ public class PumpHistoryHandler {
         if (cgmResults.size() > 0) {
             UserLogMessage.send(mContext,
                     String.format("isig: %s vctr: %s roc: %s s: %s/%s %s%s%s%s%s",
-                    cgmResults.last().getIsig(),
-                    cgmResults.last().getVctr(),
-                    cgmResults.last().getRateOfChange(),
-                    cgmResults.last().getSensorStatus(),
-                    cgmResults.last().getReadingStatus(),
-                    cgmResults.last().isNoisyData() ? "N" : "",
-                    cgmResults.last().isDiscardData() ? "D" : "",
-                    cgmResults.last().isSensorError() ? "E" : "",
-                    cgmResults.last().isBackfilledData() ? "B" : "",
-                    cgmResults.last().isSettingsChanged() ? "S" : ""
-            ));
+                            cgmResults.last().getIsig(),
+                            cgmResults.last().getVctr(),
+                            cgmResults.last().getRateOfChange(),
+                            cgmResults.last().getSensorStatus(),
+                            cgmResults.last().getReadingStatus(),
+                            cgmResults.last().isNoisyData() ? "N" : "",
+                            cgmResults.last().isDiscardData() ? "D" : "",
+                            cgmResults.last().isSensorError() ? "E" : "",
+                            cgmResults.last().isBackfilledData() ? "B" : "",
+                            cgmResults.last().isSettingsChanged() ? "S" : ""
+                    ));
         }
     }
 
@@ -1118,9 +1120,9 @@ public class PumpHistoryHandler {
 
             UserLogMessage.sendE(mContext, UserLogMessage.TYPE.RECEIVED,
                     String.format("%s {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
-                    userlogTAG, R.string.history_received,
-                    range[0] == null ? 0 : range[0].getTime(),
-                    range[1] == null ? 0 : range[1].getTime()));
+                            userlogTAG, R.string.history_received,
+                            range[0] == null ? 0 : range[0].getTime(),
+                            range[1] == null ? 0 : range[1].getTime()));
 
 //            final Date haveFrom = range[0] != null && range[0].getTime() < start ? range[0] : new Date(start);
 //            final Date haveTo = range[1] != null && range[1].getTime() - start > -1000L ? range[1] : new Date(end);

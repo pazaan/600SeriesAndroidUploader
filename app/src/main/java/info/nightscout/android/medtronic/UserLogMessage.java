@@ -189,6 +189,7 @@ public class UserLogMessage {
         SHARE(13),
         STARTUP(14),
         SHUTDOWN(15),
+        PUSHOVER(16),
         NA(-1);
 
         private int value;

@@ -830,7 +830,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
     private void statusWarnings() {
 
-        if (dataStore.isNightscoutUpload() && dataStore.isNsEnableProfileUpload() && commsSuccess > 0) {
+        if (dataStore.isNightscoutUpload() && dataStore.isNightscoutAvailable() && dataStore.isNsEnableProfileUpload() && commsSuccess > 0) {
             if (!pumpHistoryHandler.isProfileUploaded()) {
                 UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.info_no_profile_uploaded);
                 UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.help_profile_upload_main_menu);
@@ -897,22 +897,28 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     }
 
     private void RemoveOutdatedRecords() {
-        realm.executeTransactionAsync(new Realm.Transaction() {
-            @Override
-            public void execute(@NonNull Realm realm) {
+        try {
 
-                RealmResults<PumpStatusEvent> results =
-                        realm.where(PumpStatusEvent.class)
-                                .lessThan("eventDate", new Date(System.currentTimeMillis() - (48 * 60 * 60000L)))
-                                .findAll();
+            realm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
 
-                if (results.size() > 0) {
-                    Log.d(TAG, "Deleting " + results.size() + " records from realm");
-                    results.deleteAllFromRealm();
+                    RealmResults<PumpStatusEvent> results =
+                            realm.where(PumpStatusEvent.class)
+                                    .lessThan("eventDate", new Date(System.currentTimeMillis() - (48 * 60 * 60000L)))
+                                    .findAll();
+
+                    if (results.size() > 0) {
+                        Log.d(TAG, "Deleting " + results.size() + " records from realm");
+                        results.deleteAllFromRealm();
+                    }
+
                 }
+            });
 
-            }
-        });
+        } catch (Exception e) {
+            Log.w(TAG, "RemoveOutdatedRecords Realm task could not complete");
+        }
     }
 
     private void validatePumpRecord(PumpStatusEvent pumpRecord, PumpInfo activePump) {
