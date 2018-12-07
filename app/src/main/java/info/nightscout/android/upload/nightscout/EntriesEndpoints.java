@@ -2,6 +2,7 @@ package info.nightscout.android.upload.nightscout;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Date;
 import java.util.List;
 
 import okhttp3.ResponseBody;
@@ -48,6 +49,9 @@ public interface EntriesEndpoints {
         @SerializedName("key600")
         private String key600;
 
+        @SerializedName("pumpMAC600")
+        private String pumpMAC600;
+
         public String get_id() {
             return _id;
         }
@@ -67,9 +71,13 @@ public interface EntriesEndpoints {
         public String getDateString() {
             return dateString;
         }
-
-        public void setDateString(String dateString) {
-            this.dateString = dateString;
+        /*
+        public void setDateString(Date date) {
+            this.dateString = date.toString();
+        }
+        */
+        public void setDateString(Date date) {
+            this.dateString = NightScoutUpload.formatDateForNS(date);
         }
 
         public Long getDate() {
@@ -120,6 +128,14 @@ public interface EntriesEndpoints {
             this.key600 = key600;
         }
 
+        public String getPumpMAC600() {
+            return pumpMAC600;
+        }
+
+        public void setPumpMAC600(String pumpMAC600) {
+            this.pumpMAC600 = pumpMAC600;
+        }
+
         public Entry() {  }
     }
 
@@ -128,10 +144,22 @@ public interface EntriesEndpoints {
     Call<List<Entry>> checkKey(@Query("find[dateString][$gte]") String date,
                                @Query("find[key600]") String key);
 
+    // find entry using key within date range
+    @GET("/api/v1/entries/sgv.json")
+    Call<List<Entry>> checkKey(@Query("find[date][$gte]") String from,
+                                   @Query("find[date][$lte]") String to,
+                                   @Query("find[key600]") String key);
+
     // delete entry using key
     @DELETE("/api/v1/entries/sgv.json")
-    Call<ResponseBody> deleteKey(@Query("find[dateString][$gte]") String date,
+    Call<ResponseBody> deleteKey(@Query("find[date]") String date,
                                  @Query("find[key600]") String key);
+
+    // delete entry using key within date range
+    @DELETE("/api/v1/entries/sgv.json")
+    Call<ResponseBody> deleteKey(@Query("find[date][$gte]") String from,
+                               @Query("find[date][$lte]") String to,
+                               @Query("find[key600]") String key);
 
     // bulk delete
     @DELETE("/api/v1/entries/sgv.json")

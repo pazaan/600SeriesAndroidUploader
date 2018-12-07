@@ -83,17 +83,17 @@ public class UploaderApplication extends Application {
             try {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
-                if (prefs.getBoolean(getString(R.string.preferences_enable_crashlytics), true)) {
+                if (prefs.getBoolean(getString(R.string.key_dbgCrashlytics), getResources().getBoolean(R.bool.default_dbgCrashlytics))) {
                     Fabric.with(this, new Crashlytics());
                 }
-                if (prefs.getBoolean(getString(R.string.preferences_enable_answers), true)) {
+                if (prefs.getBoolean(getString(R.string.key_dbgAnswers), getResources().getBoolean(R.bool.default_dbgAnswers))) {
                     Fabric.with(this, new Answers(), new Crashlytics());
                 }
 
-                if (prefs.getBoolean(getString(R.string.preferences_enable_remote_logcat), false)) {
+                if (prefs.getBoolean(getString(R.string.key_dbgRemoteLogcat), getResources().getBoolean(R.bool.default_dbgRemoteLogcat))) {
                     Bugfender.init(this, BuildConfig.BUGFENDER_API_KEY, BuildConfig.DEBUG);
                     Bugfender.enableLogcatLogging();
-                    Bugfender.setDeviceString("NightscoutURL", prefs.getString(getString(R.string.preference_nightscout_url), "Not set"));
+                    Bugfender.setDeviceString("NightscoutURL", prefs.getString(getString(R.string.key_nightscoutURL), "Not set"));
                 }
             } catch (Exception ignored) {
             }

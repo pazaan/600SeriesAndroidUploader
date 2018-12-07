@@ -11,6 +11,8 @@ import io.realm.annotations.Index;
 public class PumpStatusEvent extends RealmObject {
     @Index
     private Date eventDate; // The actual time (uploader) of the this event (pumptime event date)
+    @Index
+    private long pumpMAC;
 
     @Index
     private int eventRTC; // RTC of pumptime request (as there is no RTC for status message)
@@ -97,14 +99,15 @@ public class PumpStatusEvent extends RealmObject {
     private short calibrationDueMinutes;
     private float sensorRateOfChange;
 
-    private boolean oldSgvWhenNewExpected = false;
-    private boolean validSGV = false;
+    private boolean validSGV;
+    private boolean cgmOldWhenNewExpected;
+    private boolean cgmLostSensor;
+    private long cgmLastSeen;
 
     @Index
-    private boolean uploaded = false;
+    private boolean uploaded;
 
     public PumpStatusEvent() {
-        // The the eventDate to now.
         this.eventDate = new Date();
     }
 
@@ -114,6 +117,14 @@ public class PumpStatusEvent extends RealmObject {
 
     public void setEventDate(Date eventDate) {
         this.eventDate = eventDate;
+    }
+
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getEventRTC() {
@@ -628,20 +639,36 @@ public class PumpStatusEvent extends RealmObject {
         this.sensorRateOfChange = sensorRateOfChange;
     }
 
-    public boolean isOldSgvWhenNewExpected() {
-        return oldSgvWhenNewExpected;
-    }
-
-    public void setOldSgvWhenNewExpected(boolean oldSgvWhenNewExpected) {
-        this.oldSgvWhenNewExpected = oldSgvWhenNewExpected;
-    }
-
     public boolean isValidSGV() {
         return validSGV;
     }
 
     public void setValidSGV(boolean validSGV) {
         this.validSGV = validSGV;
+    }
+
+    public boolean isCgmOldWhenNewExpected() {
+        return cgmOldWhenNewExpected;
+    }
+
+    public void setCgmOldWhenNewExpected(boolean cgmOldWhenNewExpected) {
+        this.cgmOldWhenNewExpected = cgmOldWhenNewExpected;
+    }
+
+    public boolean isCgmLostSensor() {
+        return cgmLostSensor;
+    }
+
+    public void setCgmLostSensor(boolean cgmLostSensor) {
+        this.cgmLostSensor = cgmLostSensor;
+    }
+
+    public long getCgmLastSeen() {
+        return cgmLastSeen;
+    }
+
+    public void setCgmLastSeen(long cgmLastSeen) {
+        this.cgmLastSeen = cgmLastSeen;
     }
 
     public boolean isUploaded() {

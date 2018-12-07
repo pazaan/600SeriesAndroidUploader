@@ -57,7 +57,9 @@ public class HistoryDebug {
         calcRTCandOFFSET(new Date(System.currentTimeMillis()));
         //new PumpHistoryParser(eventData).process(pumpHistoryHandler.pumpHistorySender, pumpRTC, pumpOFFSET, 0, 0, 0);
         read(file, "pages");
-        new PumpHistoryParser(eventData).process(pumpHistoryHandler.pumpHistorySender, pumpRTC, pumpOFFSET, 0, 0, 0,0,0);
+        try {
+            new PumpHistoryParser(eventData).process(pumpHistoryHandler.getPumpHistorySender(), 0, pumpRTC, pumpOFFSET, 0, 0, 0, 0, 0);
+        } catch (Throwable ignored) {}
     }
 
     // file = json file stored in assets

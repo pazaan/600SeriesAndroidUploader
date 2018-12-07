@@ -4,6 +4,9 @@ package info.nightscout.android.upload.nightscout;
 import android.support.annotation.NonNull;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 import info.nightscout.android.BuildConfig;
@@ -40,7 +43,8 @@ public class UploadApi {
         return treatmentsEndpoints;
     }
 
-    public UploadApi(String baseURL, String token) {
+    public UploadApi(String baseURL, String secret)
+            throws NoSuchAlgorithmException, UnsupportedEncodingException {
 
         class AddAuthHeader implements Interceptor {
 
@@ -68,8 +72,8 @@ public class UploadApi {
                 .readTimeout(60, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS);
 
-        if (token != null)
-            okHttpClient.addInterceptor(new AddAuthHeader(token));
+        if (secret != null)
+            okHttpClient.addInterceptor(new AddAuthHeader(formToken(secret)));
 
         // dev debug logging only
         if (false & BuildConfig.DEBUG) {
@@ -90,4 +94,18 @@ public class UploadApi {
         entriesEndpoints = retrofit.create(EntriesEndpoints.class);
         treatmentsEndpoints = retrofit.create(TreatmentsEndpoints.class);
     }
+
+    @NonNull
+    private String formToken(String secret) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] bytes = secret.getBytes("UTF-8");
+        digest.update(bytes, 0, bytes.length);
+        bytes = digest.digest();
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b & 0xFF));
+        }
+        return sb.toString();
+    }
+
 }

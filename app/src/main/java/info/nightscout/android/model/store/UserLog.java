@@ -1,7 +1,5 @@
 package info.nightscout.android.model.store;
 
-import java.util.UUID;
-
 import info.nightscout.android.utils.FormatKit;
 import io.realm.RealmObject;
 import io.realm.annotations.Index;
@@ -9,7 +7,7 @@ import io.realm.annotations.PrimaryKey;
 
 public class UserLog extends RealmObject {
     @PrimaryKey
-    private String key = UUID.randomUUID().toString();
+    private long index;
     @Index
     private long timestamp;
     @Index
@@ -19,7 +17,8 @@ public class UserLog extends RealmObject {
 
     private String message;
 
-    public UserLog message(long timestamp, int type, int flag, String message) {
+    public UserLog message(long index, long timestamp, int type, int flag, String message) {
+        this.index = index;
         this.timestamp = timestamp;
         this.type = type;
         this.flag = flag;
@@ -55,6 +54,9 @@ public class UserLog extends RealmObject {
                     case "id":
                         sb.append(FormatKit.getInstance().getString(Integer.parseInt(data[1])));
                         break;
+                    case "qid":
+                        sb.append(FormatKit.getInstance().getQuantityString(Integer.parseInt(data[1]), Integer.parseInt(data[2])));
+                        break;
                     case "sgv":
                         sb.append(FormatKit.getInstance().formatAsGlucose(Integer.parseInt(data[1]), false, true));
                         break;
@@ -62,7 +64,7 @@ public class UserLog extends RealmObject {
                         sb.append(FormatKit.getInstance().formatSecondsAsDiff(Integer.parseInt(data[1])));
                         break;
                     case "weekday":
-                        sb.append(FormatKit.getInstance().formatAsWeekday(Long.parseLong(data[1])));
+                        sb.append(FormatKit.getInstance().formatAsDayName(Long.parseLong(data[1])));
                         break;
                     case "date":
                         sb.append(FormatKit.getInstance().formatAsYMD(Long.parseLong(data[1])));

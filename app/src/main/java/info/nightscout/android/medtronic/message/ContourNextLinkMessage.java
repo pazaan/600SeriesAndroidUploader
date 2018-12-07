@@ -31,13 +31,13 @@ public abstract class ContourNextLinkMessage {
     private static final String TAG = ContourNextLinkMessage.class.getSimpleName();
 
     public static final int ERROR_CLEAR_TIMEOUT_MS = 25000;
-    public static final int PRESEND_CLEAR_TIMEOUT_MS = 50;//100;
+    public static final int PRESEND_CLEAR_TIMEOUT_MS = 50;
 
     public static final int READ_TIMEOUT_MS = 25000;
     public static final int CNL_READ_TIMEOUT_MS = 2000;
 
-    private static final int MULTIPACKET_TIMEOUT_MS = 1000;//2000; // minimum timeout
-    private static final int MULTIPACKET_SEGMENT_MS = 50;//80; // time allowance per segment
+    private static final int MULTIPACKET_TIMEOUT_MS = 1000; // minimum timeout
+    private static final int MULTIPACKET_SEGMENT_MS = 50; // time allowance per segment
     private static final int MULTIPACKET_SEGMENT_RETRY = 10;
 
     private static final int USB_BLOCKSIZE = 64;

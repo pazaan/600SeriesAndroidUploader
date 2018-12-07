@@ -20,8 +20,10 @@ import com.google.zxing.integration.android.IntentResult;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 import info.nightscout.android.R;
+import info.nightscout.android.urchin.UrchinService;
 
 public class SettingsFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
     private static final String TAG = SettingsFragment.class.getSimpleName();
@@ -60,6 +62,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         if ("pollInterval".equals(key)) {
             setMinBatPollIntervall((ListPreference) pref, (ListPreference) findPreference("lowBatPollInterval"));
         }
+
         updatePrefSummary(pref);
     }
 
@@ -127,6 +130,11 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
     private void updatePrefSummary(Preference p) {
         if (p instanceof ListPreference) {
             ListPreference listPref = (ListPreference) p;
+
+            if (p.getKey().contains("urchinStatusLayout")) {
+                urchinStatusLayout(listPref);
+            }
+
             p.setSummary(listPref.getEntry());
         }
         if (p instanceof EditTextPreference) {
@@ -168,11 +176,11 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
                                 if (uri.getPort() > -1)
                                     url.append(":").append(uri.getPort());
 
-                                EditTextPreference editPref = (EditTextPreference) findPreference(getString(R.string.preference_nightscout_url));
+                                EditTextPreference editPref = (EditTextPreference) findPreference(getString(R.string.key_nightscoutURL));
                                 editPref.setText(url.toString());
                                 updatePrefSummary(editPref);
 
-                                editPref = (EditTextPreference) findPreference(getString(R.string.preference_api_secret));
+                                editPref = (EditTextPreference) findPreference(getString(R.string.key_nightscoutSECRET));
                                 editPref.setText(uri.getUserInfo());
                                 updatePrefSummary(editPref);
                             } catch (MalformedURLException e) {
@@ -189,4 +197,27 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
             }
         }
     }
+
+    private CharSequence[] values;
+    private CharSequence[] entries;
+
+    private void urchinStatusLayout(ListPreference listPref) {
+
+        if (values == null || entries == null) {
+            List<String> items = UrchinService.getListPreferenceItems();
+
+            int size = items.size() / 2;
+            values = new String[size];
+            entries = new String[size];
+
+            for (int i = 0, p = 0; i < size; i++) {
+                values[i] = items.get(p++);
+                entries[i] = items.get(p++);
+            }
+        }
+
+        listPref.setEntryValues(values);
+        listPref.setEntries(entries);
+    }
+
 }

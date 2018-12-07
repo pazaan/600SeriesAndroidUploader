@@ -68,12 +68,15 @@ public class UsbHidDriver {
     }
 
     public void close() {
-        if (mConnection != null) {
-            Log.d(TAG, "Releasing HID interface.");
-            mConnection.releaseInterface(mInterface);
-            mConnection.close();
+        synchronized (UsbHidDriver.class) {
+            if (mConnection != null && isConnectionOpen) {
+                Log.d(TAG, "Releasing HID interface.");
+                if (!mConnection.releaseInterface(mInterface))
+                    Log.w(TAG, "releaseInterface returned false");
+                mConnection.close();
+            }
+            isConnectionOpen = false;
         }
-        isConnectionOpen = false;
     }
 
     public int read(byte[] dest, int timeoutMillis) {

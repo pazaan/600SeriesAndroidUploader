@@ -80,6 +80,7 @@ public class ManageCNLActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case android.R.id.home:
                 // avoid memory leaks
+                if (mRealm != null && !mRealm.isClosed()) mRealm.close();
                 mRealm = null;
                 finish();
                 break;

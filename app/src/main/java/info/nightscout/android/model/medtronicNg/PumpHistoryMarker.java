@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 import info.nightscout.android.R;
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
@@ -31,6 +32,8 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -77,21 +80,18 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
     @Override
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
-
-        NightscoutItem nightscoutItem = new NightscoutItem();
-        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
+        TreatmentsEndpoints.Treatment treatment;
 
         switch (RECORDTYPE.convert(recordtype)) {
 
             case FOOD:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Carb Correction");
-                treatment.setKey600(key);
-                treatment.setCreated_at(eventDate);
 
                 // conversion for unit type
                 double carbInputAsGrams;
                 String exchanges;
-                double gramsPerExchange = Double.parseDouble(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.GRAMS_PER_EXCHANGE, "15"));
+                double gramsPerExchange = Double.parseDouble(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.GRAMS_PER_EXCHANGE, "15"));
                 if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits)) {
                     carbInputAsGrams = gramsPerExchange * carbInput;
                     exchanges = String.format(", %s",
@@ -105,42 +105,34 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 treatment.setNotes(String.format("%s: %s %s %s%s",
                         "Event Marker",
                         "Food",
-                        FormatKit.getInstance().getString(R.string.carb),
+                        FormatKit.getInstance().getString(R.string.info_carb),
                         FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                         exchanges));
-
-                nightscoutItems.add(nightscoutItem);
                 break;
 
             case EXERCISE:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Exercise");
-                treatment.setKey600(key);
-                treatment.setCreated_at(eventDate);
                 treatment.setDuration((float) duration);
-                nightscoutItems.add(nightscoutItem);
                 break;
 
             case INJECTION:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Correction Bolus");
-                treatment.setKey600(key);
-                treatment.setCreated_at(eventDate);
                 treatment.setInsulin((float) insulin);
                 treatment.setNotes(String.format("%s: %s %s %s",
                         "Event Marker",
                         "Injection",
-                        FormatKit.getInstance().getString(R.string.bolus),
+                        FormatKit.getInstance().getString(R.string.info_bolus),
                         FormatKit.getInstance().formatAsInsulin(insulin)));
-                nightscoutItems.add(nightscoutItem);
                 break;
 
             case OTHER:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Question");
-                treatment.setKey600(key);
-                treatment.setCreated_at(eventDate);
                 treatment.setNotes(String.format("%s: %s",
                         "Event Marker",
                         "Other"));
-                nightscoutItems.add(nightscoutItem);
                 break;
 
             default:
@@ -162,7 +154,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 // conversion for unit type
                 double carbInputAsGrams;
                 String exchanges;
-                double gramsPerExchange = Double.parseDouble(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.GRAMS_PER_EXCHANGE, "15"));
+                double gramsPerExchange = Double.parseDouble(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.GRAMS_PER_EXCHANGE, "15"));
                 if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits)) {
                     carbInputAsGrams = gramsPerExchange * carbInput;
                     exchanges = String.format(", %s",
@@ -173,7 +165,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 }
                 message = String.format("%s %s %s%s",
                         "Food",
-                        FormatKit.getInstance().getString(R.string.carb),
+                        FormatKit.getInstance().getString(R.string.info_carb),
                         FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                         exchanges);
                 break;
@@ -181,14 +173,14 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
             case EXERCISE:
                 message = String.format("%s %s %s",
                         "Exercise",
-                        FormatKit.getInstance().getString(R.string.duration),
+                        FormatKit.getInstance().getString(R.string.info_duration),
                         FormatKit.getInstance().formatMinutesAsHM(duration));
                 break;
 
             case INJECTION:
                 message = String.format("%s %s %s",
                         "Injection",
-                        FormatKit.getInstance().getString(R.string.bolus),
+                        FormatKit.getInstance().getString(R.string.info_bolus),
                         FormatKit.getInstance().formatAsInsulin(insulin));
                 break;
 
@@ -202,7 +194,6 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
         }
 
         messageItems.add(new MessageItem()
-                .key(key)
                 .date(eventDate)
                 .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
                 .title(title)
@@ -211,31 +202,35 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
         return messageItems;
     }
 
-    public static void marker(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                              RECORDTYPE recordtype,
-                              int duration,
-                              byte carbUnits,
-                              double carbInput,
-                              double insulin) {
+    public static void marker(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            RECORDTYPE recordtype,
+            int duration,
+            byte carbUnits,
+            double carbInput,
+            double insulin) {
 
-        PumpHistoryMarker markerRecord = realm.where(PumpHistoryMarker.class)
+        PumpHistoryMarker record = realm.where(PumpHistoryMarker.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("eventRTC", eventRTC)
                 .equalTo("recordtype", recordtype.value())
                 .findFirst();
 
-        if (markerRecord == null) {
+        if (record == null) {
             Log.d(TAG, "*new* recordtype: " + recordtype.name());
-            markerRecord = realm.createObject(PumpHistoryMarker.class);
-            markerRecord.recordtype = recordtype.value();
-            markerRecord.eventDate = eventDate;
-            markerRecord.eventRTC = eventRTC;
-            markerRecord.eventOFFSET = eventOFFSET;
-            markerRecord.duration = duration;
-            markerRecord.carbUnits = carbUnits;
-            markerRecord.carbInput = carbInput;
-            markerRecord.insulin = insulin;
-            markerRecord.key = String.format("MARK%08X", eventRTC);
-            pumpHistorySender.setSenderREQ(markerRecord);
+            record = realm.createObject(PumpHistoryMarker.class);
+            record.pumpMAC = pumpMAC;
+            record.recordtype = recordtype.value();
+            record.eventDate = eventDate;
+            record.eventRTC = eventRTC;
+            record.eventOFFSET = eventOFFSET;
+            record.duration = duration;
+            record.carbUnits = carbUnits;
+            record.carbInput = carbInput;
+            record.insulin = insulin;
+            record.key = HistoryUtils.key("MARK", eventRTC);
+            pumpHistorySender.setSenderREQ(record);
         }
     }
 
@@ -287,6 +282,16 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getEventRTC() {

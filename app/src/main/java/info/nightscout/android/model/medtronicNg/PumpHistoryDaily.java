@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 
 import info.nightscout.android.R;
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
@@ -37,6 +38,8 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -122,21 +125,16 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        String notes = "";
-
-        NightscoutItem nightscoutItem = new NightscoutItem();
-        nightscoutItems.add(nightscoutItem);
-        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
-
-        treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
+        TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
         treatment.setEventType("Pump Daily Totals");
+
+        String notes = "";
 
         SimpleDateFormat sdfDay = new SimpleDateFormat("EEEE MMMM dd", Locale.getDefault());
 
         long midday = startDate.getTime() + ((endDate.getTime() - startDate.getTime()) / 2);
 
-        if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.FORMAT_HTML)) {
+        if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.FORMAT_HTML)) {
 
             String css = ".dt{background-color:#ddd;text-align:center;line-height:1.5;font-weight:bold}" +
                     ".dt caption{background-color:#444;color:#fff}" +
@@ -155,90 +153,91 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
                         css,
 
-                        FormatKit.getInstance().getString(R.string.Pump_Daily_Totals),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Daily_Totals),
                         sdfDay.format(midday),
 
-                        FormatKit.getInstance().getString(R.string.Insulin),
-                        FormatKit.getInstance().getString(R.string.Sensor),
-                        FormatKit.getInstance().getString(R.string.BG),
-                        FormatKit.getInstance().getString(R.string.Bolus),
-                        FormatKit.getInstance().getString(R.string.Alerts),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Insulin),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Sensor),
+                        FormatKit.getInstance().getString(R.string.dt_heading_BG),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Bolus),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Alerts),
 
-                        FormatKit.getInstance().getString(R.string.TDD),
+                        FormatKit.getInstance().getString(R.string.dt_heading_TDD),
                         FormatKit.getInstance().formatAsInsulin(totalInsulin),
-                        FormatKit.getInstance().getString(R.string.Bolus),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Bolus),
                         FormatKit.getInstance().formatAsPercent(bolusPercent),
                         FormatKit.getInstance().formatAsInsulin(bolusInsulin),
-                        FormatKit.getInstance().getString(R.string.Basal),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Basal),
                         FormatKit.getInstance().formatAsPercent(basalPercent),
                         FormatKit.getInstance().formatAsInsulin(basalInsulin),
 
-                        FormatKit.getInstance().getString(R.string.Total),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Total),
                         sgCount,
-                        FormatKit.getInstance().getString(R.string.Avg),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                         FormatKit.getInstance().formatAsGlucose(sgAverage),
-                        FormatKit.getInstance().getString(R.string.StdDev),
+                        FormatKit.getInstance().getString(R.string.dt_heading_StdDev),
                         FormatKit.getInstance().formatAsGlucose(sgStddev),
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsPercent(sgPercentAboveHigh),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationAboveHigh),
-                        FormatKit.getInstance().getString(R.string.Within),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Within),
                         FormatKit.getInstance().formatAsPercent(sgPercentWithinLimit),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationWithinLimit),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsPercent(sgPercentBelowLow),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationBelowLow),
 
-                        FormatKit.getInstance().getString(R.string.Total),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Total),
                         bgCount,
-                        FormatKit.getInstance().getString(R.string.Avg),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                         FormatKit.getInstance().formatAsGlucose(bgAverage),
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsGlucose(meterBgHigh),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsGlucose(meterBgLow),
-                        FormatKit.getInstance().getString(R.string.Manual),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Manual),
                         manualBgCount,
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsGlucose(manualBgHigh),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsGlucose(manualBgLow),
 
-                        FormatKit.getInstance().getString(R.string.Wizard),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Wizard),
                         bolusWizardUsageCount,
-                        FormatKit.getInstance().getString(R.string.Carb),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Carb),
                         PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits) ?
                                 FormatKit.getInstance().formatAsExchanges(totalFoodInput) :
                                 FormatKit.getInstance().formatAsGrams(totalFoodInput),
-                        FormatKit.getInstance().getString(R.string.Food),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Food),
                         bolusWizardFoodOnlyBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsFoodOnlyBolus),
-                        FormatKit.getInstance().getString(R.string.Correct),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Correct),
                         bolusWizardCorrectionOnlyBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsCorrectionOnlyBolus),
-                        FormatKit.getInstance().getString(R.string.Food_Corr),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Food_Corr),
                         bolusWizardFoodAndCorrectionBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsFoodAndCorrection),
-                        FormatKit.getInstance().getString(R.string.Manual),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Manual),
                         manualBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalManualBolusInsulin),
 
-                        FormatKit.getInstance().getString(R.string.PreHigh),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Total),
+                        highPredictiveAlerts + highBgAlerts + lowPredictiveAlerts + lowBgAlerts
+                                + predictiveLowGlucoseSuspendAlerts + lowGlucoseSuspendAlerts + risingRateAlerts,
+                        FormatKit.getInstance().getString(R.string.dt_heading_PreHigh),
                         highPredictiveAlerts,
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         highBgAlerts,
-                        FormatKit.getInstance().getString(R.string.PreLow),
+                        FormatKit.getInstance().getString(R.string.dt_heading_PreLow),
                         lowPredictiveAlerts,
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         lowBgAlerts,
-                        FormatKit.getInstance().getString(R.string.PreSuspd),
+                        FormatKit.getInstance().getString(R.string.dt_heading_PreSuspd),
                         predictiveLowGlucoseSuspendAlerts,
-                        FormatKit.getInstance().getString(R.string.Suspend),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Suspend),
                         lowGlucoseSuspendAlerts,
-                        FormatKit.getInstance().getString(R.string.Rise),
-                        risingRateAlerts,
-                        FormatKit.getInstance().getString(R.string.Fall),
-                        fallingRateAlerts);
+                        FormatKit.getInstance().getString(R.string.dt_heading_Rise),
+                        risingRateAlerts);
 
             } else {
 
@@ -253,81 +252,81 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
                         css,
 
-                        FormatKit.getInstance().getString(R.string.Pump_Daily_Totals),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Daily_Totals),
                         sdfDay.format(midday),
 
-                        FormatKit.getInstance().getString(R.string.Insulin),
-                        FormatKit.getInstance().getString(R.string.Sensor),
-                        FormatKit.getInstance().getString(R.string.BG),
-                        FormatKit.getInstance().getString(R.string.Bolus),
-                        FormatKit.getInstance().getString(R.string.Auto),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Insulin),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Sensor),
+                        FormatKit.getInstance().getString(R.string.dt_heading_BG),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Bolus),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Auto),
 
-                        FormatKit.getInstance().getString(R.string.TDD),
+                        FormatKit.getInstance().getString(R.string.dt_heading_TDD),
                         FormatKit.getInstance().formatAsInsulin(totalInsulin),
-                        FormatKit.getInstance().getString(R.string.Bolus),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Bolus),
                         FormatKit.getInstance().formatAsPercent(bolusPercent),
                         FormatKit.getInstance().formatAsInsulin(bolusInsulin),
-                        FormatKit.getInstance().getString(R.string.Basal),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Basal),
                         FormatKit.getInstance().formatAsPercent(basalPercent),
                         FormatKit.getInstance().formatAsInsulin(basalInsulin),
 
-                        FormatKit.getInstance().getString(R.string.Total),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Total),
                         sgCount,
-                        FormatKit.getInstance().getString(R.string.Avg),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                         FormatKit.getInstance().formatAsGlucose(sgAverage),
-                        FormatKit.getInstance().getString(R.string.StdDev),
+                        FormatKit.getInstance().getString(R.string.dt_heading_StdDev),
                         FormatKit.getInstance().formatAsGlucose(sgStddev),
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsPercent(sgPercentAboveHigh),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationAboveHigh),
-                        FormatKit.getInstance().getString(R.string.Within),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Within),
                         FormatKit.getInstance().formatAsPercent(sgPercentWithinLimit),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationWithinLimit),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsPercent(sgPercentBelowLow),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationBelowLow),
 
-                        FormatKit.getInstance().getString(R.string.Total),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Total),
                         bgCount,
-                        FormatKit.getInstance().getString(R.string.Avg),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                         FormatKit.getInstance().formatAsGlucose(bgAverage),
-                        FormatKit.getInstance().getString(R.string.StdDev),
+                        FormatKit.getInstance().getString(R.string.dt_heading_StdDev),
                         FormatKit.getInstance().formatAsGlucose(bgStdDev),
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsGlucose(meterBgHigh),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsGlucose(meterBgLow),
 
-                        FormatKit.getInstance().getString(R.string.Wizard),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Wizard),
                         bolusWizardUsageCount + mealWizardUsageCount,
-                        FormatKit.getInstance().getString(R.string.Carb),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Carb),
                         PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits) ?
                                 FormatKit.getInstance().formatAsExchanges(totalFoodInput) :
                                 FormatKit.getInstance().formatAsGrams(totalFoodInput),
-                        FormatKit.getInstance().getString(R.string.Food),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Food),
                         bolusWizardFoodOnlyBolusCount + mealWizardFoodOnlyBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsFoodOnlyBolus + totalMealWizardInsulinAsFoodOnlyBolus),
-                        FormatKit.getInstance().getString(R.string.Correct),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Correct),
                         bolusWizardCorrectionOnlyBolusCount + mealWizardCorrectionOnlyBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsCorrectionOnlyBolus + totalMealWizardInsulinAsCorrectionOnlyBolus),
-                        FormatKit.getInstance().getString(R.string.Food_Corr),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Food_Corr),
                         bolusWizardFoodAndCorrectionBolusCount + mealWizardFoodAndCorrectionBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsFoodAndCorrection + totalMealWizardInsulinAsFoodAndCorrection),
-                        FormatKit.getInstance().getString(R.string.Manual),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Manual),
                         manualBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalManualBolusInsulin),
 
-                        FormatKit.getInstance().getString(R.string.Active),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Active),
                         FormatKit.getInstance().formatMinutesAsHM(totalTimeInCLActiveMode),
-                        FormatKit.getInstance().getString(R.string.Micro),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Micro),
                         microBolusCount,
                         FormatKit.getInstance().formatAsInsulin(microBolusInsulinDelivered),
-                        FormatKit.getInstance().getString(R.string.Therapy),
-                        FormatKit.getInstance().getString(R.string.Range),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Therapy),
+                        FormatKit.getInstance().getString(R.string.dt_heading_therapy_Range),
                         FormatKit.getInstance().formatMinutesAsHM(totalTimeInTherapyTargetRange),
-                        FormatKit.getInstance().getString(R.string.Above),
+                        FormatKit.getInstance().getString(R.string.dt_heading_therapy_Above),
                         FormatKit.getInstance().formatMinutesAsHM(totalTimeInAboveTherapyTargetRangeHiLimit),
-                        FormatKit.getInstance().getString(R.string.Below),
+                        FormatKit.getInstance().getString(R.string.dt_heading_therapy_Below),
                         FormatKit.getInstance().formatMinutesAsHM(totalTimeInBelowTherapyTargetRangeLowLimit));
             }
 
@@ -340,87 +339,87 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
                                 " | %s x%s %s %s %s %s %s %s %s %s %s %s %s %s %s" +
                                 " | %s x%s %s %s %s %s %s %s %s x%s %s %s %s %s" +
                                 " | %s x%s %s %s %s x%s %s %s x%s %s %s x%s %s %s x%s %s" +
-                                " | %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
+                                " | %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
 
-                        FormatKit.getInstance().getString(R.string.Pump_Daily_Totals),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Daily_Totals),
                         sdfDay.format(midday),
 
-                        FormatKit.getInstance().getString(R.string.TDD),
+                        FormatKit.getInstance().getString(R.string.dt_heading_TDD),
                         FormatKit.getInstance().formatAsInsulin(totalInsulin),
-                        FormatKit.getInstance().getString(R.string.Bolus),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Bolus),
                         FormatKit.getInstance().formatAsPercent(bolusPercent),
                         FormatKit.getInstance().formatAsInsulin(bolusInsulin),
-                        FormatKit.getInstance().getString(R.string.Basal),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Basal),
                         FormatKit.getInstance().formatAsPercent(basalPercent),
                         FormatKit.getInstance().formatAsInsulin(basalInsulin),
 
-                        FormatKit.getInstance().getString(R.string.Sensor),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Sensor),
                         sgCount,
-                        FormatKit.getInstance().getString(R.string.Avg),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                         FormatKit.getInstance().formatAsGlucose(sgAverage),
-                        FormatKit.getInstance().getString(R.string.StdDev),
+                        FormatKit.getInstance().getString(R.string.dt_heading_StdDev),
                         FormatKit.getInstance().formatAsGlucose(sgStddev),
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsPercent(sgPercentAboveHigh),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationAboveHigh),
-                        FormatKit.getInstance().getString(R.string.Within),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Within),
                         FormatKit.getInstance().formatAsPercent(sgPercentWithinLimit),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationWithinLimit),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsPercent(sgPercentBelowLow),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationBelowLow),
 
-                        FormatKit.getInstance().getString(R.string.BG),
+                        FormatKit.getInstance().getString(R.string.dt_heading_BG),
                         bgCount,
-                        FormatKit.getInstance().getString(R.string.Avg),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                         FormatKit.getInstance().formatAsGlucose(bgAverage),
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsGlucose(meterBgHigh),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsGlucose(meterBgLow),
-                        FormatKit.getInstance().getString(R.string.Manual),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Manual),
                         manualBgCount,
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsGlucose(manualBgHigh),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsGlucose(manualBgLow),
 
-                        FormatKit.getInstance().getString(R.string.Wizard),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Wizard),
                         bolusWizardUsageCount,
-                        FormatKit.getInstance().getString(R.string.Carb),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Carb),
                         PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits) ?
                                 FormatKit.getInstance().formatAsExchanges(totalFoodInput) :
                                 FormatKit.getInstance().formatAsGrams(totalFoodInput),
-                        FormatKit.getInstance().getString(R.string.Food),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Food),
                         bolusWizardFoodOnlyBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsFoodOnlyBolus),
-                        FormatKit.getInstance().getString(R.string.Correct),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Correct),
                         bolusWizardCorrectionOnlyBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsCorrectionOnlyBolus),
-                        FormatKit.getInstance().getString(R.string.Food_Corr),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Food_Corr),
                         bolusWizardFoodAndCorrectionBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsFoodAndCorrection),
-                        FormatKit.getInstance().getString(R.string.Manual),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Manual),
                         manualBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalManualBolusInsulin),
 
-                        FormatKit.getInstance().getString(R.string.Alerts),
-                        FormatKit.getInstance().getString(R.string.PreHigh),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Alerts),
+                        highPredictiveAlerts + highBgAlerts + lowPredictiveAlerts + lowBgAlerts
+                                + predictiveLowGlucoseSuspendAlerts + lowGlucoseSuspendAlerts + risingRateAlerts,
+                        FormatKit.getInstance().getString(R.string.dt_heading_PreHigh),
                         highPredictiveAlerts,
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         highBgAlerts,
-                        FormatKit.getInstance().getString(R.string.PreLow),
+                        FormatKit.getInstance().getString(R.string.dt_heading_PreLow),
                         lowPredictiveAlerts,
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         lowBgAlerts,
-                        FormatKit.getInstance().getString(R.string.PreSuspd),
+                        FormatKit.getInstance().getString(R.string.dt_heading_PreSuspd),
                         predictiveLowGlucoseSuspendAlerts,
-                        FormatKit.getInstance().getString(R.string.Suspend),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Suspend),
                         lowGlucoseSuspendAlerts,
-                        FormatKit.getInstance().getString(R.string.Rise),
-                        risingRateAlerts,
-                        FormatKit.getInstance().getString(R.string.Fall),
-                        fallingRateAlerts);
+                        FormatKit.getInstance().getString(R.string.dt_heading_Rise),
+                        risingRateAlerts);
 
             } else {
 
@@ -431,75 +430,75 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
                                 " | %s x%s %s %s %s x%s %s %s x%s %s %s x%s %s %s x%s %s" +
                                 " | %s %s %s x%s %s %s %s %s %s %s %s %s",
 
-                        FormatKit.getInstance().getString(R.string.Pump_Daily_Totals),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Daily_Totals),
                         sdfDay.format(midday),
 
-                        FormatKit.getInstance().getString(R.string.TDD),
+                        FormatKit.getInstance().getString(R.string.dt_heading_TDD),
                         FormatKit.getInstance().formatAsInsulin(totalInsulin),
-                        FormatKit.getInstance().getString(R.string.Bolus),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Bolus),
                         FormatKit.getInstance().formatAsPercent(bolusPercent),
                         FormatKit.getInstance().formatAsInsulin(bolusInsulin),
-                        FormatKit.getInstance().getString(R.string.Basal),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Basal),
                         FormatKit.getInstance().formatAsPercent(basalPercent),
                         FormatKit.getInstance().formatAsInsulin(basalInsulin),
 
-                        FormatKit.getInstance().getString(R.string.Sensor),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Sensor),
                         sgCount,
-                        FormatKit.getInstance().getString(R.string.Avg),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                         FormatKit.getInstance().formatAsGlucose(sgAverage),
-                        FormatKit.getInstance().getString(R.string.StdDev),
+                        FormatKit.getInstance().getString(R.string.dt_heading_StdDev),
                         FormatKit.getInstance().formatAsGlucose(sgStddev),
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsPercent(sgPercentAboveHigh),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationAboveHigh),
-                        FormatKit.getInstance().getString(R.string.Within),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Within),
                         FormatKit.getInstance().formatAsPercent(sgPercentWithinLimit),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationWithinLimit),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsPercent(sgPercentBelowLow),
                         FormatKit.getInstance().formatMinutesAsHM(sgDurationBelowLow),
 
-                        FormatKit.getInstance().getString(R.string.BG),
+                        FormatKit.getInstance().getString(R.string.dt_heading_BG),
                         bgCount,
-                        FormatKit.getInstance().getString(R.string.Avg),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                         FormatKit.getInstance().formatAsGlucose(bgAverage),
-                        FormatKit.getInstance().getString(R.string.StdDev),
+                        FormatKit.getInstance().getString(R.string.dt_heading_StdDev),
                         FormatKit.getInstance().formatAsGlucose(bgStdDev),
-                        FormatKit.getInstance().getString(R.string.High),
+                        FormatKit.getInstance().getString(R.string.dt_heading_High),
                         FormatKit.getInstance().formatAsGlucose(meterBgHigh),
-                        FormatKit.getInstance().getString(R.string.Low),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Low),
                         FormatKit.getInstance().formatAsGlucose(meterBgLow),
 
-                        FormatKit.getInstance().getString(R.string.Wizard),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Wizard),
                         bolusWizardUsageCount + mealWizardUsageCount,
-                        FormatKit.getInstance().getString(R.string.Carb),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Carb),
                         PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits) ?
                                 FormatKit.getInstance().formatAsExchanges(totalFoodInput) :
                                 FormatKit.getInstance().formatAsGrams(totalFoodInput),
-                        FormatKit.getInstance().getString(R.string.Food),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Food),
                         bolusWizardFoodOnlyBolusCount + mealWizardFoodOnlyBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsFoodOnlyBolus + totalMealWizardInsulinAsFoodOnlyBolus),
-                        FormatKit.getInstance().getString(R.string.Correct),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Correct),
                         bolusWizardCorrectionOnlyBolusCount + mealWizardCorrectionOnlyBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsCorrectionOnlyBolus + totalMealWizardInsulinAsCorrectionOnlyBolus),
-                        FormatKit.getInstance().getString(R.string.Food_Corr),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Food_Corr),
                         bolusWizardFoodAndCorrectionBolusCount + mealWizardFoodAndCorrectionBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalBolusWizardInsulinAsFoodAndCorrection + totalMealWizardInsulinAsFoodAndCorrection),
-                        FormatKit.getInstance().getString(R.string.Manual),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Manual),
                         manualBolusCount,
                         FormatKit.getInstance().formatAsInsulin(totalManualBolusInsulin),
 
-                        FormatKit.getInstance().getString(R.string.Auto),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Auto),
                         FormatKit.getInstance().formatMinutesAsHM(totalTimeInCLActiveMode),
-                        FormatKit.getInstance().getString(R.string.Micro),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Micro),
                         microBolusCount,
                         FormatKit.getInstance().formatAsInsulin(microBolusInsulinDelivered),
-                        FormatKit.getInstance().getString(R.string.Therapy),
-                        FormatKit.getInstance().getString(R.string.Range),
+                        FormatKit.getInstance().getString(R.string.dt_heading_Therapy),
+                        FormatKit.getInstance().getString(R.string.dt_heading_therapy_Range),
                         FormatKit.getInstance().formatMinutesAsHM(totalTimeInTherapyTargetRange),
-                        FormatKit.getInstance().getString(R.string.Above),
+                        FormatKit.getInstance().getString(R.string.dt_heading_therapy_Above),
                         FormatKit.getInstance().formatMinutesAsHM(totalTimeInAboveTherapyTargetRangeHiLimit),
-                        FormatKit.getInstance().getString(R.string.Below),
+                        FormatKit.getInstance().getString(R.string.dt_heading_therapy_Below),
                         FormatKit.getInstance().formatMinutesAsHM(totalTimeInBelowTherapyTargetRangeLowLimit));
             }
 
@@ -517,32 +516,32 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
         long midday = startDate.getTime() + ((endDate.getTime() - startDate.getTime()) / 2);
 
         String title = String.format("%s %s",
-                FormatKit.getInstance().getString(R.string.Daily_Totals),
-                FormatKit.getInstance().formatAsWeekday(midday));
+                FormatKit.getInstance().getString(R.string.dt_heading_Daily_Totals),
+                FormatKit.getInstance().formatAsDayName(midday));
 
         String message = String.format("%s %s • %s %s %s • %s %s %s • %s %s • %s %s • %s %s • %s %s • %s %s",
-                FormatKit.getInstance().getString(R.string.TDD),
+                FormatKit.getInstance().getString(R.string.dt_heading_TDD),
                 FormatKit.getInstance().formatAsInsulin(totalInsulin),
-                FormatKit.getInstance().getString(R.string.Bolus),
+                FormatKit.getInstance().getString(R.string.dt_heading_Bolus),
                 FormatKit.getInstance().formatAsInsulin(bolusInsulin),
                 FormatKit.getInstance().formatAsPercent(bolusPercent),
-                FormatKit.getInstance().getString(R.string.Basal),
+                FormatKit.getInstance().getString(R.string.dt_heading_Basal),
                 FormatKit.getInstance().formatAsInsulin(basalInsulin),
                 FormatKit.getInstance().formatAsPercent(basalPercent),
-                FormatKit.getInstance().getString(R.string.Avg),
+                FormatKit.getInstance().getString(R.string.dt_heading_Avg),
                 FormatKit.getInstance().formatAsGlucose(sgAverage),
-                FormatKit.getInstance().getString(R.string.StdDev),
+                FormatKit.getInstance().getString(R.string.dt_heading_StdDev),
                 FormatKit.getInstance().formatAsGlucose(sgStddev),
-                FormatKit.getInstance().getString(R.string.High),
+                FormatKit.getInstance().getString(R.string.dt_heading_High),
                 FormatKit.getInstance().formatAsPercent(sgPercentAboveHigh),
-                FormatKit.getInstance().getString(R.string.Within),
+                FormatKit.getInstance().getString(R.string.dt_heading_Within),
                 FormatKit.getInstance().formatAsPercent(sgPercentWithinLimit),
-                FormatKit.getInstance().getString(R.string.Low),
+                FormatKit.getInstance().getString(R.string.dt_heading_Low),
                 FormatKit.getInstance().formatAsPercent(sgPercentBelowLow));
 
         if (mealWizardUsageCount > 0) {
             message += String.format(" • %s %s",
-                    FormatKit.getInstance().getString(R.string.Food),
+                    FormatKit.getInstance().getString(R.string.dt_heading_Food),
                     PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits) ?
                             FormatKit.getInstance().formatAsExchanges(totalFoodInput) :
                             FormatKit.getInstance().formatAsGrams(totalFoodInput));
@@ -550,19 +549,18 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
         if (TYPE.DAILY_TOTALS.equals(type)) {
             message += String.format(" • %s %s",
-                    FormatKit.getInstance().getString(R.string.Alerts),
+                    FormatKit.getInstance().getString(R.string.dt_heading_Alerts),
                     highPredictiveAlerts + lowPredictiveAlerts + lowBgAlerts + highBgAlerts +
                             risingRateAlerts + fallingRateAlerts + lowGlucoseSuspendAlerts + predictiveLowGlucoseSuspendAlerts);
         } else if (TYPE.CLOSED_LOOP_DAILY_TOTALS.equals(type)) {
             message += String.format(" • %s %s • %s %s",
-                    FormatKit.getInstance().getString(R.string.Auto),
+                    FormatKit.getInstance().getString(R.string.dt_heading_Auto),
                     FormatKit.getInstance().formatMinutesAsHM(totalTimeInCLActiveMode),
-                    FormatKit.getInstance().getString(R.string.Micro),
+                    FormatKit.getInstance().getString(R.string.dt_heading_Micro),
                     microBolusCount);
         }
 
         messageItems.add(new MessageItem()
-                .key(key)
                 .type(MessageItem.TYPE.DAILY_TOTALS)
                 .date(eventDate)
                 .title(title)
@@ -571,81 +569,84 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
         return messageItems;
     }
 
-    public static void dailyTotals(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                   int type,
-                                   Date startDate,
-                                   Date endDate,
-                                   int rtc,
-                                   int offset,
-                                   int duration,
-                                   int meterBgCount,
-                                   int meterBgAverage,
-                                   int meterBgLow,
-                                   int meterBgHigh,
-                                   int manualBgCount,
-                                   int manualBgAverage,
-                                   int manualBgLow,
-                                   int manualBgHigh,
-                                   int bgCount,
-                                   int bgAverage,
-                                   int bgStdDev,
-                                   double totalInsulin,
-                                   double basalInsulin,
-                                   int basalPercent,
-                                   double bolusInsulin,
-                                   int bolusPercent,
-                                   int carbUnits,
-                                   int bolusWizardUsageCount,
-                                   int mealWizardUsageCount,
-                                   double totalFoodInput,
-                                   double totalBolusWizardInsulinAsFoodOnlyBolus,
-                                   double totalBolusWizardInsulinAsCorrectionOnlyBolus,
-                                   double totalBolusWizardInsulinAsFoodAndCorrection,
-                                   double totalMealWizardInsulinAsFoodOnlyBolus,
-                                   double totalMealWizardInsulinAsCorrectionOnlyBolus,
-                                   double totalMealWizardInsulinAsFoodAndCorrection,
-                                   double totalManualBolusInsulin,
-                                   int bolusWizardFoodOnlyBolusCount,
-                                   int bolusWizardCorrectionOnlyBolusCount,
-                                   int bolusWizardFoodAndCorrectionBolusCount,
-                                   int mealWizardFoodOnlyBolusCount,
-                                   int mealWizardCorrectionOnlyBolusCount,
-                                   int mealWizardFoodAndCorrectionBolusCount,
-                                   int manualBolusCount,
-                                   int sgCount,
-                                   int sgAverage,
-                                   int sgStddev,
-                                   int sgDurationAboveHigh,
-                                   int sgPercentAboveHigh,
-                                   int sgDurationWithinLimit,
-                                   int sgPercentWithinLimit,
-                                   int sgDurationBelowLow,
-                                   int sgPercentBelowLow,
-                                   int lgSuspensionDuration,
-                                   int highPredictiveAlerts,
-                                   int lowPredictiveAlerts,
-                                   int lowBgAlerts,
-                                   int highBgAlerts,
-                                   int risingRateAlerts,
-                                   int fallingRateAlerts,
-                                   int lowGlucoseSuspendAlerts,
-                                   int predictiveLowGlucoseSuspendAlerts,
-                                   int microBolusCount,
-                                   double microBolusInsulinDelivered,
-                                   int totalTimeInCLActiveMode,
-                                   int totalTimeInTherapyTargetRange,
-                                   int totalTimeInAboveTherapyTargetRangeHiLimit,
-                                   int totalTimeInBelowTherapyTargetRangeLowLimit
-    ) {
+    public static void dailyTotals(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int type,
+            Date startDate,
+            Date endDate,
+            int rtc,
+            int offset,
+            int duration,
+            int meterBgCount,
+            int meterBgAverage,
+            int meterBgLow,
+            int meterBgHigh,
+            int manualBgCount,
+            int manualBgAverage,
+            int manualBgLow,
+            int manualBgHigh,
+            int bgCount,
+            int bgAverage,
+            int bgStdDev,
+            double totalInsulin,
+            double basalInsulin,
+            int basalPercent,
+            double bolusInsulin,
+            int bolusPercent,
+            int carbUnits,
+            int bolusWizardUsageCount,
+            int mealWizardUsageCount,
+            double totalFoodInput,
+            double totalBolusWizardInsulinAsFoodOnlyBolus,
+            double totalBolusWizardInsulinAsCorrectionOnlyBolus,
+            double totalBolusWizardInsulinAsFoodAndCorrection,
+            double totalMealWizardInsulinAsFoodOnlyBolus,
+            double totalMealWizardInsulinAsCorrectionOnlyBolus,
+            double totalMealWizardInsulinAsFoodAndCorrection,
+            double totalManualBolusInsulin,
+            int bolusWizardFoodOnlyBolusCount,
+            int bolusWizardCorrectionOnlyBolusCount,
+            int bolusWizardFoodAndCorrectionBolusCount,
+            int mealWizardFoodOnlyBolusCount,
+            int mealWizardCorrectionOnlyBolusCount,
+            int mealWizardFoodAndCorrectionBolusCount,
+            int manualBolusCount,
+            int sgCount,
+            int sgAverage,
+            int sgStddev,
+            int sgDurationAboveHigh,
+            int sgPercentAboveHigh,
+            int sgDurationWithinLimit,
+            int sgPercentWithinLimit,
+            int sgDurationBelowLow,
+            int sgPercentBelowLow,
+            int lgSuspensionDuration,
+            int highPredictiveAlerts,
+            int lowPredictiveAlerts,
+            int lowBgAlerts,
+            int highBgAlerts,
+            int risingRateAlerts,
+            int fallingRateAlerts,
+            int lowGlucoseSuspendAlerts,
+            int predictiveLowGlucoseSuspendAlerts,
+            int microBolusCount,
+            double microBolusInsulinDelivered,
+            int totalTimeInCLActiveMode,
+            int totalTimeInTherapyTargetRange,
+            int totalTimeInAboveTherapyTargetRangeHiLimit,
+            int totalTimeInBelowTherapyTargetRangeLowLimit) {
 
         PumpHistoryDaily record = realm.where(PumpHistoryDaily.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
         if (record == null) {
             Log.d(TAG, "*new*" + " daily totals: (event) " + eventDate + " (startDate) " + startDate + " (endDate) " + endDate);
             record = realm.createObject(PumpHistoryDaily.class);
+            record.pumpMAC = pumpMAC;
             record.eventDate = eventDate;
-            record.key = String.format("DAILY%08X", eventRTC);
+            record.key = HistoryUtils.key("DAILY", eventRTC);
             pumpHistorySender.setSenderREQ(record);
 
             record.eventRTC = eventRTC;
@@ -801,6 +802,16 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getEventRTC() {

@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.PumpHistoryHandler;
@@ -158,7 +159,10 @@ public class PushoverUploadService extends Service {
                     valid = true;
 
                     UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
-                            "Pushover is available");
+                            String.format("{id;%s} {id;%s}",
+                                    R.string.ul_Pushover,
+                                    R.string.ul_is_available
+                            ));
 
                     String[] devices = response.body().getDevices();
                     if (devices != null) {
@@ -210,7 +214,7 @@ public class PushoverUploadService extends Service {
 
         for (PumpHistoryInterface record : records) {
 
-            List<info.nightscout.android.history.MessageItem> messageItems = record.message(pumpHistoryHandler.pumpHistorySender,"PO");
+            List<info.nightscout.android.history.MessageItem> messageItems = record.message(pumpHistoryHandler.getPumpHistorySender(),"PO");
 
             boolean success = true;
             for (MessageItem messageItem : messageItems) {

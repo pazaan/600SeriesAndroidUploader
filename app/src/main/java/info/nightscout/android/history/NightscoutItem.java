@@ -14,6 +14,8 @@ public class NightscoutItem {
     private EntriesEndpoints.Entry entry;
     private ProfileEndpoints.Profile profile;
 
+    private long timestamp;
+
     private MODE mode;
 
     public enum MODE {
@@ -22,7 +24,7 @@ public class NightscoutItem {
         DELETE
     }
 
-    public NightscoutItem mode(MODE mode) {
+    public NightscoutItem setMode(MODE mode) {
         this.mode = mode;
         return this;
     }
@@ -88,5 +90,13 @@ public class NightscoutItem {
 
     public MODE getMode() {
         return mode;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 }

@@ -47,6 +47,26 @@ public class Stats {
 
     private static class LazyHolder {
         static final Stats instance = new Stats();
+
+        static Stats open() {
+            synchronized (LazyHolder.class) {
+                Log.d(TAG, "open called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
+                instance.open++;
+            }
+            return instance;
+        }
+
+        static void close() {
+            synchronized (LazyHolder.class) {
+                instance.open--;
+                Log.d(TAG, "close called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
+                if (instance.open < 1) {
+                    instance.writeRecords();
+                    instance.loadedRecords.clear();
+                    instance.open = 0;
+                }
+            }
+        }
     }
 
     public static Stats getInstance() {
@@ -54,14 +74,21 @@ public class Stats {
     }
 
     public static Stats open() {
+        return LazyHolder.open();
+
+        /*
+        LazyHolder.instance.open();
         synchronized (Stats.class) {
             LazyHolder.instance.open++;
         }
         //Log.d(TAG, "open called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
         return LazyHolder.instance;
+        */
     }
 
     public static void close() {
+        LazyHolder.close();
+        /*
         synchronized (Stats.class) {
             LazyHolder.instance.open--;
             //Log.d(TAG, "close called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
@@ -71,6 +98,7 @@ public class Stats {
                 LazyHolder.instance.open = 0;
             }
         }
+        */
     }
 
     public static int opened() {

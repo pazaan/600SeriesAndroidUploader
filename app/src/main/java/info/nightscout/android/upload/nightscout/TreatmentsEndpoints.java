@@ -31,6 +31,9 @@ public interface TreatmentsEndpoints {
         @SerializedName("key600")
         private String key600;
 
+        @SerializedName("pumpMAC600")
+        private String pumpMAC600;
+
         @SerializedName("eventType")
         private String eventType;
 
@@ -108,6 +111,14 @@ public interface TreatmentsEndpoints {
 
         public void setKey600(String key600) {
             this.key600 = key600;
+        }
+
+        public String getPumpMAC600() {
+            return pumpMAC600;
+        }
+
+        public void setPumpMAC600(String pumpMAC600) {
+            this.pumpMAC600 = pumpMAC600;
         }
 
         public String getEventType() {
@@ -286,6 +297,12 @@ public interface TreatmentsEndpoints {
     // find treatment using key
     @GET("/api/v1/treatments.json")
     Call<List<Treatment>> checkKey(@Query("find[created_at][$gte]") String date,
+                                   @Query("find[key600]") String key);
+
+    // find treatment using key within date range
+    @GET("/api/v1/treatments.json")
+    Call<List<Treatment>> checkKey(@Query("find[created_at][$gte]") String from,
+                                   @Query("find[created_at][$lte]") String to,
                                    @Query("find[key600]") String key);
 
     // find treatments using date range

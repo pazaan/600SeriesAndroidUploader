@@ -10,8 +10,6 @@ public class MessageItem {
 
     private Date date = new Date(System.currentTimeMillis());
 
-    private String key = "";
-
     private PRIORITY priority = PRIORITY.NORMAL;
     private TYPE type = TYPE.INFO;
 
@@ -117,11 +115,6 @@ public class MessageItem {
         return this;
     }
 
-    public MessageItem key(String key) {
-        this.key = key;
-        return this;
-    }
-
     public MessageItem cleared(boolean cleared) {
         this.cleared = cleared;
         return this;
@@ -158,10 +151,6 @@ public class MessageItem {
 
     public String getExtended() {
         return extended;
-    }
-
-    public String getKey() {
-        return key;
     }
 
     public boolean isCleared() {

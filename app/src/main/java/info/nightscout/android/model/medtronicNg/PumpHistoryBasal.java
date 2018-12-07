@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 import info.nightscout.android.R;
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.history.PumpHistorySender;
@@ -37,6 +38,8 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -95,30 +98,24 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
     @Override
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
-
-        NightscoutItem nightscoutItem = new NightscoutItem();
-        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
+        TreatmentsEndpoints.Treatment treatment;
 
         switch (RECORDTYPE.convert(recordtype)) {
 
             case SUSPEND:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Temp Basal");
-                treatment.setKey600(key);
-                treatment.setCreated_at(eventDate);
                 treatment.setDuration((float) programmedDuration);
                 treatment.setAbsolute((float) 0);
 
                 treatment.setNotes(String.format("%s: %s",
                         FormatKit.getInstance().getString(R.string.PUMP_SUSPEND),
                         PumpHistoryParser.SUSPEND_REASON.convert(suspendReason).string()));
-
-                nightscoutItems.add(nightscoutItem);
                 break;
 
             case RESUME:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Temp Basal");
-                treatment.setKey600(key);
-                treatment.setCreated_at(eventDate);
                 treatment.setDuration((float) programmedDuration);
 
                 treatment.setNotes(String.format("%s: %s",
@@ -132,14 +129,11 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                     else
                         treatment.setAbsolute((float) rate);
                 }
-
-                nightscoutItems.add(nightscoutItem);
                 break;
 
             case PROGRAMMED:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Temp Basal");
-                treatment.setKey600(key);
-                treatment.setCreated_at(eventDate);
                 treatment.setDuration((float) programmedDuration);
 
                 if (PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(type))
@@ -148,35 +142,30 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                     treatment.setAbsolute((float) rate);
 
                 treatment.setNotes(String.format("%s: %s %s %s%s",
-                        FormatKit.getInstance().getString(R.string.Temp_Basal),
+                        FormatKit.getInstance().getString(R.string.info_Temp_Basal),
                         PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(type) ?
                                 FormatKit.getInstance().formatAsPercent(percentageOfRate) :
                                 FormatKit.getInstance().formatAsInsulin(rate),
-                        FormatKit.getInstance().getString(R.string.duration),
+                        FormatKit.getInstance().getString(R.string.info_duration),
                         FormatKit.getInstance().formatMinutesAsHM(programmedDuration),
                         PumpHistoryParser.TEMP_BASAL_PRESET.TEMP_BASAL_PRESET_0.equals(preset) ? "" :
-                                String.format(" [%s]", pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PRESET, preset - 1))));
-
-                nightscoutItems.add(nightscoutItem);
+                                String.format(" [%s]", pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PRESET, preset - 1))));
                 break;
 
             case COMPLETED:
                 if (canceled) {
+                    treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                     treatment.setEventType("Temp Basal");
-                    treatment.setKey600(key);
-                    treatment.setCreated_at(eventDate);
                     treatment.setDuration((float) 0);
 
                     treatment.setNotes(String.format("%s: %s, %s %s %s",
-                            FormatKit.getInstance().getString(R.string.Temp_Basal),
-                            FormatKit.getInstance().getString(R.string.cancelled),
+                            FormatKit.getInstance().getString(R.string.info_Temp_Basal),
+                            FormatKit.getInstance().getString(R.string.info_cancelled),
                             PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(type) ?
                                     FormatKit.getInstance().formatAsPercent(percentageOfRate) :
                                     FormatKit.getInstance().formatAsInsulin(rate),
-                            FormatKit.getInstance().getString(R.string.duration),
+                            FormatKit.getInstance().getString(R.string.info_duration),
                             FormatKit.getInstance().formatMinutesAsHM(completedDuration)));
-
-                    nightscoutItems.add(nightscoutItem);
                 }
                 break;
         }
@@ -200,7 +189,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                         PumpHistoryParser.SUSPEND_REASON.SET_CHANGE_SUSPEND.equals(suspendReason)) return messageItems;
 
                 type = MessageItem.TYPE.SUSPEND;
-                title = FormatKit.getInstance().getString(R.string.Pump_Suspend);
+                title = FormatKit.getInstance().getString(R.string.info_Pump_Suspend);
                 message = PumpHistoryParser.SUSPEND_REASON.convert(suspendReason).string();
                 break;
 
@@ -211,33 +200,33 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                         PumpHistoryParser.SUSPEND_REASON.SET_CHANGE_SUSPEND.equals(suspendReason)) return messageItems;
 
                 type = MessageItem.TYPE.RESUME;
-                title = FormatKit.getInstance().getString(R.string.Pump_Resume);
+                title = FormatKit.getInstance().getString(R.string.info_Pump_Resume);
                 message = PumpHistoryParser.RESUME_REASON.convert(resumeReason).string();
                 break;
 
             case PROGRAMMED:
                 type = MessageItem.TYPE.BASAL;
-                title = FormatKit.getInstance().getString(R.string.Basal);
+                title = FormatKit.getInstance().getString(R.string.info_Basal);
                 message = String.format("%s %s %s %s",
-                        FormatKit.getInstance().getString(R.string.Temp),
+                        FormatKit.getInstance().getString(R.string.info_Temp),
                         PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(this.type) ?
                                 FormatKit.getInstance().formatAsPercent(percentageOfRate) :
                                 FormatKit.getInstance().formatAsInsulin(rate),
-                        FormatKit.getInstance().getString(R.string.duration),
+                        FormatKit.getInstance().getString(R.string.info_duration),
                         FormatKit.getInstance().formatMinutesAsHM(programmedDuration));
                 break;
 
             case COMPLETED:
                 if (!canceled) return messageItems;
                 type = MessageItem.TYPE.BASAL;
-                title = FormatKit.getInstance().getString(R.string.Basal);
+                title = FormatKit.getInstance().getString(R.string.info_Basal);
                 message = String.format("%s %s %s %s %s",
-                        FormatKit.getInstance().getString(R.string.Temp),
-                        FormatKit.getInstance().getString(R.string.cancelled),
+                        FormatKit.getInstance().getString(R.string.info_Temp),
+                        FormatKit.getInstance().getString(R.string.info_cancelled),
                         PumpHistoryParser.TEMP_BASAL_TYPE.PERCENT.equals(this.type) ?
                                 FormatKit.getInstance().formatAsPercent(percentageOfRate) :
                                 FormatKit.getInstance().formatAsInsulin(rate),
-                        FormatKit.getInstance().getString(R.string.duration),
+                        FormatKit.getInstance().getString(R.string.info_duration),
                         FormatKit.getInstance().formatMinutesAsHM(completedDuration));
                 break;
 
@@ -246,7 +235,6 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
         }
 
         messageItems.add(new MessageItem()
-                .key(key)
                 .type(type)
                 .date(eventDate)
                 .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
@@ -256,20 +244,24 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
         return messageItems;
     }
 
-    public static void programmed(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                            byte preset,
-                            byte type,
-                            double rate,
-                            int percentageOfRate,
-                            int duration) {
+    public static void programmed(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            byte preset,
+            byte type,
+            double rate,
+            int percentageOfRate,
+            int duration) {
 
         PumpHistoryBasal programedRecord = realm.where(PumpHistoryBasal.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("recordtype", RECORDTYPE.PROGRAMMED.value())
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
         if (programedRecord == null) {
             Log.d(TAG, "*new* temp basal programmed");
             programedRecord = realm.createObject(PumpHistoryBasal.class);
+            programedRecord.pumpMAC = pumpMAC;
             programedRecord.recordtype = RECORDTYPE.PROGRAMMED.value();
             programedRecord.eventDate = eventDate;
             programedRecord.eventRTC = eventRTC;
@@ -281,11 +273,12 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
             programedRecord.percentageOfRate = percentageOfRate;
             programedRecord.completed = false;
             programedRecord.canceled = false;
-            programedRecord.key = String.format("BASAL%08X", eventRTC);
+            programedRecord.key = HistoryUtils.key("BASAL", eventRTC);
             pumpHistorySender.setSenderREQ(programedRecord);
 
             // look for a corresponding completed temp basal
             PumpHistoryBasal completedRecord = realm.where(PumpHistoryBasal.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("recordtype", RECORDTYPE.COMPLETED.value())
                     .equalTo("completed", false)
                     .greaterThan("eventRTC", eventRTC)
@@ -309,21 +302,25 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
         }
     }
 
-    public static void completed(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                  byte preset,
-                                  byte type,
-                                  double rate,
-                                  int percentageOfRate,
-                                  int duration,
-                                  boolean canceled) {
+    public static void completed(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            byte preset,
+            byte type,
+            double rate,
+            int percentageOfRate,
+            int duration,
+            boolean canceled) {
 
         PumpHistoryBasal completedRecord = realm.where(PumpHistoryBasal.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("recordtype", RECORDTYPE.COMPLETED.value())
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
         if (completedRecord == null) {
             Log.d(TAG, "*new* temp basal completed");
             completedRecord = realm.createObject(PumpHistoryBasal.class);
+            completedRecord.pumpMAC = pumpMAC;
             completedRecord.recordtype = RECORDTYPE.COMPLETED.value();
             completedRecord.eventDate = eventDate;
             completedRecord.eventRTC = eventRTC;
@@ -335,10 +332,11 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
             completedRecord.percentageOfRate = percentageOfRate;
             completedRecord.completed = false;
             completedRecord.canceled = canceled;
-            completedRecord.key = String.format("BASAL%08X", eventRTC);
+            completedRecord.key = HistoryUtils.key("BASAL", eventRTC);;
 
             // look for a corresponding programmed temp basal
             PumpHistoryBasal programmedRecord = realm.where(PumpHistoryBasal.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("recordtype", RECORDTYPE.PROGRAMMED.value())
                     .equalTo("completed", false)
                     .greaterThan("eventRTC", eventRTC - (duration + 1) * 60)
@@ -360,16 +358,20 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
         }
     }
 
-    public static void suspend(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                               byte reason) {
+    public static void suspend(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            byte reason) {
 
         PumpHistoryBasal suspendRecord = realm.where(PumpHistoryBasal.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("recordtype", RECORDTYPE.SUSPEND.value())
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
         if (suspendRecord == null) {
             Log.d(TAG, "*new* suspend basal");
             suspendRecord = realm.createObject(PumpHistoryBasal.class);
+            suspendRecord.pumpMAC = pumpMAC;
             suspendRecord.recordtype = RECORDTYPE.SUSPEND.value();
             suspendRecord.eventDate = eventDate;
             suspendRecord.eventRTC = eventRTC;
@@ -377,38 +379,45 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
             suspendRecord.suspendReason = reason;
             suspendRecord.programmedDuration = 24 * 60;
             suspendRecord.completed = false;
-            suspendRecord.key = String.format("SUSPEND%08X", eventRTC);
+            suspendRecord.key = HistoryUtils.key("SUSPEND", eventRTC);;
             pumpHistorySender.setSenderREQ(suspendRecord);
         }
     }
 
-    public static void resume(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                              byte reason) {
+    public static void resume(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            byte reason) {
 
         PumpHistoryBasal resumeRecord = realm.where(PumpHistoryBasal.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("recordtype", RECORDTYPE.RESUME.value())
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
         if (resumeRecord == null) {
             Log.d(TAG, "*new* resume basal");
             resumeRecord = realm.createObject(PumpHistoryBasal.class);
+            resumeRecord.pumpMAC = pumpMAC;
             resumeRecord.recordtype = RECORDTYPE.RESUME.value();
             resumeRecord.eventDate = eventDate;
             resumeRecord.eventRTC = eventRTC;
             resumeRecord.eventOFFSET = eventOFFSET;
             resumeRecord.resumeReason = reason;
             resumeRecord.programmedDuration = 0;
-            resumeRecord.key = String.format("RESUME%08X", eventRTC);
+            resumeRecord.key = HistoryUtils.key("RESUME", eventRTC);;
             pumpHistorySender.setSenderREQ(resumeRecord);
 
             // look for corresponding suspend and update it's duration
-            PumpHistoryBasal suspendRecord = realm.where(PumpHistoryBasal.class)
+            RealmResults<PumpHistoryBasal> suspendRecords = realm.where(PumpHistoryBasal.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("recordtype", RECORDTYPE.SUSPEND.value())
-                    .equalTo("completedDuration", 0)
+                    .equalTo("completed", false)
                     .greaterThan("eventRTC", eventRTC - 24 * 60 * 60)
                     .lessThan("eventRTC", eventRTC)
-                    .findFirst();
-            if (suspendRecord != null) {
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findAll();
+            if (suspendRecords.size() > 0) {
+                PumpHistoryBasal suspendRecord = suspendRecords.first();
                 suspendRecord.completed = true;
                 suspendRecord.completedDuration = (int) Math.round(((double) (eventRTC - suspendRecord.getEventRTC())) / 60);
                 suspendRecord.resumeReason = reason;
@@ -417,6 +426,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
 
             // look for a temp that was in progress and resume temp with recalculated duration (for nightscout)
             RealmResults<PumpHistoryBasal> realmResults = realm.where(PumpHistoryBasal.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("recordtype", RECORDTYPE.PROGRAMMED.value())
                     .equalTo("completed", false)
                     .greaterThan("eventRTC", eventRTC - 24 * 60 * 60)
@@ -486,6 +496,16 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public byte getRecordtype() {

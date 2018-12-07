@@ -10,12 +10,15 @@ import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.store.UserLog;
 import io.realm.Realm;
 import io.realm.RealmResults;
+import io.realm.Sort;
 
 public class UserLogMessage {
     private static final String TAG = UserLogMessage.class.getSimpleName();
     private static UserLogMessage instance;
 
-    private static final long STALE_MS = 7 * 24 * 60 * 60000L;
+    private static final int MESSAGES_MAX = 10000;
+
+    private static long index;
 
     private UserLogMessage() {
         Log.d(TAG, "UserLogMessage: init called [Pid=" + android.os.Process.myPid() + "]");
@@ -34,19 +37,25 @@ public class UserLogMessage {
 
         Realm userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
 
+        if (index == 0) {
+            Number last = userLogRealm.where(UserLog.class).max("index");
+            index = last == null ? 1 : last.longValue() + 1;
+        }
+        final long i = index++;
+
         try {
             if (async) {
                 userLogRealm.executeTransactionAsync(new Realm.Transaction() {
                     @Override
                     public void execute(@NonNull Realm realm) {
-                        realm.copyToRealmOrUpdate(new UserLog().message(timestamp, type.value(), flag.value(), message));
+                        realm.copyToRealmOrUpdate(new UserLog().message(i, timestamp, type.value(), flag.value(), message));
                     }
                 });
             } else {
                 userLogRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(@NonNull Realm realm) {
-                        realm.copyToRealmOrUpdate(new UserLog().message(timestamp, type.value(), flag.value(), message));
+                        realm.copyToRealmOrUpdate(new UserLog().message(i, timestamp, type.value(), flag.value(), message));
                     }
                 });
             }
@@ -59,7 +68,7 @@ public class UserLogMessage {
     }
 
     public void stale() {
-        Realm userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
+        final Realm userLogRealm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
 
         try {
             userLogRealm.executeTransaction(new Realm.Transaction() {
@@ -67,10 +76,16 @@ public class UserLogMessage {
                 public void execute(@NonNull Realm realm) {
                     // remove stale items
                     RealmResults results = realm.where(UserLog.class)
-                            .lessThan("timestamp", System.currentTimeMillis() - STALE_MS)
                             .findAll();
-                    if (results.size() > 0) results.deleteAllFromRealm();
-                    Log.d(TAG, String.format("removed %s stale items", results.size()));
+                    if (results.size() > MESSAGES_MAX) {
+                        int count = results.size() - MESSAGES_MAX;
+                        results.where()
+                                .sort("index", Sort.ASCENDING)
+                                .limit(count)
+                                .findAll()
+                                .deleteAllFromRealm();
+                        Log.d(TAG, String.format("removed %s stale items", count));
+                    }
                 }
             });
         } catch (Exception e) {
@@ -90,6 +105,7 @@ public class UserLogMessage {
                     realm.deleteAll();
                 }
             });
+            index = 0;
         } catch (Exception e) {
             Log.e(TAG, "Could not clear messages: " + e.getMessage());
         }
@@ -190,6 +206,8 @@ public class UserLogMessage {
         STARTUP(14),
         SHUTDOWN(15),
         PUSHOVER(16),
+        NIGHTSCOUT(17),
+        ISIG(18),
         NA(-1);
 
         private int value;

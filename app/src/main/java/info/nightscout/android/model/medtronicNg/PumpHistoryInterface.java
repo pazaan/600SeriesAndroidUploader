@@ -30,6 +30,10 @@ public interface PumpHistoryInterface extends RealmModel {
 
     void setEventDate(Date eventDate);
 
+    long getPumpMAC();
+
+    void setPumpMAC(long pumpMAC);
+
     String getKey();
 
     void setKey(String key);

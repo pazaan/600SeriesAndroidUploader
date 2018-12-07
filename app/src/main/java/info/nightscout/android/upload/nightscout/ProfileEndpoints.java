@@ -30,6 +30,9 @@ public interface ProfileEndpoints {
         @SerializedName("key600")
         private String key600;
 
+        @SerializedName("pumpMAC600")
+        private String pumpMAC600;
+
         @SerializedName("defaultProfile")
         private String defaultProfile;
 
@@ -71,6 +74,14 @@ public interface ProfileEndpoints {
 
         public void setKey600(String key600) {
             this.key600 = key600;
+        }
+
+        public String getPumpMAC600() {
+            return pumpMAC600;
+        }
+
+        public void setPumpMAC600(String pumpMAC600) {
+            this.pumpMAC600 = pumpMAC600;
         }
 
         public String getDefaultProfile() {

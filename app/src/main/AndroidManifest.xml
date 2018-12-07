@@ -100,6 +100,11 @@
             android:stopWithTask="false"
             />
         <service
+            android:name=".urchin.UrchinService"
+            android:icon="@drawable/ic_launcher"
+            android:stopWithTask="false"
+            />
+        <service
             android:name=".medtronic.service.MedtronicCnlService"
             android:stopWithTask="false"
             android:process=":cnl"

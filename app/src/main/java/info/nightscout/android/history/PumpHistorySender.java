@@ -48,8 +48,7 @@ public class PumpHistorySender {
                 .ttl(PumpHistoryAlarm.class, dataStore.isNsEnableAlarms() ? dataStore.getNsAlarmTTL() * 60 * 60000L : 0)
                 .ttl(PumpHistorySystem.class, dataStore.isNsEnableSystemStatus() ? dataStore.getNsAlarmTTL() * 60 * 60000L : 0)
 
-                .limiter(2000)
-                //.limiter(1000)
+                .limiter(300)
                 .process(dataStore.isNsEnableHistorySync() ? 180 * 24 * 60 * 60000L : System.currentTimeMillis() - dataStore.getNightscoutLimitDate().getTime())
 
                 .opt(SENDEROPT.TREATMENTS, treatments)
@@ -207,75 +206,95 @@ public class PumpHistorySender {
 
     public class Sender {
 
-        List<String> active = new ArrayList<>();
-        List<String> request = new ArrayList<>();
+        private List<String> active = new ArrayList<>();
+        private List<String> request = new ArrayList<>();
 
-        List<Pair<String, Long>> ttl = new ArrayList<>();
+        private List<Pair<String, Long>> ttl = new ArrayList<>();
 
-        List<SENDEROPT> senderopts = new ArrayList<>();
-        List<Pair<SENDEROPT, String>> sendervars = new ArrayList<>();
-        List<Pair<SENDEROPT, String[]>> senderlists = new ArrayList<>();
+        private List<SENDEROPT> senderopts = new ArrayList<>();
+        private List<Pair<SENDEROPT, String>> sendervars = new ArrayList<>();
+        private List<Pair<SENDEROPT, String[]>> senderlists = new ArrayList<>();
 
-        String id = "";
-        long stale = 0;
-        long process = 0;
-        int limiter = 0;
+        private String id = "";
+        private long stale = 0;
+        private long process = 0;
+        private int limiter = 0;
 
-        Sender (String id) {
+        private Sender (String id) {
             this.id = id;
             senders.add(this);
         }
 
-        Sender limiter(int limiter) {
+        private Sender limiter(int limiter) {
             this.limiter = limiter;
             return this;
         }
 
-        public Sender stale(long time) {
+        private Sender stale(long time) {
             return this;
         }
 
-        public Sender process(long time) {
+        private Sender process(long time) {
             this.process = time;
             return this;
         }
 
-        public Sender ttl(Class clazz, long time) {
+        private Sender ttl(Class clazz, long time) {
             this.ttl.add(Pair.create(clazz.getSimpleName(), time));
             return this;
         }
 
-        public Sender add(Class clazz) {
+        private Sender add(Class clazz) {
             this.active.add(clazz.getSimpleName());
             this.request.add(clazz.getSimpleName());
             return this;
         }
 
-        public Sender add(Class clazz, boolean active) {
+        private Sender add(Class clazz, boolean active) {
             if (active) this.active.add(clazz.getSimpleName());
             if (active) this.request.add(clazz.getSimpleName());
             return this;
         }
 
-        public Sender add(Class clazz, boolean active, boolean request) {
+        private Sender add(Class clazz, boolean active, boolean request) {
             if (active) this.active.add(clazz.getSimpleName());
             if (active & request) this.request.add(clazz.getSimpleName());
             return this;
         }
 
-        public Sender opt(SENDEROPT senderopt, boolean enable) {
+        private Sender opt(SENDEROPT senderopt, boolean enable) {
             if (enable) this.senderopts.add(senderopt);
             return this;
         }
 
-        public Sender var(SENDEROPT senderopt, String string) {
+        private Sender var(SENDEROPT senderopt, String string) {
             this.sendervars.add(Pair.create(senderopt, string));
             return this;
         }
 
-        public Sender list(SENDEROPT senderopt, String[] strings) {
+        private Sender list(SENDEROPT senderopt, String[] strings) {
             this.senderlists.add(Pair.create(senderopt, strings));
             return this;
+        }
+
+        public List<String> getRequest() {
+            return request;
+        }
+
+        public List<String> getActive() {
+            return active;
+        }
+
+        public List<Pair<String, Long>> getTtl() {
+            return ttl;
+        }
+
+        public long getProcess() {
+            return process;
+        }
+
+        public int getLimiter() {
+            return limiter;
         }
     }
 
@@ -286,18 +305,18 @@ public class PumpHistorySender {
         return null;
     }
 
-    public boolean senderOpt(String senderID, SENDEROPT senderopt) {
+    public boolean isOpt(String senderID, SENDEROPT senderopt) {
         for (Sender sender : senders) {
             if (sender.id.equals(senderID) && sender.senderopts.contains(senderopt)) return true;
         }
         return false;
     }
 
-    public String senderVar(String senderID, SENDEROPT senderopt) {
-        return senderVar(senderID, senderopt, "");
+    public String getVar(String senderID, SENDEROPT senderopt) {
+        return getVar(senderID, senderopt, "");
     }
 
-    public String senderVar(String senderID, SENDEROPT senderopt, String defaultValue) {
+    public String getVar(String senderID, SENDEROPT senderopt, String defaultValue) {
         for (Sender sender : senders) {
             if (sender.id.equals(senderID)) {
                 for (Pair<SENDEROPT, String> tupple : sender.sendervars) {
@@ -309,11 +328,11 @@ public class PumpHistorySender {
         return defaultValue;
     }
 
-    public String senderList(String senderID, SENDEROPT senderopt, int index) {
-        return senderList(senderID,senderopt, index, "");
+    public String getList(String senderID, SENDEROPT senderopt, int index) {
+        return getList(senderID,senderopt, index, "");
     }
 
-    public String senderList(String senderID, SENDEROPT senderopt, int index, String defaultValue) {
+    public String getList(String senderID, SENDEROPT senderopt, int index, String defaultValue) {
         for (Sender sender : senders) {
             if (sender.id.equals(senderID)) {
                 for (Pair<SENDEROPT, String[]> tupple : sender.senderlists) {

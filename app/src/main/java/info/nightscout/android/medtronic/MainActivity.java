@@ -94,10 +94,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Realm mRealm;
     private Realm storeRealm;
     private Realm historyRealm;
-
     private DataStore dataStore;
 
     private UserLogDisplay userLogDisplay;
+    private AppUpdater appUpdater;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         mEnableCgmService = Eula.show(this, mPrefs)
-                && mPrefs.getBoolean(getString(R.string.preference_eula_accepted), false);
+                && mPrefs.getBoolean(getString(R.string.key_eulaAccepted), getResources().getBoolean(R.bool.default_eulaAccepted));
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -227,17 +227,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             if (mEnableCgmService) {
                                 sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_NOW));
                             } else {
-                                UserLogMessage.getInstance().add(R.string.main_cgm_service_disabled);
+                                UserLogMessage.getInstance().add(R.string.ul_main_cgm_service_disabled);
                             }
                         } else if (drawerItem.equals(itemUpdateProfile)) {
                             if (mEnableCgmService) {
                                 if (dataStore.isNsEnableProfileUpload()) {
                                     sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_PROFILE));
                                 } else {
-                                    UserLogMessage.getInstance().add(getString(R.string.main_pump_profile_disabled));
+                                    UserLogMessage.getInstance().add(getString(R.string.ul_main_pump_profile_disabled));
                                 }
                             } else {
-                                UserLogMessage.getInstance().add(R.string.main_cgm_service_disabled);
+                                UserLogMessage.getInstance().add(R.string.ul_main_cgm_service_disabled);
                             }
                         } else if (drawerItem.equals(itemClearLog)) {
                             UserLogMessage.getInstance().clear();
@@ -295,7 +295,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mPrefs.edit().putString("chartZoom", Integer.toString(chartZoom)).apply();
                 refreshDisplayChart();
 
-                String text = chartZoom + " hour chart";
+                String text = getString(R.string.main_chart, chartZoom);
                 Snackbar.make(v, text, Snackbar.LENGTH_SHORT)
                         .setAction("Action", null).show();
 
@@ -358,9 +358,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     protected void onStart() {
         Log.d(TAG, "onStart called");
         super.onStart();
-        if (historyRealm == null)
-            historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
-        if (mRealm == null) mRealm = Realm.getDefaultInstance();
+
+        openRealmDefault();
+        openRealmHistory();
+        openRealmDatastore();
 
         checkForUpdateBackground(5);
 
@@ -384,13 +385,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "onStop called");
         super.onStop();
 
+        if (appUpdater != null) appUpdater.stop();
         if (userLogDisplay != null) userLogDisplay.stop();
         stopDisplay();
 
-        if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
-        if (mRealm != null && !mRealm.isClosed()) mRealm.close();
-        historyRealm = null;
-        mRealm = null;
+        closeRealm();
     }
 
     @Override
@@ -403,9 +402,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         shutdownMessage();
         PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
 
-        if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
-        if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
-        if (mRealm != null && !mRealm.isClosed()) mRealm.close();
+        closeRealm();
     }
 
     @Override
@@ -443,17 +440,51 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         return true;
     }
 
+    synchronized private void openRealmDefault() {
+        if (mRealm == null)
+            mRealm = Realm.getDefaultInstance();
+    }
+
+    synchronized private void openRealmHistory() {
+        if (historyRealm == null)
+            historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
+    }
+
+
+    synchronized private void openRealmDatastore() {
+        if (storeRealm == null) {
+            storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        }
+        if (dataStore == null) {
+            dataStore = storeRealm.where(DataStore.class).findFirst();
+        }
+    }
+
+    synchronized private void closeRealm() {
+        if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
+        if (historyRealm != null && !historyRealm.isClosed()) historyRealm.close();
+        if (mRealm != null && !mRealm.isClosed()) mRealm.close();
+        dataStore = null;
+        storeRealm = null;
+        historyRealm = null;
+        mRealm = null;
+    }
+
     private void checkForUpdateNow() {
-        new AppUpdater(this)
-                .setUpdateFrom(UpdateFrom.JSON)
+        if (appUpdater == null) appUpdater = new AppUpdater(this);
+        else appUpdater.stop();
+
+        appUpdater.setUpdateFrom(UpdateFrom.JSON)
                 .setUpdateJSON("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
                 .showAppUpdated(true) // Show a dialog, even if there isn't an update
                 .start();
     }
 
     private void checkForUpdateBackground(int checkEvery) {
-        new AppUpdater(this)
-                .setUpdateFrom(UpdateFrom.JSON)
+        if (appUpdater == null) appUpdater = new AppUpdater(this);
+        else appUpdater.stop();
+
+        appUpdater.setUpdateFrom(UpdateFrom.JSON)
                 .setUpdateJSON("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
                 .showEvery(checkEvery) // Only check for an update every `checkEvery` invocations
                 .start();
@@ -463,43 +494,43 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         // userlog message at startup when no service is running
         if (!mPrefs.getBoolean("EnableCgmService", false)) {
 
-            UserLogMessage.getInstance().add(UserLogMessage.TYPE.STARTUP, R.string.main_hello);
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.STARTUP, R.string.ul_main_hello);
 
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
-                    String.format("{id;%s} {id;%s}",
-                            R.string.main_uploading,
+                    String.format("{id;%s}: {id;%s}",
+                            R.string.ul_main_uploading,
                             dataStore.isNightscoutUpload() ? R.string.text_enabled : R.string.text_disabled));
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
-                    String.format("{id;%s} {id;%s}",
-                            R.string.main_treatments,
+                    String.format("{id;%s}: {id;%s}",
+                            R.string.ul_main_treatments,
                             dataStore.isNsEnableTreatments() ? R.string.text_enabled : R.string.text_disabled
                     ));
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
-                    String.format("{id;%s} %s {id;%s}",
-                            R.string.main_poll_interval,
-                            dataStore.getPollInterval() / 60000L,
-                            R.string.time_min
+                    String.format("{id;%s}: {qid;%s;%s}",
+                            R.string.ul_main_poll_interval,
+                            R.plurals.minutes,
+                            dataStore.getPollInterval() / 60000L
                     ));
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
-                    String.format("{id;%s} %s {id;%s}",
-                            R.string.main_low_battery_poll_interval,
-                            dataStore.getLowBatPollInterval() / 60000L,
-                            R.string.time_min
+                    String.format("{id;%s}: {qid;%s;%s}",
+                            R.string.ul_main_low_battery_poll_interval,
+                            R.plurals.minutes,
+                            dataStore.getLowBatPollInterval() / 60000L
                     ));
 
             int historyFrequency = dataStore.getSysPumpHistoryFrequency();
             if (historyFrequency > 0) {
                 UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
-                        String.format("{id;%s} %s {id;%s}",
-                                R.string.main_auto_mode_update,
-                                historyFrequency,
-                                R.string.time_min
+                        String.format("{id;%s}: {qid;%s;%s}",
+                                R.string.ul_main_auto_mode_update,
+                                R.plurals.minutes,
+                                historyFrequency
                         ));
             } else {
                 UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
-                        String.format("{id;%s} {id;%s}",
-                                R.string.main_auto_mode_update,
-                                R.string.main_events_only
+                        String.format("{id;%s}: {id;%s}",
+                                R.string.ul_main_auto_mode_update,
+                                R.string.ul_main_events_only
                         ));
             }
 
@@ -510,13 +541,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void shutdownMessage() {
         // userlog message at shutdown when 'stop collecting data' selected
         if (!mPrefs.getBoolean("EnableCgmService", false)) {
-            UserLogMessage.getInstance().add(UserLogMessage.TYPE.SHUTDOWN, R.string.main_goodbye);
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.SHUTDOWN, R.string.ul_main_goodbye);
             UserLogMessage.getInstance().add("---------------------------------------------------");
         }
     }
 
     private void deviceMessage() {
-        String device = String.format("Uploader device: BRAND: %s DEVICE: %s ID: %s HARDWARE: %s MANUFACTURER: %s MODEL: %s PRODUCT: %s SDK: %s VERSION: %s",
+        String device = String.format("UPLOADER: %s BRAND: %s DEVICE: %s ID: %s HARDWARE: %s MANUFACTURER: %s MODEL: %s PRODUCT: %s SDK: %s VERSION: %s",
+                getString(R.string.versionName),
                 Build.BRAND,
                 Build.DEVICE,
                 Build.ID,
@@ -544,7 +576,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void stopMasterService() {
         Log.i(TAG, "stopMasterService called");
-        UserLogMessage.getInstance().add(UserLogMessage.TYPE.INFO, R.string.main_shutting_down_cgm_service);
+        UserLogMessage.getInstance().add(UserLogMessage.TYPE.INFO, R.string.ul_main_shutting_down_cgm_service);
         mPrefs.edit().putBoolean("EnableCgmService", false).commit();
         sendBroadcast(new Intent(MasterService.Constants.ACTION_STOP_SERVICE));
     }
@@ -552,24 +584,29 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Log.d(TAG, "onSharedPreferenceChanged called");
-        if (key.equals(getString(R.string.preference_eula_accepted))) {
-            if (!sharedPreferences.getBoolean(getString(R.string.preference_eula_accepted), false)) {
+
+        copyPrefsToDataStore(sharedPreferences);
+
+        if (mEnableCgmService)
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_STATUS_UPDATE));
+
+        if (key.equals(getString(R.string.key_eulaAccepted))) {
+            if (!sharedPreferences.getBoolean(getString(R.string.key_eulaAccepted), getResources().getBoolean(R.bool.default_eulaAccepted))) {
                 mEnableCgmService = false;
                 stopMasterService();
             } else {
                 mEnableCgmService = true;
                 startMasterService();
             }
-        } else if (key.equals("chartZoom")) {
-            chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
-        } else {
-            copyPrefsToDataStore(sharedPreferences);
-            if (mEnableCgmService)
-                sendBroadcast(new Intent(MasterService.Constants.ACTION_URCHIN_UPDATE));
         }
+        else if (key.equals("chartZoom"))
+            chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
+        else if (key.contains("urchin") && mEnableCgmService)
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_URCHIN_UPDATE));
     }
 
     public void copyPrefsToDataStore(final SharedPreferences sharedPreferences) {
+        openRealmDatastore();
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(@NonNull Realm realm) {
@@ -626,11 +663,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         displayPumpResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults<PumpStatusEvent>>() {
             @Override
             public void onChange(@NonNull RealmResults realmResults, @NonNull OrderedCollectionChangeSet changeSet) {
+                Log.d(TAG, "displayPumpResults triggered size=" + displayPumpResults.size());
+/*
                 if (changeSet.getState().equals(OrderedCollectionChangeSet.State.INITIAL)
                         || (changeSet.getState().equals(OrderedCollectionChangeSet.State.UPDATE)
                         && changeSet.getInsertions().length > 0)) {
                     refreshDisplayPump();
                 }
+*/
+                refreshDisplayPump();
             }
         });
     }
@@ -654,12 +695,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         displayCgmResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults<PumpHistoryCGM>>() {
             @Override
             public void onChange(@NonNull RealmResults realmResults, @NonNull OrderedCollectionChangeSet changeSet) {
+                Log.d(TAG, "displayCgmResults triggered size=" + displayCgmResults.size());
+/*
                 if (changeSet.getState().equals(OrderedCollectionChangeSet.State.INITIAL)
                         || (changeSet.getState().equals(OrderedCollectionChangeSet.State.UPDATE)
                         && changeSet.getInsertions().length > 0)) {
                     refreshDisplayCgm();
                     refreshDisplayChart();
                 }
+*/
+                refreshDisplayCgm();
+                refreshDisplayChart();
             }
         });
     }
@@ -764,7 +810,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             if (timeLastSGV > 0) {
                 nextRun = 60000L - (System.currentTimeMillis() - timeLastSGV) % 60000L;
-                timeString = (DateUtils.getRelativeTimeSpanString(timeLastSGV)).toString();
+                timeString = DateUtils.getRelativeTimeSpanString(timeLastSGV).toString();
             }
 
             textViewBgTime.setText(timeString);
@@ -831,6 +877,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getViewport().setYAxisBoundsManual(true);
         mChart.getViewport().setMinY(80);
         mChart.getViewport().setMaxY(180);
+
+        mChart.removeAllSeries();
 
         mChart.postInvalidate();
     }
@@ -1121,8 +1169,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                                         .sort("timestamp", Sort.DESCENDING)
                                         .findAll();
                             } else {
-                                // skip to start of day
-                                long skip = 24 * 60 * 60000L;
+                                long skip = 1 * 60 * 60000L;
                                 long tz = Calendar.getInstance().getTimeZone().getRawOffset() + Calendar.getInstance().getTimeZone().getDSTSavings();
                                 long t = (((userLogResults.get(p).getTimestamp() + tz) / skip) * skip) - tz;
                                 rr = userLogResults.where()
@@ -1160,9 +1207,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         int p = realmRecyclerView.findFirstVisibleItemPosition();
                         int c = realmRecyclerView.getRecycleView().getLayoutManager().getChildCount();
 
-                        //Log.i("TEST", "p = " + p + " t = " + t + " c = " + c);
-                        //if (p >= 0 && p < t && t - p > 20)
-                        if (p >= 0 && p < t && t - p - c > 7)
+                        if (p >= 0 && p < t && t - p - c > 6)
                             fab = true;
                     }
                     if (fab) {
@@ -1246,7 +1291,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     .or()
                     .equalTo("flag", extended ? UserLogMessage.FLAG.EXTENDED.value() : UserLogMessage.FLAG.NORMAL.value())
                     .endGroup()
-                    .sort("timestamp", Sort.ASCENDING)
+                    .sort("index", Sort.ASCENDING)
                     .findAllAsync();
 
             adapter = new UserLogAdapter(context, userLogResults, true);

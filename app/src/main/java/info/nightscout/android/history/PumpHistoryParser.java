@@ -11,6 +11,7 @@ import java.util.Locale;
 
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.medtronic.exception.IntegrityException;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.model.medtronicNg.PumpHistoryAlarm;
 import info.nightscout.android.model.medtronicNg.PumpHistoryBG;
@@ -58,10 +59,13 @@ public class PumpHistoryParser {
     private int index;
     private int event;
 
+    private long pumpMAC;
     private int pumpRTC;
     private int pumpOFFSET;
     private long pumpClockDifference;
     private double pumpDRIFT;
+
+    private IntegrityException integrityException;
 
     public PumpHistoryParser(byte[] eventData) {
         this.eventData = eventData;
@@ -69,7 +73,9 @@ public class PumpHistoryParser {
 
     private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
-    public Date[] process(PumpHistorySender pumpHistorySender, final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference, long startTime, long endTime, long parseFrom, long parseTo) {
+    public Date[] process(PumpHistorySender pumpHistorySender,
+                          final long pumpMAC, final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference,
+                          long startTime, long endTime, long parseFrom, long parseTo) throws IntegrityException {
 
         this.pumpHistorySender = pumpHistorySender;
 
@@ -79,15 +85,16 @@ public class PumpHistoryParser {
         eventOldest = 0;
         eventNewest = 0;
 
-        parser(pumpRTC, pumpOFFSET, pumpClockDifference, parseFrom, parseTo);
+        parser(pumpMAC, pumpRTC, pumpOFFSET, pumpClockDifference, parseFrom, parseTo);
 
         // event date range returned by pump as it is usually more then requested
         return new Date[]{eventOldest == 0 ? null : new Date(eventOldest), eventNewest == 0 ? null : new Date(eventNewest)};
     }
 
-    private void parser(final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference, final long parseFrom, final long parseTo) {
+    private void parser(final long pumpMAC, final int pumpRTC, final int pumpOFFSET, final long pumpClockDifference, final long parseFrom, final long parseTo) throws IntegrityException {
         historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
 
+        this.pumpMAC = pumpMAC;
         this.pumpRTC = pumpRTC;
         this.pumpOFFSET = pumpOFFSET;
         this.pumpClockDifference = pumpClockDifference;
@@ -100,135 +107,142 @@ public class PumpHistoryParser {
             @Override
             public void execute(@NonNull Realm realm) {
 
-                while (index < eventData.length) {
+                try {
 
-                    eventType = EventType.convert(read8toUInt(eventData, index));
-                    eventSize = read8toUInt(eventData, index + 0x02);
-                    eventRTC = read32BEtoInt(eventData, index + 0x03);
-                    eventOFFSET = read32BEtoInt(eventData, index + 0x07);
-                    int adjustedRTC = eventRTC + (int) ((double) (pumpRTC - eventRTC) * pumpDRIFT);
-                    Date timestamp = MessageUtils.decodeDateTime((long) adjustedRTC & 0xFFFFFFFFL, (long) pumpOFFSET);
+                    while (index < eventData.length) {
 
-                    eventDate = new Date(timestamp.getTime() - pumpClockDifference);
+                        eventType = EventType.convert(read8toUInt(eventData, index));
+                        eventSize = read8toUInt(eventData, index + 0x02);
+                        eventRTC = read32BEtoInt(eventData, index + 0x03);
+                        eventOFFSET = read32BEtoInt(eventData, index + 0x07);
+                        int adjustedRTC = eventRTC + (int) ((double) (pumpRTC - eventRTC) * pumpDRIFT);
+                        Date timestamp = MessageUtils.decodeDateTime((long) adjustedRTC & 0xFFFFFFFFL, (long) pumpOFFSET);
 
-                    long eventTime = eventDate.getTime();
-                    if (eventTime > eventNewest || eventNewest == 0) eventNewest = eventTime;
-                    if (eventTime < eventOldest || eventOldest == 0) eventOldest = eventTime;
+                        eventDate = new Date(timestamp.getTime() - pumpClockDifference);
 
-                    if ((parseFrom == 0 || eventTime >= parseFrom) && (parseTo == 0 || eventTime <= parseTo)) {
+                        long eventTime = eventDate.getTime();
+                        if (eventTime > eventNewest || eventNewest == 0) eventNewest = eventTime;
+                        if (eventTime < eventOldest || eventOldest == 0) eventOldest = eventTime;
 
-                        switch (eventType) {
-                            case SENSOR_GLUCOSE_READINGS_EXTENDED:
-                                sensorGlucoseReadingsExtended();
-                                break;
-                            case NORMAL_BOLUS_PROGRAMMED:
-                                normalBolusProgrammed();
-                                break;
-                            case NORMAL_BOLUS_DELIVERED:
-                                normalBolusDelivered();
-                                break;
-                            case SQUARE_BOLUS_PROGRAMMED:
-                                squareBolusProgrammed();
-                                break;
-                            case SQUARE_BOLUS_DELIVERED:
-                                squareBolusDelivered();
-                                break;
-                            case DUAL_BOLUS_PROGRAMMED:
-                                dualBolusProgrammed();
-                                break;
-                            case DUAL_BOLUS_PART_DELIVERED:
-                                dualBolusPartDelivered();
-                                break;
-                            case BOLUS_WIZARD_ESTIMATE:
-                                bolusWizardEstimate();
-                                break;
-                            case MEAL_WIZARD_ESTIMATE:
-                                mealWizardEstimate();
-                                break;
-                            case TEMP_BASAL_PROGRAMMED:
-                                tempBasalProgrammed();
-                                break;
-                            case TEMP_BASAL_COMPLETE:
-                                tempBasalComplete();
-                                break;
-                            case BASAL_PATTERN_SELECTED:
-                                basalPatternSelected();
-                                break;
-                            case INSULIN_DELIVERY_STOPPED:
-                                insulinDeliveryStopped();
-                                break;
-                            case INSULIN_DELIVERY_RESTARTED:
-                                insulinDeliveryRestarted();
-                                break;
-                            case BG_READING:
-                                bgReading();
-                                break;
-                            case CLOSED_LOOP_BG_READING:
-                                closedLoopBgReading();
-                                break;
-                            case CLOSED_LOOP_TRANSITION:
-                                closedLoopTransition();
-                                break;
-                            case BASAL_SEGMENT_START:
-                                basalSegmentStart();
-                                break;
-                            case CALIBRATION_COMPLETE:
-                                calibrationComplete();
-                                break;
-                            case GLUCOSE_SENSOR_CHANGE:
-                                glucoseSensorChange();
-                                break;
-                            case BATTERY_INSERTED:
-                                batteryInserted();
-                                break;
-                            case CANNULA_FILL_DELIVERED:
-                                cannulaFillDelivered();
-                                break;
-                            case FOOD_EVENT_MARKER:
-                                foodEventMarker();
-                                break;
-                            case EXERCISE_EVENT_MARKER:
-                                exerciseEventMarker();
-                                break;
-                            case INJECTION_EVENT_MARKER:
-                                injectionEventMarker();
-                                break;
-                            case OTHER_EVENT_MARKER:
-                                otherEventMarker();
-                                break;
-                            case ALARM_NOTIFICATION:
-                                alarmNotification();
-                                break;
-                            case ALARM_CLEARED:
-                                alarmCleared();
-                                break;
-                            case DAILY_TOTALS:
-                                dailyTotals();
-                                break;
-                            case CLOSED_LOOP_DAILY_TOTALS:
-                                closedLoopDailyTotals();
-                                break;
+                        if ((parseFrom == 0 || eventTime >= parseFrom) && (parseTo == 0 || eventTime <= parseTo)) {
+
+                            switch (eventType) {
+                                case SENSOR_GLUCOSE_READINGS_EXTENDED:
+                                    sensorGlucoseReadingsExtended();
+                                    break;
+                                case NORMAL_BOLUS_PROGRAMMED:
+                                    normalBolusProgrammed();
+                                    break;
+                                case NORMAL_BOLUS_DELIVERED:
+                                    normalBolusDelivered();
+                                    break;
+                                case SQUARE_BOLUS_PROGRAMMED:
+                                    squareBolusProgrammed();
+                                    break;
+                                case SQUARE_BOLUS_DELIVERED:
+                                    squareBolusDelivered();
+                                    break;
+                                case DUAL_BOLUS_PROGRAMMED:
+                                    dualBolusProgrammed();
+                                    break;
+                                case DUAL_BOLUS_PART_DELIVERED:
+                                    dualBolusPartDelivered();
+                                    break;
+                                case BOLUS_WIZARD_ESTIMATE:
+                                    bolusWizardEstimate();
+                                    break;
+                                case MEAL_WIZARD_ESTIMATE:
+                                    mealWizardEstimate();
+                                    break;
+                                case TEMP_BASAL_PROGRAMMED:
+                                    tempBasalProgrammed();
+                                    break;
+                                case TEMP_BASAL_COMPLETE:
+                                    tempBasalComplete();
+                                    break;
+                                case BASAL_PATTERN_SELECTED:
+                                    basalPatternSelected();
+                                    break;
+                                case INSULIN_DELIVERY_STOPPED:
+                                    insulinDeliveryStopped();
+                                    break;
+                                case INSULIN_DELIVERY_RESTARTED:
+                                    insulinDeliveryRestarted();
+                                    break;
+                                case BG_READING:
+                                    bgReading();
+                                    break;
+                                case CLOSED_LOOP_BG_READING:
+                                    closedLoopBgReading();
+                                    break;
+                                case CLOSED_LOOP_TRANSITION:
+                                    closedLoopTransition();
+                                    break;
+                                case BASAL_SEGMENT_START:
+                                    basalSegmentStart();
+                                    break;
+                                case CALIBRATION_COMPLETE:
+                                    calibrationComplete();
+                                    break;
+                                case GLUCOSE_SENSOR_CHANGE:
+                                    glucoseSensorChange();
+                                    break;
+                                case BATTERY_INSERTED:
+                                    batteryInserted();
+                                    break;
+                                case CANNULA_FILL_DELIVERED:
+                                    cannulaFillDelivered();
+                                    break;
+                                case FOOD_EVENT_MARKER:
+                                    foodEventMarker();
+                                    break;
+                                case EXERCISE_EVENT_MARKER:
+                                    exerciseEventMarker();
+                                    break;
+                                case INJECTION_EVENT_MARKER:
+                                    injectionEventMarker();
+                                    break;
+                                case OTHER_EVENT_MARKER:
+                                    otherEventMarker();
+                                    break;
+                                case ALARM_NOTIFICATION:
+                                    alarmNotification();
+                                    break;
+                                case ALARM_CLEARED:
+                                    alarmCleared();
+                                    break;
+                                case DAILY_TOTALS:
+                                    dailyTotals();
+                                    break;
+                                case CLOSED_LOOP_DAILY_TOTALS:
+                                    closedLoopDailyTotals();
+                                    break;
 
                             /*
                             case REWIND:
                                 rewind();
                                 break;
                             */
+                            }
+
                         }
 
+                        event++;
+                        index += eventSize;
                     }
 
-                    event++;
-                    index += eventSize;
+                } catch (IntegrityException e) {
+                    integrityException = e;
                 }
-
             }
         });
 
         historyRealm.close();
+
+        if (integrityException != null) throw integrityException;
     }
 
-    private void sensorGlucoseReadingsExtended() {
+    private void sensorGlucoseReadingsExtended() throws IntegrityException {
         int minutesBetweenReadings = read8toUInt(eventData, index + 0x0B);
         int numberOfReadings = read8toUInt(eventData, index + 0x0C);
 
@@ -264,7 +278,9 @@ public class PumpHistoryParser {
             Date timestamp = MessageUtils.decodeDateTime((long) adjustedRTC & 0xFFFFFFFFL, (long) pumpOFFSET);
             Date thisDate = new Date(timestamp.getTime() - pumpClockDifference);
 
-            PumpHistoryCGM.cgmFromHistory(pumpHistorySender, historyRealm, thisDate, thisRTC, eventOFFSET,
+            PumpHistoryCGM.cgmFromHistory(
+                    pumpHistorySender, historyRealm, pumpMAC,
+                    thisDate, thisRTC, eventOFFSET,
                     sgv,
                     isig,
                     vctr,
@@ -292,7 +308,9 @@ public class PumpHistoryParser {
         byte presetBolusNumber = eventData[index + 0x0D];
         double normalProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
         double activeInsulin = read32BEtoInt(eventData, index + 0x12) / 10000.0;
-        PumpHistoryBolus.bolus(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBolus.bolus(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.NORMAL_BOLUS.value(), true, false, false,
                 bolusRef,
                 bolusSource,
@@ -312,11 +330,15 @@ public class PumpHistoryParser {
         double activeInsulin = read32BEtoInt(eventData, index + 0x16) / 10000.0;
 
         if(bolusSource == BOLUS_SOURCE.CLOSED_LOOP_MICRO_BOLUS.value) {
-            PumpHistoryLoop.microbolus(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+            PumpHistoryLoop.microbolus(
+                    pumpHistorySender, historyRealm, pumpMAC,
+                    eventDate, eventRTC, eventOFFSET,
                     bolusRef,
                     normalDeliveredAmount);
         } else {
-            PumpHistoryBolus.bolus(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+            PumpHistoryBolus.bolus(
+                    pumpHistorySender, historyRealm, pumpMAC,
+                    eventDate, eventRTC, eventOFFSET,
                     BOLUS_TYPE.NORMAL_BOLUS.value(), false, true, false,
                     bolusRef,
                     bolusSource,
@@ -335,7 +357,8 @@ public class PumpHistoryParser {
         double squareProgrammedAmount = read32BEtoInt(eventData, index + 0x0E) / 10000.0;
         int squareProgrammedDuration = read16BEtoUInt(eventData, index + 0x12);
         double activeInsulin = read32BEtoInt(eventData, index + 0x14) / 10000.0;
-        PumpHistoryBolus.bolus(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBolus.bolus(pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.SQUARE_WAVE.value(), true, false, false,
                 bolusRef,
                 bolusSource,
@@ -355,7 +378,9 @@ public class PumpHistoryParser {
         int squareProgrammedDuration = read16BEtoUInt(eventData, index + 0x16);
         int squareDeliveredDuration = read16BEtoUInt(eventData, index + 0x18);
         double activeInsulin = read32BEtoInt(eventData, index + 0x1A) / 10000.0;
-        PumpHistoryBolus.bolus(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBolus.bolus(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.SQUARE_WAVE.value(), false, false, true,
                 bolusRef,
                 bolusSource,
@@ -374,7 +399,9 @@ public class PumpHistoryParser {
         double squareProgrammedAmount = read32BEtoInt(eventData, index + 0x12) / 10000.0;
         int squareProgrammedDuration = read16BEtoUInt(eventData, index + 0x16);
         double activeInsulin = read32BEtoInt(eventData, index + 0x18) / 10000.0;
-        PumpHistoryBolus.bolus(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBolus.bolus(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.DUAL_WAVE.value(), true, false, false,
                 bolusRef,
                 bolusSource,
@@ -396,7 +423,9 @@ public class PumpHistoryParser {
         int squareProgrammedDuration = read16BEtoUInt(eventData, index + 0x1B);
         int squareDeliveredDuration = read16BEtoUInt(eventData, index + 0x1D);
         double activeInsulin = read32BEtoInt(eventData, index + 0x1F) / 10000.0;
-        PumpHistoryBolus.bolus(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBolus.bolus(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 BOLUS_TYPE.DUAL_WAVE.value(), false, bolusPart == 1, bolusPart == 2,
                 bolusRef,
                 bolusSource,
@@ -424,7 +453,9 @@ public class PumpHistoryParser {
         byte bolusStepSize = eventData[index + 0x2F];
         boolean estimateModifiedByUser = (read8toUInt(eventData, index + 0x30) & 1) == 1;
         double finalEstimate = read32BEtoInt(eventData, index + 0x31) / 10000.0;
-        PumpHistoryBolus.bolusWizardEstimate(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBolus.bolusWizardEstimate(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 bgUnits,
                 carbUnits,
                 bgInput,
@@ -454,7 +485,9 @@ public class PumpHistoryParser {
         double bolusWizardEstimate = read32BEtoInt(eventData, index + 0x18) / 10000.0;
         double finalEstimate = bolusWizardEstimate;
 
-        PumpHistoryBolus.bolusWizardEstimate(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBolus.bolusWizardEstimate(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 bgUnits,
                 carbUnits,
                 bgInput,
@@ -479,7 +512,9 @@ public class PumpHistoryParser {
         double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
         int percentageOfRate = read8toUInt(eventData, index + 0x11);
         int duration = read16BEtoUInt(eventData, index + 0x12);
-        PumpHistoryBasal.programmed(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBasal.programmed(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 preset,
                 type,
                 rate,
@@ -494,7 +529,9 @@ public class PumpHistoryParser {
         int percentageOfRate = read8toUInt(eventData, index + 0x11);
         int duration = read16BEtoUInt(eventData, index + 0x12);
         boolean canceled = (eventData[index + 0x14] & 1) == 1;
-        PumpHistoryBasal.completed(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBasal.completed(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 preset,
                 type,
                 rate,
@@ -506,20 +543,26 @@ public class PumpHistoryParser {
     private void basalPatternSelected() {
         byte oldPatternNumber = eventData[index + 0x0B];
         byte newPatternNumber = eventData[index + 0x0C];
-        PumpHistoryPattern.pattern(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryPattern.pattern(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 oldPatternNumber,
                 newPatternNumber);
     }
 
     private void insulinDeliveryStopped() {
         byte reason = eventData[index + 0x0B];
-        PumpHistoryBasal.suspend(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBasal.suspend(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 reason);
     }
 
     private void insulinDeliveryRestarted() {
         byte reason = eventData[index + 0x0B];
-        PumpHistoryBasal.resume(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBasal.resume(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 reason);
     }
 
@@ -532,7 +575,9 @@ public class PumpHistoryParser {
         if (calibrationFlag) bgContext = BG_CONTEXT.BG_SENT_FOR_CALIB.value();
         else bgContext = BG_CONTEXT.BG_READING_RECEIVED.value();
         String serial = new StringBuffer(readString(eventData, index + 0x0F, eventSize - 0x0F)).reverse().toString();
-        PumpHistoryBG.bg(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBG.bg(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 calibrationFlag,
                 bg,
                 bgUnits,
@@ -546,7 +591,9 @@ public class PumpHistoryParser {
         byte bgUnits = (byte) (eventData[index + 0x16] & 1);
         byte bgContext = (byte) ((eventData[index + 0x16] & 0xF8) >> 3);
         boolean calibrationFlag = BG_CONTEXT.BG_SENT_FOR_CALIB.equals(bgContext) || BG_CONTEXT.ENTERED_IN_SENSOR_CALIB.equals(bgContext);
-        PumpHistoryBG.bg(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBG.bg(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 calibrationFlag,
                 bg,
                 bgUnits,
@@ -558,7 +605,9 @@ public class PumpHistoryParser {
     private void closedLoopTransition() {
         byte transitionValue = eventData[index + 0x0B];
         byte transitionReason = eventData[index + 0x0C];
-        PumpHistoryLoop.transition(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryLoop.transition(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 transitionValue,
                 transitionReason);
     }
@@ -567,30 +616,40 @@ public class PumpHistoryParser {
         byte pattern = eventData[index + 0x0B];
         byte segment = eventData[index + 0x0C];
         double rate = read32BEtoInt(eventData, index + 0x0D) / 10000.0;
-        PumpHistoryLoop.basal(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryLoop.basal(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 pattern);
     }
 
     private void calibrationComplete() {
         double calFactor = read16BEtoUInt(eventData, index + 0xB) / 100.0;
         int bgTarget = read16BEtoUInt(eventData, index + 0xD);
-        PumpHistoryBG.calibration(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryBG.calibration(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 calFactor,
                 bgTarget);
     }
 
     private void glucoseSensorChange() {
-        PumpHistoryMisc.item(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryMisc.item(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR);
     }
 
     private void batteryInserted() {
-        PumpHistoryMisc.item(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryMisc.item(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryMisc.RECORDTYPE.CHANGE_BATTERY);
     }
 
     private void rewind() {
-        PumpHistoryMisc.item(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryMisc.item(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryMisc.RECORDTYPE.CHANGE_CANNULA);
     }
 
@@ -598,7 +657,9 @@ public class PumpHistoryParser {
         byte type = eventData[index + 0x0B];
         double delivered = read32BEtoInt(eventData, index + 0x0C) / 10000.0;
         double remaining = read32BEtoInt(eventData, index + 0x10) / 10000.0;
-        PumpHistoryMisc.cannula(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryMisc.cannula(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 type,
                 delivered,
                 remaining);
@@ -607,7 +668,9 @@ public class PumpHistoryParser {
     private void foodEventMarker() {
         byte carbUnits = eventData[index + 0x0B + 0x08];
         double carbInput = read16BEtoUInt(eventData, index + +0x0B + 0x09) / (CARB_UNITS.EXCHANGES.equals(carbUnits) ? 10.0 : 1.0);
-        PumpHistoryMarker.marker(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryMarker.marker(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryMarker.RECORDTYPE.FOOD,
                 0,
                 carbUnits,
@@ -617,7 +680,9 @@ public class PumpHistoryParser {
 
     private void exerciseEventMarker() {
         int duration = read16BEtoUInt(eventData, index + 0x0B + 0x08);
-        PumpHistoryMarker.marker(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryMarker.marker(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryMarker.RECORDTYPE.EXERCISE,
                 duration,
                 (byte) 0,
@@ -627,7 +692,9 @@ public class PumpHistoryParser {
 
     private void injectionEventMarker() {
         double insulin = read32BEtoInt(eventData, index + 0x0B + 0x08) / 10000.0;
-        PumpHistoryMarker.marker(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryMarker.marker(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryMarker.RECORDTYPE.EXERCISE,
                 0,
                 (byte) 0,
@@ -636,7 +703,9 @@ public class PumpHistoryParser {
     }
 
     private void otherEventMarker() {
-        PumpHistoryMarker.marker(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryMarker.marker(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryMarker.RECORDTYPE.OTHER,
                 0,
                 (byte) 0,
@@ -644,14 +713,16 @@ public class PumpHistoryParser {
                 0);
     }
 
-    private void alarmNotification() {
+    private void alarmNotification() throws IntegrityException {
         int faultNumber = read16BEtoInt(eventData, index + 0x0B);
         byte notificationMode = eventData[index + 0x11];
         boolean extraData = (eventData[index + 0x12] & 2) == 2;
         boolean alarmHistory = (eventData[index + 0x12] & 4) == 4;
         byte[] alarmData = null;
         if (extraData) alarmData = Arrays.copyOfRange(eventData,index + 0x13,index + 0x1B);
-        PumpHistoryAlarm.alarm(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryAlarm.alarm(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 faultNumber,
                 notificationMode,
                 alarmHistory,
@@ -661,7 +732,9 @@ public class PumpHistoryParser {
 
     private void alarmCleared() {
         int faultNumber = read16BEtoInt(eventData, index + 0x0B);
-        PumpHistoryAlarm.cleared(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryAlarm.cleared(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 faultNumber);
     }
 
@@ -727,7 +800,9 @@ public class PumpHistoryParser {
         Date endTimestamp = MessageUtils.decodeDateTime((long) endAdjustedRTC & 0xFFFFFFFFL, (long) pumpOFFSET);
         Date endDate = new Date(endTimestamp.getTime() - pumpClockDifference);
 
-        PumpHistoryDaily.dailyTotals(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryDaily.dailyTotals(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryDaily.TYPE.DAILY_TOTALS.value(),
                 startDate,
                 endDate,
@@ -865,7 +940,9 @@ public class PumpHistoryParser {
 
         double totalManualBolusInsulin = Math.abs(dailyTotalBolusInsulinDelivered - totalBWIFoodOnlyBolus - totalBWICorrectionOnlyBolus - totalBWIFoodCorrectionBolus - totalOfMealWizardInsulinDeliveredFoodOnlyBolus - totalOfMealWizardInsulinDeliveredCorrectionOnlyBolus - totalOfMealWizardInsulinDeliveredFoodCorrectionBolus);
 
-        PumpHistoryDaily.dailyTotals(pumpHistorySender, historyRealm, eventDate, eventRTC, eventOFFSET,
+        PumpHistoryDaily.dailyTotals(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
                 PumpHistoryDaily.TYPE.CLOSED_LOOP_DAILY_TOTALS.value(),
                 startDate,
                 endDate,
@@ -1631,28 +1708,66 @@ public class PumpHistoryParser {
     }
 
     public enum CGM_EXCEPTION {
-        SENSOR_INIT(0x01),
-        SENSOR_CAL_NEEDED(0x02),
-        SENSOR_ERROR(0x03),
-        SENSOR_CAL_ERROR(0x04),
-        SENSOR_CHANGE_SENSOR_ERROR(0x05),
-        SENSOR_END_OF_LIFE(0x06),
-        SENSOR_NOT_READY(0x07),
-        SENSOR_READING_HIGH(0x08),
-        SENSOR_READING_LOW(0x09),
-        SENSOR_CAL_PENDING(0x0A),
-        SENSOR_CHANGE_CAL_ERROR(0x0B),
-        SENSOR_TIME_UNKNOWN(0x0C),
-        NA(-1);
+        SENSOR_INIT(0x01,
+                FormatKit.getInstance().getString(R.string.SENSOR_INIT),
+                FormatKit.getInstance().getString(R.string.SENSOR_INIT_abbreviation)),
+        SENSOR_CAL_NEEDED(0x02,
+                FormatKit.getInstance().getString(R.string.SENSOR_CAL_NEEDED),
+                FormatKit.getInstance().getString(R.string.SENSOR_CAL_NEEDED_abbreviation)),
+        SENSOR_ERROR(0x03,
+                FormatKit.getInstance().getString(R.string.SENSOR_ERROR),
+                FormatKit.getInstance().getString(R.string.SENSOR_ERROR_abbreviation)),
+        SENSOR_CAL_ERROR(0x04,
+                FormatKit.getInstance().getString(R.string.SENSOR_CAL_ERROR),
+                FormatKit.getInstance().getString(R.string.SENSOR_CAL_ERROR_abbreviation)),
+        SENSOR_CHANGE_SENSOR_ERROR(0x05,
+                FormatKit.getInstance().getString(R.string.SENSOR_CHANGE_SENSOR_ERROR),
+                FormatKit.getInstance().getString(R.string.SENSOR_CHANGE_SENSOR_ERROR_abbreviation)),
+        SENSOR_END_OF_LIFE(0x06,
+                FormatKit.getInstance().getString(R.string.SENSOR_END_OF_LIFE),
+                FormatKit.getInstance().getString(R.string.SENSOR_END_OF_LIFE_abbreviation)),
+        SENSOR_NOT_READY(0x07,
+                FormatKit.getInstance().getString(R.string.SENSOR_NOT_READY),
+                FormatKit.getInstance().getString(R.string.SENSOR_NOT_READY_abbreviation)),
+        SENSOR_READING_HIGH(0x08,
+                FormatKit.getInstance().getString(R.string.SENSOR_READING_HIGH),
+                FormatKit.getInstance().getString(R.string.SENSOR_READING_HIGH_abbreviation)),
+        SENSOR_READING_LOW(0x09,
+                FormatKit.getInstance().getString(R.string.SENSOR_READING_LOW),
+                FormatKit.getInstance().getString(R.string.SENSOR_READING_LOW_abbreviation)),
+        SENSOR_CAL_PENDING(0x0A,
+                FormatKit.getInstance().getString(R.string.SENSOR_CAL_PENDING),
+                FormatKit.getInstance().getString(R.string.SENSOR_CAL_PENDING_abbreviation)),
+        SENSOR_CHANGE_CAL_ERROR(0x0B,
+                FormatKit.getInstance().getString(R.string.SENSOR_CHANGE_CAL_ERROR),
+                FormatKit.getInstance().getString(R.string.SENSOR_CHANGE_CAL_ERROR_abbreviation)),
+        SENSOR_TIME_UNKNOWN(0x0C,
+                FormatKit.getInstance().getString(R.string.SENSOR_TIME_UNKNOWN),
+                FormatKit.getInstance().getString(R.string.SENSOR_TIME_UNKNOWN_abbreviation)),
+        NA(-1,
+                FormatKit.getInstance().getString(R.string.SENSOR_NA),
+                FormatKit.getInstance().getString(R.string.SENSOR_NA_abbreviation));
 
         private int value;
+        private String string;
+        private String abbreviation;
 
-        CGM_EXCEPTION(int value) {
+        CGM_EXCEPTION(int value, String string, String abbreviation) {
             this.value = value;
+            this.string = string;
+            this.abbreviation = abbreviation;
         }
 
         public int value() {
             return this.value;
+        }
+
+        public String string() {
+            return this.string;
+        }
+
+        public String abbriviation() {
+            return this.abbreviation;
         }
 
         public boolean equals(int value) {
@@ -1667,12 +1782,18 @@ public class PumpHistoryParser {
     }
 
     public enum SUSPEND_REASON {
-        ALARM_SUSPEND(1, FormatKit.getInstance().getString(R.string.ALARM_SUSPEND)), // Battery change, cleared occlusion, etc
-        USER_SUSPEND(2, FormatKit.getInstance().getString(R.string.USER_SUSPEND)),
-        AUTO_SUSPEND(3, FormatKit.getInstance().getString(R.string.AUTO_SUSPEND)),
-        LOWSG_SUSPEND(4, FormatKit.getInstance().getString(R.string.LOWSG_SUSPEND)),
-        SET_CHANGE_SUSPEND(5, FormatKit.getInstance().getString(R.string.SET_CHANGE_SUSPEND)), // AKA NOTSEATED_SUSPEND
-        PLGM_PREDICTED_LOW_SG(10, FormatKit.getInstance().getString(R.string.PLGM_PREDICTED_LOW_SG)),
+        ALARM_SUSPEND(1,
+                FormatKit.getInstance().getString(R.string.ALARM_SUSPEND)),
+        USER_SUSPEND(2,
+                FormatKit.getInstance().getString(R.string.USER_SUSPEND)),
+        AUTO_SUSPEND(3,
+                FormatKit.getInstance().getString(R.string.AUTO_SUSPEND)),
+        LOWSG_SUSPEND(4
+                , FormatKit.getInstance().getString(R.string.LOWSG_SUSPEND)),
+        SET_CHANGE_SUSPEND(5,
+                FormatKit.getInstance().getString(R.string.SET_CHANGE_SUSPEND)),
+        PLGM_PREDICTED_LOW_SG(10,
+                FormatKit.getInstance().getString(R.string.PLGM_PREDICTED_LOW_SG)),
         NA(-1, "");
 
         private int value;
@@ -1703,12 +1824,18 @@ public class PumpHistoryParser {
     }
 
     public enum RESUME_REASON {
-        USER_SELECTS_RESUME(1, FormatKit.getInstance().getString(R.string.USER_SELECTS_RESUME)),
-        USER_CLEARS_ALARM(2, FormatKit.getInstance().getString(R.string.USER_CLEARS_ALARM)),
-        LGM_MANUAL_RESUME(3, FormatKit.getInstance().getString(R.string.LGM_MANUAL_RESUME)),
-        LGM_AUTO_RESUME_MAX_SUSP(4, FormatKit.getInstance().getString(R.string.LGM_AUTO_RESUME_MAX_SUSP)), // After an auto suspend, but no CGM data afterwards.
-        LGM_AUTO_RESUME_PSG_SG(5, FormatKit.getInstance().getString(R.string.LGM_AUTO_RESUME_PSG_SG)), // When SG reaches the Preset SG level
-        LGM_MANUAL_RESUME_VIA_DISABLE(6, FormatKit.getInstance().getString(R.string.LGM_MANUAL_RESUME_VIA_DISABLE)),
+        USER_SELECTS_RESUME(1,
+                FormatKit.getInstance().getString(R.string.USER_SELECTS_RESUME)),
+        USER_CLEARS_ALARM(2,
+                FormatKit.getInstance().getString(R.string.USER_CLEARS_ALARM)),
+        LGM_MANUAL_RESUME(3,
+                FormatKit.getInstance().getString(R.string.LGM_MANUAL_RESUME)),
+        LGM_AUTO_RESUME_MAX_SUSP(4,
+                FormatKit.getInstance().getString(R.string.LGM_AUTO_RESUME_MAX_SUSP)), // After an auto suspend, but no CGM data afterwards.
+        LGM_AUTO_RESUME_PSG_SG(5,
+                FormatKit.getInstance().getString(R.string.LGM_AUTO_RESUME_PSG_SG)), // When SG reaches the Preset SG level
+        LGM_MANUAL_RESUME_VIA_DISABLE(6,
+                FormatKit.getInstance().getString(R.string.LGM_MANUAL_RESUME_VIA_DISABLE)),
         NA(-1, "");
 
         private int value;
@@ -1992,11 +2119,16 @@ public class PumpHistoryParser {
     }
 
     public enum CL_TRANSITION_REASON {
-        INTO_ACTIVE_DUE_TO_GLUCOSE_SENSOR_CALIBRATION(0, FormatKit.getInstance().getString(R.string.INTO_ACTIVE_DUE_TO_GLUCOSE_SENSOR_CALIBRATION)),
-        OUT_OF_ACTIVE_DUE_TO_USER_OVERRIDE(1, FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_USER_OVERRIDE)),
-        OUT_OF_ACTIVE_DUE_TO_ALARM(2, FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_ALARM)),
-        OUT_OF_ACTIVE_DUE_TO_TIMEOUT_FROM_SAFE_BASAL(3, FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_TIMEOUT_FROM_SAFE_BASAL)),
-        OUT_OF_ACTIVE_DUE_TO_PROLONGED_HIGH_SG(4, FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_PROLONGED_HIGH_SG)),
+        INTO_ACTIVE_DUE_TO_GLUCOSE_SENSOR_CALIBRATION(0,
+                FormatKit.getInstance().getString(R.string.INTO_ACTIVE_DUE_TO_GLUCOSE_SENSOR_CALIBRATION)),
+        OUT_OF_ACTIVE_DUE_TO_USER_OVERRIDE(1,
+                FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_USER_OVERRIDE)),
+        OUT_OF_ACTIVE_DUE_TO_ALARM(2,
+                FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_ALARM)),
+        OUT_OF_ACTIVE_DUE_TO_TIMEOUT_FROM_SAFE_BASAL(3,
+                FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_TIMEOUT_FROM_SAFE_BASAL)),
+        OUT_OF_ACTIVE_DUE_TO_PROLONGED_HIGH_SG(4,
+                FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_PROLONGED_HIGH_SG)),
         NA(-1, "");
 
         private int value;
@@ -2106,23 +2238,21 @@ public class PumpHistoryParser {
     }
 
     public enum BOLUS_PRESET {
-        BOLUS_PRESET_0(0, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_0)),
-        BOLUS_PRESET_1(1, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_1)),
-        BOLUS_PRESET_2(2, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_2)),
-        BOLUS_PRESET_3(3, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_3)),
-        BOLUS_PRESET_4(4, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_4)),
-        BOLUS_PRESET_5(5, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_5)),
-        BOLUS_PRESET_6(6, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_6)),
-        BOLUS_PRESET_7(7, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_7)),
-        BOLUS_PRESET_8(8, FormatKit.getInstance().getString(R.string.BOLUS_PRESET_8)),
-        NA(-1, "");
+        BOLUS_PRESET_0(0),
+        BOLUS_PRESET_1(1),
+        BOLUS_PRESET_2(2),
+        BOLUS_PRESET_3(3),
+        BOLUS_PRESET_4(4),
+        BOLUS_PRESET_5(5),
+        BOLUS_PRESET_6(6),
+        BOLUS_PRESET_7(7),
+        BOLUS_PRESET_8(8),
+        NA(-1);
 
         private int value;
-        private String string;
 
-        BOLUS_PRESET(int value, String string) {
+        BOLUS_PRESET(int value) {
             this.value = value;
-            this.string = string;
         }
 
         public byte value() {
@@ -2130,7 +2260,7 @@ public class PumpHistoryParser {
         }
 
         public String string() {
-            return this.string;
+            return FormatKit.getInstance().getNameBolusPreset(value);
         }
 
         public boolean equals(int value) {
@@ -2145,23 +2275,21 @@ public class PumpHistoryParser {
     }
 
     public enum TEMP_BASAL_PRESET {
-        TEMP_BASAL_PRESET_0(0, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_0)),
-        TEMP_BASAL_PRESET_1(1, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_1)),
-        TEMP_BASAL_PRESET_2(2, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_2)),
-        TEMP_BASAL_PRESET_3(3, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_3)),
-        TEMP_BASAL_PRESET_4(4, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_4)),
-        TEMP_BASAL_PRESET_5(5, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_5)),
-        TEMP_BASAL_PRESET_6(6, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_6)),
-        TEMP_BASAL_PRESET_7(7, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_7)),
-        TEMP_BASAL_PRESET_8(8, FormatKit.getInstance().getString(R.string.TEMP_BASAL_PRESET_8)),
-        NA(-1, "");
+        TEMP_BASAL_PRESET_0(0),
+        TEMP_BASAL_PRESET_1(1),
+        TEMP_BASAL_PRESET_2(2),
+        TEMP_BASAL_PRESET_3(3),
+        TEMP_BASAL_PRESET_4(4),
+        TEMP_BASAL_PRESET_5(5),
+        TEMP_BASAL_PRESET_6(6),
+        TEMP_BASAL_PRESET_7(7),
+        TEMP_BASAL_PRESET_8(8),
+        NA(-1);
 
         private int value;
-        private String string;
 
-        TEMP_BASAL_PRESET(int value, String string) {
+        TEMP_BASAL_PRESET(int value) {
             this.value = value;
-            this.string = string;
         }
 
         public byte value() {
@@ -2169,7 +2297,7 @@ public class PumpHistoryParser {
         }
 
         public String string() {
-            return this.string;
+            return FormatKit.getInstance().getNameTempBasalPreset(value);
         }
 
         public boolean equals(int value) {
@@ -2184,22 +2312,20 @@ public class PumpHistoryParser {
     }
 
     public enum BASAL_PATTERN {
-        BASAL_PATTERN_1(1, FormatKit.getInstance().getString(R.string.BASAL_PATTERN_1)),
-        BASAL_PATTERN_2(2, FormatKit.getInstance().getString(R.string.BASAL_PATTERN_2)),
-        BASAL_PATTERN_3(3, FormatKit.getInstance().getString(R.string.BASAL_PATTERN_3)),
-        BASAL_PATTERN_4(4, FormatKit.getInstance().getString(R.string.BASAL_PATTERN_4)),
-        BASAL_PATTERN_5(5, FormatKit.getInstance().getString(R.string.BASAL_PATTERN_5)),
-        BASAL_PATTERN_6(6, FormatKit.getInstance().getString(R.string.BASAL_PATTERN_6)),
-        BASAL_PATTERN_7(7, FormatKit.getInstance().getString(R.string.BASAL_PATTERN_7)),
-        BASAL_PATTERN_8(8, FormatKit.getInstance().getString(R.string.BASAL_PATTERN_8)),
-        NA(-1, "");
+        BASAL_PATTERN_1(1),
+        BASAL_PATTERN_2(2),
+        BASAL_PATTERN_3(3),
+        BASAL_PATTERN_4(4),
+        BASAL_PATTERN_5(5),
+        BASAL_PATTERN_6(6),
+        BASAL_PATTERN_7(7),
+        BASAL_PATTERN_8(8),
+        NA(-1);
 
         private int value;
-        private String string;
 
-        BASAL_PATTERN(int value, String string) {
+        BASAL_PATTERN(int value) {
             this.value = value;
-            this.string = string;
         }
 
         public byte value() {
@@ -2207,7 +2333,7 @@ public class PumpHistoryParser {
         }
 
         public String string() {
-            return this.string;
+            return FormatKit.getInstance().getNameBasalPattern(value);
         }
 
         public boolean equals(int value) {

@@ -6,10 +6,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.PumpAlert;
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistorySender;
-import info.nightscout.android.utils.ToolKit;
+import info.nightscout.android.medtronic.exception.IntegrityException;
 import info.nightscout.android.utils.FormatKit;
 import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 import io.realm.Realm;
@@ -36,6 +38,8 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -68,123 +72,41 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        if (senderDEL.contains(senderID)) {
-            Log.d(TAG, "TTL delete record");
-            NightscoutItem nightscoutItem = new NightscoutItem();
-            nightscoutItems.add(nightscoutItem);
-            TreatmentsEndpoints.Treatment treatment = nightscoutItem.delete().treatment();
-            treatment.setKey600(key);
-            return nightscoutItems;
-        }
-/*
-        if ((cleared && !pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED))
-                || (silenced && !pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))) {
-            return nightscoutItems;
-        }
-*/
-        if (silenced && !pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))
+        if (HistoryUtils.nightscoutTTL(nightscoutItems,this, senderID))
             return nightscoutItems;
 
-        String[] alert = FormatKit.getInstance().getAlertString(faultNumber);
-
-        int alertpriority = Integer.parseInt(alert[1]);
-        if (alertpriority < Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.ALARM_PRIORITY, "0")))
+        if (silenced && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))
             return nightscoutItems;
 
-        String notes = "";
+        PumpAlert pumpAlert = new PumpAlert()
+                .record(this)
+                .units(pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS))
+                .build();
 
-        NightscoutItem nightscoutItem = new NightscoutItem();
-        nightscoutItems.add(nightscoutItem);
-        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
+        if (pumpAlert.getPriority() < Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.ALARM_PRIORITY, "0")))
+            return nightscoutItems;
 
-        treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%s: %s",
+                pumpAlert.getTitle(),
+                pumpAlert.getCode() == 0 | pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_EXTENDED)
+                        ? pumpAlert.getComplete() : pumpAlert.getMessage()));
+
+        if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))
+            sb.append(pumpAlert.getSilenced(true));
+
+        if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED))
+            sb.append(pumpAlert.getCleared(true));
+
+        if (pumpAlert.getCode() == 0 || pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_FAULTCODE))
+            sb.append(pumpAlert.getInfo(true));
+
+        TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
         treatment.setEventType("Announcement");
         treatment.setAnnouncement(true);
-
-        String message = parseAlert(pumpHistorySender, senderID, alert[3]) + (alert[4].equals("?") ? "" : ". " + parseAlert(pumpHistorySender, senderID, alert[4]));
-
-        if (alert[2].equals("1"))
-            notes += "Pump Alert: " + message;
-        else if (alert[2].equals("2"))
-            notes += "Sensor Alert: " + message;
-        else if (alert[2].equals("3"))
-            notes += "Reminder: " + message;
-        else
-            notes += "Alert: " + message;
-
-        if (silenced) {
-            notes += " (silenced)";
-        }
-        if (cleared && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED)) {
-            int duration = (int) ((clearedDate.getTime() - alarmedDate.getTime()) / 1000L);
-            notes += " (cleared " + FormatKit.getInstance().formatSecondsAsDHMS(duration) + ")";
-        }
-
-        if (alert[2].equals("0") || pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_FAULTCODE)) {
-            notes += " #" + faultNumber;
-            if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_FAULTDATA)) {
-                StringBuilder sb = new StringBuilder();
-                if (extraData && alarmData != null)
-                    for (byte b : alarmData) sb.append(String.format("%02X", b));
-                notes += String.format(" [Mode:%s History:%s Data:%s%s]", notificationMode, alarmHistory, extraData, sb.length() == 0 ? "" : " " + sb.toString());
-            }
-        }
-
-        treatment.setNotes(notes);
+        treatment.setNotes(sb.toString());
 
         return nightscoutItems;
-    }
-
-    private String parseAlert(PumpHistorySender pumpHistorySender, String senderID, String alert) {
-        String result = "";
-
-        if (!alert.equals("?")) {
-            try {
-                String parts[] = alert.split("[{}]");
-
-                for (String part : parts) {
-                    String data[] = part.split(";");
-
-                    if (data.length < 2) {
-                        result += part;
-                    } else {
-                        int offset = Integer.parseInt(data[1]);
-                        if (extraData && alarmData != null) {
-                            switch (data[0]) {
-                                case "dval":
-                                    result += alarmData[offset];
-                                    break;
-                                case "dpat":
-                                    result += pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, alarmData[offset] - 1);
-                                    break;
-                                case "dsgv":
-                                    int sgv = ToolKit.read16BEtoInt(alarmData, offset);
-                                    if (sgv < 0x0300) result += FormatKit.getInstance().formatAsGlucose(sgv, pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS));
-                                    break;
-                                case "dclk":
-                                    result += FormatKit.getInstance().formatAsClock(alarmData[offset], alarmData[offset + 1]);
-                                    break;
-                                case "dhrs":
-                                    result += FormatKit.getInstance().formatAsHours(alarmData[offset], alarmData[offset + 1]);
-                                    break;
-                                case "dins":
-                                    result += FormatKit.getInstance().formatAsInsulin(ToolKit.read32BEtoInt(alarmData, offset) / 10000.0);
-                                    break;
-                                case "dlst":
-                                    result += data[alarmData[offset] + 2];
-                                    break;
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error parsing alert: " + alert);
-                result = "[parse error]";
-            }
-        }
-
-        return result;
     }
 
     @Override
@@ -194,31 +116,24 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
         // check if already sent as it may re-trigger due to 'cleared' updates
         if (senderACK.contains(senderID)) return messageItems;
 
-        if ((cleared && !pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED))
-                || (silenced && !pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))) {
+        if ((cleared && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED))
+                || (silenced && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))) {
             return messageItems;
         }
 
-        String[] alert = FormatKit.getInstance().getAlertString(faultNumber);
+        PumpAlert pumpAlert = new PumpAlert()
+                .record(this)
+                .units(pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS))
+                .build();
 
-        int alertpriority = Integer.parseInt(alert[1]);
-        if (alertpriority < Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.ALARM_PRIORITY, "0")))
+        if (pumpAlert.getCode() == 0
+                || pumpAlert.getPriority() < Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.ALARM_PRIORITY, "0")))
             return messageItems;
 
-        MessageItem.PRIORITY priority = MessageItem.PRIORITY.convert(alertpriority);
-
-        String title;
-        String message = parseAlert(pumpHistorySender, senderID, alert[3]);
-        String extended = "";
         MessageItem.TYPE type;
-
-        if (alert[2].equals("3")) {
-            if (cleared) title = "Cleared Reminder";
-            else title = "Reminder";
+        if (pumpAlert.getType() == PumpAlert.TYPE.REMINDER)
             type = MessageItem.TYPE.REMINDER;
-
-        } else {
-
+        else
             switch (faultNumber) {
                 case 816:
                     type = MessageItem.TYPE.ALERT_ON_HIGH;
@@ -243,62 +158,47 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                     type = MessageItem.TYPE.ALERT;
             }
 
-            if (alert[2].equals("1")) {
-                if (cleared) title = "Cleared Alert";
-                else if (silenced) title = "Silenced Alert";
-                else title = "Pump Alert";
-            } else if (alert[2].equals("2")) {
-                if (cleared) title = "Cleared Alert";
-                else if (silenced) title = "Silenced Alert";
-                else title = "Sensor Alert";
-            } else {
-                title = "Alert";
-            }
-        }
-
-        if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_EXTENDED))
-            extended = parseAlert(pumpHistorySender, senderID, alert[4]);
-
-        if (cleared) {
-            int duration = (int) ((clearedDate.getTime() - alarmedDate.getTime()) / 1000L);
-            extended += " (cleared " + FormatKit.getInstance().formatSecondsAsDHMS(duration) + ")";
-        }
-
-        if (silenced) {
-            extended += " (silenced)";
-        }
-
         messageItems.add(new MessageItem()
-                .key(key)
                 .type(type)
                 .date(alarmedDate)
-                .priority(priority)
+                .priority(MessageItem.PRIORITY.convert(pumpAlert.getPriority()))
                 .clock(FormatKit.getInstance().formatAsClock(alarmedDate.getTime()).replace(" ", ""))
-                .title(title)
-                .message(message)
-                .extended(extended)
+                .title(pumpAlert.getTitleAlt())
+                .message(pumpAlert.getMessage())
+                .extended(String.format("%s%s%s",
+                        pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_EXTENDED)
+                                ? pumpAlert.getExtended() : "",
+                        pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED)
+                                ? pumpAlert.getCleared(true) : "",
+                        pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED)
+                                ? pumpAlert.getSilenced(true) : ""))
                 .cleared(cleared)
                 .silenced(silenced));
 
         return messageItems;
     }
 
-    public static void alarm(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                             int faultNumber,
-                             byte notificationMode,
-                             boolean alarmHistory,
-                             boolean extraData,
-                             byte[] alarmData) {
+    public static void alarm(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int faultNumber,
+            byte notificationMode,
+            boolean alarmHistory,
+            boolean extraData,
+            byte[] alarmData) throws IntegrityException {
 
         PumpHistoryAlarm record;
 
         // check if pump re-raised/escalated an alarm that is already recorded in the history
-        if (!alarmHistory && notificationMode == 3);
+        if (!alarmHistory && notificationMode == 3) {
+            return;
+        }
 
-            // check if a silenced alarm notification
+        // check if a silenced alarm notification
         else if (faultNumber == 110) {
 
             record = realm.where(PumpHistoryAlarm.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("alarmedRTC", eventRTC)
                     .equalTo("alarmed", true)
                     .equalTo("silenced", false)
@@ -309,10 +209,12 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 record.silenced = true;
                 pumpHistorySender.setSenderREQ(record);
             }
+        }
 
-        } else {
+        else {
 
             record = realm.where(PumpHistoryAlarm.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("alarmedRTC", eventRTC)
                     .equalTo("alarmed", true)
                     .equalTo("faultNumber", faultNumber)
@@ -321,6 +223,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
             if (record == null) {
                 // look for a cleared alarm
                 RealmResults<PumpHistoryAlarm> results = realm.where(PumpHistoryAlarm.class)
+                        .equalTo("pumpMAC", pumpMAC)
                         .equalTo("alarmed", false)
                         .equalTo("cleared", true)
                         .equalTo("faultNumber", faultNumber)
@@ -331,6 +234,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 if (results.size() == 0) {
                     Log.d(TAG, "*new*" + " alarm");
                     record = realm.createObject(PumpHistoryAlarm.class);
+                    record.pumpMAC = pumpMAC;
                 } else {
                     Log.d(TAG, "*update*" + " alarm");
                     record = results.first();
@@ -351,18 +255,23 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 if (extraData && alarmData != null) record.alarmData = alarmData;
 
                 // key composed of 2 byte faultNumber and 4 byte eventRTC due to multiple alerts at the same time
-                record.key = String.format("ALARM%04X%08X", faultNumber, eventRTC);
+                record.key = HistoryUtils.key("ALARM", (short) faultNumber, eventRTC);
                 pumpHistorySender.setSenderREQ(record);
             }
+
+            else HistoryUtils.integrity(record, eventDate);
         }
     }
 
-    public static void cleared(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                               int faultNumber) {
+    public static void cleared(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int faultNumber) {
 
         if (faultNumber == 110) return; // ignore cleared silenced alerts
 
         PumpHistoryAlarm record = realm.where(PumpHistoryAlarm.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("cleared", true)
                 .equalTo("clearedRTC", eventRTC)
                 .equalTo("faultNumber", faultNumber)
@@ -371,6 +280,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
         if (record == null) {
             // look for a alarm
             RealmResults<PumpHistoryAlarm> results = realm.where(PumpHistoryAlarm.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("alarmed", true)
                     .equalTo("cleared", false)
                     .equalTo("silenced", false)
@@ -383,6 +293,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
             if (results.size() == 0) {
                 Log.d(TAG, "*new*" + " alarm (cleared)");
                 record = realm.createObject(PumpHistoryAlarm.class);
+                record.pumpMAC = pumpMAC;
                 record.eventDate = eventDate;
                 record.faultNumber = faultNumber;
             } else {
@@ -446,6 +357,16 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public boolean isAlarmed() {

@@ -36,12 +36,13 @@ public class UserLogAdapter
     // HSV Hue 0-360 Saturation 0-1 Value 0-1
     private final static float[] WARN_HSV = new float[] {60f, .85f, 1f};
     private final static float[] CGM_HSV =new float[] {0f, .22f, 1f};
-    private final static float[] ESTIMATE_HSV = new float[] {185f, .22f, 1f};
     private final static float[] HISTORY_HSV = new float[] {270f, .22f, 1f};
     private final static float[] HEART_HSV = new float[] {0f, 1f, 1f};
     private final static float[] SHARE_HSV = new float[] {125f, .22f, 1f};
     private final static float[] PUSHOVER_HSV = new float[] {40f, .22f, 1f};
     private final static float[] NOTE_HSV = new float[] {0f, 0f, .9f};
+    private final static float[] ESTIMATE_HSV = new float[] {185f, .22f, 1f};
+    private final static float[] ISIG_HSV = new float[] {185f, .22f, 1f};
 
     private final static float HIGHLIGHT = 1.35f;
     private final static float LOWLIGHT = 0.65f;
@@ -50,6 +51,7 @@ public class UserLogAdapter
     private int cHigh;
     private int cLow;
     private int cEestimate;
+    private int cIsig;
     private int cHistory;
     private int cPushover;
 
@@ -187,6 +189,10 @@ public class UserLogAdapter
                 ssb.append(" ").append(text);
                 ssb.setSpan(new ForegroundColorSpan(cEestimate), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 break;
+            case ISIG:
+                ssb.append(" ").append(text);
+                ssb.setSpan(new ForegroundColorSpan(cIsig), 1, text.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                break;
             case REQUESTED:
             case RECEIVED:
                 ssb.append(" ").append(text);
@@ -235,6 +241,7 @@ public class UserLogAdapter
         Log.d(TAG, String.format("textColor: %8x textSize: %s normal: %8x high: %8x low: %8x", c, s, cNormal, cHigh, cLow));
 
         cEestimate = Color.HSVToColor(high, ESTIMATE_HSV);
+        cIsig = Color.HSVToColor(normal, ISIG_HSV);
         cHistory = Color.HSVToColor(normal, HISTORY_HSV);
         cPushover = Color.HSVToColor(normal, PUSHOVER_HSV);
 
@@ -249,7 +256,6 @@ public class UserLogAdapter
         iCGM = icon("ion_ios_pulse_strong", Color.HSVToColor(high, CGM_HSV));
         iHEART = icon("ion_heart", Color.HSVToColor(high, HEART_HSV));
         iSHARE = icon("ion_android_share_alt", Color.HSVToColor(normal, SHARE_HSV));
-        //iREFRESH = icon("ion_loop", defaultColor | defaultAlpha);
         iREFRESH = icon("ion_refresh", cNormal);
         iSETTING = icon("ion_android_settings", cHigh);
 

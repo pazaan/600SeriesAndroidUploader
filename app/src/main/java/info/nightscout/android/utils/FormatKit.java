@@ -2,18 +2,22 @@ package info.nightscout.android.utils;
 
 import android.app.Application;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.preference.PreferenceManager;
 import android.text.format.DateFormat;
 import android.util.Log;
 
+import java.math.RoundingMode;
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 
 import info.nightscout.android.R;
+import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.model.store.DataStore;
+import io.realm.Realm;
 
 import static info.nightscout.android.medtronic.MainActivity.MMOLXLFACTOR;
 
@@ -26,6 +30,8 @@ public class FormatKit {
 
     private static FormatKit sInstance;
     private final Application mApplication;
+
+    private DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
 
     private FormatKit(Application application) {
         Log.d(TAG, "initialise instance");
@@ -46,30 +52,25 @@ public class FormatKit {
         return sInstance;
     }
 
-    // set the language to use for formatting
-    public FormatKit mode(int mode) {
-
-        return this;
-    }
-
     public String formatAsGrams(Double value) {
-        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(0);
         df.setMaximumFractionDigits(1);
         return df.format(value) + mApplication.getApplicationContext().getString(R.string.text_gram);
     }
 
     public String formatAsExchanges(Double value) {
-        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(0);
         df.setMaximumFractionDigits(1);
         return df.format(value) + mApplication.getApplicationContext().getString(R.string.text_gram_exchange);
     }
 
     public String formatAsInsulin(Double value) {
-        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+        return formatAsInsulin(value, 2);
+    }
+
+    public String formatAsInsulin(Double value, int precision) {
         df.setMinimumFractionDigits(0);
-        df.setMaximumFractionDigits(2);
+        df.setMaximumFractionDigits(precision);
         return df.format(value) + mApplication.getApplicationContext().getString(R.string.text_insulin_unit);
     }
 
@@ -77,47 +78,58 @@ public class FormatKit {
         return formatAsGlucose(value, false);
     }
 
-    public String formatAsGlucose(int value, boolean units) {
+    public String formatAsGlucose(int value, boolean tag) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mApplication.getApplicationContext());
-        if (!sharedPreferences.getBoolean("mmolxl", false)) return formatAsGlucoseMGDL(value, units);
-        return formatAsGlucoseMMOL(value, units, false);
+        if (!sharedPreferences.getBoolean(getString(R.string.key_mmolxl), false)) return formatAsGlucoseMGDL(value, tag);
+        return formatAsGlucoseMMOL(value, tag, 1);
     }
 
-    public String formatAsGlucose(int value, boolean units, boolean decimals) {
+    public String formatAsGlucose(int value, boolean tag, boolean decimals) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mApplication.getApplicationContext());
-        if (!sharedPreferences.getBoolean("mmolxl", false)) return formatAsGlucoseMGDL(value, units);
-        return formatAsGlucoseMMOL(value, units, decimals ? sharedPreferences.getBoolean("mmolDecimals", false) : false);
+        if (!sharedPreferences.getBoolean(getString(R.string.key_mmolxl), false)) return formatAsGlucoseMGDL(value, tag);
+        return formatAsGlucoseMMOL(value, tag,
+                decimals & sharedPreferences.getBoolean(getString(R.string.key_mmolDecimals), false) ? 2 : 1);
     }
 
-    public String formatAsGlucoseMGDL(int value, boolean units) {
-        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
-        return df.format(value) + (units ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mgdl) : "");
+    public String formatAsGlucose(int value, boolean tag, int precision) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mApplication.getApplicationContext());
+        if (!sharedPreferences.getBoolean(getString(R.string.key_mmolxl), false)) return formatAsGlucoseMGDL(value, tag);
+        return formatAsGlucoseMMOL(value, tag, precision);
     }
 
-    public String formatAsGlucoseMMOL(int value, boolean units, boolean decimals) {
-        DecimalFormat df;
-        if (decimals)
-            df = new DecimalFormat("0.00", DecimalFormatSymbols.getInstance(Locale.getDefault()));
-        else
-            df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
-        return df.format(value / MMOLXLFACTOR) + (units ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mmol) : "");
+    public String formatAsGlucoseMGDL(int value, boolean tag) {
+        return String.valueOf(value) + (tag ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mgdl) : "");
     }
 
-    public String formatAsGlucoseMMOL(int value, boolean units) {
-        DecimalFormat df = new DecimalFormat("0.00", DecimalFormatSymbols.getInstance(Locale.getDefault()));
-        return df.format(value / MMOLXLFACTOR) + (units ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mmol) : "");
+    public String formatAsGlucoseMMOL(int value, boolean tag, int precision) {
+        df.setMinimumFractionDigits(1);
+        df.setMaximumFractionDigits(precision);
+        return df.format(value / MMOLXLFACTOR) + (tag ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mmol) : "");
     }
 
-    public String formatAsFraction(double value, boolean isFraction) {
-        if (isFraction) {
-            DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
-            return df.format(value);
-        }
-        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+    public String formatAsDecimal(double value, int precision) {
+        df.setMinimumFractionDigits(precision);
+        df.setMaximumFractionDigits(precision);
         return df.format(value);
     }
 
+    public String formatAsDecimal(double value, int precisionMin, int precisionMax, RoundingMode round) {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+        df.setMinimumFractionDigits(precisionMin);
+        df.setMaximumFractionDigits(precisionMax);
+        df.setRoundingMode(round);
+        return df.format(value);
+    }
+
+    public String formatAsDecimalDiff(double value, int precision) {
+        df.setMinimumFractionDigits(precision);
+        df.setMaximumFractionDigits(precision);
+        return (value < 0 ? "-" : "+") + df.format(Math.abs(value));
+    }
+
     public String formatSecondsAsDiff(int seconds) {
+        if (seconds >= 60 * 60)
+            return (seconds < 0 ? "-" : "+") + formatMinutesAsDHM(Math.abs(seconds / 60));
         return (seconds < 0 ? "-" : "+") + formatSecondsAsDHMS(Math.abs(seconds));
     }
 
@@ -148,11 +160,23 @@ public class FormatKit {
                 (m > 0 ? m + mApplication.getApplicationContext().getString(R.string.time_m) : (h > 0 ? "" : "0" + mApplication.getApplicationContext().getString(R.string.time_m)));
     }
 
+    public String formatMinutesAsM(int minutes) {
+        return minutes + mApplication.getApplicationContext().getString(R.string.time_m);
+    }
+
     public String formatHoursAsDH(int hours) {
         int d = hours / 24;
         int h = hours % 24;
         return d + mApplication.getApplicationContext().getString(R.string.time_d) +
                 h + mApplication.getApplicationContext().getString(R.string.time_h);
+    }
+
+    public String formatHoursAsH(int hours) {
+        return hours + mApplication.getApplicationContext().getString(R.string.time_h);
+    }
+
+    public String formatDaysAsD(int days) {
+        return days + mApplication.getApplicationContext().getString(R.string.time_d);
     }
 
     public String formatAsPercent(int value) {
@@ -208,16 +232,36 @@ public class FormatKit {
         }
     }
 
-    public String formatAsHours(int hours, int minutes) {
+    public String formatAsHoursMinutes(int hours, int minutes) {
         DecimalFormat df = new DecimalFormat("00", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         return hours + ":" + df.format(minutes);
     }
 
-    public String formatAsWeekday(long time) {
+    public String formatAsMonth(long time) {
+        return new SimpleDateFormat("MM", Locale.getDefault()).format(time);
+    }
+
+    public String formatAsMonthName(long time) {
+        return new SimpleDateFormat("MMMM", Locale.getDefault()).format(time);
+    }
+
+    public String formatAsMonthNameShort(long time) {
+        return new SimpleDateFormat("MMM", Locale.getDefault()).format(time);
+    }
+
+    public String formatAsDay(long time) {
+        return new SimpleDateFormat("d", Locale.getDefault()).format(time);
+    }
+
+    public String formatAsDayName(long time) {
         return new SimpleDateFormat("EEEE", Locale.getDefault()).format(time);
     }
 
-    public String formatAsWeekdayMonthDay(long time) {
+    public String formatAsDayNameShort(long time) {
+        return new SimpleDateFormat("EEE", Locale.getDefault()).format(time);
+    }
+
+    public String formatAsDayNameMonthNameDay(long time) {
         return new SimpleDateFormat("EEEE MMMM dd", Locale.getDefault()).format(time);
     }
 
@@ -225,23 +269,69 @@ public class FormatKit {
         return new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(time);
     }
 
-    public String getString(int ref) {
-        return mApplication.getApplicationContext().getString(ref);
+    public String[] getStringArray(int id) {
+        return mApplication.getResources().getStringArray(id);
     }
 
-    public String[] getAlertString(int code) {
-        String[] pumpAlerts = mApplication.getApplicationContext().getResources().getStringArray(R.array.pump_alerts);
-        String stringCode = Integer.toString(code) + "|";
-        int i;
+    public String getQuantityString(int id, int value) {
+        return mApplication.getResources().getQuantityString(id, value, value);
+    }
 
-        for (i = pumpAlerts.length - 1; i > 0; i--) {
-            if (pumpAlerts[i].startsWith(stringCode)) break;
+    public String getString(int id) {
+        String s;
+        try {
+            s = mApplication.getResources().getString(id);
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Could not get string: id = %s", id));
+            s = "[string id error]";
         }
+        return s;
+    }
 
-        String alert[] = pumpAlerts[i].split("\\|");
-        if (alert.length != 5) alert = pumpAlerts[0].split("\\|");
+    public String getString(String name) {
+        String s;
+        try {
+            Resources res = mApplication.getResources();
+            s = res.getString(res.getIdentifier(
+                    name, "string", mApplication.getPackageName()));
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Could not get string: name = %s", name));
+            s = "[string name error]";
+        }
+        return s;
+    }
 
-        return alert;
+    public String getNameBasalPattern(int pattern) {
+        String name = "";
+        try {
+            Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+            DataStore dataStore = storeRealm.where(DataStore.class).findFirst();
+            name = dataStore.getNameBasalPattern(pattern);
+            storeRealm.close();
+        } catch (Exception ignored) {}
+        return name;
+    }
+
+    public String getNameBolusPreset(int preset) {
+        String name = "";
+        try {
+            Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+            DataStore dataStore = storeRealm.where(DataStore.class).findFirst();
+            name = dataStore.getNameBolusPreset(preset);
+            storeRealm.close();
+        } catch (Exception ignored) {}
+        return name;
+    }
+
+    public String getNameTempBasalPreset(int preset) {
+        String name = "";
+        try {
+            Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+            DataStore dataStore = storeRealm.where(DataStore.class).findFirst();
+            name = dataStore.getNameTempBasalPreset(preset);
+            storeRealm.close();
+        } catch (Exception ignored) {}
+        return name;
     }
 
     // MongoDB Index Key Limit

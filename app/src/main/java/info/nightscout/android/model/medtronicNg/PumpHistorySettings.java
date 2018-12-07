@@ -31,6 +31,8 @@ public class PumpHistorySettings extends RealmObject implements PumpHistoryInter
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -48,16 +50,20 @@ public class PumpHistorySettings extends RealmObject implements PumpHistoryInter
     @Override
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) { return new ArrayList<>(); }
 
-    public static void change(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                              int eventType) {
+    public static void change(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int eventType) {
 
         PumpHistorySettings record = realm.where(PumpHistorySettings.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("settingsType", eventType)
                 .equalTo("settingsRTC", eventRTC)
                 .findFirst();
         if (record == null) {
             Log.d(TAG, "*new*" + " settings change: " + eventType);
             record = realm.createObject(PumpHistorySettings.class);
+            record.pumpMAC = pumpMAC;
             record.eventDate = eventDate;
             record.settingsRTC = eventRTC;
             record.settingsOFFSET = eventOFFSET;
@@ -116,6 +122,16 @@ public class PumpHistorySettings extends RealmObject implements PumpHistoryInter
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getSettingsType() {

@@ -14,8 +14,9 @@ public interface DeviceEndpoints {
     class Iob {
         final Date timestamp;
         final Float bolusiob;
-        public Iob (Date timestamp,
-             Float bolusiob) {
+
+        public Iob(Date timestamp,
+                   Float bolusiob) {
             this.timestamp = timestamp;
             this.bolusiob = bolusiob;
         }
@@ -23,6 +24,7 @@ public interface DeviceEndpoints {
 
     class Battery {
         final Short percent;
+
         public Battery(short percent) {
             this.percent = percent;
         }
@@ -32,12 +34,11 @@ public interface DeviceEndpoints {
         final Boolean bolusing;
         final Boolean suspended;
         final String status;
+
         public PumpStatus(
                 Boolean bolusing,
                 Boolean suspended,
-                String status
-
-        ) {
+                String status) {
             this.bolusing = bolusing;
             this.suspended = suspended;
             this.status = status;
@@ -53,16 +54,15 @@ public interface DeviceEndpoints {
         final PumpStatus status;
 
         public PumpInfo(String clock,
-                 BigDecimal reservoir,
-                 Iob iob,
-                 Battery battery,
-                 PumpStatus status) {
+                        BigDecimal reservoir,
+                        Iob iob,
+                        Battery battery,
+                        PumpStatus status) {
             this.clock = clock;
             this.reservoir = reservoir;
             this.iob = iob;
             this.battery = battery;
             this.status = status;
-
         }
     }
 
@@ -73,9 +73,9 @@ public interface DeviceEndpoints {
         final PumpInfo pump;
 
         public DeviceStatus(Integer uploaderBattery,
-                     String device,
-                     String created_at,
-                     PumpInfo pump) {
+                            String device,
+                            String created_at,
+                            PumpInfo pump) {
             this.uploaderBattery = uploaderBattery;
             this.device = device;
             this.created_at = created_at;
@@ -91,6 +91,3 @@ public interface DeviceEndpoints {
     Call<ResponseBody> sendDeviceStatus(@Body DeviceStatus deviceStatus);
 
 }
-
-
-

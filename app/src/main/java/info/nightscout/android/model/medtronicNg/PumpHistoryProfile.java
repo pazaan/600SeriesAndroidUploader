@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistorySender;
@@ -45,6 +46,8 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -67,33 +70,28 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.TREATMENTS)) {
-            NightscoutItem nightscoutItem = new NightscoutItem();
-            nightscoutItems.add(nightscoutItem);
-            TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
-
-            treatment.setKey600(key);
-            treatment.setCreated_at(eventDate);
+        if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.TREATMENTS)) {
+            TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
             treatment.setEventType("Note");
             treatment.setNotes("Profile updated");
         }
 
-        NightscoutItem nightscoutItem2 = new NightscoutItem();
-        nightscoutItems.add(nightscoutItem2);
-        ProfileEndpoints.Profile profile = nightscoutItem2.ack(senderACK.contains(senderID)).profile();
+        NightscoutItem nightscoutItem = new NightscoutItem();
+        nightscoutItems.add(nightscoutItem);
+        ProfileEndpoints.Profile profile = nightscoutItem.ack(senderACK.contains(senderID)).profile();
 
         TimeZone tz = TimeZone.getDefault();
         Date startdate = new Date(eventDate.getTime()); // - 90 * 24 * 60 * 60000L) ; // active from date
         String timezone = tz.getID();  // (Time Zone) - time zone local to the patient. Should be set.
 
-        if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.PROFILE_OFFSET)) startdate = new Date(eventDate.getTime() - 365 * 24 * 60 * 60000L) ; // active from date
+        if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.PROFILE_OFFSET)) startdate = new Date(eventDate.getTime() - 365 * 24 * 60 * 60000L) ; // active from date
 
         profile.setKey600(key);
         profile.setCreated_at(eventDate);
         profile.setStartDate(startdate);
         profile.setMills("" + startdate.getTime());
 
-        profile.setDefaultProfile(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN,defaultProfile - 1));
+        profile.setDefaultProfile(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN,defaultProfile - 1));
         profile.setUnits(units);
 
         Map<String, ProfileEndpoints.BasalProfile> basalProfileMap = new LinkedHashTreeMap<>();
@@ -106,19 +104,19 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         bp.carbshr = Double.toString(carbsPerHour); // (Carbs per Hour) - The number of carbs that are processed per hour. Default 20.
         bp.dia = Double.toString(insulinDuration); // (Insulin duration) - value should be the duration of insulin action to use in calculating how much insulin is left active. Default 3 hours.
         bp.delay = Double.toString(insulinDelay); // delay from action to activation for insulin? Default 20.
-        bp.carbsPerExchange = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.GRAMS_PER_EXCHANGE));
+        bp.carbsPerExchange = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.GRAMS_PER_EXCHANGE));
         bp.parseCarbRatios();
         bp.parseSensitivity();
         bp.parseTargets();
 
-        basalProfileMap.put(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 0), bp.newProfile().parseBasalPattern().makeProfile());
-        basalProfileMap.put(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 1), bp.newProfile().parseBasalPattern().makeProfile());
-        basalProfileMap.put(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 2), bp.newProfile().parseBasalPattern().makeProfile());
-        basalProfileMap.put(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 3), bp.newProfile().parseBasalPattern().makeProfile());
-        basalProfileMap.put(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 4), bp.newProfile().parseBasalPattern().makeProfile());
-        basalProfileMap.put(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 5), bp.newProfile().parseBasalPattern().makeProfile());
-        basalProfileMap.put(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 6), bp.newProfile().parseBasalPattern().makeProfile());
-        basalProfileMap.put(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 7), bp.newProfile().parseBasalPattern().makeProfile());
+        basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 0), bp.newProfile().parseBasalPattern().makeProfile());
+        basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 1), bp.newProfile().parseBasalPattern().makeProfile());
+        basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 2), bp.newProfile().parseBasalPattern().makeProfile());
+        basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 3), bp.newProfile().parseBasalPattern().makeProfile());
+        basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 4), bp.newProfile().parseBasalPattern().makeProfile());
+        basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 5), bp.newProfile().parseBasalPattern().makeProfile());
+        basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 6), bp.newProfile().parseBasalPattern().makeProfile());
+        basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 7), bp.newProfile().parseBasalPattern().makeProfile());
 
         // "Auto Mode" profile using zero rate pattern for 670G pump
         basalProfileMap.put("Auto Mode", bp.newProfile().emptyBasalPattern().makeProfile());
@@ -282,20 +280,22 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         }
     }
 
-    public static void profile(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                               String units,
-                               double insulinDuration,
-                               double insulinDelay,
-                               double carbsPerHour,
-                               byte defaultProfile,
-                               byte[] basalPatterns,
-                               byte[] carbRatios,
-                               byte[] sensitivity,
-                               byte[] targets) {
+    public static void profile(
+            PumpHistorySender pumpHistorySender, Realm realm,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            String units,
+            double insulinDuration,
+            double insulinDelay,
+            double carbsPerHour,
+            byte defaultProfile,
+            byte[] basalPatterns,
+            byte[] carbRatios,
+            byte[] sensitivity,
+            byte[] targets) {
         Log.d(TAG, "*new*" + " profile");
         // create new entry
         PumpHistoryProfile record = realm.createObject(PumpHistoryProfile.class);
-        record.key = String.format("PRO%08X", eventRTC);
+        record.key = HistoryUtils.key("PRO", eventRTC);
         record.eventDate = eventDate;
         record.profileRTC = eventRTC;
         record.profileOFFSET = eventOFFSET;
@@ -362,6 +362,16 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getProfileRTC() {

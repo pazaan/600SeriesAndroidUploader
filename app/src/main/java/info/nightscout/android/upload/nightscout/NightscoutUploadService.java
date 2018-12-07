@@ -130,8 +130,17 @@ public class NightscoutUploadService extends Service {
                 .findAll();
         Log.i(TAG, "Device status records to upload: " + statusRecords.size());
 
+        // attach additional info to the nightscout pump status pill
+        String info = pumpHistoryHandler.nightscoutInfo();
+
         pumpHistoryHandler.processSenderTTL("NS");
         List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ("NS");
+
+        // rerun the uploader if we hit the limiter for this pass
+        if (records.size() == pumpHistoryHandler.getPumpHistorySender().getSender("NS").getLimiter()) {
+            Log.i(TAG, "Upload limit hit, another pass scheduled. Worker count = " + worker);
+            worker++;
+        }
 
         int total = records.size() + statusRecords.size();
 
@@ -148,13 +157,14 @@ public class NightscoutUploadService extends Service {
                 int uploaderBatteryLevel = MasterService.getUploaderBatteryLevel();
 
                 new NightScoutUpload().doRESTUpload(
-                        pumpHistoryHandler.pumpHistorySender,
+                        pumpHistoryHandler.getPumpHistorySender(),
                         storeRealm,
                         dataStore,
                         urlSetting,
                         secretSetting,
                         uploaderBatteryLevel,
                         device,
+                        info,
                         statusRecords,
                         records);
 
@@ -172,6 +182,7 @@ public class NightscoutUploadService extends Service {
                 statNightscout.timer(timer);
                 statNightscout.settotalRecords(statNightscout.getTotalRecords() + total);
 
+                //UserLogMessage.sendN(mContext, String.format("Uploaded %s records", total));
                 UserLogMessage.sendE(mContext, String.format("Uploaded %s records [%sms]", total, timer));
 
                 Log.i(TAG, String.format("Finished upload of %s record using a REST API in %s ms", total, timer));
@@ -179,6 +190,9 @@ public class NightscoutUploadService extends Service {
             } catch (Exception e) {
                 Log.e(TAG, "ERROR uploading to Nightscout", e);
                 statNightscout.incError();
+
+                // clear the worker count and try again after the next poll
+                worker = 0;
 
                 storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override

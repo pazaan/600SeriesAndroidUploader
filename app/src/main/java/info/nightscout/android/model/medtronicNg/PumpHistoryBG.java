@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 import info.nightscout.android.R;
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
@@ -42,6 +43,8 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -74,14 +77,12 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        if (!calibration && !pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.BG_INFO))
+        if (!calibration && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.BG_INFO))
             return nightscoutItems;
 
-        NightscoutItem nightscoutItem = new NightscoutItem();
-        nightscoutItems.add(nightscoutItem);
-        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
-
-        String notes = "";
+        TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID, bgDate);
+        treatment.setEventType("BG Check");
+        treatment.setGlucoseType("Finger");
 
         BigDecimal bgl;
         String units;
@@ -92,35 +93,25 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             bgl = new BigDecimal(bg / MMOLXLFACTOR).setScale(1, BigDecimal.ROUND_HALF_UP);
             units = "mmol";
         }
-        treatment.setKey600(key);
-        treatment.setCreated_at(bgDate);
-
-        treatment.setEventType("BG Check");
-        treatment.setGlucoseType("Finger");
         treatment.setGlucose(bgl);
         treatment.setUnits(units);
 
-        //for (int i : bgContext) notes += PumpHistoryParser.BG_CONTEXT.convert(i).name() + " | ";
-
-        if (calibration && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.CALIBRATION_INFO)) {
-            long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
-            notes += "CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)";
-            nightscoutItem.update();
+        if (calibration && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.CALIBRATION_INFO)) {
+            treatment.setNotes(String.format("%s: %s %s: %s (%s)",
+                    FormatKit.getInstance().getString(R.string.info_Factor),
+                    calibrationFactor,
+                    FormatKit.getInstance().getString(R.string.info_Target),
+                    FormatKit.getInstance().formatAsGlucose(calibrationTarget, true),
+                    FormatKit.getInstance().formatSecondsAsDHMS((int) ((calibrationDate.getTime() - bgDate.getTime()) / 1000L))
+            ));
+            nightscoutItems.get(0).update();
         }
 
-        if (!notes.equals("")) treatment.setNotes(notes);
-
         // insert BG reading as CGM chart entry
-        if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.INSERT_BG_AS_CGM)) {
-
-            NightscoutItem nightscoutItem1 = new NightscoutItem();
-            nightscoutItems.add(nightscoutItem1);
-            EntriesEndpoints.Entry entry = nightscoutItem1.ack(senderACK.contains(senderID)).entry();
-
+        if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.INSERT_BG_AS_CGM)) {
+            EntriesEndpoints.Entry entry = HistoryUtils.nightscoutEntry(nightscoutItems,this, senderID, bgDate);
             entry.setKey600(key + "CGM");
             entry.setType("sgv");
-            entry.setDate(bgDate.getTime());
-            entry.setDateString(bgDate.toString());
             entry.setSgv(bg);
         }
 
@@ -131,35 +122,32 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {
         List<MessageItem> messageItems = new ArrayList<>();
 
-        String key = this.key;
         MessageItem.TYPE type;
         Date date;
         String title;
         String message;
 
-        if (calibration && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.CALIBRATION_INFO)) {
-            key = String.format("BG%08X", calibrationRTC);
+        if (calibration && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.CALIBRATION_INFO)) {
             type = MessageItem.TYPE.CALIBRATION;
             date = calibrationDate;
             title = "Calibration";
             message = String.format("%s %s %s %s",
-                    FormatKit.getInstance().getString(R.string.Factor),
+                    FormatKit.getInstance().getString(R.string.info_Factor),
                     calibrationFactor,
-                    FormatKit.getInstance().getString(R.string.Target),
-                    FormatKit.getInstance().formatAsGlucose(bg, pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS)));
+                    FormatKit.getInstance().getString(R.string.info_Target),
+                    FormatKit.getInstance().formatAsGlucose(bg, pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS)));
 
-        } else if (!senderACK.contains(senderID) && pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.BG_INFO)) {
+        } else if (!senderACK.contains(senderID) && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.BG_INFO)) {
             type = MessageItem.TYPE.BG;
             date = eventDate;
             title = "BG";
             message = String.format("%s %s",
-                    FormatKit.getInstance().getString(R.string.Finger_BG),
-                    FormatKit.getInstance().formatAsGlucose(bg, pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS)));
+                    FormatKit.getInstance().getString(R.string.info_Finger_BG),
+                    FormatKit.getInstance().formatAsGlucose(bg, pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS)));
 
         } else return messageItems;
 
         messageItems.add(new MessageItem()
-                .key(key)
                 .type(type)
                 .date(date)
                 .clock(FormatKit.getInstance().formatAsClock(date.getTime()).replace(" ", ""))
@@ -169,15 +157,18 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
         return messageItems;
     }
 
-    public static void bg(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                          boolean calibrationFlag,
-                          int bg,
-                          byte bgUnits,
-                          byte bgSource,
-                          byte bgContext,
-                          String serial) {
+    public static void bg(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            boolean calibrationFlag,
+            int bg,
+            byte bgUnits,
+            byte bgSource,
+            byte bgContext,
+            String serial) {
 
         PumpHistoryBG record = realm.where(PumpHistoryBG.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("bg", bg)
                 .greaterThan("bgRTC", eventRTC - 15 * 60)
                 .lessThan("bgRTC", eventRTC + 15 * 60)
@@ -186,6 +177,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
         if (record == null) {
             // look for a calibration
             record = realm.where(PumpHistoryBG.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("calibration", true)
                     .equalTo("calibrationFlag", false)
                     .greaterThan("calibrationRTC", eventRTC)
@@ -194,6 +186,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             if (record == null) {
                 Log.d(TAG, "*new* bg");
                 record = realm.createObject(PumpHistoryBG.class);
+                record.pumpMAC = pumpMAC;
             } else {
                 Log.d(TAG, "*update* add bg to calibration");
             }
@@ -206,8 +199,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             record.bgSource = bgSource;
             record.bgContext = new RealmList<>();
             record.serial = serial;
-            record.key = String.format("BG%08X", eventRTC);
-            //record.key = String.format("BG%08X%02X", eventRTC, bgContext);
+            record.key = HistoryUtils.key("BG", eventRTC);
             pumpHistorySender.setSenderREQ(record);
         }
 
@@ -218,19 +210,23 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
         }
     }
 
-    public static void calibration(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                   double calFactor,
-                                   int bgTarget) {
+    public static void calibration(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            double calFactor,
+            int bgTarget) {
 
         // failed calibration
         if (calFactor == 0) return;
 
         PumpHistoryBG record = realm.where(PumpHistoryBG.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("calibrationRTC", eventRTC)
                 .findFirst();
         if (record == null) {
             // look for a bg
             record = realm.where(PumpHistoryBG.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .greaterThan("bgRTC", eventRTC - 20 * 60)
                     .lessThan("bgRTC", eventRTC)
                     .equalTo("calibrationFlag", true)
@@ -239,6 +235,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             if (record == null) {
                 Log.d(TAG, "*new*" + " calibration");
                 record = realm.createObject(PumpHistoryBG.class);
+                record.pumpMAC = pumpMAC;
                 record.eventDate = eventDate;
             } else {
                 Log.d(TAG, "*update*"  + " bg with calibration");
@@ -255,6 +252,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             // update calibrations for the sensor
             // find the sensor
             RealmResults<PumpHistoryMisc> results1 = realm.where(PumpHistoryMisc.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .greaterThan("eventDate", new Date(eventDate.getTime() - 8 * 24 * 60 * 60000L))
                     .lessThan("eventDate", eventDate)
                     .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR.value())
@@ -265,6 +263,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
 
                 // find the sensor date range
                 RealmResults<PumpHistoryMisc> results2 = realm.where(PumpHistoryMisc.class)
+                        .equalTo("pumpMAC", pumpMAC)
                         .lessThan("eventDate", new Date(eventDate.getTime() + 8 * 24 * 60 * 60000L))
                         .greaterThan("eventDate", eventDate)
                         .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR.value())
@@ -279,6 +278,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
 
                 // find all the calibrations for this sensor
                 RealmResults<PumpHistoryBG> results3 = realm.where(PumpHistoryBG.class)
+                        .equalTo("pumpMAC", pumpMAC)
                         .greaterThan("eventDate", begin)
                         .lessThan("eventDate", end)
                         .equalTo("calibration", true)
@@ -347,6 +347,16 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getBgRTC() {

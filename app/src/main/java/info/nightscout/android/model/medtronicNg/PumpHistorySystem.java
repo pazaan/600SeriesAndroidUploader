@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistorySender;
@@ -32,6 +33,8 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -96,24 +99,13 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        if (senderDEL.contains(senderID)) {
-            Log.d(TAG, "TTL delete record");
-            NightscoutItem nightscoutItem = new NightscoutItem();
-            nightscoutItems.add(nightscoutItem);
-            TreatmentsEndpoints.Treatment treatment = nightscoutItem.delete().treatment();
-            treatment.setKey600(key);
+        if (HistoryUtils.nightscoutTTL(nightscoutItems,this, senderID))
             return nightscoutItems;
-        }
 
         String message = makeMessage(pumpHistorySender, senderID);
         if (message.equals("")) return nightscoutItems;
 
-        NightscoutItem nightscoutItem = new NightscoutItem();
-        nightscoutItems.add(nightscoutItem);
-        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
-
-        treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
+        TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
 
         String notes;
 
@@ -193,8 +185,8 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 break;
 
             case COMMS_PUMP_CONNECTED:
-                if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_CONNECTTED)) {
-                    int at = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_CONNECTTED_AT, "900"));
+                if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_CONNECTTED)) {
+                    int at = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_CONNECTTED_AT, "900"));
                     Log.d(TAG, STATUS.convert(status).name() + " sender=" + senderID + " eventspan=" + eventspan + " timespan=" + timespan + " pre=" + timespanPre + " at=" + at);
                     if (eventspan >= at) {
                         message = String.format("%s. %s %s %s",
@@ -207,9 +199,9 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 break;
 
             case COMMS_PUMP_LOST:
-                if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_LOST)) {
-                    int at = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_LOST_AT, "900"));
-                    int repeat = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_LOST_REPEAT, "900"));
+                if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_LOST)) {
+                    int at = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_LOST_AT, "900"));
+                    int repeat = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_LOST_REPEAT, "900"));
                     Log.d(TAG, STATUS.convert(status).name() + " sender=" + senderID + " eventspan=" + eventspan + " timespan=" + timespan + " pre=" + timespanPre + " at=" + at + " repeat=" + repeat);
                     if ((timespan >= at && timespanPre / (at > 0 ? at : 1) == 0)
                             || (repeat != 0 && timespanPre - at > 0 && (timespan - at) / repeat > (timespanPre - at) / repeat)) {
@@ -223,9 +215,9 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 break;
 
             case CNL_USB_ERROR:
-                if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_CNL_USB_ERROR)) {
-                    int at = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_CNL_USB_ERROR_AT, "0"));
-                    int repeat = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_CNL_USB_ERROR_REPEAT, "900"));
+                if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_CNL_USB_ERROR)) {
+                    int at = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_CNL_USB_ERROR_AT, "0"));
+                    int repeat = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_CNL_USB_ERROR_REPEAT, "900"));
                     Log.d(TAG, STATUS.convert(status).name() + " sender=" + senderID + " eventspan=" + eventspan + " timespan=" + timespan + " pre=" + timespanPre + " at=" + at + " repeat=" + repeat);
                     if ((timespan >= at && timespanPre / (at > 0 ? at : 1) == 0)
                             || (repeat != 0 && timespanPre - at > 0 && (timespan - at) / repeat > (timespanPre - at) / repeat)) {
@@ -237,9 +229,9 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 break;
 
             case PUMP_DEVICE_ERROR:
-                if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_DEVICE_ERROR)) {
-                    int at = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_DEVICE_ERROR_AT, "0"));
-                    int repeat = Integer.parseInt(pumpHistorySender.senderVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_DEVICE_ERROR_REPEAT, "600"));
+                if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_DEVICE_ERROR)) {
+                    int at = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_DEVICE_ERROR_AT, "0"));
+                    int repeat = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.SYSTEM_PUMP_DEVICE_ERROR_REPEAT, "600"));
                     if ((timespan >= at && timespanPre / (at > 0 ? at : 1) == 0)
                             || (repeat != 0 && timespanPre - at > 0 && (timespan - at) / repeat > (timespanPre - at) / repeat)) {
                         message = String.format("%s. %s.",
@@ -250,7 +242,7 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 break;
 
             case UPLOADER_BATTERY_LOW:
-                if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY_LOW)
+                if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY_LOW)
                         && data != null && data.size() > 0) {
                     message = String.format("%s %s. %s",
                             "Uploader battery at",
@@ -260,7 +252,7 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 break;
 
             case UPLOADER_BATTERY_VERYLOW:
-                if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY_VERY_LOW)
+                if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY_VERY_LOW)
                         && data != null && data.size() > 0) {
                     message = String.format("%s %s. %s",
                             "Uploader battery at",
@@ -270,13 +262,13 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 break;
 
             case UPLOADER_BATTERY_FULL:
-                if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY_CHARGED)) {
+                if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY_CHARGED)) {
                     message =  "Uploader battery fully charged";
                 }
                 break;
 
             case UPLOADER_BATTERY:
-                if (pumpHistorySender.senderOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY)
+                if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.SYSTEM_UPLOADER_BATTERY)
                         && data != null && data.size() > 0) {
                     message = String.format("%s %s.",
                             "Uploader battery at",
@@ -398,5 +390,15 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 }

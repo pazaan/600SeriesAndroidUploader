@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.history.PumpHistorySender;
+import info.nightscout.android.medtronic.exception.IntegrityException;
 import info.nightscout.android.upload.nightscout.EntriesEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
@@ -31,6 +33,8 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -65,63 +69,86 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        int sgvNS = sgv;
-        if (sgvNS == 0) {
-            if (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_NEEDED.equals(sensorException))
-                sgvNS = NS_ERROR.SENSOR_NOT_CALIBRATED.value;
-            else if (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CHANGE_SENSOR_ERROR.equals(sensorException))
-                sgvNS = NS_ERROR.SENSOR_NOT_ACTIVE.value;
-            else if (PumpHistoryParser.CGM_EXCEPTION.SENSOR_END_OF_LIFE.equals(sensorException))
-                sgvNS = NS_ERROR.SENSOR_NOT_ACTIVE.value;
+        NS_TREND trend = cgmTrend != null
+                ? NS_TREND.valueOf(cgmTrend)
+                : NS_TREND.NONE; // setting the trend to NONE in NS shows symbol: <">
+
+        int sgv = this.sgv;
+
+        if (!estimate) {
+
+            switch (PumpHistoryParser.CGM_EXCEPTION.convert(sensorException)) {
+                case SENSOR_CAL_NEEDED:
+                    trend = NS_TREND.NOT_COMPUTABLE;
+                    sgv = NS_ERROR.SENSOR_NOT_CALIBRATED.value;
+                    break;
+                case SENSOR_CHANGE_CAL_ERROR:
+                case SENSOR_CHANGE_SENSOR_ERROR:
+                case SENSOR_END_OF_LIFE:
+                    trend = NS_TREND.NOT_COMPUTABLE;
+                    sgv = NS_ERROR.SENSOR_NOT_ACTIVE.value;
+                    break;
+                case SENSOR_READING_LOW:
+                    trend = NS_TREND.RATE_OUT_OF_RANGE;
+                    sgv = 40;
+                    break;
+                case SENSOR_READING_HIGH:
+                    trend = NS_TREND.RATE_OUT_OF_RANGE;
+                    sgv = 400;
+                    break;
+                case SENSOR_CAL_PENDING:
+                case SENSOR_INIT:
+                    trend = NS_TREND.NOT_COMPUTABLE;
+                    sgv = NS_ERROR.NO_ANTENNA.value;
+                    break;
+            }
+
+        } else {
+            // limit range for NS as it uses some values as flags
+            if (sgv < 40) sgv = 40;
+            else if (sgv > 400) sgv = 400;
         }
 
-        if (sgvNS > 0) {
-            NightscoutItem nightscoutItem = new NightscoutItem();
-            nightscoutItems.add(nightscoutItem);
-            EntriesEndpoints.Entry entry = nightscoutItem.ack(senderACK.contains(senderID)).entry();
-
-            entry.setKey600(key);
+        if (sgv > 0) {
+            EntriesEndpoints.Entry entry = HistoryUtils.nightscoutEntry(nightscoutItems, this, senderID);
             entry.setType("sgv");
-            entry.setDate(eventDate.getTime());
-            entry.setDateString(eventDate.toString());
-
-            entry.setSgv(sgvNS);
-
-            if (estimate)
-                entry.setDirection(NS_TREND.NONE.string()); // setting the trend to NONE in NS shows symbol: <">
-            else if (cgmTrend != null)
-                entry.setDirection(NS_TREND.valueOf(cgmTrend).string());
+            entry.setSgv(sgv);
+            entry.setDirection(trend.string());
         }
 
         return nightscoutItems;
     }
 
-    public static void cgmFromHistory(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                             int sgv,
-                             double isig,
-                             double vctr,
-                             double rateOfChange,
-                             byte sensorStatus,
-                             byte readingStatus,
-                             boolean backfilledData,
-                             boolean settingsChanged,
-                             boolean noisyData,
-                             boolean discardData,
-                             boolean sensorError,
-                             byte sensorException) {
+    public static void cgmFromHistory(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int sgv,
+            double isig,
+            double vctr,
+            double rateOfChange,
+            byte sensorStatus,
+            byte readingStatus,
+            boolean backfilledData,
+            boolean settingsChanged,
+            boolean noisyData,
+            boolean discardData,
+            boolean sensorError,
+            byte sensorException) throws IntegrityException {
 
         PumpHistoryCGM record = realm.where(PumpHistoryCGM.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("cgmRTC", eventRTC)
                 .findFirst();
+
         if (record == null) {
             // create new entry
             record = realm.createObject(PumpHistoryCGM.class);
-            record.key = String.format("CGM%08X", eventRTC);
+            record.pumpMAC = pumpMAC;
+            record.key = HistoryUtils.key("CGM", eventRTC);
             record.history = true;
             record.eventDate = eventDate;
             record.cgmRTC = eventRTC;
             record.cgmOFFSET = eventOFFSET;
-            record.sgv = sgv;
             record.isig = isig;
             record.vctr = vctr;
             record.sensorStatus = sensorStatus;
@@ -132,47 +159,79 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
             record.noisyData = noisyData;
             record.discardData = discardData;
             record.sensorError = sensorError;
-            record.sensorException = sensorException;
-            if (sgv > 0) pumpHistorySender.setSenderREQ(record);
+            sgv(record, sgv, null, sensorException);
+            pumpHistorySender.setSenderREQ(record);
+        }
 
-        } else if (!record.history) {
-            // update the entry
-            record.history = true;
-            record.isig = isig;
-            record.vctr = vctr;
-            record.sensorStatus = sensorStatus;
-            record.readingStatus = readingStatus;
-            record.rateOfChange = rateOfChange;
-            record.backfilledData = backfilledData;
-            record.settingsChanged = settingsChanged;
-            record.noisyData = noisyData;
-            record.discardData = discardData;
-            record.sensorError = sensorError;
-            record.sensorException = sensorException;
+        else {
+            HistoryUtils.integrity(record, eventDate);
+            if (!record.history) {
+                // update the entry
+                record.history = true;
+                record.isig = isig;
+                record.vctr = vctr;
+                record.sensorStatus = sensorStatus;
+                record.readingStatus = readingStatus;
+                record.rateOfChange = rateOfChange;
+                record.backfilledData = backfilledData;
+                record.settingsChanged = settingsChanged;
+                record.noisyData = noisyData;
+                record.discardData = discardData;
+                record.sensorError = sensorError;
+                record.sensorException = sensorException;
+            }
         }
     }
 
-    public static void cgmFromStatus(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                           int sgv,
-                           byte sensorException,
-                           String trend) {
+    public static void cgmFromStatus(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int sgv,
+            byte sensorException,
+            String trend) throws IntegrityException {
 
         PumpHistoryCGM record = realm.where(PumpHistoryCGM.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("cgmRTC", eventRTC)
                 .findFirst();
+
         if (record == null) {
             // create new entry
             record = realm.createObject(PumpHistoryCGM.class);
-            record.key = String.format("CGM%08X", eventRTC);
+            record.pumpMAC = pumpMAC;
+            record.key = HistoryUtils.key("CGM", eventRTC);
             record.history = false;
             record.eventDate = eventDate;
             record.cgmRTC = eventRTC;
             record.cgmOFFSET = eventOFFSET;
-            record.sgv = sgv;
-            record.sensorException = sensorException;
-            record.cgmTrend = trend;
+            sgv(record, sgv, trend, sensorException);
             pumpHistorySender.setSenderREQ(record);
         }
+
+        else HistoryUtils.integrity(record, eventDate);
+    }
+
+    private static void sgv(PumpHistoryCGM record, int sgv, String trend, byte sensorException) {
+        // 600 pumps produce a exception for low/high readings but no actual sgv
+        // it will show 'below 40 / 2.2' or 'above 400 / 22.2' on the pump
+        // for continuity and graph visibility we set
+        // reading low: <= 40 mg/dl (2.2 mmol) as 40
+        // reading high: >= 400 mg/dl (22.2 mmol) as 400
+        if (sgv == 0) {
+            switch (PumpHistoryParser.CGM_EXCEPTION.convert(sensorException)) {
+                case SENSOR_READING_LOW:
+                    trend = NS_TREND.RATE_OUT_OF_RANGE.name();
+                    sgv = 40;
+                    break;
+                case SENSOR_READING_HIGH:
+                    trend = NS_TREND.RATE_OUT_OF_RANGE.name();
+                    sgv = 400;
+                    break;
+            }
+        }
+        record.sgv = sgv;
+        record.cgmTrend = trend;
+        record.sensorException = sensorException;
     }
 
     public enum NS_TREND {
@@ -277,6 +336,16 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public boolean isHistory() {

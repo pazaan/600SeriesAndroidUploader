@@ -28,6 +28,11 @@ repositories {
     maven { url "https://jitpack.io" }
 }
 
+// change dev to false for release version (release uses the generated version name and code)
+def dev = true
+def devName = "arecibo 0.7.0 dev"
+def devCode = "0"
+
 def generateVersionCode() {
     // We need to get the number of releases directly from GitHub, since Travis
     // does a "git clone --depth=50", meaning we don't get all the tags locally.
@@ -77,8 +82,8 @@ android {
         applicationId "info.nightscout.android"
         minSdkVersion 14
         targetSdkVersion 28
-        versionName generateVersionName()
-        versionCode generateVersionCode()
+        versionName = dev ? devName : generateVersionName()
+        versionCode = dev ? devCode : generateVersionCode()
         buildConfigField "String", "BUGFENDER_API_KEY", getBugfenderApiKey()
     }
 

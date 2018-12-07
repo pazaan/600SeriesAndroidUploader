@@ -8,6 +8,7 @@ import android.util.Pair;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +25,7 @@ import info.nightscout.android.medtronic.Stats;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.medtronic.exception.ChecksumException;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.exception.IntegrityException;
 import info.nightscout.android.medtronic.exception.UnexpectedMessageException;
 import info.nightscout.android.medtronic.message.ReadHistoryResponseMessage;
 import info.nightscout.android.model.medtronicNg.HistorySegment;
@@ -57,7 +59,7 @@ public class PumpHistoryHandler {
     private static final String TAG = PumpHistoryHandler.class.getSimpleName();
 
     private final static long HISTORY_STALE_MS = 120 * 24 * 60 * 60000L;
-    private final static long HISTORY_REQUEST_LIMITER_MS = 4 * 24 * 60 * 60000L;
+    private final static long HISTORY_REQUEST_LIMITER_MS = 7 * 24 * 60 * 60000L;
 
     private final static byte HISTORY_PUMP = 2;
     private final static byte HISTORY_CGM = 3;
@@ -71,7 +73,7 @@ public class PumpHistoryHandler {
 
     private List<DBitem> historyDB;
 
-    public PumpHistorySender pumpHistorySender;
+    private PumpHistorySender pumpHistorySender;
 
     private DateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US);
 
@@ -105,6 +107,10 @@ public class PumpHistoryHandler {
         Stats.open();
     }
 
+    public PumpHistorySender getPumpHistorySender() {
+        return pumpHistorySender;
+    }
+
     public void close() {
         Log.d(TAG,"close history handler");
         Stats.close();
@@ -133,7 +139,7 @@ public class PumpHistoryHandler {
         PumpHistorySender.Sender sender = pumpHistorySender.getSender(senderID);
 
         long now = System.currentTimeMillis();
-        Date limitDate = new Date(now - sender.process);
+        Date limitDate = new Date(now - sender.getProcess());
 
         StringBuilder log = new StringBuilder();
         StringBuilder logdb = new StringBuilder();
@@ -141,9 +147,11 @@ public class PumpHistoryHandler {
 
         List<PumpHistoryInterface> records = new ArrayList<>();
 
+        List<String> request = sender.getRequest();
+
         for (DBitem dBitem : historyDB) {
 
-            if (sender.request.contains(dBitem.historydb)) {
+            if (request.contains(dBitem.historydb)) {
 
                 RealmResults<PumpHistoryInterface> requested = dBitem.results.where()
                         .greaterThanOrEqualTo("eventDate", limitDate)
@@ -168,10 +176,10 @@ public class PumpHistoryHandler {
         });
 
         // limiter
-        if (records.size() > sender.limiter)
-            records = records.subList(records.size() - sender.limiter, records.size());
+        if (records.size() > sender.getLimiter())
+            records = records.subList(records.size() - sender.getLimiter(), records.size());
 
-        log.append(String.format(" limiter: %s final: %s", sender.limiter, records.size()));
+        log.append(String.format(" limiter: %s final: %s", sender.getLimiter(), records.size()));
         log.append(logdb.toString());
         Log.d(TAG, log.toString());
 
@@ -211,7 +219,7 @@ public class PumpHistoryHandler {
 
         PumpHistorySender.Sender sender = pumpHistorySender.getSender(senderID);
 
-        List<Pair<String, Long>> ttl = sender.ttl;
+        List<Pair<String, Long>> ttl = sender.getTtl();
 
         final List<PumpHistoryInterface> recordsToDelete = new ArrayList<>();
         final List<PumpHistoryInterface> recordsToUndelete = new ArrayList<>();
@@ -298,6 +306,30 @@ public class PumpHistoryHandler {
                 }
 
                 Log.d(TAG, "stale date: " + dateFormatter.format(oldest) + " deleted: " + count + " history records");
+            }
+        });
+    }
+
+    public void reset() {
+        historyRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
+
+                int count = 0;
+                for (DBitem dBitem : historyDB) {
+                    RealmResults<PumpHistoryInterface> records = dBitem.results.where().findAll();
+                    count += records.size();
+                    records.deleteAllFromRealm();
+                }
+
+                Log.d(TAG, "reset history database: deleted " + count + " history records");
+
+                final RealmResults<HistorySegment> segment = historyRealm
+                        .where(HistorySegment.class)
+                        .findAll();
+                segment.deleteAllFromRealm();
+
+                Log.d(TAG, "reset history segments: deleted " + segment.size() + " segment records");
             }
         });
     }
@@ -430,13 +462,13 @@ public class PumpHistoryHandler {
 
     public void profile(final MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
 
-        UserLogMessage.send(mContext, R.string.history_reading_pump_basal);
+        UserLogMessage.send(mContext, R.string.ul_history_reading_pump_basal);
         final byte[] basalPatterns = cnlReader.getBasalPatterns();
-        UserLogMessage.send(mContext, R.string.history_reading_carb);
+        UserLogMessage.send(mContext, R.string.ul_history_reading_carb);
         final byte[] carbRatios = cnlReader.getBolusWizardCarbRatios();
-        UserLogMessage.send(mContext, R.string.history_reading_sensitivity);
+        UserLogMessage.send(mContext, R.string.ul_history_reading_sensitivity);
         final byte[] sensitivity = cnlReader.getBolusWizardSensitivity();
-        UserLogMessage.send(mContext, R.string.history_reading_targets);
+        UserLogMessage.send(mContext, R.string.ul_history_reading_targets);
         final byte[] targets = cnlReader.getBolusWizardTargets();
 
         // user settings
@@ -484,7 +516,7 @@ public class PumpHistoryHandler {
             }
         });
 
-        UserLogMessage.send(mContext, R.string.history_sending_profile);
+        UserLogMessage.send(mContext, R.string.ul_history_sending_profile);
 
         // update NS historical treatments when pattern naming has changed
 
@@ -497,7 +529,7 @@ public class PumpHistoryHandler {
 
             if (results.size() > 0) {
                 Log.d(TAG, "NameBasalPatternChanged: Found " + results.size() + " pattern switch treatments to update");
-                UserLogMessage.send(mContext, R.string.history_pattern_names_changed);
+                UserLogMessage.send(mContext, R.string.ul_history_pattern_names_changed);
 
                 historyRealm.executeTransaction(new Realm.Transaction() {
                     @Override
@@ -533,7 +565,7 @@ public class PumpHistoryHandler {
 
             if (results.size() > 0) {
                 Log.d(TAG, "GramsPerExchangeChanged: Found " + results.size() + " carb/bolus treatments to update");
-                UserLogMessage.send(mContext, R.string.history_grams_changed);
+                UserLogMessage.send(mContext, R.string.ul_history_grams_changed);
 
                 historyRealm.executeTransaction(new Realm.Transaction() {
                     @Override
@@ -555,17 +587,21 @@ public class PumpHistoryHandler {
         }
     }
 
-    public void cgm(final PumpStatusEvent pumpRecord) {
+    IntegrityException integrityException;
+
+    public void cgm(final PumpStatusEvent pumpRecord) throws IntegrityException {
 
         if (!pumpRecord.isCgmActive()) return;
 
         boolean status = true;
         boolean backfill = false;
         boolean estimate = false;
+        boolean isig = false;
 
         final Date date = pumpRecord.getCgmDate();
         final int rtc = pumpRecord.getCgmRTC();
         final int offset = pumpRecord.getCgmOFFSET();
+        final long pumpMAC = pumpRecord.getPumpMAC();
         final int sgv = pumpRecord.getSgv();
         final String trend = pumpRecord.getCgmTrendString();
         final byte exception = pumpRecord.getCgmExceptionType();
@@ -592,45 +628,65 @@ public class PumpHistoryHandler {
 
                 // estimate sgv?
                 if (dataStore.isSysEnableEstimateSGV()
-                        && (
-                        (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_NEEDED.equals(exception)
-                                || PumpHistoryParser.CGM_EXCEPTION.SENSOR_END_OF_LIFE.equals(exception)
-                                || (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_PENDING.equals(exception) && sgv == 0)
-                        ) && pumpHistoryRecency() < 6 * 60 * 60000L)
+                        && (PumpHistoryParser.CGM_EXCEPTION.SENSOR_END_OF_LIFE.equals(exception)
+                        || PumpHistoryParser.CGM_EXCEPTION.SENSOR_CHANGE_SENSOR_ERROR.equals(exception)
+                        || PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_NEEDED.equals(exception)
+                        || (PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_PENDING.equals(exception) && sgv == 0))
                         ) {
 
-                    RealmResults<PumpHistoryMisc> miscResults = historyRealm
-                            .where(PumpHistoryMisc.class)
-                            .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR.value())
-                            .sort("eventDate", Sort.DESCENDING)
-                            .findAll();
-                    if (miscResults.size() > 0) {
 
-                        // current sensor lifetime
-                        Date sensorDate = miscResults.first().getEventDate();
-                        Date sensorDateEnd = new Date(System.currentTimeMillis());
+                    if (pumpHistoryRecency() <= 6 * 60 * 60000L) {
 
-                        // current sensor calibrations
-                        RealmResults<PumpHistoryBG> bgResults = historyRealm
-                                .where(PumpHistoryBG.class)
-                                .equalTo("calibration", true)
-                                .greaterThanOrEqualTo("eventDate", sensorDate)
-                                .lessThan("eventDate", sensorDateEnd)
+                        RealmResults<PumpHistoryMisc> miscResults = historyRealm
+                                .where(PumpHistoryMisc.class)
+                                .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR.value())
                                 .sort("eventDate", Sort.DESCENDING)
                                 .findAll();
-                        if (bgResults.size() > 0) {
-                            status = false;
-                            backfill = true;
-                            estimate = true;
-                            ((StatPoll) Stats.getInstance().readRecord(StatPoll.class)).incHistoryReqEstimate();
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
-                                    String.format("{id;%s}: estimate sgv", R.string.history_text));
+                        if (miscResults.size() > 0) {
+
+                            // current sensor lifetime
+                            Date sensorDate = miscResults.first().getEventDate();
+                            Date sensorDateEnd = new Date(System.currentTimeMillis());
+
+                            // current sensor calibrations
+                            RealmResults<PumpHistoryBG> bgResults = historyRealm
+                                    .where(PumpHistoryBG.class)
+                                    .equalTo("calibration", true)
+                                    .greaterThanOrEqualTo("eventDate", sensorDate)
+                                    .lessThan("eventDate", sensorDateEnd)
+                                    .sort("eventDate", Sort.DESCENDING)
+                                    .findAll();
+                            if (bgResults.size() > 0) {
+                                status = false;
+                                backfill = true;
+                                estimate = true;
+                                ((StatPoll) Stats.getInstance().readRecord(StatPoll.class)).incHistoryReqEstimate();
+                                UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                        String.format("{id;%s}: estimate sgv", R.string.ul_history_heading));
+                            }
+
+                        } else {
+                            UserLogMessage.sendE(mContext,
+                                    String.format("sgv estimate not available: no sensor change event found"));
                         }
+
+                    } else {
+                        UserLogMessage.sendE(mContext,
+                                String.format("sgv estimate not available: history recency > 6 hours"));
                     }
                 }
 
+                if (dataStore.isSysEnableReportISIG() && sgv == 0) {
+                    if (!estimate)
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: report isig", R.string.ul_history_heading));
+                    backfill = true;
+                    isig = true;
+                }
+
                 // missed readings?
-                else if (!dataStore.isRequestCgmHistory() && date.getTime() - cgmResults.first().getEventDate().getTime() > 9 * 60 * 1000L) {
+                if (!estimate & !isig & !dataStore.isRequestCgmHistory()
+                        && date.getTime() - cgmResults.first().getEventDate().getTime() > 9 * 60 * 1000L) {
 
                     // ignore missed readings during the warm-up phase
                     if (!PumpHistoryParser.CGM_EXCEPTION.SENSOR_INIT.equals(exception) &&
@@ -638,25 +694,35 @@ public class PumpHistoryHandler {
                         backfill = true;
                         ((StatPoll) Stats.getInstance().readRecord(StatPoll.class)).incHistoryReqBackfill();
                         UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
-                                String.format("{id;%s}: {id;%s}", R.string.history_text, R.string.history_cgm_backfill));
+                                String.format("{id;%s}: {id;%s}", R.string.ul_history_heading, R.string.ul_history_cgm_backfill));
                     }
 
                 }
             }
         }
 
+        //backfill = true;
+        //isig = true;
+
         if (status) {
             // push the current sgv from status (always have latest sgv available even if there are comms errors after this)
             historyRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(@NonNull Realm realm) {
-                    PumpHistoryCGM.cgmFromStatus(pumpHistorySender, historyRealm, date, rtc, offset,
-                            sgv,
-                            exception,
-                            trend
-                    );
+                    try {
+                        PumpHistoryCGM.cgmFromStatus(
+                                pumpHistorySender, historyRealm, pumpMAC,
+                                date, rtc, offset,
+                                sgv,
+                                exception,
+                                trend
+                        );
+                    } catch (IntegrityException e) {
+                        integrityException = e;
+                    }
                 }
             });
+            if (integrityException != null) throw integrityException;
         }
 
         if (backfill) {
@@ -677,6 +743,14 @@ public class PumpHistoryHandler {
             });
         }
 
+        if (isig) {
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
+                    dataStore.setRequestIsig(true);
+                }
+            });
+        }
     }
 
     public void estimateSgv() {
@@ -717,11 +791,15 @@ public class PumpHistoryHandler {
 
         RealmResults<PumpHistoryCGM> cgmResults = historyRealm
                 .where(PumpHistoryCGM.class)
+                .greaterThanOrEqualTo("eventDate", bgDate)
+                .lessThan("eventDate", bgDateEnd)
                 .equalTo("history", true)
                 .equalTo("discardData", false)
                 .equalTo("noisyData", false)
-                .greaterThanOrEqualTo("eventDate", bgDate)
-                .lessThan("eventDate", bgDateEnd)
+                .notEqualTo("sensorException", PumpHistoryParser.CGM_EXCEPTION.SENSOR_INIT.value())
+                .notEqualTo("sensorException", PumpHistoryParser.CGM_EXCEPTION.SENSOR_ERROR.value())
+                .notEqualTo("sensorException", PumpHistoryParser.CGM_EXCEPTION.SENSOR_READING_HIGH.value())
+                .notEqualTo("sensorException", PumpHistoryParser.CGM_EXCEPTION.SENSOR_READING_LOW.value())
                 .sort("eventDate", Sort.ASCENDING)
                 .findAll();
         if (cgmResults.size() == 0) return;
@@ -753,7 +831,6 @@ public class PumpHistoryHandler {
         int t = 0;
 
         DateFormat dfLog = new SimpleDateFormat("MM/dd HH:mm", Locale.US);
-        DecimalFormat dfNumber = new DecimalFormat("0.00");
 
         for (int i = 0; i < cgmResults.size(); i++) {
 
@@ -765,7 +842,7 @@ public class PumpHistoryHandler {
                                 bgpos,
                                 dfLog.format(bgResults.get(bgpos).getEventDate()),
                                 bgResults.get(bgpos).getBg(),
-                                FormatKit.getInstance().formatAsGlucoseMMOL(bgResults.get(bgpos).getBg(), false),
+                                FormatKit.getInstance().formatAsGlucoseMMOL(bgResults.get(bgpos).getBg(), false, 1),
                                 bgResults.get(bgpos).getCalibrationFactor()
                         ));
                     }
@@ -805,7 +882,7 @@ public class PumpHistoryHandler {
                 Log.d(TAG, String.format("### SGV [%s] %s | %s / %s | %s %s %s %s",
                         i, dfLog.format(cgmResults.get(i).getEventDate()),
                         (int) Math.round(sgv),
-                        FormatKit.getInstance().formatAsGlucoseMMOL((int) Math.round(sgv), false),
+                        FormatKit.getInstance().formatAsGlucoseMMOL((int) Math.round(sgv), false, 1),
                         t, factor, isig, x
                 ));
             }
@@ -845,8 +922,8 @@ public class PumpHistoryHandler {
                                 String.format("t+%s f: %s o: %s x: %s",
                                         t,
                                         factor,
-                                        dfNumber.format(offsetAvg),
-                                        dfNumber.format(x)
+                                        FormatKit.getInstance().formatAsDecimal(offsetAvg, 2),
+                                        FormatKit.getInstance().formatAsDecimal(x, 2)
                                 ));
                     }
                 }
@@ -871,28 +948,171 @@ public class PumpHistoryHandler {
     }
 
     public void isig() {
+        storeRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
+                dataStore.setRequestIsig(false);
+            }
+        });
+
         RealmResults<PumpHistoryCGM> cgmResults = historyRealm
                 .where(PumpHistoryCGM.class)
-                .sort("eventDate", Sort.ASCENDING)
+                .sort("eventDate", Sort.DESCENDING)
                 .findAll();
+
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+        df.setMinimumFractionDigits(1);
+        df.setMaximumFractionDigits(2);
+
+        StringBuilder isig = new StringBuilder("isig:");
+        StringBuilder roc = new StringBuilder("");
         if (cgmResults.size() > 0) {
-            UserLogMessage.send(mContext,
-                    String.format("isig: %s vctr: %s roc: %s s: %s/%s %s%s%s%s%s",
-                            cgmResults.last().getIsig(),
-                            cgmResults.last().getVctr(),
-                            cgmResults.last().getRateOfChange(),
-                            cgmResults.last().getSensorStatus(),
-                            cgmResults.last().getReadingStatus(),
-                            cgmResults.last().isNoisyData() ? "N" : "",
-                            cgmResults.last().isDiscardData() ? "D" : "",
-                            cgmResults.last().isSensorError() ? "E" : "",
-                            cgmResults.last().isBackfilledData() ? "B" : "",
-                            cgmResults.last().isSettingsChanged() ? "S" : ""
-                    ));
+            isig.append(" " + df.format(cgmResults.get(0).getIsig()));
+        }
+        if (cgmResults.size() > 1) {
+            isig.append(" " + df.format(cgmResults.get(1).getIsig()));
+            roc.append(" " + df.format(cgmResults.get(0).getIsig() - cgmResults.get(1).getIsig()) + "\\5m");
+        }
+        if (cgmResults.size() > 2) {
+            isig.append(" " + df.format(cgmResults.get(2).getIsig()));
+            roc.append(" " + df.format(cgmResults.get(0).getIsig() - cgmResults.get(2).getIsig()) + "\\10m");
+        }
+        if (cgmResults.size() > 3) {
+            isig.append(" " + df.format(cgmResults.get(3).getIsig()));
+        }
+        if (cgmResults.size() > 4) {
+            isig.append(" " + df.format(cgmResults.get(4).getIsig()));
+        }
+        UserLogMessage.send(mContext, UserLogMessage.TYPE.ISIG, isig.toString());
+
+        int period = 5;
+
+        if (cgmResults.size() > period) {
+
+            // Kalman Filter
+            // X = K * Z + (1 - K) * X1
+            // X = current estimation
+            // X1 = previous estimation
+            // Z = current measurement
+            // K = Kalman gain
+
+            double k = 0.5;
+            double z = 0;
+            double x = 0;
+            double x1 = 0;
+            double p = 0;
+            double p1 = 0;
+            double sum = 0;
+
+            StringBuilder log = new StringBuilder();
+
+            for (int i = 0; i <= period; i++) {
+                p = cgmResults.get(period - i).getIsig();
+                if (i >= 1) z = p - p1;
+                if (i >= 2) x = (k * z) + (1 - k) * x1;
+                else x = z;
+                p1 = p;
+                x1 = x;
+                sum = sum + z;
+                log.append(" " + i + "=" + df.format(x) + " " + df.format(p) + " (" + df.format(z) + ")");
+            }
+
+            Log.d("TEST", "p=" + period + " x=" + df.format(x) + " a=" + df.format(sum / period) + " *** " + log.toString());
+
+            //roc.append(" " + df.format(sum / period) + "\\a " + df.format(x) + "\\k");
+            roc.append(" " + df.format(x) + "\\k");
+
+            if (x <= -2 || x >= 2) roc.insert(0, "unstable:");
+            else if (x >= .8) roc.insert(0, "rising fast:");
+            else if (x >= .3) roc.insert(0, "rising:");
+            else if (x <= -.8) roc.insert(0, "falling fast:");
+            else if (x <= -.3) roc.insert(0, "falling:");
+            else roc.insert(0, "steady:");
+
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.ISIG, roc.toString());
         }
     }
 
-    public void update(MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public String isigString() {
+        RealmResults<PumpHistoryCGM> cgmResults = historyRealm
+                .where(PumpHistoryCGM.class)
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
+        df.setMinimumFractionDigits(1);
+        df.setMaximumFractionDigits(2);
+
+        StringBuilder isig = new StringBuilder("");
+        if (cgmResults.size() > 0) {
+            isig.append(df.format(cgmResults.get(0).getIsig()));
+        }
+        if (cgmResults.size() > 1) {
+            isig.append(" " + df.format(cgmResults.get(1).getIsig()));
+        }
+        if (cgmResults.size() > 2) {
+            isig.append(" " + df.format(cgmResults.get(2).getIsig()));
+        }
+
+        int period = 5;
+
+        if (cgmResults.size() > period) {
+            double k = 0.5;
+            double z = 0;
+            double x = 0;
+            double x1 = 0;
+            double p = 0;
+            double p1 = 0;
+            double sum = 0;
+
+            for (int i = 0; i <= period; i++) {
+                p = cgmResults.get(period - i).getIsig();
+                if (i >= 1) z = p - p1;
+                if (i >= 2) x = (k * z) + (1 - k) * x1;
+                else x = z;
+                p1 = p;
+                x1 = x;
+                sum = sum + z;
+            }
+
+            // stability
+            if (Math.abs(x) >= 3) isig.insert(0, ">< ");
+            else if (x >= .8) isig.insert(0, "++ ");
+            else if (x >= .3) isig.insert(0, "+ ");
+            else if (x <= -.8) isig.insert(0, "-- ");
+            else if (x <= -.3) isig.insert(0, "- ");
+            else if (Math.abs(x) >= 1) isig.insert(0, "= ");
+            else isig.insert(0, "== ");
+        }
+
+        return isig.toString();
+    }
+
+    // extra info for the nightscout pump status pill
+    // when the experimental features are in use
+    public String nightscoutInfo() {
+        String info = "";
+        boolean estimate = dataStore.isSysEnableEstimateSGV();
+        boolean isig = dataStore.isSysEnableReportISIG();
+        if (estimate || isig) {
+            RealmResults<PumpHistoryCGM> cgmResults = historyRealm
+                    .where(PumpHistoryCGM.class)
+                    .sort("eventDate", Sort.ASCENDING)
+                    .findAll();
+            if (cgmResults.size() > 0 && cgmResults.last().isHistory()) {
+                if (estimate && cgmResults.last().isEstimate())
+                    info = isig ? "*E " + isigString() : "*E";
+                else if (isig
+                        && PumpHistoryParser.CGM_EXCEPTION.convert(cgmResults.last().getSensorException())
+                        != PumpHistoryParser.CGM_EXCEPTION.NA)
+                    info = isigString();
+            }
+        }
+        //return isigString();
+        return info;
+    }
+
+    public void update(MedtronicCnlReader cnlReader) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException, IntegrityException {
         long newest = cnlReader.getSessionDate().getTime();
         long oldest = newest - HISTORY_STALE_MS;
 
@@ -911,10 +1131,11 @@ public class PumpHistoryHandler {
                     dataStore.setRequestCgmHistory(false);
                 }
             });
-            if (dataStore.isSysEnableCgmHistory()) updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, true, "CGM history:", mContext.getString(R.string.history_read_cgm));
+            if (dataStore.isSysEnableCgmHistory()) updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, true, "CGM history:", mContext.getString(R.string.ul_history_read_cgm));
 
             // process sgv estimates now as cgm data is available, avoids any comms errors after this
             if (dataStore.isRequestEstimate()) estimateSgv();
+            if (dataStore.isRequestIsig()) isig();
 
             // clear the request flag now as segment marker will get added
             storeRealm.executeTransaction(new Realm.Transaction() {
@@ -923,7 +1144,7 @@ public class PumpHistoryHandler {
                     dataStore.setRequestPumpHistory(false);
                 }
             });
-            if (dataStore.isSysEnablePumpHistory()) updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", mContext.getString(R.string.history_read_pump));
+            if (dataStore.isSysEnablePumpHistory()) updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", mContext.getString(R.string.ul_history_read_pump));
 
         } else {
 
@@ -934,7 +1155,7 @@ public class PumpHistoryHandler {
                     dataStore.setRequestPumpHistory(false);
                 }
             });
-            if (dataStore.isSysEnablePumpHistory()) updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", mContext.getString(R.string.history_read_pump));
+            if (dataStore.isSysEnablePumpHistory()) updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", mContext.getString(R.string.ul_history_read_pump));
 
             // clear the request flag now as segment marker will get added
             storeRealm.executeTransaction(new Realm.Transaction() {
@@ -943,14 +1164,14 @@ public class PumpHistoryHandler {
                     dataStore.setRequestCgmHistory(false);
                 }
             });
-            if (dataStore.isSysEnableCgmHistory()) updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, false, "CGM history:", mContext.getString(R.string.history_read_cgm));
+            if (dataStore.isSysEnableCgmHistory()) updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, false, "CGM history:", mContext.getString(R.string.ul_history_read_cgm));
         }
 
         records();
     }
 
     private void updateHistorySegments(MedtronicCnlReader cnlReader, int days, final long oldest, final long newest, final byte historyType, boolean pullHistory, String logTAG, String userlogTAG)
-            throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+            throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException, IntegrityException {
 
         logTAG = "=== " + logTAG;
 
@@ -1080,10 +1301,10 @@ public class PumpHistoryHandler {
             ));
 
             UserLogMessage.sendN(mContext, UserLogMessage.TYPE.REQUESTED,
-                    String.format("%s {id;%s}", userlogTAG, R.string.history_requested));
+                    String.format("%s {id;%s}", userlogTAG, R.string.ul_history_requested));
             UserLogMessage.sendE(mContext, UserLogMessage.TYPE.REQUESTED,
                     String.format("%s {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
-                            userlogTAG, R.string.history_requested, start, end));
+                            userlogTAG, R.string.ul_history_requested, start, end));
 
             Date[] range;
             ReadHistoryResponseMessage response = cnlReader.getHistory(start, end, historyType);
@@ -1103,6 +1324,7 @@ public class PumpHistoryHandler {
                 long timer = System.currentTimeMillis();
                 range = new PumpHistoryParser(response.getEventData()).process(
                         pumpHistorySender,
+                        cnlReader.getPumpSession().getPumpMAC(),
                         cnlReader.getSessionRTC(),
                         cnlReader.getSessionOFFSET(),
                         cnlReader.getSessionClockDifference(),
@@ -1120,7 +1342,7 @@ public class PumpHistoryHandler {
 
             UserLogMessage.sendE(mContext, UserLogMessage.TYPE.RECEIVED,
                     String.format("%s {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
-                            userlogTAG, R.string.history_received,
+                            userlogTAG, R.string.ul_history_received,
                             range[0] == null ? 0 : range[0].getTime(),
                             range[1] == null ? 0 : range[1].getTime()));
 
@@ -1129,12 +1351,13 @@ public class PumpHistoryHandler {
 
             final Date haveFrom = range[0] != null && range[0].getTime() < start ? range[0] : new Date(start);
             final Date haveTo = range[1] != null && range[1].getTime() > haveFrom.getTime() ? range[1] : new Date(end);
+/*
             Log.d(TAG, String.format("%s have: %s - %s",
                     logTAG,
                     dateFormatter.format(haveFrom),
                     dateFormatter.format(haveTo)
             ));
-
+*/
             historyRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(@NonNull Realm realm) {

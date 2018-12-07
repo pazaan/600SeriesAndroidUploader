@@ -229,7 +229,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         transmitterControl = payload[0x43];
         transmitterBattery = payload[0x45];
         // Normalise transmitter battery to percentage shown on pump sensor status screen
-        transmitterBattery = (byte) (((transmitterBattery & 0x0F) * 100) / 15);
+        transmitterBattery = (byte) Math.round(((transmitterBattery & 0x0F) * 100.0) / 15.0);
 
         // Sensor
         long rawSensorRateOfChange = read16BEtoULong(payload, 0x46);

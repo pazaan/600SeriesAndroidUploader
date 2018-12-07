@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
@@ -33,6 +34,8 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -82,52 +85,47 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
     @Override
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
-
-        NightscoutItem nightscoutItem = new NightscoutItem();
-        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
+        TreatmentsEndpoints.Treatment treatment;
 
         switch (RECORDTYPE.convert(recordtype)) {
 
             case MICROBOLUS:
                 // Synthesize Closed Loop Microboluses into Temp Basals
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Temp Basal");
-                treatment.setCreated_at(eventDate);
-                treatment.setKey600(key);
                 treatment.setDuration((float) 5);
                 treatment.setAbsolute((float) (deliveredAmount * 12));
                 treatment.setNotes("microbolus " + deliveredAmount + "U");
-                nightscoutItems.add(nightscoutItem);
                 break;
 
             case TRANSITION_IN:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Profile Switch");
-                treatment.setCreated_at(eventDate);
-                treatment.setKey600(key);
                 treatment.setProfile("Auto Mode");
                 treatment.setNotes("Auto Mode: active (" + PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string() + ")");
-                nightscoutItems.add(nightscoutItem);
                 break;
 
             case RESTART_BASAL:
+                treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Profile Switch");
-                treatment.setCreated_at(eventDate);
-                treatment.setKey600(key);
-                treatment.setProfile(pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, basalPattern - 1));
+                treatment.setProfile(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, basalPattern - 1));
                 treatment.setNotes("Auto Mode: stopped (" + PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string() + ")");
-                nightscoutItems.add(nightscoutItem);
                 break;
         }
 
         return nightscoutItems;
     }
 
-    public static void microbolus(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                  int bolusRef,
-                                  double deliveredAmount) {
+    public static void microbolus(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int bolusRef,
+            double deliveredAmount) {
 
         //if (true) return;
 
         PumpHistoryLoop record = realm.where(PumpHistoryLoop.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("eventRTC", eventRTC)
                 .equalTo("recordtype", RECORDTYPE.MICROBOLUS.value())
                 .findFirst();
@@ -135,20 +133,23 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
         if (record == null) {
             Log.d(TAG, "*new* microbolus ref: " + bolusRef);
             record = realm.createObject(PumpHistoryLoop.class);
+            record.pumpMAC = pumpMAC;
             record.recordtype = RECORDTYPE.MICROBOLUS.value();
             record.eventDate = eventDate;
             record.eventRTC = eventRTC;
             record.eventOFFSET = eventOFFSET;
             record.bolusRef = bolusRef;
             record.deliveredAmount = deliveredAmount;
-            record.key = String.format("MB%08X", eventRTC);
+            record.key = HistoryUtils.key("MB", eventRTC);
             pumpHistorySender.setSenderREQ(record);
         }
     }
 
-    public static void transition(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                  byte transitionValue,
-                                  byte transitionReason) {
+    public static void transition(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            byte transitionValue,
+            byte transitionReason) {
 
         PumpHistoryLoop record;
 
@@ -156,19 +157,21 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
 
             case CL_INTO_ACTIVE:
                 record = realm.where(PumpHistoryLoop.class)
+                        .equalTo("pumpMAC", pumpMAC)
                         .equalTo("eventRTC", eventRTC)
                         .equalTo("recordtype", RECORDTYPE.TRANSITION_IN.value())
                         .findFirst();
                 if (record == null) {
                     Log.d(TAG, "*new* loop transition in event");
                     record = realm.createObject(PumpHistoryLoop.class);
+                    record.pumpMAC = pumpMAC;
                     record.recordtype = RECORDTYPE.TRANSITION_IN.value();
                     record.eventDate = eventDate;
                     record.eventRTC = eventRTC;
                     record.eventOFFSET = eventOFFSET;
                     record.transitionValue = transitionValue;
                     record.transitionReason = transitionReason;
-                    record.key = String.format("LOOP%08X", eventRTC);
+                    record.key = HistoryUtils.key("LOOP", eventRTC);
                     pumpHistorySender.setSenderREQ(record);
                 }
                 break;
@@ -176,27 +179,32 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
             case CL_OUT_OF_ACTIVE:
                 record = realm.where(PumpHistoryLoop.class)
                         .equalTo("eventRTC", eventRTC)
+                        .equalTo("pumpMAC", pumpMAC)
                         .equalTo("recordtype", RECORDTYPE.TRANSITION_OUT.value())
                         .findFirst();
                 if (record == null) {
                     Log.d(TAG, "*new* loop transition out event");
                     record = realm.createObject(PumpHistoryLoop.class);
+                    record.pumpMAC = pumpMAC;
                     record.recordtype = RECORDTYPE.TRANSITION_OUT.value();
                     record.eventDate = eventDate;
                     record.eventRTC = eventRTC;
                     record.eventOFFSET = eventOFFSET;
                     record.transitionValue = transitionValue;
                     record.transitionReason = transitionReason;
-                    record.key = String.format("LOOP%08X", eventRTC);
+                    record.key = HistoryUtils.key("LOOP", eventRTC);
                 }
 
         }
     }
 
-    public static void basal(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                             byte pattern) {
+    public static void basal(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            byte pattern) {
 
         PumpHistoryLoop transitionRecord = realm.where(PumpHistoryLoop.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("recordtype", RECORDTYPE.TRANSITION_OUT.value())
                 .greaterThan("eventRTC", eventRTC - (5 * 60))
                 .lessThanOrEqualTo("eventRTC", eventRTC)
@@ -205,6 +213,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
         if (transitionRecord != null) {
 
             PumpHistoryLoop record = realm.where(PumpHistoryLoop.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("recordtype", RECORDTYPE.RESTART_BASAL.value())
                     .equalTo("eventRTC", eventRTC)
                     .findFirst();
@@ -212,6 +221,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
             if (record == null) {
                 Log.d(TAG, "*new* loop restart basal pattern");
                 record = realm.createObject(PumpHistoryLoop.class);
+                record.pumpMAC = pumpMAC;
                 record.recordtype = RECORDTYPE.RESTART_BASAL.value();
                 record.eventDate = eventDate;
                 record.eventRTC = eventRTC;
@@ -219,7 +229,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
                 record.basalPattern = pattern;
                 record.transitionValue = transitionRecord.transitionValue;
                 record.transitionReason = transitionRecord.transitionReason;
-                record.key = String.format("LOOP%08X", eventRTC);
+                record.key = HistoryUtils.key("LOOP", eventRTC);
                 pumpHistorySender.setSenderREQ(record);
             }
         }
@@ -276,6 +286,16 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public byte getRecordtype() {

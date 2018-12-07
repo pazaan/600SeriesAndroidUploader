@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 import info.nightscout.android.R;
+import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.utils.FormatKit;
@@ -34,6 +35,8 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
 
     @Index
     private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -47,16 +50,11 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        NightscoutItem nightscoutItem = new NightscoutItem();
-        nightscoutItems.add(nightscoutItem);
-        TreatmentsEndpoints.Treatment treatment = nightscoutItem.ack(senderACK.contains(senderID)).treatment();
-
-        treatment.setKey600(key);
-        treatment.setCreated_at(eventDate);
+        TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
         treatment.setEventType("Profile Switch");
 
-        String oldName = pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, oldPatternNumber - 1);
-        String newName = pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1);
+        String oldName = pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, oldPatternNumber - 1);
+        String newName = pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1);
 
         treatment.setProfile(newName);
         treatment.setNotes("Changed profile from " + oldName + " to " + newName);
@@ -68,14 +66,13 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
     public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {
         List<MessageItem> messageItems = new ArrayList<>();
 
-        String title = FormatKit.getInstance().getString(R.string.Basal);
+        String title = FormatKit.getInstance().getString(R.string.info_Basal);
         String message = String.format("%s %s <- %s",
-                FormatKit.getInstance().getString(R.string.Pattern),
-                pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1),
-                pumpHistorySender.senderList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, oldPatternNumber - 1));
+                FormatKit.getInstance().getString(R.string.info_Pattern),
+                pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1),
+                pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, oldPatternNumber - 1));
 
         messageItems.add(new MessageItem()
-                .key(key)
                 .type(MessageItem.TYPE.BASAL)
                 .date(eventDate)
                 .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
@@ -85,18 +82,22 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
         return messageItems;
     }
 
-    public static void pattern(PumpHistorySender pumpHistorySender, Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                               byte oldPatternNumber,
-                               byte newPatternNumber) {
+    public static void pattern(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            byte oldPatternNumber,
+            byte newPatternNumber) {
 
         PumpHistoryPattern record = realm.where(PumpHistoryPattern.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
         if (record == null) {
             Log.d(TAG, "*new*" + " basal pattern switch");
             // create new entry
             record = realm.createObject(PumpHistoryPattern.class);
-            record.key = String.format("PRO%08X", eventRTC);
+            record.pumpMAC = pumpMAC;
+            record.key = HistoryUtils.key("PRO", eventRTC);
             record.eventDate = eventDate;
             record.eventRTC = eventRTC;
             record.eventOFFSET = eventOFFSET;
@@ -154,6 +155,16 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
     @Override
     public void setKey(String key) {
         this.key = key;
+    }
+
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
+    }
+
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getEventRTC() {

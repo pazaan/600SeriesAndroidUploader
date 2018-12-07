@@ -4,11 +4,10 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.model.store.DataStore;
@@ -54,6 +53,9 @@ public class NightscoutStatus {
     private int ns_version_minor = 0;
     private int ns_version_point = 0;
 
+    private long deviceTime = 0;
+    private long serverTime = 0;
+
     private boolean available;
     private long reporttime;
 
@@ -70,18 +72,18 @@ public class NightscoutStatus {
         available = dataStore.isNightscoutAvailable();
         reporttime = dataStore.getNightscoutReportTime();
 
-        //if (!isOnline()) {
         if (!UploaderApplication.isOnline()) {
             available = false;
             if (dataStore.isDbgEnableUploadErrors())
-                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,"Offline / No internet service");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                        R.string.ul_warn_offline);
 
         } else {
 
             boolean report = true;
             if (reporttime > 0 && now - reporttime < NS_REPORT) report = false;
 
-            if (!ns_authDefaultRoles.contains("readable")
+            if (!ns_authDefaultRoles.toLowerCase().contains("readable")
                     || (dataStore.isNsEnableTreatments() && !dataStore.isNightscoutCareportal()))
                 available = false;
 
@@ -93,12 +95,27 @@ public class NightscoutStatus {
                 if (available && dataStore.isDbgEnableUploadErrors()) {
 
                     if (!dataStore.isNightscoutAvailable()) {
-                        UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,"Nightscout site is available");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
+                                "Nightscout site is available");
                     }
 
                     if (dataStore.isNsEnableTreatments() && !ns_careportal) {
-                        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,"Careportal is not enabled in Nightscout, treatment data can not be uploaded.");
-                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Add 'careportal' to your ENABLE string in Azure or Heroku. Treatments can be disabled in the 'Advanced Nightscout Settings' menu.");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                                R.string.ul_ns_warn_careportal);
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                R.string.ul_ns_help_careportal);
+                    }
+
+                    Log.d(TAG, String.format("DEVICE: %s NIGHTSCOUT SERVER: %s DIFFERENCE: %s seconds",
+                            new Date(deviceTime).toString(),
+                            new Date(serverTime).toString(),
+                            (deviceTime - serverTime) / 1000L
+                    ));
+                    if (Math.abs(serverTime - deviceTime) > 10 * 60000L) {
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                                R.string.ul_ns_warn_servertime);
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                R.string.ul_ns_help_servertime);
                     }
 
                     if (report) {
@@ -106,57 +123,89 @@ public class NightscoutStatus {
 
                         UserLogMessage.sendE(mContext, "NS version: " + ns_version);
 
+                        UserLogMessage.sendE(mContext, String.format(
+                                "NS server time: {diff;%s}  {date.time;%s}",
+                                (serverTime - deviceTime) / 1000L,
+                                serverTime));
+
                         if (ns_version_major <= NS_MAJOR &&
                                 (ns_version_minor < NS_MINOR || (ns_version_minor == NS_MINOR && ns_version_point < NS_POINT))) {
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Your version of Nightscout is out of date. It is recommended to use the latest release version of Nightscout with the 600 Series Uploader.");
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_version);
                         }
 
-                        if (!(ns_enable.contains("PUMP") || ns_enable.contains("pump"))) {
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Pump status information can be shown in Nightscout. Add 'pump' to your ENABLE string in Azure or Heroku.");
+                        if (!(ns_enable.toLowerCase().contains("pump"))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_config_pump);
                         } else {
                             if (!ns_devicestatus) {
-                                UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Pump status details can be shown in Nightscout. Add 'DEVICESTATUS_ADVANCED' with value 'true' to your strings in Azure or Heroku.");
+                                UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                        R.string.ul_ns_help_config_devicestatus);
                             }
                             if (ns_pumpFields.equals("")) {
-                                UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Pump battery, insulin, delivery modes, calibration and active error alert can be shown in Nightscout. Add 'PUMP_FIELDS' with value 'clock reservoir battery status' to your strings in Azure or Heroku.");
+                                UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                        R.string.ul_ns_help_config_pumpfields);
                             } else {
-                                if (!(ns_pumpFields.contains("STATUS") || ns_pumpFields.contains("status")))
-                                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Bolus delivery modes, error alerts and calibration time can be shown in Nightscout. Add 'status' to your 'PUMP_FIELDS' string in Azure or Heroku.");
-                                if (!(ns_pumpFields.contains("RESERVOIR") || ns_pumpFields.contains("reservoir")))
-                                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Units of insulin remaining in the pump can be shown in Nightscout. Add 'reservoir' to your 'PUMP_FIELDS' string in Azure or Heroku.");
-                                if (!(ns_pumpFields.contains("BATTERY") || ns_pumpFields.contains("battery")))
-                                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Pump battery percentage remaining can be shown in Nightscout. Add 'battery' to your 'PUMP_FIELDS' string in Azure or Heroku.");
-                                if (!(ns_pumpFields.contains("CLOCK") || ns_pumpFields.contains("clock")))
-                                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Time since last pump reading can shown on Nightscout. Add 'clock' to your 'PUMP_FIELDS' string in Azure or Heroku.");
+                                if (!(ns_pumpFields.toLowerCase().contains("status")))
+                                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                            R.string.ul_ns_help_config_pumpfields_status);
+                                if (!(ns_pumpFields.toLowerCase().contains("reservoir")))
+                                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                            R.string.ul_ns_help_config_pumpfields_reservoir);
+                                if (!(ns_pumpFields.toLowerCase().contains("battery")))
+                                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                            R.string.ul_ns_help_config_pumpfields_battery);
+                                if (!(ns_pumpFields.toLowerCase().contains("clock")))
+                                    UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                            R.string.ul_ns_help_config_pumpfields_clock);
                             }
                         }
 
                         if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableSensorChange()
-                                && !(ns_enable.contains("SAGE") || ns_enable.contains("sage"))) {
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Sensor changes are detected and sent to Nightscout. Add 'sage' to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the 'Advanced Nightscout Settings' menu.");
+                                && !(ns_enable.toLowerCase().contains("sage"))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_config_sage);
                         }
 
                         if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableReservoirChange()
-                                && !(ns_enable.contains("CAGE") || ns_enable.contains("cage"))) {
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Reservoir changes are detected and sent to Nightscout. Add 'cage' to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the 'Advanced Nightscout Settings' menu.");
+                                && !(ns_enable.toLowerCase().contains("cage"))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_config_cage);
+                        }
+
+                        if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsulinChange()
+                                && !(ns_enable.toLowerCase().contains("iage"))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_config_iage);
+                        }
+
+                        if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableBatteryChange()
+                                && !(ns_enable.toLowerCase().contains("bage"))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_config_bage);
                         }
 
                         if (dataStore.isNsEnableProfileUpload()
-                                && !(ns_enable.contains("PROFILE") || ns_enable.contains("profile"))) {
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Basal Profiles are sent to Nightscout. Add 'profile' to your ENABLE string in Azure or Heroku. This can be disabled in the 'Advanced Nightscout Settings' menu.");
+                                && !(ns_enable.toLowerCase().contains("profile"))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_config_profile);
                         }
 
-                        if (!(ns_enable.contains("BASAL") || ns_enable.contains("basal"))) {
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"Basal rates profiles and pattern changes can be shown in Nightscout. Add 'basal' to your ENABLE string in Azure or Heroku.");
+                        if (!(ns_enable.toLowerCase().contains("basal"))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_config_basal);
                         }
 
-                        if (!(ns_enable.contains("IOB") || ns_enable.contains("iob"))) {
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,"IOB active insulin can be shown in Nightscout. Add 'iob' to your ENABLE string in Azure or Heroku.");
+                        if (!(ns_enable.toLowerCase().contains("iob"))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns_help_config_iob);
                         }
+
                     }
 
                 } else if (!available && dataStore.isDbgEnableUploadErrors())
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,"Nightscout site is not available");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                            "Nightscout site is not available");
             }
         }
 
@@ -177,7 +226,7 @@ public class NightscoutStatus {
             boolean available = false;
 
             try{
-                UploadApi uploadApi = new UploadApi(url, formToken(secret));
+                UploadApi uploadApi = new UploadApi(url, secret);
 
                 statusEndpoints = uploadApi.getStatusEndpoints();
 
@@ -228,9 +277,12 @@ public class NightscoutStatus {
 
                     List<String> enable = responseBody.body().getSettings().getEnable();
                     if (enable != null) {
+                        StringBuilder sb = new StringBuilder();
                         for (String e : enable) {
-                            ns_enable += e + " ";
+                            sb.append(sb.length() == 0 ? "" : " ");
+                            sb.append(e);
                         }
+                        ns_enable = sb.toString();
                     }
                 }
 
@@ -248,29 +300,27 @@ public class NightscoutStatus {
                     }
                 }
 
+                try {
+                    if (responseBody.body().getServerTimeEpoch() != null) {
+                        serverTime = responseBody.body().getServerTimeEpoch().longValue();
+                        deviceTime = System.currentTimeMillis();
+                    }
+                } catch (Exception ignored) {
+                    serverTime = 0;
+                    deviceTime = 0;
+                }
+
                 available = true;
 
             } catch (Exception e) {
                 Log.e(TAG, "Nightscout status check error", e);
                 if (dataStore.isDbgEnableUploadErrors())
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,"Nightscout status is not available: " + e.getMessage());
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                            "Nightscout status is not available: " + e.getMessage());
             }
 
             return available;
         }
-    }
-
-    @NonNull
-    private String formToken(String secret) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-1");
-        byte[] bytes = secret.getBytes("UTF-8");
-        digest.update(bytes, 0, bytes.length);
-        bytes = digest.digest();
-        StringBuilder sb = new StringBuilder(bytes.length * 2);
-        for (byte b : bytes) {
-            sb.append(String.format("%02x", b & 0xFF));
-        }
-        return sb.toString();
     }
 
 }
