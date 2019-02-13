@@ -76,7 +76,7 @@ public class PumpHistorySender {
 
                 .opt(SENDEROPT.SYSTEM_UPLOADER_BATTERY_LOW, dataStore.isNsEnableSystemStatus())
                 .opt(SENDEROPT.SYSTEM_UPLOADER_BATTERY_VERY_LOW, dataStore.isNsEnableSystemStatus())
-                .opt(SENDEROPT.SYSTEM_UPLOADER_BATTERY_CHARGED, dataStore.isNsEnableSystemStatus())
+                .opt(SENDEROPT.SYSTEM_UPLOADER_BATTERY_CHARGED, dataStore.isNsEnableUploaderBatteryFull())
 
                 .opt(SENDEROPT.BG_INFO, dataStore.isNsEnableFingerBG())
                 .opt(SENDEROPT.CALIBRATION_INFO, dataStore.isNsEnableFingerBG() & dataStore.isNsEnableCalibrationInfo())

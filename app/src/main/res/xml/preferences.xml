@@ -240,6 +240,12 @@
                     android:key="@string/key_nsEnableSystemStatus"
                     android:defaultValue="@bool/default_nsEnableSystemStatus"
                     android:summary="@string/pref_ns_status_uploader_summary"/>
+                <CheckBoxPreference
+                    android:title="Uploader Battery Full"
+                    android:dependency="@string/key_nsEnableTreatments"
+                    android:key="@string/key_nsEnableUploaderBatteryFull"
+                    android:defaultValue="@bool/default_nsEnableUploaderBatteryFull"
+                    android:summary="Send uploader battery full status to Nightscout"/>
                 <info.nightscout.android.utils.ListPreference
                     android:title="@string/pref_ns_status_ttl_title"
                     android:dependency="@string/key_nsEnableTreatments"

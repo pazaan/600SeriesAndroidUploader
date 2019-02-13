@@ -71,6 +71,7 @@
     <string name="key_nsAlarmExtended">nsAlarmExtended</string>
     <string name="key_nsAlarmCleared">nsAlarmCleared</string>
     <string name="key_nsEnableSystemStatus">nsEnableSystemStatus</string>
+    <string name="key_nsEnableUploaderBatteryFull">nsEnableUploaderBatteryFull</string>
     <string name="key_nsAlarmTTL">nsAlarmTTL</string>
     <string name="key_nsEnableDailyTotals">nsEnableDailyTotals</string>
     <string name="key_nsEnableFormatHTML">nsEnableFormatHTML</string>
@@ -270,7 +271,8 @@
     <bool name="default_nsEnableAlarms">false</bool>
     <bool name="default_nsAlarmExtended">true</bool>
     <bool name="default_nsAlarmCleared">true</bool>
-    <bool name="default_nsEnableSystemStatus">false</bool>
+    <bool name="default_nsEnableSystemStatus">true</bool>
+    <bool name="default_nsEnableUploaderBatteryFull">false</bool>
     <string name="default_nsAlarmTTL">24</string>
     <bool name="default_nsEnableDailyTotals">true</bool>
     <bool name="default_nsEnableFormatHTML">true</bool>
