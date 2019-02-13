@@ -128,8 +128,9 @@ public class NightscoutStatus {
                                 (serverTime - deviceTime) / 1000L,
                                 serverTime));
 
-                        if (ns_version_major <= NS_MAJOR &&
-                                (ns_version_minor < NS_MINOR || (ns_version_minor == NS_MINOR && ns_version_point < NS_POINT))) {
+                        if (ns_version_major < NS_MAJOR ||
+                                (ns_version_major <= NS_MAJOR && ns_version_minor < NS_MINOR) ||
+                                (ns_version_major <= NS_MAJOR && ns_version_minor <= NS_MINOR && ns_version_point < NS_POINT)) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
                                     R.string.ul_ns_help_version);
                         }
@@ -243,9 +244,13 @@ public class NightscoutStatus {
                 if (s != null) {
                     ns_version = s;
                     String parts[] = ns_version.split("-");
-                    if (parts.length == 3) {
+                    if (parts.length > 0) {
                         ns_version_code = parts[0];
+                    }
+                    if(parts.length > 1){
                         ns_version_channel = parts[1];
+                    }
+                    if(parts.length > 2) {
                         ns_version_date = parts[2];
                     }
                     String code[] = ns_version_code.split("\\.");
