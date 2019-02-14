@@ -271,7 +271,7 @@
     <bool name="default_nsEnableAlarms">false</bool>
     <bool name="default_nsAlarmExtended">true</bool>
     <bool name="default_nsAlarmCleared">true</bool>
-    <bool name="default_nsEnableSystemStatus">true</bool>
+    <bool name="default_nsEnableSystemStatus">false</bool>
     <bool name="default_nsEnableUploaderBatteryFull">false</bool>
     <string name="default_nsAlarmTTL">24</string>
     <bool name="default_nsEnableDailyTotals">true</bool>
