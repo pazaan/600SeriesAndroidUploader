@@ -64,7 +64,7 @@ public class PumpHistorySender {
                 .var(SENDEROPT.ALARM_PRIORITY, Integer.toString(MessageItem.PRIORITY.LOWEST.value()))
 
                 .opt(SENDEROPT.SYSTEM_PUMP_DEVICE_ERROR, dataStore.isNsEnableSystemStatus())
-                .opt(SENDEROPT.SYSTEM_CNL_USB_ERROR, dataStore.isNsEnableSystemStatus())
+                .opt(SENDEROPT.SYSTEM_CNL_USB_ERROR, dataStore.isnsEnableUploaderUsbError())
                 /*
                 makes lot of extra noise in NS when a user is in/out of range all day!
                 .opt(SENDEROPT.SYSTEM_PUMP_CONNECTTED, dataStore.isNsEnableSystemStatus())

@@ -505,8 +505,14 @@
     <string name="pref_ns_status_extended_summary">Full extended message as shown on the pump</string>
     <string name="pref_ns_status_time_to_clear_title">Time to Clear</string>
     <string name="pref_ns_status_time_to_clear_summary">Time taken to react to alarm on the pump</string>
-    <string name="pref_ns_status_uploader_title">Uploader Status</string>
+    <string name="pref_ns_category_uploader_status">Uploader Status</string>
+    <string name="pref_ns_status_uploader_title">Enable Uploader Status</string>
     <string name="pref_ns_status_uploader_summary">Send uploader status alerts and info to Nightscout</string>
+    <string name="pref_ns_status_uploader_battery_full_title">Uploader Battery Full</string>
+    <string name="pref_ns_status_uploader_battery_full_summary">Send uploader battery full alerts to Nightscout</string>
+    <string name="pref_ns_status_uploader_usb_error_title">Uploader USB Error</string>
+    <string name="pref_ns_status_uploader_usb_error_summary">Send uploader USB error (disconnected) alerts to Nightscout</string>
+
     <string name="pref_ns_status_ttl_title">Remove from Nightscout</string>
 
     <string name="pref_ns_category_misc">Misc</string>

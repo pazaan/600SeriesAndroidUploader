@@ -234,6 +234,9 @@
                     android:key="@string/key_nsAlarmCleared"
                     android:defaultValue="@bool/default_nsAlarmCleared"
                     android:summary="@string/pref_ns_status_time_to_clear_summary"/>
+            </PreferenceCategory>
+            <PreferenceCategory
+                android:title="@string/pref_ns_category_uploader_status">
                 <CheckBoxPreference
                     android:title="@string/pref_ns_status_uploader_title"
                     android:dependency="@string/key_nsEnableTreatments"
@@ -241,44 +244,18 @@
                     android:defaultValue="@bool/default_nsEnableSystemStatus"
                     android:summary="@string/pref_ns_status_uploader_summary"/>
                 <CheckBoxPreference
-                    android:title="Uploader Battery Full"
-                    android:dependency="@string/key_nsEnableTreatments"
+                    android:title="@string/pref_ns_status_uploader_battery_full_title"
+                    android:dependency="@string/key_nsEnableSystemStatus"
                     android:key="@string/key_nsEnableUploaderBatteryFull"
                     android:defaultValue="@bool/default_nsEnableUploaderBatteryFull"
-                    android:summary="Send uploader battery full status to Nightscout"/>
-                <info.nightscout.android.utils.ListPreference
-                    android:title="@string/pref_ns_status_ttl_title"
-                    android:dependency="@string/key_nsEnableTreatments"
-                    android:key="@string/key_nsAlarmTTL"
-                    android:summary="%s"
-                    android:defaultValue="@string/default_nsAlarmTTL"
-                    android:entries="@array/alarm_ttl"
-                    android:entryValues="@array/alarm_ttl_values"/>
-            </PreferenceCategory>
-
-            <PreferenceCategory
-                android:title="@string/pref_ns_category_misc">
-                <info.nightscout.android.utils.ListPreference
-                    android:title="@string/pref_ns_grams_per_exchange_title"
-                    android:key="@string/key_nsGramsPerExchange"
-                    android:defaultValue="@string/default_nsGramsPerExchange"
-                    android:summary="%s"
-                    android:entries="@array/grams_per_exchange"
-                    android:entryValues="@array/grams_per_exchange_values"/>
+                    android:summary="@string/pref_ns_status_uploader_battery_full_summary"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_daily_totals_title"
-                    android:dependency="@string/key_nsEnableTreatments"
-                    android:key="@string/key_nsEnableDailyTotals"
-                    android:defaultValue="@bool/default_nsEnableDailyTotals"
-                    android:summary="@string/pref_ns_daily_totals_summary"/>
-                <CheckBoxPreference
-                    android:title="@string/pref_ns_formatting_title"
-                    android:dependency="@string/key_nsEnableTreatments"
-                    android:key="@string/key_nsEnableFormatHTML"
-                    android:defaultValue="@bool/default_nsEnableFormatHTML"
-                    android:summary="@string/pref_ns_formatting_summary"/>
+                    android:title="@string/pref_ns_status_uploader_usb_error_title"
+                    android:dependency="@string/key_nsEnableSystemStatus"
+                    android:key="@string/key_nsEnableUploaderUsbError"
+                    android:defaultValue="@bool/default_nsEnableUploaderUsbError"
+                    android:summary="@string/pref_ns_status_uploader_usb_error_summary"/>
             </PreferenceCategory>
-
             <PreferenceCategory
                 android:title="@string/pref_ns_category_pattern_and_preset_naming">
                 <PreferenceScreen
@@ -458,7 +435,6 @@
                 </PreferenceScreen>
 
             </PreferenceCategory>
-
             <PreferenceCategory
                 android:title="@string/pref_ns_category_cgm">
                 <CheckBoxPreference
@@ -467,6 +443,36 @@
                     android:key="@string/key_nsEnableInsertBGasCGM"
                     android:defaultValue="@bool/default_nsEnableInsertBGasCGM"
                     android:summary="@string/pref_ns_insert_bg_as_cgm_summary"/>
+            </PreferenceCategory>
+            <PreferenceCategory
+                android:title="@string/pref_ns_category_misc">
+                <info.nightscout.android.utils.ListPreference
+                    android:title="@string/pref_ns_grams_per_exchange_title"
+                    android:key="@string/key_nsGramsPerExchange"
+                    android:defaultValue="@string/default_nsGramsPerExchange"
+                    android:summary="%s"
+                    android:entries="@array/grams_per_exchange"
+                    android:entryValues="@array/grams_per_exchange_values"/>
+                <CheckBoxPreference
+                    android:title="@string/pref_ns_daily_totals_title"
+                    android:dependency="@string/key_nsEnableTreatments"
+                    android:key="@string/key_nsEnableDailyTotals"
+                    android:defaultValue="@bool/default_nsEnableDailyTotals"
+                    android:summary="@string/pref_ns_daily_totals_summary"/>
+                <CheckBoxPreference
+                    android:title="@string/pref_ns_formatting_title"
+                    android:dependency="@string/key_nsEnableTreatments"
+                    android:key="@string/key_nsEnableFormatHTML"
+                    android:defaultValue="@bool/default_nsEnableFormatHTML"
+                    android:summary="@string/pref_ns_formatting_summary"/>
+                <info.nightscout.android.utils.ListPreference
+                    android:title="@string/pref_ns_status_ttl_title"
+                    android:dependency="@string/key_nsEnableTreatments"
+                    android:key="@string/key_nsAlarmTTL"
+                    android:summary="%s"
+                    android:defaultValue="@string/default_nsAlarmTTL"
+                    android:entries="@array/alarm_ttl"
+                    android:entryValues="@array/alarm_ttl_values"/>
             </PreferenceCategory>
         </PreferenceScreen>
 

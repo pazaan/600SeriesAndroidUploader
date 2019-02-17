@@ -103,6 +103,7 @@ public class DataStore extends RealmObject {
     private boolean nsAlarmCleared;
     private boolean nsEnableSystemStatus;
     private boolean nsEnableUploaderBatteryFull;
+    private boolean nsEnableUploaderUsbError;
     private int nsAlarmTTL;
     private boolean nsEnableDailyTotals;
     private boolean nsEnableFormatHTML;
@@ -307,6 +308,7 @@ public class DataStore extends RealmObject {
         nsAlarmCleared = getBoolean(c, p, R.string.key_nsAlarmCleared, R.bool.default_nsAlarmCleared);
         nsEnableSystemStatus = getBoolean(c, p, R.string.key_nsEnableSystemStatus, R.bool.default_nsEnableSystemStatus);
         nsEnableUploaderBatteryFull = getBoolean(c, p, R.string.key_nsEnableUploaderBatteryFull, R.bool.default_nsEnableUploaderBatteryFull);
+        nsEnableUploaderUsbError = getBoolean(c, p, R.string.key_nsEnableUploaderUsbError, R.bool.default_nsEnableUploaderUsbError);
         nsAlarmTTL = getInt(c, p, R.string.key_nsAlarmTTL, R.string.default_nsAlarmTTL);
         nsEnableDailyTotals = getBoolean(c, p, R.string.key_nsEnableDailyTotals, R.bool.default_nsEnableDailyTotals);
         nsEnableFormatHTML = getBoolean(c, p, R.string.key_nsEnableFormatHTML, R.bool.default_nsEnableFormatHTML);
@@ -901,7 +903,10 @@ public class DataStore extends RealmObject {
         return nsEnableSystemStatus;
     }
     public boolean isNsEnableUploaderBatteryFull() {
-        return nsEnableUploaderBatteryFull;
+        return nsEnableSystemStatus && nsEnableUploaderBatteryFull;
+    }
+    public boolean isnsEnableUploaderUsbError() {
+        return nsEnableSystemStatus && nsEnableUploaderUsbError;
     }
 
     public int getNsAlarmTTL() {
