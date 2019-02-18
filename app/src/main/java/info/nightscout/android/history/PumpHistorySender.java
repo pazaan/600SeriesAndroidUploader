@@ -85,8 +85,8 @@ public class PumpHistorySender {
                 .opt(SENDEROPT.MISC_BATTERY, dataStore.isNsEnableBatteryChange())
                 .opt(SENDEROPT.MISC_CANNULA, dataStore.isNsEnableReservoirChange())
                 .opt(SENDEROPT.MISC_INSULIN, dataStore.isNsEnableInsulinChange())
-                .var(SENDEROPT.INSULIN_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsInsulinChangeThreshold()))
-                .var(SENDEROPT.CANNULA_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsCannulaChangeThreshold()))
+                .var(SENDEROPT.INSULIN_CHANGE_THRESHOLD, Integer.toString(dataStore.getNsInsulinChangeThreshold()))
+                .var(SENDEROPT.CANNULA_CHANGE_THRESHOLD, Integer.toString(dataStore.getNsCannulaChangeThreshold()))
 
                 .opt(SENDEROPT.INSERT_BG_AS_CGM, dataStore.isNsEnableFingerBG() & dataStore.isNsEnableInsertBGasCGM())
 
@@ -126,8 +126,8 @@ public class PumpHistorySender {
                 .opt(SENDEROPT.MISC_BATTERY, dataStore.isPushoverEnableConsumables())
                 .opt(SENDEROPT.MISC_CANNULA, dataStore.isPushoverEnableConsumables() & dataStore.isNsEnableReservoirChange())
                 .opt(SENDEROPT.MISC_INSULIN, dataStore.isPushoverEnableConsumables() & dataStore.isNsEnableInsulinChange())
-                .var(SENDEROPT.INSULIN_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsInsulinChangeThreshold()))
-                .var(SENDEROPT.CANNULA_CLANGE_THRESHOLD, Integer.toString(dataStore.getNsCannulaChangeThreshold()))
+                .var(SENDEROPT.INSULIN_CHANGE_THRESHOLD, Integer.toString(dataStore.getNsInsulinChangeThreshold()))
+                .var(SENDEROPT.CANNULA_CHANGE_THRESHOLD, Integer.toString(dataStore.getNsCannulaChangeThreshold()))
 
                 .opt(SENDEROPT.ALARM_CLEARED, dataStore.isPushoverEnableCleared())
                 .opt(SENDEROPT.ALARM_SILENCED, dataStore.isPushoverEnableSilenced())
@@ -192,8 +192,8 @@ public class PumpHistorySender {
         BG_INFO,
         CALIBRATION_INFO,
         INSERT_BG_AS_CGM,
-        INSULIN_CLANGE_THRESHOLD,
-        CANNULA_CLANGE_THRESHOLD,
+        INSULIN_CHANGE_THRESHOLD,
+        CANNULA_CHANGE_THRESHOLD,
 
         PROFILE_OFFSET,
 

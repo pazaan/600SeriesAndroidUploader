@@ -976,7 +976,7 @@
                             android:title="Priority"
                             android:dependency="@string/key_pushoverEnablePumpEmergency"
                             android:key="@string/key_pushoverPriorityPumpEmergency"
-                            android:defaultValue="@string/key_pushoverPriorityPumpEmergency"
+                            android:defaultValue="@string/default_pushoverPriorityPumpEmergency"
                             android:summary="%s"
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
@@ -984,7 +984,7 @@
                             android:title="Sound"
                             android:dependency="@string/key_pushoverEnablePumpEmergency"
                             android:key="@string/key_pushoverSoundPumpEmergency"
-                            android:defaultValue="@string/key_pushoverSoundPumpEmergency"
+                            android:defaultValue="@string/default_pushoverSoundPumpEmergency"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
                             android:entryValues="@array/pushover_sound"/>
@@ -1451,7 +1451,7 @@
                 <CheckBoxPreference
                     android:title="@string/pref_system_cgm_history_title"
                     android:key="@string/key_sysEnableCgmHistory"
-                    android:defaultValue="@bool/default_sysEnablePollOverride"
+                    android:defaultValue="@bool/default_sysEnableCgmHistory"
                     android:summary="@string/pref_system_cgm_history_summary"/>
                 <info.nightscout.android.utils.ListPreference
                     android:title="@string/pref_system_cgm_backfill_title"

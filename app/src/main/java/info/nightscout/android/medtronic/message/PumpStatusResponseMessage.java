@@ -142,7 +142,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         tempBasalPercentage =  (short) (payload[0x23] & 0x00FF);
 
         // Temp basal minutes remaining
-        tempBasalMinutesRemaining = (short) (read16BEtoShort(payload, 0x24) &  0x00FF);
+        tempBasalMinutesRemaining = read16BEtoShort(payload, 0x24);
 
         // Units of insulin delivered as basal today
         long rawBasalUnitsDeliveredToday = read32BEtoULong(payload, 0x26);

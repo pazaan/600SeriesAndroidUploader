@@ -1301,18 +1301,18 @@ public class UrchinService extends Service {
                 s = duration + FormatKit.getInstance().getString(R.string.time_m);
                 break;
             case 2:
-                s = String.format("%s%s", duration < 60 ? "" :
-                                duration / 60 + FormatKit.getInstance().getString(R.string.time_h),
+                s = String.format("%s%s",
+                        duration < 60 ? "" : duration / 60 + FormatKit.getInstance().getString(R.string.time_h),
                         duration % 60);
                 break;
             case 3:
-                s = String.format("%s", duration < 60 ?
-                        duration % 60  + FormatKit.getInstance().getString(R.string.time_m) :
-                        duration / 60 + FormatKit.getInstance().getString(R.string.time_h) + duration % 60);
+                s = String.format("%s",
+                        duration < 60 ? duration % 60 + FormatKit.getInstance().getString(R.string.time_m) :
+                                duration / 60 + FormatKit.getInstance().getString(R.string.time_h) + duration % 60);
                 break;
             case 4:
-                s = String.format("%s%s", duration < 60 ? "" :
-                                duration / 60 + FormatKit.getInstance().getString(R.string.time_h),
+                s = String.format("%s%s",
+                        duration < 60 ? "" : duration / 60 + FormatKit.getInstance().getString(R.string.time_h),
                         duration % 60 + FormatKit.getInstance().getString(R.string.time_m));
                 break;
             default:

@@ -146,8 +146,8 @@
     <string name="urchin_disp_CalibrateNow">C!</string>
     <string name="urchin_disp_Calibrating">C</string>
     <string name="urchin_disp_WarmUp">W</string>
-    <string name="urchin_disp_SensorEndOfLife">E!</string>
-    <string name="urchin_disp_SensorError">S!</string>
+    <string name="urchin_disp_SensorEndOfLife">X!</string>
+    <string name="urchin_disp_SensorError">E!</string>
     <string name="urchin_disp_NoCGM">\?\?</string>
     <string name="urchin_disp_NoData">\?</string>
 

@@ -39,9 +39,12 @@
 
     <!-- taken from pump alarm history -->
 
+    <string name = "alert_4">Pump error 4|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name = "alert_6">Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.</string>
     <string name = "alert_7">Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.</string>
     <string name = "alert_8">Insulin flow blocked|Estimated 0U insulin in reservoir. Change reservoir and infusion set.</string>
     <string name = "alert_11">Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.</string>
+    <string name = "alert_15">Pump error 15|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
     <string name = "alert_58">Battery Failed|Insert a new AA battery.</string>
     <string name = "alert_61">Stuck button|Button pressed for more than 3 minutes</string>
     <string name = "alert_70">Fill Cannula?|Select Fill to fill cannula or select Done if not needed.</string>
@@ -53,6 +56,7 @@
     <string name = "alert_105">Low Reservoir %1$s remain|Change reservoir soon.</string>
     <string name = "alert_106">Low Reservoir %1$s hours remain|Change reservoir soon.</string>
     <string name = "alert_113">Reservoir estimate at 0U|To ensure insulin delivery change reservoir.</string>
+    <string name = "alert_117">Active Insulin cleared|Any Active Insulin amount has been cleared.</string>
 
     <string name = "alert_775">Calibrate Now|Check BG and calibrate sensor.</string>
     <string name = "alert_776">Calibration not accepted|Recheck BG and calibrate sensor.</string>
@@ -100,10 +104,6 @@
     <string name = "alert_109_list">One day|Two days|Three days</string>
     <string name = "alert_110">Sensor alert occurred|Check Alarm History for silenced alerts.</string>
 
-    <!-- need verifying -->
-
-    <string name = "alert_6">Power loss|AA battery was removed for more than 10 min or power was lost.</string>
-
     <!-- auto mode alerts - best guess! ;) -->
 
     <string name = "alert_820">Auto Mode exit|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
@@ -124,7 +124,7 @@
 
     *** 640G User Guide UK/IE - Pump alarms, alerts, and messages ***
 
-    xxx|Active Insulin cleared|Any Active Insulin amount has been cleared.
+    117|Active Insulin cleared|Any Active Insulin amount has been cleared.
     xxx|Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.
     058|Battery failed|Insert a new AA battery.
     xxx|Battery not compatible|See User Guide.
@@ -149,7 +149,7 @@
     xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
     xxx|No reservoir detected|Rewind before loading reservoir.
     xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
-    xxx|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
+    006|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
     xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then reenter your settings. See User Guide.
     xxx|Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.
     xxx|Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
@@ -204,7 +204,7 @@
 
     *** 670G User Guide US - Pump alarms, alerts, and messages ***
 
-    xxx|Active Insulin cleared|Any Active Insulin amount has been cleared.
+    117|Active Insulin cleared|Any Active Insulin amount has been cleared.
     008|Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.
     058|Battery failed|Insert a new AA battery.
     xxx|Battery not compatible|See User Guide.
@@ -230,7 +230,7 @@
     xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
     xxx|No reservoir detected|Rewind before loading reservoir.
     xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
-    xxx|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
+    006|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
     xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then re-enter your settings. See User Guide.
     xxx|Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.
     xxx|Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.

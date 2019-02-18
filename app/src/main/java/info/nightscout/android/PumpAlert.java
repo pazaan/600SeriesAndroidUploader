@@ -93,6 +93,12 @@ public class PumpAlert {
 
         switch (code) {
 
+            case 4:
+                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_4).format();
+                break;
+            case 6:
+                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_6).format();
+                break;
             case 7:
                 alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_7).format();
                 break;
@@ -101,6 +107,9 @@ public class PumpAlert {
                 break;
             case 11:
                 alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_11).format();
+                break;
+            case 15:
+                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_15).format();
                 break;
             case 58:
                 alert(TYPE.PUMP, PRIORITY.NORMAL).id(R.string.alert_58).format();
@@ -132,6 +141,9 @@ public class PumpAlert {
                 break;
             case 113:
                 alert(TYPE.PUMP, PRIORITY.HIGH).id(R.string.alert_113).format();
+                break;
+            case 117:
+                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_117).format();
                 break;
 
             case 775:
@@ -256,12 +268,6 @@ public class PumpAlert {
                 break;
             case 110:
                 alert(TYPE.SENSOR, PRIORITY.LOWEST).id(R.string.alert_110).format();
-                break;
-
-            // need verifying
-
-            case 6:
-                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_6).format();
                 break;
 
             // auto mode alerts - best guess! ;)

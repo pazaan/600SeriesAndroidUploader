@@ -113,7 +113,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         }
         else if (RECORDTYPE.CHANGE_CANNULA.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_CANNULA)) {
-            double threshold = Double.parseDouble(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.CANNULA_CLANGE_THRESHOLD, "0")) / 1000;
+            double threshold = Double.parseDouble(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.CANNULA_CHANGE_THRESHOLD, "0")) / 1000;
             // only send a CAGE event when primed amount exceeds threshold
             if (delivered < threshold) return nightscoutItems;
             type = "Site Change";
@@ -128,7 +128,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_INSULIN)) {
             // only send a IAGE event when insulin reservoir in pump exceeds threshold
-            int threshold = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.INSULIN_CLANGE_THRESHOLD, "0"));
+            int threshold = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.INSULIN_CHANGE_THRESHOLD, "0"));
             if (threshold == 1) threshold = 140; // 1.8ml Reservoir
             else if (threshold == 2) threshold = 240; // 3.0ml Reservoir
             if (remaining < threshold) return nightscoutItems;
@@ -185,7 +185,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         }
         else if (RECORDTYPE.CHANGE_CANNULA.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_CANNULA)) {
-            double threshold = Double.parseDouble(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.CANNULA_CLANGE_THRESHOLD, "0")) / 1000;
+            double threshold = Double.parseDouble(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.CANNULA_CHANGE_THRESHOLD, "0")) / 1000;
             // only send a CAGE event when primed amount exceeds threshold
             if (delivered < threshold) return messageItems;
             title = FormatKit.getInstance().getString(R.string.info_Cannula_Change);
@@ -193,7 +193,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
         else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_INSULIN)) {
             // only send a IAGE event when insulin reservoir in pump exceeds threshold
-            int threshold = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.INSULIN_CLANGE_THRESHOLD, "0"));
+            int threshold = Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.INSULIN_CHANGE_THRESHOLD, "0"));
             if (threshold == 1) threshold = 140; // 1.8ml Reservoir
             else if (threshold == 2) threshold = 240; // 3.0ml Reservoir
             if (remaining < threshold) return messageItems;

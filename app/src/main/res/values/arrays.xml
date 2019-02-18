@@ -481,7 +481,7 @@
     </string-array>
 
     <string-array name="urchin_units">
-        <item>{string;urchin_text_none}: \'99\</item>
+        <item>{string;urchin_text_none}: \'99\'</item>
         <item>{string;urchin_text_unit_u}: <small>\'99{string;urchin_text_unit_u}\'</small></item>
         <item>{string;urchin_text_unit_U}: <small>\'99{string;urchin_text_unit_U}\'</small></item>
     </string-array>

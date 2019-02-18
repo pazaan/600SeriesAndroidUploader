@@ -320,9 +320,11 @@ public class NightScoutUpload {
                 sb.append("⚠");
             }
             if (record.isBolusingNormal()) {
+                sb.append(sb.length() == 0 ? "" : " ");
                 sb.append("bolusing");
             }
             else if (record.isSuspended()) {
+                sb.append(sb.length() == 0 ? "" : " ");
                 sb.append("suspended");
             }
             else if (record.isBolusingSquare() || record.isBolusingDual() || record.getTempBasalMinutesRemaining() > 0) {

@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!DOCTYPE resources [
+    <!ENTITY EMERGENCY "2">
+    <!ENTITY HIGH "1">
+    <!ENTITY NORMAL "0">
+    <!ENTITY LOW "-1">
+    <!ENTITY LOWEST "-2">
+    ]>
+
 <resources>
 
     <!-- Keys -->
@@ -324,78 +332,78 @@
     <string name="default_pushoverUSERtoken"> </string>
 
     <bool name="default_pushoverEnableOnHigh">true</bool>
-    <string name="default_pushoverPriorityOnHigh">emergency</string>
+    <string name="default_pushoverPriorityOnHigh">&EMERGENCY;</string>
     <string name="default_pushoverSoundOnHigh">persistent</string>
     <bool name="default_pushoverEnableOnLow">true</bool>
-    <string name="default_pushoverPriorityOnLow">emergency</string>
+    <string name="default_pushoverPriorityOnLow">&EMERGENCY;</string>
     <string name="default_pushoverSoundOnLow">persistent</string>
     <bool name="default_pushoverEnableBeforeHigh">true</bool>
-    <string name="default_pushoverPriorityBeforeHigh">high</string>
+    <string name="default_pushoverPriorityBeforeHigh">&HIGH;</string>
     <string name="default_pushoverSoundBeforeHigh">updown</string>
     <bool name="default_pushoverEnableBeforeLow">true</bool>
-    <string name="default_pushoverPriorityBeforeLow">high</string>
+    <string name="default_pushoverPriorityBeforeLow">&HIGH;</string>
     <string name="default_pushoverSoundBeforeLow">updown</string>
     <bool name="default_pushoverEnableAutoModeExit">true</bool>
-    <string name="default_pushoverPriorityAutoModeExit">high</string>
+    <string name="default_pushoverPriorityAutoModeExit">&HIGH;</string>
     <string name="default_pushoverSoundAutoModeExit">updown</string>
 
     <bool name="default_pushoverEnablePumpEmergency">true</bool>
-    <string name="default_pushoverPriorityPumpEmergency">emergency</string>
+    <string name="default_pushoverPriorityPumpEmergency">&EMERGENCY;</string>
     <string name="default_pushoverSoundPumpEmergency">persistent</string>
     <bool name="default_pushoverEnablePumpActionable">true</bool>
-    <string name="default_pushoverPriorityPumpActionable">high</string>
+    <string name="default_pushoverPriorityPumpActionable">&HIGH;</string>
     <string name="default_pushoverSoundPumpActionable">updown</string>
     <bool name="default_pushoverEnablePumpInformational">true</bool>
-    <string name="default_pushoverPriorityPumpInformational">normal</string>
+    <string name="default_pushoverPriorityPumpInformational">&NORMAL;</string>
     <string name="default_pushoverSoundPumpInformational">bike</string>
     <bool name="default_pushoverEnablePumpReminder">true</bool>
-    <string name="default_pushoverPriorityPumpReminder">normal</string>
+    <string name="default_pushoverPriorityPumpReminder">&NORMAL;</string>
     <string name="default_pushoverSoundPumpReminder">tugboat</string>
 
     <bool name="default_pushoverEnableBolus">true</bool>
-    <string name="default_pushoverPriorityBolus">normal</string>
+    <string name="default_pushoverPriorityBolus">&NORMAL;</string>
     <string name="default_pushoverSoundBolus">classical</string>
     <bool name="default_pushoverEnableBasal">true</bool>
-    <string name="default_pushoverPriorityBasal">normal</string>
+    <string name="default_pushoverPriorityBasal">&NORMAL;</string>
     <string name="default_pushoverSoundBasal">pianobar</string>
     <bool name="default_pushoverEnableSuspendResume">true</bool>
-    <string name="default_pushoverPrioritySuspendResume">normal</string>
+    <string name="default_pushoverPrioritySuspendResume">&NORMAL;</string>
     <string name="default_pushoverSoundSuspendResume">gamelan</string>
     <bool name="default_pushoverEnableBG">true</bool>
-    <string name="default_pushoverPriorityBG">normal</string>
+    <string name="default_pushoverPriorityBG">&NORMAL;</string>
     <string name="default_pushoverSoundBG">bike</string>
     <bool name="default_pushoverEnableCalibration">false</bool>
-    <string name="default_pushoverPriorityCalibration">normal</string>
+    <string name="default_pushoverPriorityCalibration">&NORMAL;</string>
     <string name="default_pushoverSoundCalibration">bike</string>
     <bool name="default_pushoverEnableConsumables">true</bool>
-    <string name="default_pushoverPriorityConsumables">normal</string>
+    <string name="default_pushoverPriorityConsumables">&NORMAL;</string>
     <string name="default_pushoverSoundConsumables">bike</string>
     <bool name="default_pushoverLifetimeInfo">false</bool>
     <bool name="default_pushoverEnableDailyTotals">true</bool>
-    <string name="default_pushoverPriorityDailyTotals">normal</string>
+    <string name="default_pushoverPriorityDailyTotals">&NORMAL;</string>
     <string name="default_pushoverSoundDailyTotals">bike</string>
 
     <bool name="default_pushoverEnableUploaderPumpErrors">true</bool>
-    <string name="default_pushoverPriorityUploaderPumpErrors">emergency</string>
+    <string name="default_pushoverPriorityUploaderPumpErrors">&EMERGENCY;</string>
     <string name="default_pushoverSoundUploaderPumpErrors">persistent</string>
     <bool name="default_pushoverEnableUploaderPumpConnection">true</bool>
-    <string name="default_pushoverPriorityUploaderPumpConnection">normal</string>
+    <string name="default_pushoverPriorityUploaderPumpConnection">&NORMAL;</string>
     <string name="default_pushoverSoundUploaderPumpConnection">bike</string>
     <bool name="default_pushoverEnableUploaderBattery">true</bool>
-    <string name="default_pushoverPriorityUploaderBattery">normal</string>
+    <string name="default_pushoverPriorityUploaderBattery">&NORMAL;</string>
     <string name="default_pushoverSoundUploaderBattery">bike</string>
     <bool name="default_pushoverEnableBatteryLow">true</bool>
     <bool name="default_pushoverEnableBatteryCharged">true</bool>
 
     <bool name="default_pushoverEnableCleared">true</bool>
-    <string name="default_pushoverPriorityCleared">low</string>
+    <string name="default_pushoverPriorityCleared">&LOW;</string>
     <string name="default_pushoverSoundCleared">none</string>
     <bool name="default_pushoverEnableSilenced">false</bool>
-    <string name="default_pushoverPrioritySilenced">normal</string>
+    <string name="default_pushoverPrioritySilenced">&NORMAL;</string>
     <string name="default_pushoverSoundSilenced">none</string>
 
     <bool name="default_pushoverEnablePriorityOverride">false</bool>
-    <string name="default_pushoverPriorityOverride">-2</string>
+    <string name="default_pushoverPriorityOverride">&LOWEST;</string>
     <bool name="default_pushoverEnableSoundOverride">false</bool>
     <string name="default_pushoverSoundOverride">none</string>
 
