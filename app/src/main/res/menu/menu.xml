@@ -8,11 +8,11 @@
         android:icon="@drawable/battery_unknown"
         android:orderInCategory="99"
         app:showAsAction="always"
-        android:title="@string/menu_name_battery_status"/>
+        android:title="@string/main_screen__icon_battery_status"/>
     <item
         android:id="@+id/action_menu_status"
         android:icon="@drawable/ic_launcher"
         android:orderInCategory="100"
         app:showAsAction="always"
-        android:title="@string/menu_name_status"/>
+        android:title="@string/main_screen__icon_nightscout_status"/>
 </menu>

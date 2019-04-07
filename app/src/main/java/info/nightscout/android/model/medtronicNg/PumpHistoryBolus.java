@@ -104,6 +104,11 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
+        if (!pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.BOLUS)) {
+            HistoryUtils.nightscoutDeleteTreatment(nightscoutItems, this, senderID);
+            return nightscoutItems;
+        }
+
         TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID, programmedDate);
 
         String formatSeperator = pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.FORMAT_HTML) ? " <br>" : " ";
@@ -127,9 +132,9 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setRelative((float) ((squareProgrammedAmount * 60) / squareProgrammedDuration));
             notes.append(String.format("%s%s %s %s %s",
                     notes.length() == 0 ? "" : " ",
-                    FormatKit.getInstance().getString(R.string.info_Square_Bolus),
+                    FormatKit.getInstance().getString(R.string.text__Square_Bolus),
                     FormatKit.getInstance().formatAsInsulin(squareProgrammedAmount),
-                    FormatKit.getInstance().getString(R.string.info_duration),
+                    FormatKit.getInstance().getString(R.string.text__duration),
                     FormatKit.getInstance().formatMinutesAsHM(squareProgrammedDuration)));
 
         } else if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(bolusType)) {
@@ -144,10 +149,10 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setRelative((float) ((squareProgrammedAmount * 60) / squareProgrammedDuration));
             notes.append(String.format("%s%s %s:%s %s %s",
                     notes.length() == 0 ? "" : " ",
-                    FormatKit.getInstance().getString(R.string.info_Dual_Bolus),
+                    FormatKit.getInstance().getString(R.string.text__Dual_Bolus),
                     FormatKit.getInstance().formatAsInsulin(normalProgrammedAmount),
                     FormatKit.getInstance().formatAsInsulin(squareProgrammedAmount),
-                    FormatKit.getInstance().getString(R.string.info_duration),
+                    FormatKit.getInstance().getString(R.string.text__duration),
                     FormatKit.getInstance().formatMinutesAsHM(squareProgrammedDuration)));
 
         } else {
@@ -162,7 +167,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             if (PumpHistoryParser.BOLUS_TYPE.NORMAL_BOLUS.equals(bolusType))
                 notes.append(String.format("%s%s %s",
                         notes.length() == 0 ? "" : " ",
-                        FormatKit.getInstance().getString(R.string.info_Normal_Bolus),
+                        FormatKit.getInstance().getString(R.string.text__Normal_Bolus),
                         FormatKit.getInstance().formatAsInsulin(normalProgrammedAmount)));
                 // dual programmed but cancelled during delivery of normal part
             else if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(bolusType)) {
@@ -172,10 +177,10 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 treatment.setSplitExt("0");
                 treatment.setRelative((float) 0);
             }
-            notes.append(String.format("%s* %s %s %s",
+            notes.append(String.format("%s* %s: %s %s",
                     notes.length() == 0 ? "" : formatSeperator,
-                    FormatKit.getInstance().getString(R.string.info_cancelled),
-                    FormatKit.getInstance().getString(R.string.info_delivered),
+                    FormatKit.getInstance().getString(R.string.text__cancelled),
+                    FormatKit.getInstance().getString(R.string.text__delivered),
                     FormatKit.getInstance().formatAsInsulin(normalDeliveredAmount)));
             // always write a canceled bolus to NS
             nightscoutItems.get(0).update();
@@ -189,13 +194,13 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setSplitNow(String.valueOf(splitNow));
             treatment.setSplitExt(String.valueOf(splitExt));
             treatment.setRelative((float) ((squareDeliveredAmount * 60) / squareDeliveredDuration));
-            notes.append(String.format("%s* %s %s %s %s %s %s",
+            notes.append(String.format("%s* %s: %s %s:%s %s %s",
                     notes.length() == 0 ? "" : formatSeperator,
-                    FormatKit.getInstance().getString(R.string.info_cancelled),
-                    FormatKit.getInstance().getString(R.string.info_square),
-                    FormatKit.getInstance().getString(R.string.info_delivered),
+                    FormatKit.getInstance().getString(R.string.text__cancelled),
+                    FormatKit.getInstance().getString(R.string.text__delivered),
+                    FormatKit.getInstance().formatAsInsulin(normalDeliveredAmount),
                     FormatKit.getInstance().formatAsInsulin(squareDeliveredAmount),
-                    FormatKit.getInstance().getString(R.string.info_duration),
+                    FormatKit.getInstance().getString(R.string.text__duration),
                     FormatKit.getInstance().formatMinutesAsHM(squareDeliveredDuration)));
             // always write a canceled bolus to NS
             nightscoutItems.get(0).update();
@@ -213,16 +218,16 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 carbRatioAsGrams = gramsPerExchange / carbRatio;
                 gramsPerU = String.format("(%s/%s %s/%s/%s)",
                         FormatKit.getInstance().formatAsGrams(carbRatioAsGrams),
-                        FormatKit.getInstance().getString(R.string.text_insulin_unit),
+                        FormatKit.getInstance().getString(R.string.insulin_U),
                         FormatKit.getInstance().formatAsInsulin(carbRatio),
                         FormatKit.getInstance().formatAsGrams(gramsPerExchange),
-                        FormatKit.getInstance().getString(R.string.info_exchange));
+                        FormatKit.getInstance().getString(R.string.gram_exchange_ex));
             } else {
                 carbInputAsGrams = carbInput;
                 carbRatioAsGrams = carbRatio;
                 gramsPerU = String.format("(%s/%s)",
                         FormatKit.getInstance().formatAsGrams(carbRatioAsGrams),
-                        FormatKit.getInstance().getString(R.string.text_insulin_unit));
+                        FormatKit.getInstance().getString(R.string.insulin_U));
             }
 
             // only change NS event type when dual/square (combo) is not in use
@@ -239,7 +244,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                     if (carbInputAsGrams != 0 || foodEstimate != 0) {
                         notes.append(String.format("%s%s %s %s %s",
                                 notes.length() == 0 ? "" : formatSeperator,
-                                FormatKit.getInstance().getString(R.string.info_carb),
+                                FormatKit.getInstance().getString(R.string.text__carb),
                                 FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                                 FormatKit.getInstance().formatAsInsulin(foodEstimate),
                                 gramsPerU));
@@ -247,18 +252,18 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                     if (bgInput != 0 || correctionEstimate != 0) {
                         notes.append(String.format("%s%s %s %s (%s~%s %s/%s)",
                                 notes.length() == 0 ? "" : formatSeperator,
-                                FormatKit.getInstance().getString(R.string.info_bg),
+                                FormatKit.getInstance().getString(R.string.text__bg),
                                 FormatKit.getInstance().formatAsDecimal(bgInput, PumpHistoryParser.BG_UNITS.MMOL_L.equals(bgUnits) ? 1 : 0),
                                 FormatKit.getInstance().formatAsInsulin(correctionEstimate),
                                 FormatKit.getInstance().formatAsDecimal(lowBgTarget, PumpHistoryParser.BG_UNITS.MMOL_L.equals(bgUnits) ? 1 : 0),
                                 FormatKit.getInstance().formatAsDecimal(highBgTarget, PumpHistoryParser.BG_UNITS.MMOL_L.equals(bgUnits) ? 1 : 0),
                                 FormatKit.getInstance().formatAsDecimal(isf, PumpHistoryParser.BG_UNITS.MMOL_L.equals(bgUnits) ? 1 : 0),
-                                FormatKit.getInstance().getString(R.string.text_insulin_unit)));
+                                FormatKit.getInstance().getString(R.string.insulin_U)));
                     }
                     if (iobAdjustment != 0) {
                         notes.append(String.format("%s%s %s %s",
                                 notes.length() == 0 ? "" : formatSeperator,
-                                FormatKit.getInstance().getString(R.string.info_iob),
+                                FormatKit.getInstance().getString(R.string.text__iob),
                                 FormatKit.getInstance().formatAsInsulin(iob),
                                 FormatKit.getInstance().formatAsInsulin(iobAdjustment > 0 ? -iobAdjustment : iobAdjustment)));
                     }
@@ -266,7 +271,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 case CLOSED_LOOP_FOOD_BOLUS:
                     notes.append(String.format("%s%s %s %s %s",
                             notes.length() == 0 ? "" : formatSeperator,
-                            FormatKit.getInstance().getString(R.string.info_carb),
+                            FormatKit.getInstance().getString(R.string.text__carb),
                             FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                             FormatKit.getInstance().formatAsInsulin(foodEstimate),
                             gramsPerU));
@@ -274,18 +279,18 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 case CLOSED_LOOP_BG_CORRECTION:
                     notes.append(String.format("%s%s %s",
                             notes.length() == 0 ? "" : formatSeperator,
-                            FormatKit.getInstance().getString(R.string.info_correction),
+                            FormatKit.getInstance().getString(R.string.text__correction),
                             FormatKit.getInstance().formatAsInsulin(correctionEstimate)));
                     break;
                 case CLOSED_LOOP_BG_CORRECTION_AND_FOOD_BOLUS:
                     notes.append(String.format("%s%s %s %s %s%s%s %s",
                             notes.length() == 0 ? "" : formatSeperator,
-                            FormatKit.getInstance().getString(R.string.info_carb),
+                            FormatKit.getInstance().getString(R.string.text__carb),
                             FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                             FormatKit.getInstance().formatAsInsulin(foodEstimate),
                             gramsPerU,
                             formatSeperator,
-                            FormatKit.getInstance().getString(R.string.info_correction),
+                            FormatKit.getInstance().getString(R.string.text__correction),
                             FormatKit.getInstance().formatAsInsulin(correctionEstimate)));
                     break;
             }
@@ -316,56 +321,66 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
 
         if (normalDelivered && normalProgrammedAmount != normalDeliveredAmount) {
             date = normalDeliveredDate;
-            title = FormatKit.getInstance().getString(R.string.info_Bolus);
-            message += String.format("%s %s • %s %s %s",
-                    FormatKit.getInstance().getString(R.string.info_Normal),
-                    FormatKit.getInstance().formatAsInsulin(normalProgrammedAmount),
-                    FormatKit.getInstance().getString(R.string.info_cancelled),
-                    FormatKit.getInstance().getString(R.string.info_delivered),
+            title = FormatKit.getInstance().getString(R.string.text__Bolus);
+            message += String.format("%s: %s %s",
+                    FormatKit.getInstance().getString(R.string.text__cancelled),
+                    FormatKit.getInstance().getString(R.string.text__delivered),
                     FormatKit.getInstance().formatAsInsulin(normalDeliveredAmount));
+
+        } else if (normalDelivered && squareDelivered && squareProgrammedAmount != squareDeliveredAmount) {
+            date = squareDeliveredDate;
+            title = FormatKit.getInstance().getString(R.string.text__Bolus);
+            message += String.format("%s: %s %s:%s %s %s",
+                    FormatKit.getInstance().getString(R.string.text__cancelled),
+                    FormatKit.getInstance().getString(R.string.text__delivered),
+                    FormatKit.getInstance().formatAsInsulin(normalDeliveredAmount),
+                    FormatKit.getInstance().formatAsInsulin(squareDeliveredAmount),
+                    FormatKit.getInstance().getString(R.string.text__duration),
+                    FormatKit.getInstance().formatMinutesAsHM(squareDeliveredDuration));
 
         } else if (squareDelivered && squareProgrammedAmount != squareDeliveredAmount) {
             date = squareDeliveredDate;
-            title = FormatKit.getInstance().getString(R.string.info_Bolus);
-            message += String.format("%s %s • %s %s %s %s %s",
-                    FormatKit.getInstance().getString(R.string.info_Square),
-                    FormatKit.getInstance().formatAsInsulin(squareProgrammedAmount),
-                    FormatKit.getInstance().getString(R.string.info_cancelled),
-                    FormatKit.getInstance().getString(R.string.info_delivered),
+            title = FormatKit.getInstance().getString(R.string.text__Bolus);
+            message += String.format("%s: %s %s %s %s",
+                    FormatKit.getInstance().getString(R.string.text__cancelled),
+                    FormatKit.getInstance().getString(R.string.text__delivered),
                     FormatKit.getInstance().formatAsInsulin(squareDeliveredAmount),
-                    FormatKit.getInstance().getString(R.string.info_duration),
+                    FormatKit.getInstance().getString(R.string.text__duration),
                     FormatKit.getInstance().formatMinutesAsHM(squareDeliveredDuration));
         } else {
             date = programmedDate;
-            title = FormatKit.getInstance().getString(R.string.info_Bolus);
+            title = FormatKit.getInstance().getString(R.string.text__Bolus);
 
             if (estimate) {
                 message = String.format("%s %s ",
-                        FormatKit.getInstance().getString(R.string.dt_heading_Food),
+                        FormatKit.getInstance().getString(R.string.daily_totals_heading__food),
                         PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits) ?
                                 FormatKit.getInstance().formatAsExchanges(carbInput) :
                                 FormatKit.getInstance().formatAsGrams(carbInput));
             }
 
             if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(bolusType)) {
-                message += String.format("%s %s %s %s",
-                        FormatKit.getInstance().getString(R.string.info_Square),
+                message += String.format("%s %s %s %s%s",
+                        FormatKit.getInstance().getString(R.string.text__Square),
                         FormatKit.getInstance().formatAsInsulin(squareProgrammedAmount),
-                        FormatKit.getInstance().getString(R.string.info_duration),
-                        FormatKit.getInstance().formatMinutesAsHM(squareProgrammedDuration));
-
+                        FormatKit.getInstance().getString(R.string.text__duration),
+                        FormatKit.getInstance().formatMinutesAsHM(squareProgrammedDuration),
+                        squareDelivered ? String.format(" (%s)",
+                                FormatKit.getInstance().getString(R.string.text__completed)) : ""
+                );
             } else if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(bolusType)) {
-                message += String.format("%s %s %s:%s %s %s",
-                        FormatKit.getInstance().getString(R.string.info_Dual),
-                        FormatKit.getInstance().formatAsInsulin(normalProgrammedAmount + squareProgrammedAmount),
+                message += String.format("%s %s:%s %s %s%s",
+                        FormatKit.getInstance().getString(R.string.text__Dual),
                         FormatKit.getInstance().formatAsInsulin(normalProgrammedAmount),
                         FormatKit.getInstance().formatAsInsulin(squareProgrammedAmount),
-                        FormatKit.getInstance().getString(R.string.info_duration),
-                        FormatKit.getInstance().formatMinutesAsHM(squareProgrammedDuration));
-
+                        FormatKit.getInstance().getString(R.string.text__duration),
+                        FormatKit.getInstance().formatMinutesAsHM(squareProgrammedDuration),
+                        squareDelivered ? String.format(" (%s)",
+                                FormatKit.getInstance().getString(R.string.text__completed)) : ""
+                );
             } else {
                 message += String.format("%s %s",
-                        FormatKit.getInstance().getString(R.string.info_Normal),
+                        FormatKit.getInstance().getString(R.string.text__Normal),
                         FormatKit.getInstance().formatAsInsulin(normalProgrammedAmount));
             }
         }

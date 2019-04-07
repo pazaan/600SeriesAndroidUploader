@@ -26,6 +26,7 @@ import io.realm.Realm;
 import okhttp3.Headers;
 import retrofit2.Response;
 
+import static info.nightscout.android.history.PumpHistorySender.SENDER_ID_PUSHOVER;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
 import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
@@ -123,7 +124,7 @@ public class PushoverUploadService extends Service {
         try {
 
             if (!valid && apiToken.equals(apiCheck) && userToken.equals(userCheck)) {
-                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,"Pushover validation failed. Check that your Pushover account is active and your account settings are correct.");
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_share__pushover_validation_failed);
                 throw new Exception("account error");
             }
 
@@ -151,18 +152,17 @@ public class PushoverUploadService extends Service {
 
                 String status = response.body().getStatus();
                 if (response.code() == 400 || status == null || !status.equals("1")) {
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                            "Pushover validation failed. Check that your Pushover account is active and your account settings are correct.");
+                    updateValidation();
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_share__pushover_validation_failed);
                     throw new Exception("account error");
+
                 } else {
 
                     valid = true;
+                    updateValidation();
 
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
-                            String.format("{id;%s} {id;%s}",
-                                    R.string.ul_Pushover,
-                                    R.string.ul_is_available
-                            ));
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE, String.format("{id;%s} {id;%s}",
+                            R.string.ul_share__pushover, R.string.ul_share__is_available));
 
                     String[] devices = response.body().getDevices();
                     if (devices != null) {
@@ -173,8 +173,8 @@ public class PushoverUploadService extends Service {
                             sb.append("'");
                         }
                         if (sb.length() > 0)
-                            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.PUSHOVER,
-                                    "Pushover: devices " + sb.toString());
+                            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.PUSHOVER, String.format("{id;%s}: %s",
+                                    R.string.ul_share__pushover, sb.toString()));
                     }
                 }
             }
@@ -182,8 +182,6 @@ public class PushoverUploadService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Pushover validation failed: " + e.getMessage());
         }
-
-        updateValidation();
 
         return valid;
     }
@@ -210,11 +208,11 @@ public class PushoverUploadService extends Service {
         messagesSent = 0;
 
         pumpHistoryHandler = new PumpHistoryHandler(mContext);
-        List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ("PO");
+        List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ(SENDER_ID_PUSHOVER);
 
         for (PumpHistoryInterface record : records) {
 
-            List<info.nightscout.android.history.MessageItem> messageItems = record.message(pumpHistoryHandler.getPumpHistorySender(),"PO");
+            List<info.nightscout.android.history.MessageItem> messageItems = record.message(pumpHistoryHandler.getPumpHistorySender(), SENDER_ID_PUSHOVER);
 
             boolean success = true;
             for (MessageItem messageItem : messageItems) {
@@ -222,7 +220,7 @@ public class PushoverUploadService extends Service {
             }
 
             if (success) {
-                pumpHistoryHandler.setSenderRecordACK(record, "PO");
+                pumpHistoryHandler.setSenderRecordACK(record, SENDER_ID_PUSHOVER);
             } else {
                 statPushover.incError();
                 break;
@@ -240,9 +238,8 @@ public class PushoverUploadService extends Service {
             DateFormat df = new SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH);
             Log.i(TAG, String.format("Sent: %s Limit: %s Remaining: %d Reset: %s",
                     messagesSent, appLimit, appRemaining, df.format(appReset * 1000)));
-            UserLogMessage.sendN(mContext, UserLogMessage.TYPE.PUSHOVER,
-                    String.format("Pushover messages sent: %s",
-                            messagesSent));
+            UserLogMessage.sendN(mContext, UserLogMessage.TYPE.PUSHOVER, String.format("{id;%s}: {id;%s} %s",
+                    R.string.ul_share__pushover, R.string.ul_share__processed, messagesSent));
         }
     }
 
@@ -253,14 +250,20 @@ public class PushoverUploadService extends Service {
         String message = messageItem.getMessage();
         String extended = messageItem.getExtended();
 
-        if (dataStore.isPushoverTitleTime())
+        if (dataStore.isPushoverEnableTitleTime()
+                && messageItem.getClock().length() > 0)
             title += " " + messageItem.getClock();
+
+        if (dataStore.isPushoverEnableTitleText()
+                && dataStore.getPushoverTitleText().length() > 0)
+            title += " " + dataStore.getPushoverTitleText();
 
         if (extended.length() > 0)
             message += " • " + extended;
 
         // Pushover will fail with a empty message string
-        if (message.length() == 0) message = "...";
+        if (message.length() == 0)
+            message = "...";
 
         PushoverEndpoints pushoverEndpoints = pushoverApi.getPushoverEndpoints();
 
@@ -290,10 +293,6 @@ public class PushoverUploadService extends Service {
             case ALERT_BEFORE_LOW:
                 priority = dataStore.getPushoverPriorityBeforeLow();
                 sound = dataStore.getPushoverSoundBeforeLow();
-                break;
-            case ALERT_AUTOMODE_EXIT:
-                priority = dataStore.getPushoverPriorityAutoModeExit();
-                sound = dataStore.getPushoverSoundAutoModeExit();
                 break;
             case ALERT_EMERGENCY:
                 priority = dataStore.getPushoverPriorityPumpEmergency();
@@ -340,13 +339,29 @@ public class PushoverUploadService extends Service {
                 priority = dataStore.getPushoverPriorityDailyTotals();
                 sound = dataStore.getPushoverSoundDailyTotals();
                 break;
+            case AUTOMODE_ACTIVE:
+                priority = dataStore.getPushoverPriorityAutoModeActive();
+                sound = dataStore.getPushoverSoundAutoModeActive();
+                break;
+            case AUTOMODE_STOP:
+                priority = dataStore.getPushoverPriorityAutoModeStop();
+                sound = dataStore.getPushoverSoundAutoModeStop();
+                break;
+            case AUTOMODE_EXIT:
+                priority = dataStore.getPushoverPriorityAutoModeExit();
+                sound = dataStore.getPushoverSoundAutoModeExit();
+                break;
+            case AUTOMODE_MINMAX:
+                priority = dataStore.getPushoverPriorityAutoModeMinMax();
+                sound = dataStore.getPushoverSoundAutoModeMinMax();
+                break;
             case ALERT_UPLOADER_ERROR:
                 priority = dataStore.getPushoverPriorityUploaderPumpErrors();
                 sound = dataStore.getPushoverSoundUploaderPumpErrors();
                 break;
-            case ALERT_UPLOADER_CONNECTION:
-                priority = dataStore.getPushoverPriorityUploaderPumpConnection();
-                sound = dataStore.getPushoverSoundUploaderPumpConnection();
+            case ALERT_UPLOADER_STATUS:
+                priority = dataStore.getPushoverPriorityUploaderStatus();
+                sound = dataStore.getPushoverSoundUploaderStatus();
                 break;
             case ALERT_UPLOADER_BATTERY:
                 priority = dataStore.getPushoverPriorityUploaderBattery();
@@ -364,17 +379,24 @@ public class PushoverUploadService extends Service {
                     priority = dataStore.getPushoverPriorityPumpInformational();
                     sound = dataStore.getPushoverSoundPumpInformational();
                 } else {
-                    priority = "0";
-                    sound = "none";
+                    priority = PRIORITY.NORMAL.string;
+                    sound = SOUND.NONE.string;
                 }
         }
 
         if (messageItem.isCleared()) {
             priority = dataStore.getPushoverPriorityCleared();
             sound = dataStore.getPushoverSoundCleared();
-        } else if (messageItem.isSilenced()) {
+        } else if (messageItem.isSilenced()
+                && dataStore.isPushoverEnableSilencedOverride()) {
             priority = dataStore.getPushoverPrioritySilenced();
             sound = dataStore.getPushoverSoundSilenced();
+        }
+
+        if (dataStore.isPushoverEnableBackfillOverride() &&
+                System.currentTimeMillis() - messageItem.getDate().getTime() > dataStore.getPushoverBackfillOverrideAge() * 60000L) {
+            priority = dataStore.getPushoverPriorityBackfill();
+            sound = dataStore.getPushoverSoundBackfill();
         }
 
         if (dataStore.isPushoverEnablePriorityOverride())
@@ -385,7 +407,10 @@ public class PushoverUploadService extends Service {
         pem.setPriority(priority);
         pem.setSound(sound);
 
-        if (priority.equals("2")) {
+        // Use device name to send the message directly to that device, rather than all of the user's devices (multiple devices may be separated by a comma)
+        pem.setDevice(dataStore.getPushoverSendToDevice());
+
+        if (priority.equals(PRIORITY.EMERGENCY.string)) {
             pem.setRetry(dataStore.getPushoverEmergencyRetry());
             pem.setExpire(dataStore.getPushoverEmergencyExpire());
         }
@@ -419,12 +444,16 @@ public class PushoverUploadService extends Service {
             } catch (Exception ignored) {}
 
             UserLogMessage.sendE(mContext, UserLogMessage.TYPE.PUSHOVER,
-                    String.format("Pushover: %s/%s {date.time;%s} '%s' '%s'",
+                    String.format("{id;%s}: %s/%s {date.time;%s} '%s' '%s' '%s' '%s'%s",
+                            R.string.ul_share__pushover,
                             appLimit - appRemaining,
                             appLimit,
                             messageItem.getDate().getTime(),
-                            title,
-                            message
+                            pem.getTitle(),
+                            pem.getMessage(),
+                            pem.getPriority(),
+                            pem.getSound(),
+                            pem.getDevice().length() == 0 ? "" : " '" + pem.getDevice() + "'"
                     ));
 
             messagesSent++;

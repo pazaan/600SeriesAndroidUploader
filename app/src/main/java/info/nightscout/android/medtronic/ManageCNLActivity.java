@@ -50,7 +50,7 @@ public class ManageCNLActivity extends AppCompatActivity {
                             .sizeDp(24)
             );
             getSupportActionBar().setElevation(0);
-            getSupportActionBar().setTitle(R.string.manage_cnl_title);
+            getSupportActionBar().setTitle(R.string.manage_cnl__title);
         }
 
         mRealm = Realm.getDefaultInstance();

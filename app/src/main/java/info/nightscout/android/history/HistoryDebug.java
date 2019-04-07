@@ -53,11 +53,12 @@ public class HistoryDebug {
     }
 
     public void history(String file) {
-        read(file, "cbg_pages");
-        calcRTCandOFFSET(new Date(System.currentTimeMillis()));
-        //new PumpHistoryParser(eventData).process(pumpHistoryHandler.pumpHistorySender, pumpRTC, pumpOFFSET, 0, 0, 0);
-        read(file, "pages");
         try {
+            read(file, "cbg_pages");
+            calcRTCandOFFSET(new Date(System.currentTimeMillis()));
+            new PumpHistoryParser(eventData).process(pumpHistoryHandler.getPumpHistorySender(), 0, pumpRTC, pumpOFFSET, 0, 0, 0, 0, 0);
+            read(file, "pages");
+            //new PumpHistoryParser(eventData).logcat();
             new PumpHistoryParser(eventData).process(pumpHistoryHandler.getPumpHistorySender(), 0, pumpRTC, pumpOFFSET, 0, 0, 0, 0, 0);
         } catch (Throwable ignored) {}
     }

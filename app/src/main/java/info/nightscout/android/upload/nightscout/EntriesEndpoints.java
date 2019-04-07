@@ -71,13 +71,9 @@ public interface EntriesEndpoints {
         public String getDateString() {
             return dateString;
         }
-        /*
+
         public void setDateString(Date date) {
-            this.dateString = date.toString();
-        }
-        */
-        public void setDateString(Date date) {
-            this.dateString = NightScoutUpload.formatDateForNS(date);
+            this.dateString = NightscoutUpload.formatDateForNS(date);
         }
 
         public Long getDate() {
@@ -141,25 +137,42 @@ public interface EntriesEndpoints {
 
     // find entry using key
     @GET("/api/v1/entries/sgv.json")
-    Call<List<Entry>> checkKey(@Query("find[dateString][$gte]") String date,
-                               @Query("find[key600]") String key);
+    Call<List<Entry>> findKey(@Query("find[date][$gte]") String date,
+                              @Query("find[key600]") String key);
 
     // find entry using key within date range
     @GET("/api/v1/entries/sgv.json")
-    Call<List<Entry>> checkKey(@Query("find[date][$gte]") String from,
-                                   @Query("find[date][$lte]") String to,
-                                   @Query("find[key600]") String key);
+    Call<List<Entry>> findKey(@Query("find[date][$gte]") String from,
+                              @Query("find[date][$lte]") String to,
+                              @Query("find[key600]") String key);
+
+    // delete entry using id
+    @DELETE("/api/v1/entries/sgv.json")
+    Call<ResponseBody> deleteID(@Query("find[date]") String date,
+                                @Query("find[_id]") String id);
 
     // delete entry using key
     @DELETE("/api/v1/entries/sgv.json")
     Call<ResponseBody> deleteKey(@Query("find[date]") String date,
                                  @Query("find[key600]") String key);
 
+    // delete entry using key and mac
+    @DELETE("/api/v1/entries/sgv.json")
+    Call<ResponseBody> deleteKeyMac(@Query("find[date]") String date,
+                                    @Query("find[key600]") String key,
+                                    @Query("find[pumpMAC600]") String mac);
+
+    // delete entry using key and mac not exist
+    @DELETE("/api/v1/entries/sgv.json")
+    Call<ResponseBody> deleteKeyNoMac(@Query("find[date]") String date,
+                                      @Query("find[key600]") String key,
+                                      @Query("find[pumpMAC600][$not][$exists]") String empty);
+
     // delete entry using key within date range
     @DELETE("/api/v1/entries/sgv.json")
     Call<ResponseBody> deleteKey(@Query("find[date][$gte]") String from,
-                               @Query("find[date][$lte]") String to,
-                               @Query("find[key600]") String key);
+                                 @Query("find[date][$lte]") String to,
+                                 @Query("find[key600]") String key);
 
     // bulk delete
     @DELETE("/api/v1/entries/sgv.json")
@@ -168,9 +181,9 @@ public interface EntriesEndpoints {
 
     // bulk delete non-keyed entries, ignore key600 field
     @DELETE("/api/v1/entries/sgv.json")
-    Call<ResponseBody> deleteCleanupItems(@Query("find[date][$gte]") String from,
-                                          @Query("find[date][$lte]") String to,
-                                          @Query("find[key600][$not][$exists]") String empty);
+    Call<ResponseBody> deleteCleanupItemsNonKeyed(@Query("find[date][$gte]") String from,
+                                                  @Query("find[date][$lte]") String to,
+                                                  @Query("find[key600][$not][$exists]") String empty);
 
     // bulk delete non-keyed entries
     @DELETE("/api/v1/entries/sgv.json")

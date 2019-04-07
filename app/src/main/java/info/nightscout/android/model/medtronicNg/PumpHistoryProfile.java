@@ -18,7 +18,6 @@ import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.upload.nightscout.ProfileEndpoints;
-import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -36,6 +35,8 @@ import static info.nightscout.android.utils.ToolKit.read16BEtoUInt;
 public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterface {
     @Ignore
     private static final String TAG = PumpHistoryProfile.class.getSimpleName();
+    @Ignore
+    private static final String AUTOMODE = "Auto Mode";
 
     @Index
     private String senderREQ = "";
@@ -69,13 +70,13 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
     @Override
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
-
+/*
         if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.TREATMENTS)) {
             TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
             treatment.setEventType("Note");
             treatment.setNotes("Profile updated");
         }
-
+*/
         NightscoutItem nightscoutItem = new NightscoutItem();
         nightscoutItems.add(nightscoutItem);
         ProfileEndpoints.Profile profile = nightscoutItem.ack(senderACK.contains(senderID)).profile();
@@ -90,8 +91,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         profile.setCreated_at(eventDate);
         profile.setStartDate(startdate);
         profile.setMills("" + startdate.getTime());
-
-        profile.setDefaultProfile(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN,defaultProfile - 1));
+        profile.setDefaultProfile(defaultProfile == 9 ? AUTOMODE : pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN,defaultProfile - 1));
         profile.setUnits(units);
 
         Map<String, ProfileEndpoints.BasalProfile> basalProfileMap = new LinkedHashTreeMap<>();
@@ -119,7 +119,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         basalProfileMap.put(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, 7), bp.newProfile().parseBasalPattern().makeProfile());
 
         // "Auto Mode" profile using zero rate pattern for 670G pump
-        basalProfileMap.put("Auto Mode", bp.newProfile().emptyBasalPattern().makeProfile());
+        basalProfileMap.put(AUTOMODE, bp.newProfile().emptyBasalPattern().makeProfile());
 
         return nightscoutItems;
     }

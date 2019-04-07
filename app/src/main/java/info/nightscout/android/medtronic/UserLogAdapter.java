@@ -55,6 +55,8 @@ public class UserLogAdapter
     private int cHistory;
     private int cPushover;
 
+    private boolean largeText;
+
     private IconicsDrawable iWARN;
     private IconicsDrawable iINFO;
     private IconicsDrawable iNOTE;
@@ -136,6 +138,8 @@ public class UserLogAdapter
         UserLogMessage.TYPE type = UserLogMessage.TYPE.convert(ul.getType());
         String clock = FormatKit.getInstance().formatAsDayClockSeconds(ul.getTimestamp());
         String text = ul.getMessageParsed();
+
+        if (largeText) clock += "\n";
 
         switch (type) {
             case WARN:
@@ -221,6 +225,8 @@ public class UserLogAdapter
 
     private void initDrawables(TextView tv) {
 
+        largeText = mContext.getResources().getConfiguration().fontScale > 1;
+
         int c = tv.getCurrentTextColor();
         float s = tv.getTextSize();
 
@@ -238,7 +244,7 @@ public class UserLogAdapter
         cHigh = Color.HSVToColor(high, new float[] {hsv[0], hsv[1], 1.f});
         cLow = Color.HSVToColor(low, new float[] {hsv[0], hsv[1], 1.f});
 
-        Log.d(TAG, String.format("textColor: %8x textSize: %s normal: %8x high: %8x low: %8x", c, s, cNormal, cHigh, cLow));
+        Log.d(TAG, String.format("textColor: %08x textSize: %s normal: %08x high: %08x low: %08x", c, s, cNormal, cHigh, cLow));
 
         cEestimate = Color.HSVToColor(high, ESTIMATE_HSV);
         cIsig = Color.HSVToColor(normal, ISIG_HSV);

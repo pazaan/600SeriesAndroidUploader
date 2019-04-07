@@ -105,7 +105,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 treatment.setNotes(String.format("%s: %s %s %s%s",
                         "Event Marker",
                         "Food",
-                        FormatKit.getInstance().getString(R.string.info_carb),
+                        FormatKit.getInstance().getString(R.string.text__carb),
                         FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                         exchanges));
                 break;
@@ -123,7 +123,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 treatment.setNotes(String.format("%s: %s %s %s",
                         "Event Marker",
                         "Injection",
-                        FormatKit.getInstance().getString(R.string.info_bolus),
+                        FormatKit.getInstance().getString(R.string.text__bolus),
                         FormatKit.getInstance().formatAsInsulin(insulin)));
                 break;
 
@@ -165,7 +165,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 }
                 message = String.format("%s %s %s%s",
                         "Food",
-                        FormatKit.getInstance().getString(R.string.info_carb),
+                        FormatKit.getInstance().getString(R.string.text__carb),
                         FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                         exchanges);
                 break;
@@ -173,14 +173,14 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
             case EXERCISE:
                 message = String.format("%s %s %s",
                         "Exercise",
-                        FormatKit.getInstance().getString(R.string.info_duration),
+                        FormatKit.getInstance().getString(R.string.text__duration),
                         FormatKit.getInstance().formatMinutesAsHM(duration));
                 break;
 
             case INJECTION:
                 message = String.format("%s %s %s",
                         "Injection",
-                        FormatKit.getInstance().getString(R.string.info_bolus),
+                        FormatKit.getInstance().getString(R.string.text__bolus),
                         FormatKit.getInstance().formatAsInsulin(insulin));
                 break;
 

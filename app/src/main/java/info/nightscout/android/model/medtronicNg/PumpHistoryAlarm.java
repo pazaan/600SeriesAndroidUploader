@@ -59,6 +59,8 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
 
     @Index
     private boolean silenced;
+    @Index
+    private boolean repeated;
 
     @Index
     private int faultNumber;
@@ -72,10 +74,13 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        if (HistoryUtils.nightscoutTTL(nightscoutItems,this, senderID))
+        if (HistoryUtils.nightscoutTTL(nightscoutItems, this, senderID))
             return nightscoutItems;
 
         if (silenced && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))
+            return nightscoutItems;
+
+        if (repeated && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_REPEATED))
             return nightscoutItems;
 
         PumpAlert pumpAlert = new PumpAlert()
@@ -83,8 +88,10 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 .units(pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS))
                 .build();
 
-        if (pumpAlert.getPriority() < Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.ALARM_PRIORITY, "0")))
+        if (pumpAlert.getPriority() < Integer.parseInt(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.ALARM_PRIORITY, "0"))) {
+            HistoryUtils.nightscoutDeleteTreatment(nightscoutItems, this, senderID);
             return nightscoutItems;
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("%s: %s",
@@ -92,19 +99,27 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 pumpAlert.getCode() == 0 | pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_EXTENDED)
                         ? pumpAlert.getComplete() : pumpAlert.getMessage()));
 
+        if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_REPEATED))
+            sb.append(pumpAlert.getRepeated(true));
+
         if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))
             sb.append(pumpAlert.getSilenced(true));
 
         if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED))
             sb.append(pumpAlert.getCleared(true));
 
-        if (pumpAlert.getCode() == 0 || pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_FAULTCODE))
+        if (pumpAlert.getCode() == 0 || pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_FAULTCODE)) {
+            if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.FORMAT_HTML)) sb.append("<br><br>");
             sb.append(pumpAlert.getInfo(true));
+        }
 
         TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
         treatment.setEventType("Announcement");
         treatment.setAnnouncement(true);
         treatment.setNotes(sb.toString());
+
+        // nightscout will delete events with the same type & date, workaround: offset dates
+        HistoryUtils.checkTreatmentDateDuplicated(PumpHistoryAlarm.class, this, treatment);
 
         return nightscoutItems;
     }
@@ -113,13 +128,19 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
     public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {
         List<MessageItem> messageItems = new ArrayList<>();
 
-        // check if already sent as it may re-trigger due to 'cleared' updates
-        if (senderACK.contains(senderID)) return messageItems;
-
-        if ((cleared && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED))
-                || (silenced && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))) {
+        if (repeated && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_REPEATED))
             return messageItems;
+
+        if (cleared) {
+            if (!pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED))
+                return messageItems;
+            if (!pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_CLEARED_ALWAYS_UPDATE)
+                    && senderACK.contains(senderID))
+                return messageItems;
         }
+
+        if (silenced && !pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.ALARM_SILENCED))
+            return messageItems;
 
         PumpAlert pumpAlert = new PumpAlert()
                 .record(this)
@@ -148,12 +169,19 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 case 805:
                     type = MessageItem.TYPE.ALERT_BEFORE_LOW;
                     break;
+
                 case 820:
+                    type = MessageItem.TYPE.AUTOMODE_EXIT;
+                    break;
                 case 821:
+                case 822:
+                    type = MessageItem.TYPE.AUTOMODE_MINMAX;
+                    break;
                 case 823:
                 case 824:
-                    type = MessageItem.TYPE.ALERT_AUTOMODE_EXIT;
+                    type = MessageItem.TYPE.AUTOMODE_EXIT;
                     break;
+
                 default:
                     type = MessageItem.TYPE.ALERT;
             }
@@ -189,13 +217,8 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
 
         PumpHistoryAlarm record;
 
-        // check if pump re-raised/escalated an alarm that is already recorded in the history
-        if (!alarmHistory && notificationMode == 3) {
-            return;
-        }
-
         // check if a silenced alarm notification
-        else if (faultNumber == 110) {
+        if (faultNumber == 110) {
 
             record = realm.where(PumpHistoryAlarm.class)
                     .equalTo("pumpMAC", pumpMAC)
@@ -205,10 +228,20 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                     .findFirst();
 
             if (record != null) {
-                Log.d(TAG, "*update*" + " alarm (silenced)");
-                record.silenced = true;
+                Log.d(TAG, String.format("*update* alarm (silenced) #%s", record.faultNumber));
                 pumpHistorySender.setSenderREQ(record);
+            } else {
+                Log.d(TAG, String.format("*new* alarm (silenced) #%s", faultNumber));
+                record = realm.createObject(PumpHistoryAlarm.class);
+                record.pumpMAC = pumpMAC;
+                record.eventDate = eventDate;
+                record.alarmedDate = eventDate;
+                record.alarmedRTC = eventRTC;
+                record.alarmedOFFSET = eventOFFSET;
+                record.faultNumber = faultNumber;
             }
+
+            record.silenced = true;
         }
 
         else {
@@ -232,11 +265,11 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                         .sort("clearedDate", Sort.ASCENDING)
                         .findAll();
                 if (results.size() == 0) {
-                    Log.d(TAG, "*new*" + " alarm");
+                    Log.d(TAG, String.format("*new* alarm #%s", faultNumber));
                     record = realm.createObject(PumpHistoryAlarm.class);
                     record.pumpMAC = pumpMAC;
                 } else {
-                    Log.d(TAG, "*update*" + " alarm");
+                    Log.d(TAG, String.format("*update* alarm #%s", faultNumber));
                     record = results.first();
                 }
 
@@ -254,8 +287,12 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 record.extraData = extraData;
                 if (extraData && alarmData != null) record.alarmData = alarmData;
 
+                // check if pump re-raised/escalated an alarm that is already recorded in the history
+                if (!alarmHistory && notificationMode == 3) record.repeated = true;
+
                 // key composed of 2 byte faultNumber and 4 byte eventRTC due to multiple alerts at the same time
                 record.key = HistoryUtils.key("ALARM", (short) faultNumber, eventRTC);
+
                 pumpHistorySender.setSenderREQ(record);
             }
 
@@ -267,7 +304,23 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
             PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
             Date eventDate, int eventRTC, int eventOFFSET,
             int faultNumber) {
-
+/*
+        // debug for 670 faults
+        PumpAlert pumpAlert = new PumpAlert().faultNumber(faultNumber).build();
+        //if (!pumpAlert.isAlertKnown() || (faultNumber >= 818 && faultNumber <= 840)) {
+        if (!pumpAlert.isAlertKnown()) {
+            Date pumpdate = MessageUtils.decodeDateTime(eventRTC & 0xFFFFFFFFL, eventOFFSET);
+            PumpHistorySystem.event(pumpHistorySender, realm,
+                    eventDate, eventDate,
+                    String.format("%08X:%04X:DEBUGALERT", eventRTC, faultNumber),
+                    PumpHistorySystem.STATUS.DEBUG_NIGHTSCOUT,
+                    new RealmList<>(
+                            String.format("[ClearedAlert]<br>pumpDate: %s<br>faultNumber: #%s",
+                                    FormatKit.getInstance().formatAsYMDHMS(pumpdate.getTime()),
+                                    faultNumber))
+            );
+        }
+*/
         if (faultNumber == 110) return; // ignore cleared silenced alerts
 
         PumpHistoryAlarm record = realm.where(PumpHistoryAlarm.class)
@@ -287,25 +340,33 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                     .equalTo("faultNumber", faultNumber)
                     .lessThanOrEqualTo("alarmedRTC", eventRTC)
                     .greaterThan("alarmedRTC", eventRTC - 12 * 60 * 60)
-                    //.sort("alarmedDate", Sort.DESCENDING)
-                    .sort("alarmedDate", Sort.ASCENDING)
+                    .sort("alarmedDate", Sort.DESCENDING)
                     .findAll();
+
             if (results.size() == 0) {
-                Log.d(TAG, "*new*" + " alarm (cleared)");
+                Log.d(TAG, String.format("*new* alarm (cleared) #%s", faultNumber));
                 record = realm.createObject(PumpHistoryAlarm.class);
                 record.pumpMAC = pumpMAC;
                 record.eventDate = eventDate;
                 record.faultNumber = faultNumber;
+                record.clearedDate = eventDate;
+                record.clearedRTC = eventRTC;
+                record.clearedOFFSET = eventOFFSET;
+                record.cleared = true;
+
             } else {
-                Log.d(TAG, "*update*" + " alarm (cleared)");
-                record = results.first();
-                pumpHistorySender.setSenderREQ(record);
+                Log.d(TAG, String.format("*update* alarm (cleared) #%s records=%s", faultNumber, results.size()));
+                for (PumpHistoryAlarm item : results) {
+                    item.clearedDate = eventDate;
+                    item.clearedRTC = eventRTC;
+                    item.clearedOFFSET = eventOFFSET;
+                    item.cleared = true;
+                    pumpHistorySender.setSenderREQ(item);
+                    // is this the original alert?
+                    if (!item.repeated) break;
+                }
             }
 
-            record.clearedDate = eventDate;
-            record.clearedRTC = eventRTC;
-            record.clearedOFFSET = eventOFFSET;
-            record.cleared = true;
         }
     }
 
@@ -423,5 +484,9 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
 
     public byte[] getAlarmData() {
         return alarmData;
+    }
+
+    public boolean isRepeated() {
+        return repeated;
     }
 }

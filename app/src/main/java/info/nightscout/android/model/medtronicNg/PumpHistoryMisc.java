@@ -101,15 +101,15 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_SENSOR)) {
             type = "Sensor Change";
             notes = String.format("%s: %s",
-                    FormatKit.getInstance().getString(R.string.info_Pump),
-                    FormatKit.getInstance().getString(R.string.info_new_sensor_started));
+                    FormatKit.getInstance().getString(R.string.text__Pump),
+                    FormatKit.getInstance().getString(R.string.text__new_sensor_started));
         }
         else if (RECORDTYPE.CHANGE_BATTERY.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_BATTERY)) {
             type = "Pump Battery Change";
             notes = String.format("%s: %s",
-                    FormatKit.getInstance().getString(R.string.info_Pump),
-                    FormatKit.getInstance().getString(R.string.info_battery_inserted));
+                    FormatKit.getInstance().getString(R.string.text__Pump),
+                    FormatKit.getInstance().getString(R.string.text__battery_inserted));
         }
         else if (RECORDTYPE.CHANGE_CANNULA.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_CANNULA)) {
@@ -118,10 +118,10 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
             if (delivered < threshold) return nightscoutItems;
             type = "Site Change";
             notes = String.format("%s: %s%s%s %s (%s)",
-                    FormatKit.getInstance().getString(R.string.info_Pump),
-                    FormatKit.getInstance().getString(R.string.info_fill_cannula),
+                    FormatKit.getInstance().getString(R.string.text__Pump),
+                    FormatKit.getInstance().getString(R.string.text__fill_cannula),
                     formatSeperator,
-                    FormatKit.getInstance().getString(R.string.info_Prime),
+                    FormatKit.getInstance().getString(R.string.text__Prime),
                     FormatKit.getInstance().formatAsInsulin(delivered),
                     FormatKit.getInstance().formatAsInsulin(remaining));
         }
@@ -134,15 +134,15 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
             if (remaining < threshold) return nightscoutItems;
             type = "Insulin Change";
             notes = String.format("%s: %s%s%s %s (%s)",
-                    FormatKit.getInstance().getString(R.string.info_Pump),
-                    FormatKit.getInstance().getString(R.string.info_new_reservoir),
+                    FormatKit.getInstance().getString(R.string.text__Pump),
+                    FormatKit.getInstance().getString(R.string.text__new_reservoir),
                     formatSeperator,
-                    FormatKit.getInstance().getString(R.string.info_Prime),
+                    FormatKit.getInstance().getString(R.string.text__Prime),
                     FormatKit.getInstance().formatAsInsulin(delivered),
                     FormatKit.getInstance().formatAsInsulin(remaining));
         }
         else {
-            Log.e(TAG, "unknown misc event");
+            HistoryUtils.nightscoutDeleteTreatment(nightscoutItems, this, senderID);
             return nightscoutItems;
         }
 
@@ -177,18 +177,18 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
 
         if (RECORDTYPE.CHANGE_SENSOR.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_SENSOR)) {
-            title = FormatKit.getInstance().getString(R.string.info_Sensor_Change);
+            title = FormatKit.getInstance().getString(R.string.text__Sensor_Change);
         }
         else if (RECORDTYPE.CHANGE_BATTERY.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_BATTERY)) {
-            title = FormatKit.getInstance().getString(R.string.info_Battery_Change);
+            title = FormatKit.getInstance().getString(R.string.text__Battery_Change);
         }
         else if (RECORDTYPE.CHANGE_CANNULA.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_CANNULA)) {
             double threshold = Double.parseDouble(pumpHistorySender.getVar(senderID, PumpHistorySender.SENDEROPT.CANNULA_CHANGE_THRESHOLD, "0")) / 1000;
             // only send a CAGE event when primed amount exceeds threshold
             if (delivered < threshold) return messageItems;
-            title = FormatKit.getInstance().getString(R.string.info_Cannula_Change);
+            title = FormatKit.getInstance().getString(R.string.text__Cannula_Change);
         }
         else if (RECORDTYPE.CHANGE_INSULIN.equals(recordtype)
                 && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MISC_INSULIN)) {
@@ -197,7 +197,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
             if (threshold == 1) threshold = 140; // 1.8ml Reservoir
             else if (threshold == 2) threshold = 240; // 3.0ml Reservoir
             if (remaining < threshold) return messageItems;
-            title = FormatKit.getInstance().getString(R.string.info_Insulin_Change);
+            title = FormatKit.getInstance().getString(R.string.text__Insulin_Change);
         }
         else
             return messageItems;
@@ -220,7 +220,7 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
     private String formatLifetimes() {
         StringBuilder sb = new StringBuilder(
                 String.format("%s ",
-                        FormatKit.getInstance().getString(R.string.info_Lifetimes)));
+                        FormatKit.getInstance().getString(R.string.text__Lifetimes)));
 
         for (int lt = 0; lt < LIFETIMES_TOTAL; lt++) {
             byte days = lifetimes[lt << 1];
@@ -358,33 +358,88 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
             record.eventOFFSET = eventOFFSET;
             record.recordtype = recordtype.value();
 
-            // lifetime for items
-            RealmResults<PumpHistoryMisc> realmResults = realm.where(PumpHistoryMisc.class)
-                    .equalTo("pumpMAC", pumpMAC)
-                    .equalTo("recordtype", recordtype.value())
-                    .sort("eventDate", Sort.DESCENDING)
-                    .findAll();
-            if (realmResults.size() > 1) {
-                for (int i = 1; i < realmResults.size(); i++) {
-                    long lifetime = (realmResults.get(i - 1).eventDate.getTime() - realmResults.get(i).eventDate.getTime()) / 60000L;
-                    byte days = (byte) (lifetime / 1440);
-                    byte hours = (byte) ((lifetime % 1440) / 60);
-                    for (int lt = 0; lt < LIFETIMES_TOTAL && i - lt >= 0; lt++) {
-                        byte[] lifetimes = realmResults.get(i - lt).lifetimes;
-                        if (lifetimes[lt << 1] != days || lifetimes[(lt << 1) + 1] != hours) {
-                            lifetimes[lt << 1] = days;
-                            lifetimes[(lt << 1) + 1] = hours;
-                            realmResults.get(i - lt).lifetimes = lifetimes;
-                            pumpHistorySender.setSenderREQ(realmResults.get(i - lt));
-                        }
-                    }
-                }
-            }
+            calcLifetimes(pumpHistorySender, realm, pumpMAC, recordtype);
 
             return record;
         }
 
         return null;
+    }
+
+    private static void calcLifetimes(PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC, RECORDTYPE recordtype) {
+
+        // lifetime for items
+        RealmResults<PumpHistoryMisc> realmResults = realm.where(PumpHistoryMisc.class)
+                .equalTo("pumpMAC", pumpMAC)
+                .equalTo("recordtype", recordtype.value())
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+
+        if (realmResults.size() > 1) {
+
+            for (int i = 1; i < realmResults.size(); i++) {
+
+                long lifetime = (realmResults.get(i - 1).eventDate.getTime() - realmResults.get(i).eventDate.getTime()) / 60000L;
+
+                byte days = (byte) (lifetime / 1440);
+                byte hours = (byte) ((lifetime % 1440) / 60);
+
+                for (int lt = 0; lt < LIFETIMES_TOTAL && i - lt >= 0; lt++) {
+                    byte[] lifetimes = realmResults.get(i - lt).lifetimes;
+
+                    if (lifetimes[lt << 1] != days || lifetimes[(lt << 1) + 1] != hours) {
+                        lifetimes[lt << 1] = days;
+                        lifetimes[(lt << 1) + 1] = hours;
+                        realmResults.get(i - lt).lifetimes = lifetimes;
+                        pumpHistorySender.setSenderREQ(realmResults.get(i - lt));
+                    }
+                }
+
+            }
+        }
+    }
+
+    /*
+    Sensor Change
+    A delay in responding to a 'new sensor' will create 2 history items with the 1st being
+    the time inserted and the 2nd at the time responded (user selects start as new)
+    NS prefers to show the 1st even though the 2nd is more recent.
+    *** workaround ***
+    Filter 'Sensor Change' events and use the recorded history item again if less the 60 mins old.
+    */
+
+    public static void sensor(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            RECORDTYPE recordtype) {
+
+        PumpHistoryMisc record = realm.where(PumpHistoryMisc.class)
+                .equalTo("pumpMAC", pumpMAC)
+                .equalTo("recordtype", recordtype.value())
+                .equalTo("eventRTC", eventRTC)
+                .findFirst();
+
+        if (record == null && (realm.where(PumpHistoryMisc.class)
+                .equalTo("pumpMAC", pumpMAC)
+                .equalTo("recordtype", recordtype.value())
+                .greaterThan("eventRTC", eventRTC - 60 * 60)
+                .lessThan("eventRTC", eventRTC + 60 * 60)
+                .findAll()).size() == 0)
+        {
+            Log.d(TAG, "*new* recordtype: " + recordtype.name());
+            record = realm.createObject(PumpHistoryMisc.class);
+            record.pumpMAC = pumpMAC;
+
+            record.eventDate = eventDate;
+            record.key = HistoryUtils.key("MISC", eventRTC);
+            pumpHistorySender.setSenderREQ(record);
+
+            record.eventRTC = eventRTC;
+            record.eventOFFSET = eventOFFSET;
+            record.recordtype = recordtype.value();
+
+            calcLifetimes(pumpHistorySender, realm, pumpMAC, recordtype);
+        }
     }
 
     public static void cannula(

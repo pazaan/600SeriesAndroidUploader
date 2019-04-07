@@ -26,6 +26,18 @@ public class NightscoutStatus {
     private final int NS_MINOR = 10;
     private final int NS_POINT = 2;
 
+    // NS v0.11.1 delete handling changed to work as query based
+    // regression caused the id based method to be limited to 4 days max causing deletes older then this to not complete
+    // Use query based delete handling for NS version >= this
+    private final int NS_MAJOR_USE_QUERY = 0;
+    private final int NS_MINOR_USE_QUERY = 11;
+    private final int NS_POINT_USE_QUERY = 0;
+
+    // Use profile handling for NS version >= this
+    private final int NS_MAJOR_USE_PROFILE = 0;
+    private final int NS_MINOR_USE_PROFILE = 10;
+    private final int NS_POINT_USE_PROFILE = 2;
+
     // report schedule
     private final long NS_REPORT = 120 * 60000L;
 
@@ -45,6 +57,8 @@ public class NightscoutStatus {
     private String ns_enable = "";
     private boolean ns_careportal = false;
     private boolean ns_devicestatus = false;
+    private boolean ns_usequery = false;
+    private boolean ns_useprofile = false;
 
     private String ns_version_code = "0.0.0";
     private String ns_version_channel = "";
@@ -76,7 +90,7 @@ public class NightscoutStatus {
             available = false;
             if (dataStore.isDbgEnableUploadErrors())
                 UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                        R.string.ul_warn_offline);
+                        R.string.ul_share__offline);
 
         } else {
 
@@ -95,15 +109,15 @@ public class NightscoutStatus {
                 if (available && dataStore.isDbgEnableUploadErrors()) {
 
                     if (!dataStore.isNightscoutAvailable()) {
-                        UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
-                                "Nightscout site is available");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE, String.format("{id;%s} {id;%s}",
+                                R.string.ul_share__nightscout_site, R.string.ul_share__is_available));
                     }
 
                     if (dataStore.isNsEnableTreatments() && !ns_careportal) {
                         UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                                R.string.ul_ns_warn_careportal);
+                                R.string.ul_ns__warn_careportal);
                         UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                R.string.ul_ns_help_careportal);
+                                R.string.ul_ns__help_careportal);
                     }
 
                     Log.d(TAG, String.format("DEVICE: %s NIGHTSCOUT SERVER: %s DIFFERENCE: %s seconds",
@@ -113,100 +127,103 @@ public class NightscoutStatus {
                     ));
                     if (Math.abs(serverTime - deviceTime) > 10 * 60000L) {
                         UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                                R.string.ul_ns_warn_servertime);
+                                R.string.ul_ns__warn_servertime);
                         UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                R.string.ul_ns_help_servertime);
+                                R.string.ul_ns__help_servertime);
                     }
 
                     if (report) {
                         reporttime = now;
 
-                        UserLogMessage.sendE(mContext, "NS version: " + ns_version);
+                        UserLogMessage.sendE(mContext, String.format("{id;%s}: {id;%s} %s",
+                                R.string.ul_share__nightscout, R.string.ul_share__version, ns_version));
 
-                        UserLogMessage.sendE(mContext, String.format(
-                                "NS server time: {diff;%s}  {date.time;%s}",
+                        UserLogMessage.sendE(mContext, String.format("{id;%s}: {diff;%s} {date.time;%s}",
+                                R.string.ul_share__nightscout,
                                 (serverTime - deviceTime) / 1000L,
                                 serverTime));
 
                         if (ns_version_major < NS_MAJOR ||
                                 (ns_version_major <= NS_MAJOR && ns_version_minor < NS_MINOR) ||
                                 (ns_version_major <= NS_MAJOR && ns_version_minor <= NS_MINOR && ns_version_point < NS_POINT)) {
+                            UserLogMessage.sendN(mContext, String.format("{id;%s}: {id;%s} %s",
+                                    R.string.ul_share__nightscout, R.string.ul_share__version, ns_version));
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_version);
+                                    R.string.ul_ns__help_version);
                         }
 
                         if (!(ns_enable.toLowerCase().contains("pump"))) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_config_pump);
+                                    R.string.ul_ns__help_config_pump);
                         } else {
                             if (!ns_devicestatus) {
                                 UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                        R.string.ul_ns_help_config_devicestatus);
+                                        R.string.ul_ns__help_config_devicestatus);
                             }
                             if (ns_pumpFields.equals("")) {
                                 UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                        R.string.ul_ns_help_config_pumpfields);
+                                        R.string.ul_ns__help_config_pumpfields);
                             } else {
                                 if (!(ns_pumpFields.toLowerCase().contains("status")))
                                     UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                            R.string.ul_ns_help_config_pumpfields_status);
+                                            R.string.ul_ns__help_config_pumpfields_status);
                                 if (!(ns_pumpFields.toLowerCase().contains("reservoir")))
                                     UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                            R.string.ul_ns_help_config_pumpfields_reservoir);
+                                            R.string.ul_ns__help_config_pumpfields_reservoir);
                                 if (!(ns_pumpFields.toLowerCase().contains("battery")))
                                     UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                            R.string.ul_ns_help_config_pumpfields_battery);
+                                            R.string.ul_ns__help_config_pumpfields_battery);
                                 if (!(ns_pumpFields.toLowerCase().contains("clock")))
                                     UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                            R.string.ul_ns_help_config_pumpfields_clock);
+                                            R.string.ul_ns__help_config_pumpfields_clock);
                             }
                         }
 
                         if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableSensorChange()
                                 && !(ns_enable.toLowerCase().contains("sage"))) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_config_sage);
+                                    R.string.ul_ns__help_config_sage);
                         }
 
                         if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableReservoirChange()
                                 && !(ns_enable.toLowerCase().contains("cage"))) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_config_cage);
+                                    R.string.ul_ns__help_config_cage);
                         }
 
                         if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsulinChange()
                                 && !(ns_enable.toLowerCase().contains("iage"))) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_config_iage);
+                                    R.string.ul_ns__help_config_iage);
                         }
 
                         if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableBatteryChange()
                                 && !(ns_enable.toLowerCase().contains("bage"))) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_config_bage);
+                                    R.string.ul_ns__help_config_bage);
                         }
 
                         if (dataStore.isNsEnableProfileUpload()
                                 && !(ns_enable.toLowerCase().contains("profile"))) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_config_profile);
+                                    R.string.ul_ns__help_config_profile);
                         }
 
                         if (!(ns_enable.toLowerCase().contains("basal"))) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_config_basal);
+                                    R.string.ul_ns__help_config_basal);
                         }
 
                         if (!(ns_enable.toLowerCase().contains("iob"))) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
-                                    R.string.ul_ns_help_config_iob);
+                                    R.string.ul_ns__help_config_iob);
                         }
 
                     }
 
                 } else if (!available && dataStore.isDbgEnableUploadErrors())
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                            "Nightscout site is not available");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} {id;%s}",
+                            R.string.ul_share__nightscout_site, R.string.ul_share__is_not_available));
             }
         }
 
@@ -216,6 +233,8 @@ public class NightscoutStatus {
                 dataStore.setNightscoutAvailable(available);
                 dataStore.setNightscoutReportTime(reporttime);
                 dataStore.setNightscoutCareportal(ns_careportal);
+                dataStore.setNightscoutUseQuery(ns_usequery);
+                dataStore.setNightscoutUseProfile(ns_useprofile);
             }
         });
 
@@ -264,6 +283,22 @@ public class NightscoutStatus {
                     }
                 }
 
+                if (ns_version_major < NS_MAJOR_USE_QUERY ||
+                        (ns_version_major <= NS_MAJOR_USE_QUERY && ns_version_minor < NS_MINOR_USE_QUERY) ||
+                        (ns_version_major <= NS_MAJOR_USE_QUERY && ns_version_minor <= NS_MINOR_USE_QUERY && ns_version_point < NS_POINT_USE_QUERY)) {
+                    ns_usequery = false;
+                } else {
+                    ns_usequery = true;
+                }
+
+                if (ns_version_major < NS_MAJOR_USE_PROFILE ||
+                        (ns_version_major <= NS_MAJOR_USE_PROFILE && ns_version_minor < NS_MINOR_USE_PROFILE) ||
+                        (ns_version_major <= NS_MAJOR_USE_PROFILE && ns_version_minor <= NS_MINOR_USE_PROFILE && ns_version_point < NS_POINT_USE_PROFILE)) {
+                    ns_useprofile = false;
+                } else {
+                    ns_useprofile = true;
+                }
+
                 s = responseBody.body().getName();
                 if (s != null) ns_name = s;
 
@@ -290,6 +325,9 @@ public class NightscoutStatus {
                         ns_enable = sb.toString();
                     }
                 }
+
+                if (!ns_enable.toLowerCase().contains("profile"))
+                    ns_useprofile = false;
 
                 if (responseBody.body().getExtendedSettings() != null) {
 
@@ -320,8 +358,8 @@ public class NightscoutStatus {
             } catch (Exception e) {
                 Log.e(TAG, "Nightscout status check error", e);
                 if (dataStore.isDbgEnableUploadErrors())
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                            "Nightscout status is not available: " + e.getMessage());
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s}: %s",
+                            R.string.ul_share__nightscout_status, e.getMessage()));
             }
 
             return available;

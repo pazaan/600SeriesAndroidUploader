@@ -23,6 +23,7 @@ import info.nightscout.android.model.medtronicNg.PumpHistoryLoop;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMarker;
 import info.nightscout.android.model.medtronicNg.PumpHistoryMisc;
 import info.nightscout.android.model.medtronicNg.PumpHistoryPattern;
+import info.nightscout.android.model.medtronicNg.PumpHistorySystem;
 import info.nightscout.android.utils.HexDump;
 import info.nightscout.android.utils.FormatKit;
 import io.realm.Realm;
@@ -218,11 +219,15 @@ public class PumpHistoryParser {
                                     closedLoopDailyTotals();
                                     break;
 
-                            /*
-                            case REWIND:
-                                rewind();
-                                break;
-                            */
+                                case CLOSED_LOOP_ALARM_AUTO_CLEARED:
+                                    debugParser();
+                                    break;
+                                case CLOSED_LOOP_TEMP_TARGET_STARTED:
+                                    debugParser();
+                                    break;
+                                case CLOSED_LOOP_TEMP_TARGET_ENDED:
+                                    debugParser();
+                                    break;
                             }
 
                         }
@@ -240,6 +245,13 @@ public class PumpHistoryParser {
         historyRealm.close();
 
         if (integrityException != null) throw integrityException;
+    }
+
+    private void debugParser() {
+        PumpHistorySystem.debugParser(
+                pumpHistorySender, historyRealm, pumpMAC,
+                eventDate, eventRTC, eventOFFSET,
+                eventType, eventData, eventSize, index);
     }
 
     private void sensorGlucoseReadingsExtended() throws IntegrityException {
@@ -633,7 +645,7 @@ public class PumpHistoryParser {
     }
 
     private void glucoseSensorChange() {
-        PumpHistoryMisc.item(
+        PumpHistoryMisc.sensor(
                 pumpHistorySender, historyRealm, pumpMAC,
                 eventDate, eventRTC, eventOFFSET,
                 PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR);
@@ -1583,7 +1595,7 @@ public class PumpHistoryParser {
         }
     }
 
-    private enum EventType {
+    public enum EventType {
         TIME_RESET(0x02),
         USER_TIME_DATE_CHANGE(0x03),
         SOURCE_ID_CONFIGURATION(0x04),
@@ -1708,66 +1720,77 @@ public class PumpHistoryParser {
     }
 
     public enum CGM_EXCEPTION {
+        SENSOR_OK(0x00,
+                R.string.sensor_state__ok,
+                R.string.sensor_state__ok),
         SENSOR_INIT(0x01,
-                FormatKit.getInstance().getString(R.string.SENSOR_INIT),
-                FormatKit.getInstance().getString(R.string.SENSOR_INIT_abbreviation)),
+                R.string.sensor_state__warm_up,
+                R.string.sensor_state__warm_up_abbreviation),
         SENSOR_CAL_NEEDED(0x02,
-                FormatKit.getInstance().getString(R.string.SENSOR_CAL_NEEDED),
-                FormatKit.getInstance().getString(R.string.SENSOR_CAL_NEEDED_abbreviation)),
+                R.string.sensor_state__calibrate_now,
+                R.string.sensor_state__calibrate_now_abbreviation),
         SENSOR_ERROR(0x03,
-                FormatKit.getInstance().getString(R.string.SENSOR_ERROR),
-                FormatKit.getInstance().getString(R.string.SENSOR_ERROR_abbreviation)),
+                R.string.sensor_state__sg_not_available,
+                R.string.sensor_state__sg_not_available_abbreviation),
         SENSOR_CAL_ERROR(0x04,
-                FormatKit.getInstance().getString(R.string.SENSOR_CAL_ERROR),
-                FormatKit.getInstance().getString(R.string.SENSOR_CAL_ERROR_abbreviation)),
+                R.string.sensor_state__cal_error,
+                R.string.sensor_state__cal_error_abbreviation),
         SENSOR_CHANGE_SENSOR_ERROR(0x05,
-                FormatKit.getInstance().getString(R.string.SENSOR_CHANGE_SENSOR_ERROR),
-                FormatKit.getInstance().getString(R.string.SENSOR_CHANGE_SENSOR_ERROR_abbreviation)),
+                R.string.sensor_state__change_sensor,
+                R.string.sensor_state__change_sensor_abbreviation),
         SENSOR_END_OF_LIFE(0x06,
-                FormatKit.getInstance().getString(R.string.SENSOR_END_OF_LIFE),
-                FormatKit.getInstance().getString(R.string.SENSOR_END_OF_LIFE_abbreviation)),
+                R.string.sensor_state__sensor_expired,
+                R.string.sensor_state__sensor_expired_abbreviation),
         SENSOR_NOT_READY(0x07,
-                FormatKit.getInstance().getString(R.string.SENSOR_NOT_READY),
-                FormatKit.getInstance().getString(R.string.SENSOR_NOT_READY_abbreviation)),
+                R.string.sensor_state__not_ready,
+                R.string.sensor_state__not_ready_abbreviation),
         SENSOR_READING_HIGH(0x08,
-                FormatKit.getInstance().getString(R.string.SENSOR_READING_HIGH),
-                FormatKit.getInstance().getString(R.string.SENSOR_READING_HIGH_abbreviation)),
+                R.string.sensor_state__reading_high,
+                R.string.sensor_state__reading_high_abbreviation),
         SENSOR_READING_LOW(0x09,
-                FormatKit.getInstance().getString(R.string.SENSOR_READING_LOW),
-                FormatKit.getInstance().getString(R.string.SENSOR_READING_LOW_abbreviation)),
+                R.string.sensor_state__reading_low,
+                R.string.sensor_state__reading_low_abbreviation),
         SENSOR_CAL_PENDING(0x0A,
-                FormatKit.getInstance().getString(R.string.SENSOR_CAL_PENDING),
-                FormatKit.getInstance().getString(R.string.SENSOR_CAL_PENDING_abbreviation)),
+                R.string.sensor_state__calibrating,
+                R.string.sensor_state__calibrating_abbreviation),
         SENSOR_CHANGE_CAL_ERROR(0x0B,
-                FormatKit.getInstance().getString(R.string.SENSOR_CHANGE_CAL_ERROR),
-                FormatKit.getInstance().getString(R.string.SENSOR_CHANGE_CAL_ERROR_abbreviation)),
+                R.string.sensor_state__cal_error_change_sensor,
+                R.string.sensor_state__cal_error_change_sensor_abbreviation),
         SENSOR_TIME_UNKNOWN(0x0C,
-                FormatKit.getInstance().getString(R.string.SENSOR_TIME_UNKNOWN),
-                FormatKit.getInstance().getString(R.string.SENSOR_TIME_UNKNOWN_abbreviation)),
+                R.string.sensor_state__time_unknown,
+                R.string.sensor_state__time_unknown_abbreviation),
         NA(-1,
-                FormatKit.getInstance().getString(R.string.SENSOR_NA),
-                FormatKit.getInstance().getString(R.string.SENSOR_NA_abbreviation));
+                R.string.sensor_state__sensor_error,
+                R.string.sensor_state__sensor_error_abbreviation);
 
         private int value;
-        private String string;
-        private String abbreviation;
+        private int stringId;
+        private int abbreviationId;
 
-        CGM_EXCEPTION(int value, String string, String abbreviation) {
+        CGM_EXCEPTION(int value, int stringId, int abbreviationId) {
             this.value = value;
-            this.string = string;
-            this.abbreviation = abbreviation;
+            this.stringId = stringId;
+            this.abbreviationId = abbreviationId;
         }
 
         public int value() {
             return this.value;
         }
 
+        public int stringId() {
+            return this.stringId;
+        }
+
         public String string() {
-            return this.string;
+            return FormatKit.getInstance().getString(this.stringId);
+        }
+
+        public int abbriviationId() {
+            return this.abbreviationId;
         }
 
         public String abbriviation() {
-            return this.abbreviation;
+            return FormatKit.getInstance().getString(this.abbreviationId);
         }
 
         public boolean equals(int value) {
@@ -1783,17 +1806,17 @@ public class PumpHistoryParser {
 
     public enum SUSPEND_REASON {
         ALARM_SUSPEND(1,
-                FormatKit.getInstance().getString(R.string.ALARM_SUSPEND)),
+                FormatKit.getInstance().getString(R.string.pump_suspend__alarm_suspend)),
         USER_SUSPEND(2,
-                FormatKit.getInstance().getString(R.string.USER_SUSPEND)),
+                FormatKit.getInstance().getString(R.string.pump_suspend__user_suspend)),
         AUTO_SUSPEND(3,
-                FormatKit.getInstance().getString(R.string.AUTO_SUSPEND)),
+                FormatKit.getInstance().getString(R.string.pump_suspend__auto_suspend)),
         LOWSG_SUSPEND(4
-                , FormatKit.getInstance().getString(R.string.LOWSG_SUSPEND)),
+                , FormatKit.getInstance().getString(R.string.pump_suspend__low_glucose_suspend)),
         SET_CHANGE_SUSPEND(5,
-                FormatKit.getInstance().getString(R.string.SET_CHANGE_SUSPEND)),
+                FormatKit.getInstance().getString(R.string.pump_suspend__set_change_suspend)),
         PLGM_PREDICTED_LOW_SG(10,
-                FormatKit.getInstance().getString(R.string.PLGM_PREDICTED_LOW_SG)),
+                FormatKit.getInstance().getString(R.string.pump_suspend__predicted_low_glucose_suspend)),
         NA(-1, "");
 
         private int value;
@@ -1825,17 +1848,17 @@ public class PumpHistoryParser {
 
     public enum RESUME_REASON {
         USER_SELECTS_RESUME(1,
-                FormatKit.getInstance().getString(R.string.USER_SELECTS_RESUME)),
+                FormatKit.getInstance().getString(R.string.pump_resume__user_resumed)),
         USER_CLEARS_ALARM(2,
-                FormatKit.getInstance().getString(R.string.USER_CLEARS_ALARM)),
+                FormatKit.getInstance().getString(R.string.pump_resume__user_clears_alarm)),
         LGM_MANUAL_RESUME(3,
-                FormatKit.getInstance().getString(R.string.LGM_MANUAL_RESUME)),
+                FormatKit.getInstance().getString(R.string.pump_resume__low_glucose_manual_resume)),
         LGM_AUTO_RESUME_MAX_SUSP(4,
-                FormatKit.getInstance().getString(R.string.LGM_AUTO_RESUME_MAX_SUSP)), // After an auto suspend, but no CGM data afterwards.
+                FormatKit.getInstance().getString(R.string.pump_resume__low_glucose_auto_resume_max_suspend_period)), // After an auto suspend, but no CGM data afterwards.
         LGM_AUTO_RESUME_PSG_SG(5,
-                FormatKit.getInstance().getString(R.string.LGM_AUTO_RESUME_PSG_SG)), // When SG reaches the Preset SG level
+                FormatKit.getInstance().getString(R.string.pump_resume__low_glucose_auto_resume_preset_glucose_reached)), // When SG reaches the Preset SG level
         LGM_MANUAL_RESUME_VIA_DISABLE(6,
-                FormatKit.getInstance().getString(R.string.LGM_MANUAL_RESUME_VIA_DISABLE)),
+                FormatKit.getInstance().getString(R.string.pump_resume__low_glucose_manual_resume_via_disable)),
         NA(-1, "");
 
         private int value;
@@ -2120,15 +2143,15 @@ public class PumpHistoryParser {
 
     public enum CL_TRANSITION_REASON {
         INTO_ACTIVE_DUE_TO_GLUCOSE_SENSOR_CALIBRATION(0,
-                FormatKit.getInstance().getString(R.string.INTO_ACTIVE_DUE_TO_GLUCOSE_SENSOR_CALIBRATION)),
+                FormatKit.getInstance().getString(R.string.automode_transition__into_active_due_to_sensor_calibration)),
         OUT_OF_ACTIVE_DUE_TO_USER_OVERRIDE(1,
-                FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_USER_OVERRIDE)),
+                FormatKit.getInstance().getString(R.string.automode_transition__out_of_active_due_to_user_override)),
         OUT_OF_ACTIVE_DUE_TO_ALARM(2,
-                FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_ALARM)),
+                FormatKit.getInstance().getString(R.string.automode_transition__out_of_active_due_to_alarm)),
         OUT_OF_ACTIVE_DUE_TO_TIMEOUT_FROM_SAFE_BASAL(3,
-                FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_TIMEOUT_FROM_SAFE_BASAL)),
+                FormatKit.getInstance().getString(R.string.automode_transition__out_of_active_due_to_timeout_from_safe_basal)),
         OUT_OF_ACTIVE_DUE_TO_PROLONGED_HIGH_SG(4,
-                FormatKit.getInstance().getString(R.string.OUT_OF_ACTIVE_DUE_TO_PROLONGED_HIGH_SG)),
+                FormatKit.getInstance().getString(R.string.automode_transition__out_of_active_due_to_prolonged_high_sg)),
         NA(-1, "");
 
         private int value;

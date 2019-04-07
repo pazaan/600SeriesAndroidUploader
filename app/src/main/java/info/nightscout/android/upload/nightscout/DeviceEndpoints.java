@@ -67,11 +67,11 @@ public interface DeviceEndpoints {
     }
 
     class DeviceStatus {
-        final Integer uploaderBattery;
-        final String device;
-        final String created_at;
-        final PumpInfo pump;
-
+        Integer uploaderBattery;
+        String device;
+        String created_at;
+        PumpInfo pump;
+/*
         public DeviceStatus(Integer uploaderBattery,
                             String device,
                             String created_at,
@@ -81,6 +81,23 @@ public interface DeviceEndpoints {
             this.created_at = created_at;
             this.pump = pump;
         }
+*/
+        public void setUploaderBattery(Integer uploaderBattery) {
+            this.uploaderBattery = uploaderBattery;
+        }
+
+        public void setDevice(String device) {
+            this.device = device;
+        }
+
+        public void setCreatedAt(String created_at) {
+            this.created_at = created_at;
+        }
+
+        public void setPump(PumpInfo pump) {
+            this.pump = pump;
+        }
+
     }
 
     @Headers({

@@ -193,6 +193,7 @@ public class MedtronicCnlReader {
 
         // retry strategy: last,chan0,chan1,last,chan2,chan3,last
         if (lastRadioChannel != 0x00) {
+            //noinspection RedundantCollectionOperation
             radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
             radioChannels.add(4, lastRadioChannel);
             radioChannels.add(2, lastRadioChannel);
@@ -267,6 +268,22 @@ public class MedtronicCnlReader {
 
         Log.d(TAG, "Finished updatePumpStatus");
         return pumpRecord;
+    }
+
+    public PumpStatusResponseMessage updatePumpStatus() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin updatePumpStatus");
+
+        RequestMessage requestMessage = new RequestMessage() {
+            @Override
+            PumpStatusResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                return new PumpStatusRequestMessage(mPumpSession).send(mDevice);
+            }
+        };
+
+        PumpStatusResponseMessage response = (PumpStatusResponseMessage) requestMessage.execute();
+
+        Log.d(TAG, "Finished updatePumpStatus");
+        return response;
     }
 
     public byte[] getBasalPatterns() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {

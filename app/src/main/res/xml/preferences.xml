@@ -2,43 +2,43 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-        android:title="@string/pref_category_monitor">
+        android:title="@string/pref_monitor_category">
         <info.nightscout.android.utils.CustomSwitchPreference
-            android:title="@string/pref_bg_unit_title"
+            android:title="@string/pref_monitor_bg_unit_title"
             android:disableDependentsState="false"
             android:key="@string/key_mmolxl"
             android:defaultValue="@bool/default_mmolxl"
-            android:summaryOff="@string/pref_bg_unit_summary_off"
-            android:summaryOn="@string/pref_bg_unit_summary_on"
-            android:switchTextOff="@string/text_unit_mgdl"
-            android:switchTextOn="@string/text_unit_mmol" />
+            android:summaryOff="@string/pref_monitor_bg_unit_summary_off"
+            android:summaryOn="@string/pref_monitor_bg_unit_summary_on"
+            android:switchTextOff="@string/glucose_mgdl"
+            android:switchTextOn="@string/glucose_mmol" />
         <info.nightscout.android.utils.CustomSwitchPreference
-            android:title="@string/pref_decimals_title"
+            android:title="@string/pref_monitor_decimals_title"
             android:dependency="mmolxl"
             android:key="@string/key_mmolDecimals"
             android:defaultValue="@bool/default_mmolDecimals"
-            android:summaryOff="@string/pref_decimals_summary_off"
-            android:summaryOn="@string/pref_decimals_summary_on"
+            android:summaryOff="@string/pref_monitor_decimals_summary_off"
+            android:summaryOn="@string/pref_monitor_decimals_summary_on"
             android:switchTextOff="1"
             android:switchTextOn="2" />
         <info.nightscout.android.utils.ListPreference
-            android:title="@string/pref_poll_interval_title"
+            android:title="@string/pref_monitor_poll_interval_title"
             android:key="@string/key_pollInterval"
             android:defaultValue="@string/default_pollInterval"
             android:entries="@array/poll_interval"
             android:entryValues="@array/poll_interval_values"
             android:summary="%s" />
         <info.nightscout.android.utils.CustomSwitchPreference
-            android:title="@string/pref_poll_away_title"
+            android:title="@string/pref_monitor_poll_overdue_title"
             android:disableDependentsState="false"
             android:key="@string/key_doublePollOnPumpAway"
             android:defaultValue="@bool/default_doublePollOnPumpAway"
-            android:summaryOff="@string/pref_poll_away_summary_off"
-            android:summaryOn="@string/pref_poll_away_summary_on"
-            android:switchTextOff="@string/text_off"
-            android:switchTextOn="@string/text_on" />
+            android:summaryOff="@string/pref_monitor_poll_overdue_summary_off"
+            android:summaryOn="@string/pref_monitor_poll_overdue_summary_on"
+            android:switchTextOff="@string/off"
+            android:switchTextOn="@string/on" />
         <info.nightscout.android.utils.ListPreference
-            android:title="@string/pref_low_battery_poll_interval_title"
+            android:title="@string/pref_monitor_low_battery_poll_interval_title"
             android:key="@string/key_lowBatPollInterval"
             android:defaultValue="@string/default_lowBatPollInterval"
             android:summary="%s"
@@ -47,9 +47,9 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/pref_category_display">
+        android:title="@string/pref_display_category">
         <info.nightscout.android.utils.ListPreference
-            android:title="@string/pref_chart_title"
+            android:title="@string/pref_chart_zoom_title"
             android:key="@string/key_chartZoom"
             android:defaultValue="@string/default_chartZoom"
             android:summary="%s"
@@ -65,13 +65,13 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/pref_category_sharing">
+        android:title="@string/pref_sharing_category">
         <CheckBoxPreference
-            android:title="@string/pref_upload_title"
+            android:title="@string/pref_send_to_nightscout_title"
             android:disableDependentsState="false"
             android:key="@string/key_EnableRESTUpload"
             android:defaultValue="@bool/default_EnableRESTUpload"
-            android:summary="@string/pref_upload_summary" />
+            android:summary="@string/pref_send_to_nightscout_summary" />
         <info.nightscout.android.utils.EditTextPreferenceURL
             android:title="@string/pref_url_title"
             android:key="@string/key_nightscoutURL"
@@ -88,26 +88,61 @@
             android:dialogTitle="@string/pref_secret_dialog_title" />
 
         <PreferenceScreen
-            android:title="@string/pref_category_advanced_nightscout_settings"
+            android:title="@string/pref_ns_advanced_nightscout_settings_category"
             android:dependency="@string/key_EnableRESTUpload"
             android:persistent="false">
 
             <PreferenceCategory
-                android:title="@string/pref_category_advanced_nightscout_settings">
+                android:title="@string/pref_ns_advanced_nightscout_settings_category">
                 <CheckBoxPreference
                     android:title="@string/pref_ns_treatments_title"
                     android:key="@string/key_nsEnableTreatments"
                     android:defaultValue="@bool/default_nsEnableTreatments"
                     android:summary="@string/pref_ns_treatments_summary"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_history_sync_title"
-                    android:key="@string/key_nsEnableHistorySync"
-                    android:defaultValue="@bool/default_nsEnableHistorySync"
-                    android:summary="@string/pref_ns_history_sync_summary"/>
+                    android:title="@string/pref_ns_bolus_title"
+                    android:dependency="@string/key_nsEnableTreatments"
+                    android:key="@string/key_nsEnableBolusTreatments"
+                    android:defaultValue="@bool/default_nsEnableBolusTreatments"
+                    android:summary="@string/pref_ns_bolus_summary"/>
+                <CheckBoxPreference
+                    android:title="@string/pref_ns_basal_title"
+                    android:dependency="@string/key_nsEnableTreatments"
+                    android:key="@string/key_nsEnableBasalTreatments"
+                    android:defaultValue="@bool/default_nsEnableBasalTreatments"
+                    android:summary="@string/pref_ns_basal_summary"/>
+                <info.nightscout.android.utils.EditTextPreferenceTEXT
+                    android:title="@string/pref_ns_entered_by_title"
+                    android:dependency="@string/key_nsEnableTreatments"
+                    android:key="@string/key_nsEnteredBy"
+                    android:defaultValue="@string/default_nsEnteredBy"
+                    android:dialogMessage=""
+                    android:dialogTitle="@string/pref_ns_entered_by_title"/>
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="@string/pref_ns_category_bg_readings">
+                android:title="@string/pref_ns_device_status_category">
+                <CheckBoxPreference
+                    android:title="@string/pref_ns_device_title"
+                    android:key="@string/key_nsEnableDeviceStatus"
+                    android:defaultValue="@bool/default_nsEnableDeviceStatus"
+                    android:summary="@string/pref_ns_device_summary"/>
+                <CheckBoxPreference
+                    android:title="@string/pref_ns_pump_title"
+                    android:dependency="@string/key_nsEnableDeviceStatus"
+                    android:key="@string/key_nsEnableDevicePUMP"
+                    android:defaultValue="@bool/default_nsEnableDevicePUMP"
+                    android:summary="@string/pref_ns_pump_summary"/>
+                <info.nightscout.android.utils.EditTextPreferenceTEXT
+                    android:title="@string/pref_ns_device_name_title"
+                    android:key="@string/key_nsDeviceName"
+                    android:defaultValue="@string/default_nsDeviceName"
+                    android:dialogMessage=""
+                    android:dialogTitle="@string/pref_ns_device_name_title"/>
+            </PreferenceCategory>
+
+            <PreferenceCategory
+                android:title="@string/pref_ns_bg_readings_category">
                 <CheckBoxPreference
                     android:title="@string/pref_ns_finger_bg_title"
                     android:dependency="@string/key_nsEnableTreatments"
@@ -123,7 +158,7 @@
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="@string/pref_ns_category_consumables">
+                android:title="@string/pref_ns_consumables_category">
                 <CheckBoxPreference
                     android:title="@string/pref_ns_sensor_change_title"
                     android:dependency="@string/key_nsEnableTreatments"
@@ -172,7 +207,7 @@
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="@string/pref_ns_category_profiles">
+                android:title="@string/pref_ns_profiles_category">
                 <CheckBoxPreference
                     android:title="@string/pref_ns_profile_upload_title"
                     android:key="@string/key_nsEnableProfileUpload"
@@ -207,36 +242,44 @@
                     android:entries="@array/active_insulin_time"
                     android:entryValues="@array/active_insulin_time_values"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_profile_sent_pattern_change_title"
+                    android:title="@string/pref_ns_profile_send_pattern_change_title"
                     android:dependency="@string/key_nsEnableTreatments"
                     android:key="@string/key_nsEnablePatternChange"
                     android:defaultValue="@bool/default_nsEnablePatternChange"
-                    android:summary="@string/pref_ns_profile_sent_pattern_change_summary"/>
+                    android:summary="@string/pref_ns_profile_send_pattern_change_summary"/>
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="@string/pref_ns_category_status">
+                android:title="@string/pref_ns_pump_alerts_category">
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_pump_title"
+                    android:title="@string/pref_ns_pump_alerts_title"
                     android:dependency="@string/key_nsEnableTreatments"
                     android:key="@string/key_nsEnableAlarms"
                     android:defaultValue="@bool/default_nsEnableAlarms"
-                    android:summary="@string/pref_ns_status_pump_summary"/>
+                    android:summary="@string/pref_ns_pump_alerts_summary"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_extended_title"
+                    android:title="@string/pref_ns_pump_alerts_extended_message_info_title"
                     android:dependency="@string/key_nsEnableAlarms"
                     android:key="@string/key_nsAlarmExtended"
                     android:defaultValue="@bool/default_nsAlarmExtended"
-                    android:summary="@string/pref_ns_status_extended_summary"/>
+                    android:summary="@string/pref_ns_pump_alerts_extended_message_info_summary"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_time_to_clear_title"
+                    android:title="@string/pref_ns_pump_alerts_time_to_clear_title"
                     android:dependency="@string/key_nsEnableAlarms"
                     android:key="@string/key_nsAlarmCleared"
                     android:defaultValue="@bool/default_nsAlarmCleared"
-                    android:summary="@string/pref_ns_status_time_to_clear_summary"/>
+                    android:summary="@string/pref_ns_pump_alerts_time_to_clear_summary"/>
+                <info.nightscout.android.utils.ListPreference
+                    android:title="@string/pref_ns_pump_alerts_remove_from_nightscout_title"
+                    android:dependency="@string/key_nsEnableAlarms"
+                    android:key="@string/key_nsAlarmTTL"
+                    android:summary="%s"
+                    android:defaultValue="@string/default_nsAlarmTTL"
+                    android:entries="@array/alarm_ttl"
+                    android:entryValues="@array/alarm_ttl_values"/>
             </PreferenceCategory>
             <PreferenceCategory
-                android:title="@string/pref_ns_category_uploader_status">
+                android:title="@string/pref_ns_uploader_status_category">
                 <CheckBoxPreference
                     android:title="@string/pref_ns_status_uploader_title"
                     android:dependency="@string/key_nsEnableTreatments"
@@ -244,25 +287,40 @@
                     android:defaultValue="@bool/default_nsEnableSystemStatus"
                     android:summary="@string/pref_ns_status_uploader_summary"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_uploader_battery_full_title"
-                    android:dependency="@string/key_nsEnableSystemStatus"
-                    android:key="@string/key_nsEnableUploaderBatteryFull"
-                    android:defaultValue="@bool/default_nsEnableUploaderBatteryFull"
-                    android:summary="@string/pref_ns_status_uploader_battery_full_summary"/>
-                <CheckBoxPreference
                     android:title="@string/pref_ns_status_uploader_usb_error_title"
                     android:dependency="@string/key_nsEnableSystemStatus"
-                    android:key="@string/key_nsEnableUploaderUsbError"
-                    android:defaultValue="@bool/default_nsEnableUploaderUsbError"
+                    android:key="@string/key_nsSystemStatusUsbErrors"
+                    android:defaultValue="@bool/default_nsSystemStatusUsbErrors"
                     android:summary="@string/pref_ns_status_uploader_usb_error_summary"/>
+                <CheckBoxPreference
+                    android:title="@string/pref_ns_status_uploader_connection_states"
+                    android:dependency="@string/key_nsEnableSystemStatus"
+                    android:key="@string/key_nsSystemStatusConnection"
+                    android:defaultValue="@bool/default_nsSystemStatusConnection"/>
+                <CheckBoxPreference
+                    android:title="@string/pref_ns_status_uploader_low_battery_state"
+                    android:dependency="@string/key_nsEnableSystemStatus"
+                    android:key="@string/key_nsSystemStatusBatteryLow"
+                    android:defaultValue="@bool/default_nsSystemStatusBatteryLow"/>
+                <CheckBoxPreference
+                    android:title="@string/pref_ns_status_uploader_fully_charged_state"
+                    android:dependency="@string/key_nsEnableSystemStatus"
+                    android:key="@string/key_nsSystemStatusBatteryCharged"
+                    android:defaultValue="@bool/default_nsSystemStatusBatteryCharged"/>
+                <Preference
+                    android:title="@string/pref_ns_status_uploader_time_to_clear_title"
+                    android:dependency="@string/key_nsEnableSystemStatus"
+                    android:key="pref_static_field_key"
+                    android:selectable="false"
+                    android:summary="@string/pref_ns_status_uploader_time_to_clear_summary"/>
             </PreferenceCategory>
             <PreferenceCategory
-                android:title="@string/pref_ns_category_pattern_and_preset_naming">
+                android:title="@string/pref_ns_pattern_and_preset_naming_category">
                 <PreferenceScreen
-                    android:title="@string/pref_ns_category_basal_patterns"
+                    android:title="@string/pref_ns_basal_patterns_category"
                     android:persistent="false">
                     <PreferenceCategory
-                        android:title="@string/pref_ns_category_basal_patterns">
+                        android:title="@string/pref_ns_basal_patterns_category">
                         <info.nightscout.android.utils.EditTextPreferenceNAME
                             android:title="@string/pref_ns_pattern_1_title"
                             android:key="@string/key_nameBasalPattern1"
@@ -315,10 +373,10 @@
                 </PreferenceScreen>
 
                 <PreferenceScreen
-                    android:title="@string/pref_ns_category_temp_basal_presets"
+                    android:title="@string/pref_ns_temp_basal_presets_category"
                     android:persistent="false">
                     <PreferenceCategory
-                        android:title="@string/pref_ns_category_temp_basal_presets">
+                        android:title="@string/pref_ns_temp_basal_presets_category">
                         <info.nightscout.android.utils.EditTextPreferenceNAME
                             android:title="@string/pref_ns_preset_1_title"
                             android:key="@string/key_nameTempBasalPreset1"
@@ -371,10 +429,10 @@
                 </PreferenceScreen>
 
                 <PreferenceScreen
-                    android:title="@string/pref_ns_category_bolus_presets"
+                    android:title="@string/pref_ns_bolus_presets_category"
                     android:persistent="false">
                     <PreferenceCategory
-                        android:title="@string/pref_ns_category_bolus_presets">
+                        android:title="@string/pref_ns_bolus_presets_category">
                         <info.nightscout.android.utils.EditTextPreferenceNAME
                             android:title="@string/pref_ns_preset_1_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
@@ -436,16 +494,16 @@
 
             </PreferenceCategory>
             <PreferenceCategory
-                android:title="@string/pref_ns_category_cgm">
+                android:title="@string/pref_ns_cgm_category">
                 <CheckBoxPreference
                     android:title="@string/pref_ns_insert_bg_as_cgm_title"
-                    android:dependency="@string/key_nsEnableTreatments"
+                    android:dependency="@string/key_nsEnableFingerBG"
                     android:key="@string/key_nsEnableInsertBGasCGM"
                     android:defaultValue="@bool/default_nsEnableInsertBGasCGM"
                     android:summary="@string/pref_ns_insert_bg_as_cgm_summary"/>
             </PreferenceCategory>
             <PreferenceCategory
-                android:title="@string/pref_ns_category_misc">
+                android:title="@string/pref_ns_misc_category">
                 <info.nightscout.android.utils.ListPreference
                     android:title="@string/pref_ns_grams_per_exchange_title"
                     android:key="@string/key_nsGramsPerExchange"
@@ -465,14 +523,6 @@
                     android:key="@string/key_nsEnableFormatHTML"
                     android:defaultValue="@bool/default_nsEnableFormatHTML"
                     android:summary="@string/pref_ns_formatting_summary"/>
-                <info.nightscout.android.utils.ListPreference
-                    android:title="@string/pref_ns_status_ttl_title"
-                    android:dependency="@string/key_nsEnableTreatments"
-                    android:key="@string/key_nsAlarmTTL"
-                    android:summary="%s"
-                    android:defaultValue="@string/default_nsAlarmTTL"
-                    android:entries="@array/alarm_ttl"
-                    android:entryValues="@array/alarm_ttl_values"/>
             </PreferenceCategory>
         </PreferenceScreen>
 
@@ -483,10 +533,10 @@
             android:summary="@string/pref_scan_qr_code_summary"/>
 
         <CheckBoxPreference
-            android:title="@string/pref_xdrip_title"
+            android:title="@string/pref_send_to_xdrip_title"
             android:key="@string/key_enableXdripPlusUpload"
             android:defaultValue="@bool/default_enableXdripPlusUpload"
-            android:summary="@string/pref_xdrip_summary" />
+            android:summary="@string/pref_send_to_xdrip_summary" />
 
         <PreferenceScreen
             android:title="@string/pref_urchin_title"
@@ -607,14 +657,14 @@
                     android:dependency="@string/key_urchinEnable"
                     android:key="@string/key_urchinCustomText1"
                     android:defaultValue="@string/default_urchinCustomText1"
-                    android:dialogMessage="@string/pref_urchin_custom_text_characters_dialog_message"
+                    android:dialogMessage="@string/pebble_charset"
                     android:dialogTitle="@string/pref_urchin_custom_text_dialog_title"/>
                 <info.nightscout.android.utils.EditTextPreferenceURCHIN
                     android:title="@string/pref_urchin_custom_text_2_title"
                     android:dependency="@string/key_urchinEnable"
                     android:key="@string/key_urchinCustomText2"
                     android:defaultValue="@string/default_urchinCustomText2"
-                    android:dialogMessage="@string/pref_urchin_custom_text_characters_dialog_message"
+                    android:dialogMessage="@string/pebble_charset"
                     android:dialogTitle="@string/pref_urchin_custom_text_dialog_title"/>
             </PreferenceCategory>
 
@@ -624,188 +674,196 @@
                 <ListPreference
                     android:key="urchinStatusLayout1"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_ActiveInsulin"/>
                 <ListPreference
                     android:key="urchinStatusLayout2"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Text_Space"/>
                 <ListPreference
                     android:key="urchinStatusLayout3"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Basal"/>
                 <ListPreference
                     android:key="urchinStatusLayout4"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Nextline"/>
                 <ListPreference
                     android:key="urchinStatusLayout5"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Calibrate"/>
                 <ListPreference
                     android:key="urchinStatusLayout6"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Text_Space"/>
                 <ListPreference
                     android:key="urchinStatusLayout7"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Battery"/>
                 <ListPreference
                     android:key="urchinStatusLayout8"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout9"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout10"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout11"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout12"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout13"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout14"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout15"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout16"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout17"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout18"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout19"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout20"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout21"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout22"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout23"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout24"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout25"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout26"
                     android:summary="%s"
-                    android:defaultValue="0"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout27"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout28"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout29"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout30"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout31"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout32"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout33"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout34"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
                 <ListPreference
                     android:key="urchinStatusLayout35"
                     android:summary="%s"
-                    android:defaultValue="@string/default_urchinStatusLayout"/>
+                    android:defaultValue="@string/default_urchinStatusLayout_Empty"/>
             </PreferenceCategory>
 
         </PreferenceScreen>
 
         <PreferenceScreen
-            android:title="Pushover"
-            android:summary="Alerts and Events to any device"
+            android:title="@string/pref_pushover_category"
+            android:summary="@string/pref_pushover_summary"
             android:persistent="false">
-
             <PreferenceCategory
-                android:title="Pushover">
+                android:title="@string/pref_pushover_enable_title">
                 <CheckBoxPreference
-                    android:title="Enable Pushover support"
+                    android:title="@string/pref_pushover_summary"
                     android:key="@string/key_pushoverEnable"
                     android:defaultValue="@bool/default_pushoverEnable"
-                    android:summary="Send push notifications for pump alerts and events to any device using Pushover. Download the Pushover app on your follower device from the App Store."/>
+                    android:summary="@string/pref_pushover_enable_summary"/>
             </PreferenceCategory>
-
+            <Preference
+                android:title="@string/pref_pushover_website_title">
+                <intent android:action="android.intent.action.VIEW"
+                    android:data="https://pushover.net/" />
+            </Preference>
+            <Preference
+                android:title="@string/pref_pushover_website_api_token_title">
+                <intent android:action="android.intent.action.VIEW"
+                    android:data="https://pushover.net/apps/build" />
+            </Preference>
             <PreferenceCategory
-                android:title="Account">
+                android:title="@string/pref_pushover_account_category">
                 <info.nightscout.android.utils.EditTextPreferenceURL
-                    android:title="API Token"
+                    android:title="@string/pref_pushover_api_token_title"
                     android:dependency="@string/key_pushoverEnable"
                     android:key="@string/key_pushoverAPItoken"
                     android:defaultValue="@string/default_pushoverAPItoken"
                     android:dialogMessage=""
-                    android:dialogTitle="Enter your api token"/>
+                    android:dialogTitle="@string/pref_pushover_api_token_summary"/>
                 <info.nightscout.android.utils.EditTextPreferenceURL
-                    android:title="USER / GROUP Key"
+                    android:title="@string/pref_pushover_user_group_key_title"
                     android:dependency="@string/key_pushoverEnable"
                     android:key="@string/key_pushoverUSERtoken"
                     android:defaultValue="@string/default_pushoverUSERtoken"
                     android:dialogMessage=""
-                    android:dialogTitle="Enter your user / group key"/>
+                    android:dialogTitle="@string/pref_pushover_user_group_key_summary"/>
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="Override">
+                android:title="@string/pref_pushover_override_category">
                 <CheckBoxPreference
-                    android:title="Priority Override"
+                    android:title="@string/pref_pushover_override_priority_title"
                     android:dependency="@string/key_pushoverEnable"
                     android:key="@string/key_pushoverEnablePriorityOverride"
                     android:defaultValue="@bool/default_pushoverEnablePriorityOverride"/>
                 <ListPreference
-                    android:title="All Priorities"
+                    android:title="@string/pref_pushover_override_all_priorities_title"
                     android:dependency="@string/key_pushoverEnablePriorityOverride"
                     android:key="@string/key_pushoverPriorityOverride"
                     android:defaultValue="@string/default_pushoverPriorityOverride"
@@ -813,12 +871,12 @@
                     android:entries="@array/pushover_priority"
                     android:entryValues="@array/pushover_priority_values"/>
                 <CheckBoxPreference
-                    android:title="Sound Override"
+                    android:title="@string/pref_pushover_override_sound_title"
                     android:dependency="@string/key_pushoverEnable"
                     android:key="@string/key_pushoverEnableSoundOverride"
                     android:defaultValue="@bool/default_pushoverEnableSoundOverride"/>
                 <ListPreference
-                    android:title="All Sounds"
+                    android:title="@string/pref_pushover_override_all_sounds_title"
                     android:dependency="@string/key_pushoverEnableSoundOverride"
                     android:key="@string/key_pushoverSoundOverride"
                     android:defaultValue="@string/default_pushoverSoundOverride"
@@ -828,31 +886,37 @@
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="Settings">
+                android:title="@string/pref_pushover_settings_category">
                 <PreferenceScreen
-                    android:title="High/Low Alerts"
+                    android:title="@string/pref_pushover_high_low_alerts_category"
                     android:dependency="@string/key_pushoverEnable"
                     android:persistent="false">
                     <PreferenceCategory
-                        android:title="High/Low Alerts">
+                        android:title="@string/pref_pushover_high_low_alerts_category">
                         <Preference
                             android:key="pref_static_field_key"
                             android:selectable="false"
-                            android:summary="Alarms and alerts that have not been acknowledged and cleared by the pump user can have a notification sent to followers."/>
+                            android:summary="@string/pref_pushover_message_alarms_alerts_summary"/>
                         <Preference
-                            android:title="Message priority selection:"
+                            android:title="@string/pref_pushover_message_priority_selection_title"
                             android:key="pref_static_field_key"
                             android:selectable="false"
-                            android:summary="EMERGENCY: red notification &amp; sound (persistent alarm that must be aknowledged by follower)\nHIGH: red notification &amp; sound\nNORMAL: notification &amp; sound\nLOW: notification &amp; no sound\nLOWEST: no notification &amp; no sound (message can be viewed in the Pushover app/widget)"/>
+                            android:summary="@string/pref_pushover_message_priority_summary"/>
+                        <Preference
+                            android:title="@string/pref_pushover_preview_sounds_title"
+                            android:summary="@string/pref_pushover_preview_sounds_summary">
+                            <intent android:action="android.intent.action.VIEW"
+                                android:data="https://pushover.net/api#sounds" />
+                        </Preference>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Alert On High">
+                        android:title="@string/pref_pushover_alert_on_high_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableOnHigh"
                             android:defaultValue="@bool/default_pushoverEnableOnHigh"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableOnHigh"
                             android:key="@string/key_pushoverPriorityOnHigh"
                             android:defaultValue="@string/default_pushoverPriorityOnHigh"
@@ -860,7 +924,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableOnHigh"
                             android:key="@string/key_pushoverSoundOnHigh"
                             android:defaultValue="@string/default_pushoverSoundOnHigh"
@@ -869,13 +933,13 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Alert On Low">
+                        android:title="@string/pref_pushover_alert_on_low_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableOnLow"
                             android:defaultValue="@bool/default_pushoverEnableOnLow"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableOnLow"
                             android:key="@string/key_pushoverPriorityOnLow"
                             android:defaultValue="@string/default_pushoverPriorityOnLow"
@@ -883,7 +947,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableOnLow"
                             android:key="@string/key_pushoverSoundOnLow"
                             android:defaultValue="@string/default_pushoverSoundOnLow"
@@ -892,13 +956,13 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Alert Before High">
+                        android:title="@string/pref_pushover_alert_before_high_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableBeforeHigh"
                             android:defaultValue="@bool/default_pushoverEnableBeforeHigh"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableBeforeHigh"
                             android:key="@string/key_pushoverPriorityBeforeHigh"
                             android:defaultValue="@string/default_pushoverPriorityBeforeHigh"
@@ -906,7 +970,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableBeforeHigh"
                             android:key="@string/key_pushoverSoundBeforeHigh"
                             android:defaultValue="@string/default_pushoverSoundBeforeHigh"
@@ -915,13 +979,13 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Alert Before Low">
+                        android:title="@string/pref_pushover_alert_before_low_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableBeforeLow"
                             android:defaultValue="@bool/default_pushoverEnableBeforeLow"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableBeforeLow"
                             android:key="@string/key_pushoverPriorityBeforeLow"
                             android:defaultValue="@string/default_pushoverPriorityBeforeLow"
@@ -929,7 +993,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableBeforeLow"
                             android:key="@string/key_pushoverSoundBeforeLow"
                             android:defaultValue="@string/default_pushoverSoundBeforeLow"
@@ -937,55 +1001,46 @@
                             android:entries="@array/pushover_sound"
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
-                    <PreferenceCategory
-                        android:title="Auto Mode Exit">
-                        <CheckBoxPreference
-                            android:title="Send message"
-                            android:key="@string/key_pushoverEnableAutoModeExit"
-                            android:defaultValue="@bool/default_pushoverEnableAutoModeExit"/>
-                        <ListPreference
-                            android:title="Priority"
-                            android:dependency="@string/key_pushoverEnableAutoModeExit"
-                            android:key="@string/key_pushoverPriorityAutoModeExit"
-                            android:defaultValue="@string/default_pushoverPriorityAutoModeExit"
-                            android:summary="%s"
-                            android:entries="@array/pushover_priority"
-                            android:entryValues="@array/pushover_priority_values"/>
-                        <ListPreference
-                            android:title="Sound"
-                            android:dependency="@string/key_pushoverEnableAutoModeExit"
-                            android:key="@string/key_pushoverSoundAutoModeExit"
-                            android:defaultValue="@string/default_pushoverSoundAutoModeExit"
-                            android:summary="%s"
-                            android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
-                    </PreferenceCategory>
                 </PreferenceScreen>
 
                 <PreferenceScreen
-                    android:title="Pump Alerts"
+                    android:title="@string/pref_pushover_pump_alerts_category"
                     android:dependency="@string/key_pushoverEnable"
                     android:persistent="false">
                     <PreferenceCategory
-                        android:title="Pump Alerts">
+                        android:title="@string/pref_pushover_pump_alerts_category">
                         <Preference
                             android:key="pref_static_field_key"
                             android:selectable="false"
-                            android:summary="Alarms and alerts that have not been acknowledged and cleared by the pump user can have a notification sent to followers."/>
+                            android:summary="@string/pref_pushover_message_alarms_alerts_summary"/>
                         <Preference
-                            android:title="Message priority selection:"
+                            android:title="@string/pref_pushover_message_priority_selection_title"
                             android:key="pref_static_field_key"
                             android:selectable="false"
-                            android:summary="EMERGENCY: red notification &amp; sound (persistent alarm that must be aknowledged by follower)\nHIGH: red notification &amp; sound\nNORMAL: notification &amp; sound\nLOW: notification &amp; no sound\nLOWEST: no notification &amp; no sound (message can be viewed in the Pushover app/widget)"/>
+                            android:summary="@string/pref_pushover_message_priority_summary"/>
+                        <Preference
+                            android:title="Preview sounds"
+                            android:summary="@string/pref_pushover_preview_sounds_summary">
+                            <intent android:action="android.intent.action.VIEW"
+                                android:data="https://pushover.net/api#sounds" />
+                        </Preference>
+                        <Preference
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_emergency_alert_note_summary"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Emergency Alert">
+                        android:title="@string/pref_pushover_emergency_alert_category">
+                        <Preference
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_emergency_alert_summary"/>
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnablePumpEmergency"
                             android:defaultValue="@bool/default_pushoverEnablePumpEmergency"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnablePumpEmergency"
                             android:key="@string/key_pushoverPriorityPumpEmergency"
                             android:defaultValue="@string/default_pushoverPriorityPumpEmergency"
@@ -993,7 +1048,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnablePumpEmergency"
                             android:key="@string/key_pushoverSoundPumpEmergency"
                             android:defaultValue="@string/default_pushoverSoundPumpEmergency"
@@ -1002,13 +1057,17 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Actionable Alert">
+                        android:title="@string/pref_pushover_actionable_alert_category">
+                        <Preference
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_actionable_alert_summary"/>
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnablePumpActionable"
                             android:defaultValue="@bool/default_pushoverEnablePumpActionable"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnablePumpActionable"
                             android:key="@string/key_pushoverPriorityPumpActionable"
                             android:defaultValue="@string/default_pushoverPriorityPumpActionable"
@@ -1016,7 +1075,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnablePumpActionable"
                             android:key="@string/key_pushoverSoundPumpActionable"
                             android:defaultValue="@string/default_pushoverSoundPumpActionable"
@@ -1025,13 +1084,17 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Informational Alert">
+                        android:title="@string/pref_pushover_informational_alert_category">
+                        <Preference
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_informational_alert_summary"/>
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnablePumpInformational"
                             android:defaultValue="@bool/default_pushoverEnablePumpInformational"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnablePumpInformational"
                             android:key="@string/key_pushoverPriorityPumpInformational"
                             android:defaultValue="@string/default_pushoverPriorityPumpInformational"
@@ -1039,7 +1102,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnablePumpInformational"
                             android:key="@string/key_pushoverSoundPumpInformational"
                             android:defaultValue="@string/default_pushoverSoundPumpInformational"
@@ -1048,13 +1111,17 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Reminders">
+                        android:title="@string/pref_pushover_reminders_category">
+                        <Preference
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_reminders_summary"/>
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnablePumpReminder"
                             android:defaultValue="@bool/default_pushoverEnablePumpReminder"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnablePumpReminder"
                             android:key="@string/key_pushoverPriorityPumpReminder"
                             android:defaultValue="@string/default_pushoverPriorityPumpReminder"
@@ -1062,7 +1129,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnablePumpReminder"
                             android:key="@string/key_pushoverSoundPumpReminder"
                             android:defaultValue="@string/default_pushoverSoundPumpReminder"
@@ -1073,7 +1140,7 @@
                 </PreferenceScreen>
 
                 <PreferenceScreen
-                    android:title="Pump Events"
+                    android:title="@string/pref_pushover_pump_events_category"
                     android:dependency="@string/key_pushoverEnable"
                     android:persistent="false">
                     <PreferenceCategory
@@ -1081,21 +1148,27 @@
                         <Preference
                             android:key="pref_static_field_key"
                             android:selectable="false"
-                            android:summary="Treatments and events can have a notification sent to followers."/>
+                            android:summary="@string/pref_pushover_pump_events_summary"/>
                         <Preference
-                            android:title="Message priority selection:"
+                            android:title="@string/pref_pushover_message_priority_selection_title"
                             android:key="pref_static_field_key"
                             android:selectable="false"
-                            android:summary="EMERGENCY: red notification &amp; sound (persistent alarm that must be aknowledged by follower)\nHIGH: red notification &amp; sound\nNORMAL: notification &amp; sound\nLOW: notification &amp; no sound\nLOWEST: no notification &amp; no sound (message can be viewed in the Pushover app/widget)"/>
+                            android:summary="@string/pref_pushover_message_priority_summary"/>
+                        <Preference
+                            android:title="Preview sounds"
+                            android:summary="@string/pref_pushover_preview_sounds_summary">
+                            <intent android:action="android.intent.action.VIEW"
+                                android:data="https://pushover.net/api#sounds" />
+                        </Preference>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Bolus">
+                        android:title="@string/pref_pushover_bolus_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableBolus"
                             android:defaultValue="@bool/default_pushoverEnableBolus"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableBolus"
                             android:key="@string/key_pushoverPriorityBolus"
                             android:defaultValue="@string/default_pushoverPriorityBolus"
@@ -1103,7 +1176,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableBolus"
                             android:key="@string/key_pushoverSoundBolus"
                             android:defaultValue="@string/default_pushoverSoundBolus"
@@ -1112,13 +1185,13 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Basal">
+                        android:title="@string/pref_pushover_basal_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableBasal"
                             android:defaultValue="@bool/default_pushoverEnableBasal"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableBasal"
                             android:key="@string/key_pushoverPriorityBasal"
                             android:defaultValue="@string/default_pushoverPriorityBasal"
@@ -1126,7 +1199,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableBasal"
                             android:key="@string/key_pushoverSoundBasal"
                             android:defaultValue="@string/default_pushoverSoundBasal"
@@ -1135,13 +1208,13 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Suspend / Resume">
+                        android:title="@string/pref_pushover_suspend_resume_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableSuspendResume"
                             android:defaultValue="@bool/default_pushoverEnableSuspendResume"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableSuspendResume"
                             android:key="@string/key_pushoverPrioritySuspendResume"
                             android:defaultValue="@string/default_pushoverPrioritySuspendResume"
@@ -1149,7 +1222,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableSuspendResume"
                             android:key="@string/key_pushoverSoundSuspendResume"
                             android:defaultValue="@string/default_pushoverSoundSuspendResume"
@@ -1158,13 +1231,13 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="BG">
+                        android:title="@string/pref_pushover_bg_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableBG"
                             android:defaultValue="@bool/default_pushoverEnableBG"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableBG"
                             android:key="@string/key_pushoverPriorityBG"
                             android:defaultValue="@string/default_pushoverPriorityBG"
@@ -1172,7 +1245,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableBG"
                             android:key="@string/key_pushoverSoundBG"
                             android:defaultValue="@string/default_pushoverSoundBG"
@@ -1181,13 +1254,13 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Calibration Result">
+                        android:title="@string/pref_pushover_bg_calibration_title">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableCalibration"
                             android:defaultValue="@bool/default_pushoverEnableCalibration"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableCalibration"
                             android:key="@string/key_pushoverPriorityCalibration"
                             android:defaultValue="@string/default_pushoverPriorityCalibration"
@@ -1195,7 +1268,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableCalibration"
                             android:key="@string/key_pushoverSoundCalibration"
                             android:defaultValue="@string/default_pushoverSoundCalibration"
@@ -1204,13 +1277,13 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Consumables">
+                        android:title="@string/pref_pushover_consumables_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableConsumables"
                             android:defaultValue="@bool/default_pushoverEnableConsumables"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableConsumables"
                             android:key="@string/key_pushoverPriorityConsumables"
                             android:defaultValue="@string/default_pushoverPriorityConsumables"
@@ -1218,7 +1291,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableConsumables"
                             android:key="@string/key_pushoverSoundConsumables"
                             android:defaultValue="@string/default_pushoverSoundConsumables"
@@ -1226,20 +1299,19 @@
                             android:entries="@array/pushover_sound"
                             android:entryValues="@array/pushover_sound"/>
                         <CheckBoxPreference
-                            android:title="Lifetime info"
+                            android:title="@string/pref_pushover_lifetime_info_title"
                             android:dependency="@string/key_pushoverEnableConsumables"
                             android:key="@string/key_pushoverLifetimeInfo"
-                            android:defaultValue="@bool/default_pushoverLifetimeInfo"
-                            android:summary="Lifetimes of consumable items"/>
+                            android:defaultValue="@bool/default_pushoverLifetimeInfo"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Daily Totals">
+                        android:title="@string/pref_pushover_daily_totals_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableDailyTotals"
                             android:defaultValue="@bool/default_pushoverEnableDailyTotals"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableDailyTotals"
                             android:key="@string/key_pushoverPriorityDailyTotals"
                             android:defaultValue="@string/default_pushoverPriorityDailyTotals"
@@ -1247,7 +1319,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableDailyTotals"
                             android:key="@string/key_pushoverSoundDailyTotals"
                             android:defaultValue="@string/default_pushoverSoundDailyTotals"
@@ -1258,30 +1330,152 @@
                 </PreferenceScreen>
 
                 <PreferenceScreen
-                    android:title="Uploader Events"
+                    android:title="@string/pref_pushover_auto_mode_events_category"
                     android:dependency="@string/key_pushoverEnable"
                     android:persistent="false">
                     <PreferenceCategory
-                        android:title="Uploader Events">
+                        android:title="@string/pref_pushover_auto_mode_events_category">
                         <Preference
                             android:key="pref_static_field_key"
                             android:selectable="false"
-                            android:summary="Send Uploader status events to followers."/>
+                            android:summary="@string/pref_pushover_message_alarms_alerts_summary"/>
                         <Preference
-                            android:title="Message priority selection:"
+                            android:title="@string/pref_pushover_message_priority_selection_title"
                             android:key="pref_static_field_key"
                             android:selectable="false"
-                            android:summary="EMERGENCY: red notification &amp; sound (persistent alarm that must be aknowledged by follower)\nHIGH: red notification &amp; sound\nNORMAL: notification &amp; sound\nLOW: notification &amp; no sound\nLOWEST: no notification &amp; no sound (message can be viewed in the Pushover app/widget)"/>
+                            android:summary="@string/pref_pushover_message_priority_summary"/>
+                        <Preference
+                            android:title="@string/pref_pushover_preview_sounds_title"
+                            android:summary="@string/pref_pushover_preview_sounds_summary">
+                            <intent android:action="android.intent.action.VIEW"
+                                android:data="https://pushover.net/api#sounds" />
+                        </Preference>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Pump errors">
+                        android:title="@string/pref_pushover_auto_mode_active_category">
                         <CheckBoxPreference
-                            android:title="Send message"
-                            android:summary="Some pump errors can block all communication until they are cleared by the pump user. Notify follower when pump is in this state."
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:key="@string/key_pushoverEnableAutoModeActive"
+                            android:defaultValue="@bool/default_pushoverEnableAutoModeActive"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_priority_title"
+                            android:dependency="@string/key_pushoverEnableAutoModeActive"
+                            android:key="@string/key_pushoverPriorityAutoModeActive"
+                            android:defaultValue="@string/default_pushoverPriorityAutoModeActive"
+                            android:summary="%s"
+                            android:entries="@array/pushover_priority"
+                            android:entryValues="@array/pushover_priority_values"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_sound_title"
+                            android:dependency="@string/key_pushoverEnableAutoModeActive"
+                            android:key="@string/key_pushoverSoundAutoModeActive"
+                            android:defaultValue="@string/default_pushoverSoundAutoModeActive"
+                            android:summary="%s"
+                            android:entries="@array/pushover_sound"
+                            android:entryValues="@array/pushover_sound"/>
+                    </PreferenceCategory>
+                    <PreferenceCategory
+                        android:title="@string/pref_pushover_auto_mode_stop_category">
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:key="@string/key_pushoverEnableAutoModeStop"
+                            android:defaultValue="@bool/default_pushoverEnableAutoModeStop"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_priority_title"
+                            android:dependency="@string/key_pushoverEnableAutoModeStop"
+                            android:key="@string/key_pushoverPriorityAutoModeStop"
+                            android:defaultValue="@string/default_pushoverPriorityAutoModeStop"
+                            android:summary="%s"
+                            android:entries="@array/pushover_priority"
+                            android:entryValues="@array/pushover_priority_values"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_sound_title"
+                            android:dependency="@string/key_pushoverEnableAutoModeStop"
+                            android:key="@string/key_pushoverSoundAutoModeStop"
+                            android:defaultValue="@string/default_pushoverSoundAutoModeStop"
+                            android:summary="%s"
+                            android:entries="@array/pushover_sound"
+                            android:entryValues="@array/pushover_sound"/>
+                    </PreferenceCategory>
+                    <PreferenceCategory
+                        android:title="@string/pref_pushover_auto_mode_exit_category">
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:key="@string/key_pushoverEnableAutoModeExit"
+                            android:defaultValue="@bool/default_pushoverEnableAutoModeExit"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_priority_title"
+                            android:dependency="@string/key_pushoverEnableAutoModeExit"
+                            android:key="@string/key_pushoverPriorityAutoModeExit"
+                            android:defaultValue="@string/default_pushoverPriorityAutoModeExit"
+                            android:summary="%s"
+                            android:entries="@array/pushover_priority"
+                            android:entryValues="@array/pushover_priority_values"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_sound_title"
+                            android:dependency="@string/key_pushoverEnableAutoModeExit"
+                            android:key="@string/key_pushoverSoundAutoModeExit"
+                            android:defaultValue="@string/default_pushoverSoundAutoModeExit"
+                            android:summary="%s"
+                            android:entries="@array/pushover_sound"
+                            android:entryValues="@array/pushover_sound"/>
+                    </PreferenceCategory>
+                    <PreferenceCategory
+                        android:title="@string/pref_pushover_auto_mode_min_max_category">
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:key="@string/key_pushoverEnableAutoModeMinMax"
+                            android:defaultValue="@bool/default_pushoverEnableAutoModeMinMax"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_priority_title"
+                            android:dependency="@string/key_pushoverEnableAutoModeMinMax"
+                            android:key="@string/key_pushoverPriorityAutoModeMinMax"
+                            android:defaultValue="@string/default_pushoverPriorityAutoModeMinMax"
+                            android:summary="%s"
+                            android:entries="@array/pushover_priority"
+                            android:entryValues="@array/pushover_priority_values"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_sound_title"
+                            android:dependency="@string/key_pushoverEnableAutoModeMinMax"
+                            android:key="@string/key_pushoverSoundAutoModeMinMax"
+                            android:defaultValue="@string/default_pushoverSoundAutoModeMinMax"
+                            android:summary="%s"
+                            android:entries="@array/pushover_sound"
+                            android:entryValues="@array/pushover_sound"/>
+                    </PreferenceCategory>
+                </PreferenceScreen>
+
+                <PreferenceScreen
+                    android:title="@string/pref_pushover_uploader_events_category"
+                    android:dependency="@string/key_pushoverEnable"
+                    android:persistent="false">
+                    <PreferenceCategory
+                        android:title="@string/pref_pushover_uploader_events_category">
+                        <Preference
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_uploader_events_summary"/>
+                        <Preference
+                            android:title="@string/pref_pushover_message_priority_selection_title"
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_message_priority_summary"/>
+                        <Preference
+                            android:title="@string/pref_pushover_preview_sounds_title"
+                            android:summary="@string/pref_pushover_preview_sounds_summary">
+                            <intent android:action="android.intent.action.VIEW"
+                                android:data="https://pushover.net/api#sounds" />
+                        </Preference>
+                    </PreferenceCategory>
+                    <PreferenceCategory
+                        android:title="@string/pref_pushover_pump_errors_category">
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:summary="@string/pref_pushover_pump_errors_summary"
                             android:key="@string/key_pushoverEnableUploaderPumpErrors"
                             android:defaultValue="@bool/default_pushoverEnableUploaderPumpErrors"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableUploaderPumpErrors"
                             android:key="@string/key_pushoverPriorityUploaderPumpErrors"
                             android:defaultValue="@string/default_pushoverPriorityUploaderPumpErrors"
@@ -1289,7 +1483,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableUploaderPumpErrors"
                             android:key="@string/key_pushoverSoundUploaderPumpErrors"
                             android:defaultValue="@string/default_pushoverSoundUploaderPumpErrors"
@@ -1297,38 +1491,75 @@
                             android:entries="@array/pushover_sound"
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
+
                     <PreferenceCategory
-                        android:title="Connection">
+                        android:title="@string/pref_pushover_usb_errors_category">
                         <CheckBoxPreference
-                            android:title="Send message"
-                            android:summary="Send follower uploader-pump connection issues."
-                            android:key="@string/key_pushoverEnableUploaderPumpConnection"
-                            android:defaultValue="@bool/default_pushoverEnableUploaderPumpConnection"/>
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:summary="@string/pref_pushover_usb_errors_summary"
+                            android:key="@string/key_pushoverEnableUploaderUsbErrors"
+                            android:defaultValue="@bool/default_pushoverEnableUploaderUsbErrors"/>
                         <ListPreference
-                            android:title="Priority"
-                            android:dependency="@string/key_pushoverEnableUploaderPumpConnection"
-                            android:key="@string/key_pushoverPriorityUploaderPumpConnection"
-                            android:defaultValue="@string/default_pushoverPriorityUploaderPumpConnection"
+                            android:title="@string/pref_pushover_priority_title"
+                            android:dependency="@string/key_pushoverEnableUploaderUsbErrors"
+                            android:key="@string/key_pushoverPriorityUploaderUsbErrors"
+                            android:defaultValue="@string/default_pushoverPriorityUploaderUsbErrors"
                             android:summary="%s"
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
-                            android:dependency="@string/key_pushoverEnableUploaderPumpConnection"
-                            android:key="@string/key_pushoverSoundUploaderPumpConnection"
-                            android:defaultValue="@string/default_pushoverSoundUploaderPumpConnection"
+                            android:title="@string/pref_pushover_sound_title"
+                            android:dependency="@string/key_pushoverEnableUploaderUsbErrors"
+                            android:key="@string/key_pushoverSoundUploaderUsbErrors"
+                            android:defaultValue="@string/default_pushoverSoundUploaderUsbErrors"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
+
                     <PreferenceCategory
-                        android:title="Battery">
+                        android:title="@string/pref_pushover_status_category">
                         <CheckBoxPreference
-                            android:title="Send message"
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:summary="@string/pref_pushover_status_summary"
+                            android:key="@string/key_pushoverEnableUploaderStatus"
+                            android:defaultValue="@bool/default_pushoverEnableUploaderStatus"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_priority_title"
+                            android:dependency="@string/key_pushoverEnableUploaderStatus"
+                            android:key="@string/key_pushoverPriorityUploaderStatus"
+                            android:defaultValue="@string/default_pushoverPriorityUploaderStatus"
+                            android:summary="%s"
+                            android:entries="@array/pushover_priority"
+                            android:entryValues="@array/pushover_priority_values"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_sound_title"
+                            android:dependency="@string/key_pushoverEnableUploaderStatus"
+                            android:key="@string/key_pushoverSoundUploaderStatus"
+                            android:defaultValue="@string/default_pushoverSoundUploaderStatus"
+                            android:summary="%s"
+                            android:entries="@array/pushover_sound"
+                            android:entryValues="@array/pushover_sound"/>
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_connection_states_title"
+                            android:dependency="@string/key_pushoverEnableUploaderStatus"
+                            android:key="@string/key_pushoverEnableUploaderStatusConnection"
+                            android:defaultValue="@bool/default_pushoverEnableUploaderStatusConnection"/>
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_sgv_estimation_active_title"
+                            android:dependency="@string/key_pushoverEnableUploaderStatus"
+                            android:key="@string/key_pushoverEnableUploaderStatusEstimate"
+                            android:defaultValue="@bool/default_pushoverEnableUploaderStatusEstimate"/>
+                    </PreferenceCategory>
+
+                    <PreferenceCategory
+                        android:title="@string/pref_pushover_battery_category">
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_send_message_title"
                             android:key="@string/key_pushoverEnableUploaderBattery"
                             android:defaultValue="@bool/default_pushoverEnableUploaderBattery"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableUploaderBattery"
                             android:key="@string/key_pushoverPriorityUploaderBattery"
                             android:defaultValue="@string/default_pushoverPriorityUploaderBattery"
@@ -1336,7 +1567,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableUploaderBattery"
                             android:key="@string/key_pushoverSoundUploaderBattery"
                             android:defaultValue="@string/default_pushoverSoundUploaderBattery"
@@ -1344,12 +1575,12 @@
                             android:entries="@array/pushover_sound"
                             android:entryValues="@array/pushover_sound"/>
                         <CheckBoxPreference
-                            android:title="Low battery state"
+                            android:title="@string/pref_pushover_low_battery_state_title"
                             android:dependency="@string/key_pushoverEnableUploaderBattery"
                             android:key="@string/key_pushoverEnableBatteryLow"
                             android:defaultValue="@bool/default_pushoverEnableBatteryLow"/>
                         <CheckBoxPreference
-                            android:title="Fully charged state"
+                            android:title="@string/pref_pushover_fully_charged_state_title"
                             android:dependency="@string/key_pushoverEnableUploaderBattery"
                             android:key="@string/key_pushoverEnableBatteryCharged"
                             android:defaultValue="@bool/default_pushoverEnableBatteryCharged"/>
@@ -1357,36 +1588,48 @@
                 </PreferenceScreen>
 
                 <PreferenceScreen
-                    android:title="Advanced"
+                    android:title="@string/pref_pushover_advanced_category"
                     android:dependency="pushoverEnable"
                     android:persistent="false">
                     <PreferenceCategory
-                        android:title="Advanced">
+                        android:title="@string/pref_pushover_advanced_category">
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Extended Info">
+                        android:title="@string/pref_pushover_extended_info_category">
                         <CheckBoxPreference
-                            android:title="Extended message info"
-                            android:key="@string/key_pushoverInfoExtended"
-                            android:defaultValue="@bool/default_pushoverInfoExtended"
-                            android:summary="Full extended message as shown on the pump"/>
+                            android:title="@string/pref_pushover_extended_message_info_title"
+                            android:key="@string/key_pushoverEnableInfoExtended"
+                            android:defaultValue="@bool/default_pushoverEnableInfoExtended"
+                            android:summary="@string/pref_pushover_extended_message_info_summary"/>
                         <CheckBoxPreference
-                            android:title="Time in Notification Title"
-                            android:key="@string/key_pushoverTitleTime"
-                            android:defaultValue="@bool/default_pushoverTitleTime"
-                            android:summary="Include the time in the title part of a notification"/>
+                            android:title="@string/pref_pushover_time_in_notification_title"
+                            android:key="@string/key_pushoverEnableTitleTime"
+                            android:defaultValue="@bool/default_pushoverEnableTitleTime"
+                            android:summary="@string/pref_pushover_time_in_notification_summary"/>
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_text_in_notification_title"
+                            android:key="@string/key_pushoverEnableTitleText"
+                            android:defaultValue="@bool/default_pushoverEnableTitleText"
+                            android:summary="@string/pref_pushover_text_in_notification_summary"/>
+                        <info.nightscout.android.utils.EditTextPreferencePUSHOVER
+                            android:title="@string/pref_pushover_custom_text_title"
+                            android:dependency="@string/key_pushoverEnableTitleText"
+                            android:key="@string/key_pushoverTitleText"
+                            android:defaultValue="@string/default_pushoverTitleText"
+                            android:dialogMessage=""
+                            android:dialogTitle="@string/pref_pushover_custom_text_title"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Emergency Alerts">
+                        android:title="@string/pref_pushover_emergency_alerts_category">
                         <info.nightscout.android.utils.ListPreference
-                            android:title="Retry every"
+                            android:title="@string/pref_pushover_retry_every_title"
                             android:key="@string/key_pushoverEmergencyRetry"
                             android:defaultValue="@string/default_pushoverEmergencyRetry"
                             android:summary="%s"
                             android:entries="@array/pushover_retry"
                             android:entryValues="@array/pushover_retry_values"/>
                         <info.nightscout.android.utils.ListPreference
-                            android:title="Expire after"
+                            android:title="@string/pref_pushover_expire_after_title"
                             android:key="@string/key_pushoverEmergencyExpire"
                             android:defaultValue="@string/default_pushoverEmergencyExpire"
                             android:summary="%s"
@@ -1394,14 +1637,20 @@
                             android:entryValues="@array/pushover_expire_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Cleared Alerts">
+                        android:title="@string/pref_pushover_cleared_alert_category">
                         <CheckBoxPreference
-                            android:title="Send message"
-                            android:summary="Cleared alerts can be sent to followers, these are only available after history has been retrieved when processing other live events."
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:summary="@string/pref_pushover_cleared_alert_summary"
                             android:key="@string/key_pushoverEnableCleared"
                             android:defaultValue="@bool/default_pushoverEnableCleared"/>
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_acknowledged_title"
+                            android:dependency="@string/key_pushoverEnableCleared"
+                            android:summary="@string/pref_pushover_acknowledged_summary"
+                            android:key="@string/key_pushoverEnableClearedAcknowledged"
+                            android:defaultValue="@bool/default_pushoverEnableClearedAcknowledged"/>
                         <ListPreference
-                            android:title="Priority"
+                            android:title="@string/pref_pushover_priority_title"
                             android:dependency="@string/key_pushoverEnableCleared"
                             android:key="@string/key_pushoverPriorityCleared"
                             android:defaultValue="@string/default_pushoverPriorityCleared"
@@ -1409,7 +1658,7 @@
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
+                            android:title="@string/pref_pushover_sound_title"
                             android:dependency="@string/key_pushoverEnableCleared"
                             android:key="@string/key_pushoverSoundCleared"
                             android:defaultValue="@string/default_pushoverSoundCleared"
@@ -1418,28 +1667,102 @@
                             android:entryValues="@array/pushover_sound"/>
                     </PreferenceCategory>
                     <PreferenceCategory
-                        android:title="Silenced Alerts">
+                        android:title="@string/pref_pushover_silenced_alerts_category">
                         <CheckBoxPreference
-                            android:title="Send message"
-                            android:summary="Silenced unacknowledged sensor alerts can be sent to followers. Pump will stay quiet and follower will be alerted."
+                            android:title="@string/pref_pushover_send_message_title"
+                            android:summary="@string/pref_pushover_silenced_alerts_summary"
                             android:key="@string/key_pushoverEnableSilenced"
                             android:defaultValue="@bool/default_pushoverEnableSilenced"/>
-                        <ListPreference
-                            android:title="Priority"
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_override_title"
+                            android:summary="@string/pref_pushover_silenced_alerts_override_summary"
                             android:dependency="@string/key_pushoverEnableSilenced"
+                            android:key="@string/key_pushoverEnableSilencedOverride"
+                            android:defaultValue="@bool/default_pushoverEnableSilencedOverride"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_priority_title"
+                            android:dependency="@string/key_pushoverEnableSilencedOverride"
                             android:key="@string/key_pushoverPrioritySilenced"
                             android:defaultValue="@string/default_pushoverPrioritySilenced"
                             android:summary="%s"
                             android:entries="@array/pushover_priority"
                             android:entryValues="@array/pushover_priority_values"/>
                         <ListPreference
-                            android:title="Sound"
-                            android:dependency="@string/key_pushoverEnableSilenced"
+                            android:title="@string/pref_pushover_sound_title"
+                            android:dependency="@string/key_pushoverEnableSilencedOverride"
                             android:key="@string/key_pushoverSoundSilenced"
                             android:defaultValue="@string/default_pushoverSoundSilenced"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
                             android:entryValues="@array/pushover_sound"/>
+                    </PreferenceCategory>
+                    <PreferenceCategory
+                        android:title="@string/pref_pushover_backfill_category">
+                        <info.nightscout.android.utils.ListPreference
+                            android:title="@string/pref_pushover_backfill_period_title"
+                            android:key="@string/key_pushoverBackfillPeriod"
+                            android:defaultValue="@string/default_pushoverBackfillPeriod"
+                            android:summary="%s"
+                            android:entries="@array/pushover_backfill"
+                            android:entryValues="@array/pushover_backfill_values"/>
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_start_restart_title"
+                            android:summary="@string/pref_pushover_start_restart_summary"
+                            android:key="@string/key_pushoverEnableBackfillOnStart"
+                            android:defaultValue="@bool/default_pushoverEnableBackfillOnStart"/>
+                        <Preference
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_unpluged_limiter_summary"/>
+                        <info.nightscout.android.utils.ListPreference
+                            android:title="@string/pref_pushover_unpluged_limiter_title"
+                            android:key="@string/key_pushoverBackfillLimiter"
+                            android:defaultValue="@string/default_pushoverBackfillLimiter"
+                            android:summary="%s"
+                            android:entries="@array/pushover_backfill"
+                            android:entryValues="@array/pushover_backfill_values"/>
+                        <CheckBoxPreference
+                            android:title="@string/pref_pushover_override_title"
+                            android:summary="@string/pref_pushover_age_summary"
+                            android:key="@string/key_pushoverEnableBackfillOverride"
+                            android:defaultValue="@bool/default_pushoverEnableBackfillOverride"/>
+                        <info.nightscout.android.utils.ListPreference
+                            android:title="@string/pref_pushover_age_title"
+                            android:dependency="@string/key_pushoverEnableBackfillOverride"
+                            android:key="@string/key_pushoverBackfillOverrideAge"
+                            android:defaultValue="@string/default_pushoverBackfillOverrideAge"
+                            android:summary="%s"
+                            android:entries="@array/pushover_backfill"
+                            android:entryValues="@array/pushover_backfill_values"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_priority_title"
+                            android:dependency="@string/key_pushoverEnableBackfillOverride"
+                            android:key="@string/key_pushoverPriorityBackfill"
+                            android:defaultValue="@string/default_pushoverPriorityBackfill"
+                            android:summary="%s"
+                            android:entries="@array/pushover_priority"
+                            android:entryValues="@array/pushover_priority_values"/>
+                        <ListPreference
+                            android:title="@string/pref_pushover_sound_title"
+                            android:dependency="@string/key_pushoverEnableBackfillOverride"
+                            android:key="@string/key_pushoverSoundBackfill"
+                            android:defaultValue="@string/default_pushoverSoundBackfill"
+                            android:summary="%s"
+                            android:entries="@array/pushover_sound"
+                            android:entryValues="@array/pushover_sound"/>
+                    </PreferenceCategory>
+                    <PreferenceCategory
+                        android:title="@string/pref_pushover_api_category">
+                        <Preference
+                            android:key="pref_static_field_key"
+                            android:selectable="false"
+                            android:summary="@string/pref_pushover_device_name_summary"/>
+                        <info.nightscout.android.utils.EditTextPreferenceTEXT
+                            android:title="@string/pref_pushover_device_name_title"
+                            android:key="@string/key_pushoverSendToDevice"
+                            android:defaultValue="@string/default_pushoverSendToDevice"
+                            android:dialogMessage=""
+                            android:dialogTitle="@string/pref_pushover_device_name_title"/>
                     </PreferenceCategory>
 
                 </PreferenceScreen>
@@ -1450,16 +1773,15 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/pref_category_system">
+        android:title="@string/pref_system_category">
         <PreferenceScreen
-            android:title="@string/pref_category_advanced_system_settings"
+            android:title="@string/pref_advanced_system_settings_category"
             android:persistent="false">
             <PreferenceCategory
-                android:title="@string/pref_category_advanced_system_settings">
+                android:title="@string/pref_advanced_system_settings_category">
             </PreferenceCategory>
-
             <PreferenceCategory
-                android:title="@string/pref_system_category_history_sync">
+                android:title="@string/pref_system_history_sync_category">
                 <CheckBoxPreference
                     android:title="@string/pref_system_cgm_history_title"
                     android:key="@string/key_sysEnableCgmHistory"
@@ -1497,17 +1819,52 @@
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="@string/pref_system_category_experimental">
+                android:title="@string/pref_system_experimental_category">
                 <CheckBoxPreference
                     android:title="@string/pref_system_estimate_sgv_title"
                     android:key="@string/key_sysEnableEstimateSGV"
                     android:defaultValue="@bool/default_sysEnableEstimateSGV"
                     android:summary="@string/pref_system_estimate_sgv_summary"/>
                 <CheckBoxPreference
+                    android:title="@string/pref_system_estimate_sgv_eol"
+                    android:dependency="@string/key_sysEnableEstimateSGV"
+                    android:key="@string/key_sysEnableEstimateSGVeol"
+                    android:defaultValue="@bool/default_sysEnableEstimateSGVeol"/>
+                <CheckBoxPreference
+                    android:title="@string/pref_system_estimate_sgv_error"
+                    android:dependency="@string/key_sysEnableEstimateSGV"
+                    android:key="@string/key_sysEnableEstimateSGVerror"
+                    android:defaultValue="@bool/default_sysEnableEstimateSGVerror"/>
+
+                <CheckBoxPreference
                     android:title="@string/pref_system_report_isig_title"
                     android:key="@string/key_sysEnableReportISIG"
                     android:defaultValue="@bool/default_sysEnableReportISIG"
                     android:summary="@string/pref_system_report_isig_summary"/>
+                <info.nightscout.android.utils.ListPreference
+                    android:title="ISIG's to include"
+                    android:dependency="@string/key_sysEnableReportISIG"
+                    android:key="@string/key_sysReportISIGinclude"
+                    android:defaultValue="@string/default_sysReportISIGinclude"
+                    android:summary="%s"
+                    android:entries="@array/ReportISIGinclude"
+                    android:entryValues="@array/ReportISIGinclude"/>
+                <info.nightscout.android.utils.ListPreference
+                    android:title="Minimum runtime"
+                    android:dependency="@string/key_sysEnableReportISIG"
+                    android:key="@string/key_sysReportISIGminimum"
+                    android:defaultValue="@string/default_sysReportISIGminimum"
+                    android:summary="%s"
+                    android:entries="@array/ReportISIGminimum"
+                    android:entryValues="@array/ReportISIGminimum_values"/>
+                <info.nightscout.android.utils.ListPreference
+                    android:title="Minimum runtime on new sensor"
+                    android:dependency="@string/key_sysEnableReportISIG"
+                    android:key="@string/key_sysReportISIGnewsensor"
+                    android:defaultValue="@string/default_sysReportISIGnewsensor"
+                    android:summary="%s"
+                    android:entries="@array/ReportISIGnewsensor"
+                    android:entryValues="@array/ReportISIGnewsensor_values"/>
             </PreferenceCategory>
 
             <PreferenceCategory
@@ -1519,12 +1876,19 @@
                     android:defaultValue="@bool/default_sysEnableClashProtect"
                     android:summaryOff="@string/pref_system_radio_clash_protection_summary_off"
                     android:summaryOn="@string/pref_system_radio_clash_protection_summary_on"
-                    android:switchTextOff="@string/text_off"
-                    android:switchTextOn="@string/text_on" />
+                    android:switchTextOff="@string/off"
+                    android:switchTextOn="@string/on" />
+                <info.nightscout.android.utils.ListPreference
+                    android:title="RSSI allow connection"
+                    android:key="@string/key_sysRssiAllowConnect"
+                    android:defaultValue="@string/default_sysRssiAllowConnect"
+                    android:summary="%s"
+                    android:entries="@array/rssi_allowconnect"
+                    android:entryValues="@array/rssi_allowconnect_values"/>
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="@string/pref_system_category_polling">
+                android:title="@string/pref_system_polling_category">
                 <info.nightscout.android.utils.CustomSwitchPreference
                     android:title="@string/pref_system_poll_timing_title"
                     android:disableDependentsState="false"
@@ -1532,8 +1896,8 @@
                     android:defaultValue="@bool/default_sysEnablePollOverride"
                     android:summaryOff="@string/pref_system_poll_timing_summary_off"
                     android:summaryOn="@string/pref_system_poll_timing_summary_on"
-                    android:switchTextOff="@string/text_off"
-                    android:switchTextOn="@string/text_on" />
+                    android:switchTextOff="@string/off"
+                    android:switchTextOn="@string/on" />
                 <info.nightscout.android.utils.ListPreference
                     android:title="@string/pref_system_poll_grace_period_title"
                     android:dependency="@string/key_sysEnablePollOverride"
@@ -1577,7 +1941,7 @@
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="@string/pref_system_category_timing">
+                android:title="@string/pref_system_timing_category">
                 <info.nightscout.android.utils.CustomSwitchPreference
                     android:title="@string/pref_system_control_passthrough_title"
                     android:disableDependentsState="false"
@@ -1585,12 +1949,12 @@
                     android:defaultValue="@bool/default_sysEnableWait500ms"
                     android:summaryOff="@string/pref_system_control_passthrough_summary_off"
                     android:summaryOn="@string/pref_system_control_passthrough_summary_on"
-                    android:switchTextOff="@string/text_off"
-                    android:switchTextOn="@string/text_on"/>
+                    android:switchTextOff="@string/off"
+                    android:switchTextOn="@string/on"/>
             </PreferenceCategory>
 
             <PreferenceCategory
-                android:title="@string/pref_system_category_usb">
+                android:title="@string/pref_system_usb_category">
                 <info.nightscout.android.utils.CustomSwitchPreference
                     android:title="@string/pref_system_usb_permission_title"
                     android:disableDependentsState="false"
@@ -1598,16 +1962,16 @@
                     android:defaultValue="@bool/default_sysEnableUsbPermissionDialog"
                     android:summaryOff="@string/pref_system_usb_permission_summary_off"
                     android:summaryOn="@string/pref_system_usb_permission_summary_on"
-                    android:switchTextOff="@string/text_off"
-                    android:switchTextOn="@string/text_on"/>
+                    android:switchTextOff="@string/off"
+                    android:switchTextOn="@string/on"/>
             </PreferenceCategory>
         </PreferenceScreen>
 
         <PreferenceScreen
-            android:title="@string/pref_category_debug_settings"
+            android:title="@string/pref_debug_settings_category"
             android:persistent="false">
             <PreferenceCategory
-                android:title="@string/pref_category_debug_settings">
+                android:title="@string/pref_debug_settings_category">
                 <SwitchPreference
                     android:title="@string/pref_debug_crash_reporting_title"
                     android:key="@string/key_dbgCrashlytics"
@@ -1632,7 +1996,7 @@
                     android:entryValues="@array/debug_log_level_values" />
             </PreferenceCategory>
             <PreferenceCategory
-                android:title="@string/pref_debug_category_userlog">
+                android:title="@string/pref_debug_userlog_category">
                 <SwitchPreference
                     android:title="@string/pref_debug_extended_errors_title"
                     android:key="@string/key_dbgEnableExtendedErrors"
@@ -1648,7 +2012,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="@string/pref_category_disclaimer">
+        android:title="@string/pref_disclaimer_category">
         <SwitchPreference
             android:title="@string/pref_disclaimer_title"
             android:disableDependentsState="false"
@@ -1656,11 +2020,11 @@
             android:defaultValue="@bool/default_eulaAccepted"
             android:summaryOff="@string/pref_disclaimer_summary"
             android:summaryOn="@string/pref_disclaimer_summary"
-            android:switchTextOff="@string/text_NO"
-            android:switchTextOn="@string/text_YES" />
+            android:switchTextOff="@string/NO"
+            android:switchTextOn="@string/YES" />
     </PreferenceCategory>
     <PreferenceCategory
-        android:title="@string/pref_category_app_version">
+        android:title="@string/pref_app_version_category">
         <!--suppress AndroidDomInspection -->
         <Preference
             android:title="@string/versionName"

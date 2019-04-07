@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
+import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.medtronic.service.MasterService;
@@ -200,11 +201,8 @@ public class UrchinService extends Service {
 
     private void received() {
         if (receivedCount++ == 1) {
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
-                    String.format("{id;%s} {id;%s}",
-                    R.string.ul_Urchin,
-                    R.string.ul_is_active
-            ));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE, String.format("{id;%s} {id;%s}",
+                    R.string.ul_share__urchin, R.string.ul_share__is_available));
         }
     }
 
@@ -552,7 +550,7 @@ public class UrchinService extends Service {
         if (pumpStatusEvent != null && pumpStatusEvent.getEventDate().getTime() > timeNow  - 4 * 60 * 60000L) {
             return pumpStatusEvent.getActiveInsulin() + styleUnits();
         }
-        return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+        return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
     }
 
     private String bolusing() {
@@ -560,7 +558,7 @@ public class UrchinService extends Service {
             if (!pumpStatusEvent.isBolusingNormal()
                     && (pumpStatusEvent.isBolusingSquare() || pumpStatusEvent.isBolusingDual())) {
                 return String.format("%s%s%s%s%s",
-                        FormatKit.getInstance().getString(R.string.urchin_disp_Bolusing),
+                        FormatKit.getInstance().getString(R.string.urchin_watchface_Bolusing),
                         FormatKit.getInstance().formatAsDecimal(pumpStatusEvent.getBolusingDelivered(), 1, 1, RoundingMode.HALF_UP),
                         styleUnits(),
                         styleConcatenate(),
@@ -582,7 +580,7 @@ public class UrchinService extends Service {
             String tag = "";
 
             if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(results.first().getBolusType())) {
-                if (dataStore.isUrchinBolusTags()) tag = FormatKit.getInstance().getString(R.string.urchin_disp_Dual);
+                if (dataStore.isUrchinBolusTags()) tag = FormatKit.getInstance().getString(R.string.urchin_watchface_Dual);
                 if (results.first().isSquareDelivered())
                     insulin = results.first().getNormalDeliveredAmount() + results.first().getSquareDeliveredAmount();
                 else if (results.first().isNormalDelivered())
@@ -591,7 +589,7 @@ public class UrchinService extends Service {
                     insulin = results.first().getNormalProgrammedAmount() + results.first().getSquareProgrammedAmount();
 
             } else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(results.first().getBolusType())) {
-                if (dataStore.isUrchinBolusTags()) tag = FormatKit.getInstance().getString(R.string.urchin_disp_Square);
+                if (dataStore.isUrchinBolusTags()) tag = FormatKit.getInstance().getString(R.string.urchin_watchface_Square);
                 if (results.first().isSquareDelivered())
                     insulin = results.first().getSquareDeliveredAmount();
                 else
@@ -645,7 +643,7 @@ public class UrchinService extends Service {
                     styleUnits());
         }
 
-        return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+        return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
     }
 
     private String basalCombo() {
@@ -663,7 +661,7 @@ public class UrchinService extends Service {
                 // check if most recent suspend is in history and show the start time
                 if (suspend.size() > 0 && PumpHistoryBasal.RECORDTYPE.SUSPEND.equals(suspend.first().getRecordtype()))
                     return String.format("%s%s%s",
-                            FormatKit.getInstance().getString(R.string.urchin_disp_Suspend),
+                            FormatKit.getInstance().getString(R.string.urchin_watchface_Suspend),
                             styleConcatenate(),
                             styleTime(suspend.first().getEventDate().getTime()));
 
@@ -689,7 +687,7 @@ public class UrchinService extends Service {
 
         }
 
-        return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+        return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
     }
 
     private String basalState() {
@@ -706,14 +704,14 @@ public class UrchinService extends Service {
                 // check if most recent suspend is in history and show the start time
                 if (suspend.size() > 0 && PumpHistoryBasal.RECORDTYPE.SUSPEND.equals(suspend.first().getRecordtype()))
                     return String.format("%s%s%s",
-                            FormatKit.getInstance().getString(R.string.urchin_disp_Suspend),
+                            FormatKit.getInstance().getString(R.string.urchin_watchface_Suspend),
                             styleConcatenate(),
                             styleTime(suspend.first().getEventDate().getTime()));
 
             } else if (pumpStatusEvent.isTempBasalActive()) {
                 int minutes = pumpStatusEvent.getTempBasalMinutesRemaining();
                 return String.format("%s%s%s",
-                        FormatKit.getInstance().getString(R.string.urchin_disp_Temp),
+                        FormatKit.getInstance().getString(R.string.urchin_watchface_Temp),
                         styleConcatenate(),
                         styleDuration(minutes));
             }
@@ -731,8 +729,8 @@ public class UrchinService extends Service {
             long due = pumpStatusEvent.getCalibrationDueMinutes() + ((pumpStatusEvent.getCgmDate().getTime() - timeNow) / 60000L);
             if (due < 0) due = 0;
             String dueString = due >= 100
-                    ? ((due + 30) / 60 + FormatKit.getInstance().getString(R.string.time_h))
-                    : (due % 100 + FormatKit.getInstance().getString(R.string.time_m));
+                    ? ((due + 30) / 60 + FormatKit.getInstance().getString(R.string.hour_h))
+                    : (due % 100 + FormatKit.getInstance().getString(R.string.minute_m));
 
             PumpHistoryParser.CGM_EXCEPTION cgmException;
             if (pumpStatusEvent.isCgmException())
@@ -748,34 +746,34 @@ public class UrchinService extends Service {
                     return dueString;
                 case SENSOR_INIT:
                     return String.format("%s%s",
-                            FormatKit.getInstance().getString(R.string.urchin_disp_WarmUp),
+                            FormatKit.getInstance().getString(R.string.urchin_watchface_WarmUp),
                             dueString);
                 case SENSOR_CAL_PENDING:
-                    return FormatKit.getInstance().getString(R.string.urchin_disp_Calibrating);
+                    return FormatKit.getInstance().getString(R.string.urchin_watchface_Calibrating);
                 case SENSOR_CAL_NEEDED:
-                    return FormatKit.getInstance().getString(R.string.urchin_disp_CalibrateNow);
+                    return FormatKit.getInstance().getString(R.string.urchin_watchface_CalibrateNow);
                 case SENSOR_CHANGE_CAL_ERROR:
                 case SENSOR_CHANGE_SENSOR_ERROR:
                 case SENSOR_END_OF_LIFE:
-                    return FormatKit.getInstance().getString(R.string.urchin_disp_SensorEndOfLife);
+                    return FormatKit.getInstance().getString(R.string.urchin_watchface_SensorEndOfLife);
                 default:
-                    return FormatKit.getInstance().getString(R.string.urchin_disp_SensorError);
+                    return FormatKit.getInstance().getString(R.string.urchin_watchface_SensorError);
             }
         }
 
-        return   FormatKit.getInstance().getString(R.string.urchin_disp_NoCGM);
+        return   FormatKit.getInstance().getString(R.string.urchin_watchface_NoCGM);
     }
 
     private String uploaderBattery() {
         int battery = MasterService.getUploaderBatteryLevel();
         if (battery > 0) return styleBattery(battery);
-        return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+        return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
     }
 
     private String pumpBattery() {
         if (pumpStatusEvent != null)
             return styleBattery(pumpStatusEvent.getBatteryPercentage());
-        return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+        return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
     }
 
     private String pumpBatteryAge() {
@@ -786,8 +784,8 @@ public class UrchinService extends Service {
         if (results.size() > 0)
             return String.format("%s%s",
                     (timeNow - results.first().getEventDate().getTime()) / (24 * 60 * 60000L),
-                    FormatKit.getInstance().getString(R.string.time_d));
-        return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+                    FormatKit.getInstance().getString(R.string.day_d));
+        return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
     }
 
     private String pumpReservoirUnits() {
@@ -795,7 +793,7 @@ public class UrchinService extends Service {
             return String.format("%s%s",
                     FormatKit.getInstance().formatAsDecimal(pumpStatusEvent.getReservoirAmount(), 0, 0, RoundingMode.HALF_UP),
                     styleUnits());
-        return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+        return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
     }
 
     private String pumpReservoirAge() {
@@ -806,7 +804,7 @@ public class UrchinService extends Service {
         if (results.size() > 0)
             return String.format("%s%s",
                     (timeNow - results.first().getEventDate().getTime()) / (60 * 60000L),
-                    FormatKit.getInstance().getString(R.string.time_h));
+                    FormatKit.getInstance().getString(R.string.hour_h));
         return "";
     }
 
@@ -830,80 +828,32 @@ public class UrchinService extends Service {
     private String sensorAge() {
         int hours = sensorHours();
         if (hours == -1)
-            return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+            return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
         else
-            return (hours / 24) + FormatKit.getInstance().getString(R.string.time_d);
+            return (hours / 24) + FormatKit.getInstance().getString(R.string.day_d);
     }
 
     // assumes a liftime of 6 days, sensors with longer life will produce a wrong result
     private String sensorLife() {
         int hours = sensorHours();
         if (hours == -1)
-            return FormatKit.getInstance().getString(R.string.urchin_disp_NoData);
+            return FormatKit.getInstance().getString(R.string.urchin_watchface_NoData);
         hours = 145 - hours;
         if (hours < 0) hours = 0;
-        if (hours > 120) return "6" + FormatKit.getInstance().getString(R.string.time_d);
-        else if (hours > 10) return ((hours / 24) + 1) + FormatKit.getInstance().getString(R.string.time_d);
-        else return hours + FormatKit.getInstance().getString(R.string.time_h);
+        if (hours > 120) return "6" + FormatKit.getInstance().getString(R.string.day_d);
+        else if (hours > 10) return ((hours / 24) + 1) + FormatKit.getInstance().getString(R.string.day_d);
+        else return hours + FormatKit.getInstance().getString(R.string.hour_h);
     }
 
     private String isig(boolean stability) {
-        if (dataStore.isSysEnableReportISIG()) {
-            RealmResults<PumpHistoryCGM> cgmResults = historyRealm
-                    .where(PumpHistoryCGM.class)
-                    .sort("eventDate", Sort.DESCENDING)
-                    .findAll();
-            if (cgmResults.size() > 0 && cgmResults.first().isHistory()
-                    && (cgmResults.first().isEstimate()
-                    || PumpHistoryParser.CGM_EXCEPTION.convert(cgmResults.first().getSensorException())
-                    != PumpHistoryParser.CGM_EXCEPTION.NA)) {
-
-                String s = "";
-
-                if (stability) {
-                    int period = 5;
-
-                    if (cgmResults.size() > period) {
-                        double k = 0.5;
-                        double z = 0;
-                        double x = 0;
-                        double x1 = 0;
-                        double p = 0;
-                        double p1 = 0;
-                        double sum = 0;
-
-                        for (int i = 0; i <= period; i++) {
-                            p = cgmResults.get(period - i).getIsig();
-                            if (i >= 1) z = p - p1;
-                            if (i >= 2) x = (k * z) + (1 - k) * x1;
-                            else x = z;
-                            p1 = p;
-                            x1 = x;
-                            sum = sum + z;
-                        }
-
-                        /*
-                        if (x <= -2 || x >= 2) s = "+-";
-                        else if (x >= .8) s = "++";
-                        else if (x >= .3) s = "+ ";
-                        else if (x <= -.8) s = "--";
-                        else if (x <= -.3) s = "-";
-                        else s = "=";
-                        */
-
-                        if (Math.abs(x) >= 3) s = "><";
-                        else if (x >= .8) s = "++";
-                        else if (x >= .3) s =  "+";
-                        else if (x <= -.8) s =  "--";
-                        else if (x <= -.3) s =  "- ";
-                        else if (Math.abs(x) >= 1) s = "=";
-                        else s = "==";
-                    }
-                }
-
-                return s + " " + FormatKit.getInstance().formatAsDecimal(cgmResults.first().getIsig(), 2);
-                //return FormatKit.getInstance().formatAsDecimal(cgmResults.first().getIsig(), 2) + s;
-            }
+        if (dataStore.isReportIsigAvailable()) {
+            PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(this);
+            PumpHistoryHandler.IsigReport isigReport = pumpHistoryHandler.isigReport();
+            isigReport.formatter(1, 1);
+            String s = stability ? isigReport.formatStabilityAsSymbol() : "";
+            s = isigReport.formatIsig(0, s);
+            pumpHistoryHandler.close();
+            return s;
         }
         return "";
     }
@@ -915,7 +865,7 @@ public class UrchinService extends Service {
                     .sort("eventDate", Sort.DESCENDING)
                     .findAll();
             if (cgmResults.size() > 0 && cgmResults.first().isEstimate())
-                return FormatKit.getInstance().getString(R.string.urchin_disp_Estimate);
+                return FormatKit.getInstance().getString(R.string.urchin_watchface_Estimate);
         }
         return "";
     }
@@ -977,7 +927,7 @@ public class UrchinService extends Service {
                 && pumpStatusEvent.getAlert() > 0) {
             int minutes = (int) ((timeNow - pumpStatusEvent.getAlertDate().getTime()) / 60000L);
             return String.format("%s%s%s",
-                    FormatKit.getInstance().getString(R.string.urchin_disp_Alert),
+                    FormatKit.getInstance().getString(R.string.urchin_watchface_Alert),
                     styleConcatenate(),
                     styleDuration(minutes)
             );
@@ -989,7 +939,7 @@ public class UrchinService extends Service {
         if (pumpStatusEvent != null
                 && pumpStatusEvent.getAlert() > 0) {
             return String.format("%s%s%s",
-                    FormatKit.getInstance().getString(R.string.urchin_disp_Alert),
+                    FormatKit.getInstance().getString(R.string.urchin_watchface_Alert),
                     styleConcatenate(),
                     styleTime(pumpStatusEvent.getAlertDate().getTime())
             );
@@ -1001,34 +951,12 @@ public class UrchinService extends Service {
         StringBuilder sb = new StringBuilder();
 
         byte[] statusLayout = dataStore.getUrchinStatusLayout();
-        boolean single = false;
-        boolean multi = false;
+        boolean group = false;
         boolean skip = false;
         String s;
 
         for (byte item : statusLayout) {
             s = getStatusItem(item);
-
-            if (s.equals("single")) {
-                single = !skip | multi;
-            }
-            else if (s.equals("multi")) {
-                multi = !skip;
-            }
-            else if (s.equals("end")) {
-                single = false;
-                multi = false;
-                skip = false;
-            }
-            else if ((single | multi) && s.length() > 0) {
-                sb.append(s);
-                skip = true;
-                single = false;
-            }
-            else if (!skip) {
-                sb.append(s);
-            }
-/*
             if (s.equals("start")) {
                 group = true;
                 skip = false;
@@ -1040,7 +968,6 @@ public class UrchinService extends Service {
             } else if (!group) {
                 sb.append(s);
             }
-*/
         }
         Log.d(TAG,"status layout:\n" + sb.toString());
 
@@ -1181,7 +1108,7 @@ public class UrchinService extends Service {
                 s = bg(timeNow - 15 * 60000L);
                 if (s.length() > 0)
                     s = String.format("%s%s%s",
-                            FormatKit.getInstance().getString(R.string.urchin_disp_BG),
+                            FormatKit.getInstance().getString(R.string.urchin_watchface_BG),
                             styleConcatenate(),
                             s);
                 break;
@@ -1189,7 +1116,7 @@ public class UrchinService extends Service {
                 s = bg(timeNow - 60 * 60000L);
                 if (s.length() > 0)
                     s = String.format("%s%s%s",
-                            FormatKit.getInstance().getString(R.string.urchin_disp_BG),
+                            FormatKit.getInstance().getString(R.string.urchin_watchface_BG),
                             styleConcatenate(),
                             s);
                 break;
@@ -1201,7 +1128,7 @@ public class UrchinService extends Service {
                 s = factor(timeNow - 15 * 60000L);
                 if (s.length() > 0)
                     s = String.format("%s%s%s",
-                            FormatKit.getInstance().getString(R.string.urchin_disp_Factor),
+                            FormatKit.getInstance().getString(R.string.urchin_watchface_Factor),
                             styleConcatenate(),
                             s);
                 break;
@@ -1209,7 +1136,7 @@ public class UrchinService extends Service {
                 s = factor(timeNow - 60 * 60000L);
                 if (s.length() > 0)
                     s = String.format("%s%s%s",
-                            FormatKit.getInstance().getString(R.string.urchin_disp_Factor),
+                            FormatKit.getInstance().getString(R.string.urchin_watchface_Factor),
                             styleConcatenate(),
                             s);
                 break;
@@ -1218,10 +1145,10 @@ public class UrchinService extends Service {
                 s = isig(true);
                 break;
             case 132:
-                s = isig(true);
+                s = isig(false);
                 if (s.length() > 0)
                     s = String.format("%s%s%s",
-                            FormatKit.getInstance().getString(R.string.urchin_disp_ISIG),
+                            FormatKit.getInstance().getString(R.string.urchin_watchface_ISIG),
                             styleConcatenate(),
                             s);
                 break;
@@ -1238,13 +1165,10 @@ public class UrchinService extends Service {
                 break;
 
             case 201:
-                s = "single";
+                s = "start";
                 break;
             case 202:
                 s = "end";
-                break;
-            case 203:
-                s = "multi";
                 break;
 
             default:
@@ -1252,15 +1176,6 @@ public class UrchinService extends Service {
         }
         return s;
     }
-
-    /*
-
-    [GROUP SINGLE] first active item only
-    [GROUP MULTIPLE] first active group only
-    [GROUP END]
-
-     */
-
 
     private DateFormat dfDay = new SimpleDateFormat("d", Locale.getDefault());
     private DateFormat dfDayName = new SimpleDateFormat("EEE", Locale.getDefault());
@@ -1272,18 +1187,23 @@ public class UrchinService extends Service {
 
     private String styleTime(long time) {
         String text;
+
+        String ampm = dfAMPM.format(time).replace(".", "").replace(",", "").toLowerCase();
+        ampm = ampm.length() > 1 ? ampm.substring(0, 2) : (ampm.length() > 0 ? ampm.substring(0, 1) : "");
+        String ap = ampm.length() > 0 ? ampm.substring(0, 1) : "";
+
         switch (dataStore.getUrchinTimeStyle()) {
             case 1:
-                text = df12.format(time) + (dfAMPM.format(time).substring(0, 1).toLowerCase());
+                text = df12.format(time) + ap;
                 break;
             case 2:
-                text = df12.format(time) + (dfAMPM.format(time).substring(0, 1).toUpperCase());
+                text = df12.format(time) + ap.toUpperCase();
                 break;
             case 3:
-                text = df12.format(time) + (dfAMPM.format(time).replace(".", "").substring(0, 2).toLowerCase());
+                text = df12.format(time) + ampm;
                 break;
             case 4:
-                text = df12.format(time) + (dfAMPM.format(time).replace(".", "").substring(0, 2).toUpperCase());
+                text = df12.format(time) + ampm.toUpperCase();
                 break;
             case 5:
                 text = df24.format(time);
@@ -1298,22 +1218,22 @@ public class UrchinService extends Service {
         String s;
         switch (dataStore.getUrchinDurationStyle()) {
             case 1:
-                s = duration + FormatKit.getInstance().getString(R.string.time_m);
+                s = duration + FormatKit.getInstance().getString(R.string.minute_m);
                 break;
             case 2:
                 s = String.format("%s%s",
-                        duration < 60 ? "" : duration / 60 + FormatKit.getInstance().getString(R.string.time_h),
+                        duration < 60 ? "" : duration / 60 + FormatKit.getInstance().getString(R.string.hour_h),
                         duration % 60);
                 break;
             case 3:
                 s = String.format("%s",
-                        duration < 60 ? duration % 60 + FormatKit.getInstance().getString(R.string.time_m) :
-                                duration / 60 + FormatKit.getInstance().getString(R.string.time_h) + duration % 60);
+                        duration < 60 ? duration % 60 + FormatKit.getInstance().getString(R.string.minute_m) :
+                                duration / 60 + FormatKit.getInstance().getString(R.string.hour_h) + duration % 60);
                 break;
             case 4:
                 s = String.format("%s%s",
-                        duration < 60 ? "" : duration / 60 + FormatKit.getInstance().getString(R.string.time_h),
-                        duration % 60 + FormatKit.getInstance().getString(R.string.time_m));
+                        duration < 60 ? "" : duration / 60 + FormatKit.getInstance().getString(R.string.hour_h),
+                        duration % 60 + FormatKit.getInstance().getString(R.string.minute_m));
                 break;
             default:
                 s = String.valueOf(duration);
@@ -1325,10 +1245,10 @@ public class UrchinService extends Service {
         String s;
         switch (dataStore.getUrchinUnitsStyle()) {
             case 1:
-                s = FormatKit.getInstance().getString(R.string.text_insulin_unit).toLowerCase();
+                s = FormatKit.getInstance().getString(R.string.insulin_U).toLowerCase();
                 break;
             case 2:
-                s = FormatKit.getInstance().getString(R.string.text_insulin_unit).toUpperCase();
+                s = FormatKit.getInstance().getString(R.string.insulin_U).toUpperCase();
                 break;
             default:
                 s = "";
@@ -1354,29 +1274,29 @@ public class UrchinService extends Service {
                 break;
             case 5:
                 if (battery > 25)
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_Hi);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_Hi);
                 else
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_Lo);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_Lo);
                 break;
             case 6:
                 if (battery > 65)
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_High);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_High);
                 else if (battery > 25)
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_Medium);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_Medium);
                 else
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_Low);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_Low);
                 break;
             case 7:
                 if (battery > 80)
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_Full);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_Full);
                 else if (battery > 60)
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_High);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_High);
                 else if (battery > 30)
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_Medium);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_Medium);
                 else if (battery > 15)
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_Low);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_Low);
                 else
-                    s = FormatKit.getInstance().getString(R.string.urchin_disp_Battery_Empty);
+                    s = FormatKit.getInstance().getString(R.string.urchin_watchface_Battery_Empty);
                 break;
             default:
                 s = battery + "";
@@ -1492,9 +1412,9 @@ public class UrchinService extends Service {
         items.add("14");
         items.add(String.format("%s: '%s·%s' '%s·%s' (%s)",
                 fk.getString(R.string.urchin_status_layout_Basal_State),
-                fk.getString(R.string.urchin_disp_Temp),
+                fk.getString(R.string.urchin_watchface_Temp),
                 fk.formatMinutesAsM(45),
-                fk.getString(R.string.urchin_disp_Suspend),
+                fk.getString(R.string.urchin_watchface_Suspend),
                 fk.formatAsClock(11, 30),
                 fk.getString(R.string.urchin_status_layout_when_active)
         ));
@@ -1504,7 +1424,7 @@ public class UrchinService extends Service {
                 fk.getString(R.string.urchin_status_layout_Basal_State),
                 fk.formatAsInsulin(0.0),
                 fk.formatMinutesAsM(45),
-                fk.getString(R.string.urchin_disp_Suspend),
+                fk.getString(R.string.urchin_watchface_Suspend),
                 fk.formatAsClock(11, 30),
                 fk.getString(R.string.urchin_status_layout_dynamic)
         ));
@@ -1518,7 +1438,7 @@ public class UrchinService extends Service {
         items.add("17");
         items.add(String.format("%s: '%s%s·%s' (%s)",
                 fk.getString(R.string.urchin_status_layout_Bolusing),
-                fk.getString(R.string.urchin_disp_Bolusing),
+                fk.getString(R.string.urchin_watchface_Bolusing),
                 fk.formatAsInsulin(3.5),
                 fk.formatMinutesAsM(45),
                 fk.getString(R.string.urchin_status_layout_when_active)
@@ -1534,7 +1454,7 @@ public class UrchinService extends Service {
         items.add(String.format("%s: '%s' '%s'",
                 fk.getString(R.string.urchin_status_layout_Calibration),
                 fk.formatMinutesAsM(45),
-                fk.getString(R.string.urchin_disp_CalibrateNow)
+                fk.getString(R.string.urchin_watchface_CalibrateNow)
         ));
         items.add("20");
         items.add(String.format("%s / %s & %s: (%s)",
@@ -1638,7 +1558,7 @@ public class UrchinService extends Service {
         items.add("114");
         items.add(String.format("%s: '%s·%s' (%s %s)",
                 fk.getString(R.string.urchin_status_layout_BG),
-                fk.getString(R.string.urchin_disp_BG),
+                fk.getString(R.string.urchin_watchface_BG),
                 fk.formatAsGlucose(100),
                 fk.getString(R.string.urchin_status_layout_when_recent),
                 fk.formatMinutesAsM(15)
@@ -1646,7 +1566,7 @@ public class UrchinService extends Service {
         items.add("115");
         items.add(String.format("%s: '%s·%s' (%s %s)",
                 fk.getString(R.string.urchin_status_layout_BG),
-                fk.getString(R.string.urchin_disp_BG),
+                fk.getString(R.string.urchin_watchface_BG),
                 fk.formatAsGlucose(100),
                 fk.getString(R.string.urchin_status_layout_when_recent),
                 fk.formatMinutesAsM(60)
@@ -1662,7 +1582,7 @@ public class UrchinService extends Service {
         items.add("122");
         items.add(String.format("%s: '%s·%s' (%s %s)",
                 fk.getString(R.string.urchin_status_layout_Factor),
-                fk.getString(R.string.urchin_disp_Factor),
+                fk.getString(R.string.urchin_watchface_Factor),
                 fk.formatAsDecimal(4.5, 1),
                 fk.getString(R.string.urchin_status_layout_when_recent),
                 fk.formatMinutesAsM(15)
@@ -1670,48 +1590,48 @@ public class UrchinService extends Service {
         items.add("123");
         items.add(String.format("%s: '%s·%s' (%s %s)",
                 fk.getString(R.string.urchin_status_layout_Factor),
-                fk.getString(R.string.urchin_disp_Factor),
+                fk.getString(R.string.urchin_watchface_Factor),
                 fk.formatAsDecimal(4.5, 1),
                 fk.getString(R.string.urchin_status_layout_when_recent),
                 fk.formatMinutesAsM(60)
         ));
 
         items.add("131");
-        items.add(String.format("%s: '%s' (%s)",
+        items.add(String.format("%s: '+- %s' (%s)",
                 fk.getString(R.string.urchin_status_layout_ISIG),
-                fk.formatAsDecimal(31.45, 2),
+                fk.formatAsDecimal(31.4, 1),
                 fk.getString(R.string.urchin_status_layout_when_available)
         ));
         items.add("132");
         items.add(String.format("%s: '%s·%s' (%s)",
                 fk.getString(R.string.urchin_status_layout_ISIG),
-                fk.getString(R.string.urchin_disp_ISIG),
-                fk.formatAsDecimal(31.45, 2),
+                fk.getString(R.string.urchin_watchface_ISIG),
+                fk.formatAsDecimal(31.4, 1),
                 fk.getString(R.string.urchin_status_layout_when_available)
         ));
 
         items.add("141");
         items.add(String.format("%s: '%s' (%s)",
                 fk.getString(R.string.urchin_status_layout_Estimate),
-                fk.getString(R.string.urchin_disp_Estimate),
+                fk.getString(R.string.urchin_watchface_Estimate),
                 fk.getString(R.string.urchin_status_layout_when_available)
         ));
 
         items.add("151");
         items.add(String.format("%s: '%s·%s' (%s)",
                 fk.getString(R.string.urchin_status_layout_Pump_Alert),
-                fk.getString(R.string.urchin_disp_Alert),
+                fk.getString(R.string.urchin_watchface_Alert),
                 fk.formatAsClock(11, 30),
                 fk.getString(R.string.urchin_status_layout_when_active)
         ));
         items.add("152");
         items.add(String.format("%s: '%s·%s' (%s)",
                 fk.getString(R.string.urchin_status_layout_Pump_Alert),
-                fk.getString(R.string.urchin_disp_Alert),
+                fk.getString(R.string.urchin_watchface_Alert),
                 fk.formatMinutesAsM(45),
                 fk.getString(R.string.urchin_status_layout_when_active)
         ));
-/*
+
         items.add("201");
         items.add(String.format("[%s] %s",
                 fk.getString(R.string.urchin_status_layout_GROUP_START),
@@ -1720,19 +1640,6 @@ public class UrchinService extends Service {
         items.add("202");
         items.add(String.format("[%s]",
                 fk.getString(R.string.urchin_status_layout_GROUP_END)
-        ));
-*/
-        items.add("201");
-        items.add(String.format("%s",
-                "[GROUP SINGLE] first active item only"
-        ));
-        items.add("202");
-        items.add(String.format("[%s]",
-                fk.getString(R.string.urchin_status_layout_GROUP_END)
-        ));
-        items.add("203");
-        items.add(String.format("%s",
-                "[GROUP MULTIPLE] first active group only"
         ));
 
         return items;

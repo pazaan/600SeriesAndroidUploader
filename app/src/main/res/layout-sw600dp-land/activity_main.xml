@@ -23,6 +23,7 @@
     </android.support.design.widget.AppBarLayout>
 
     <android.support.constraint.ConstraintLayout
+        android:id="@+id/view_sgv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10sp"
@@ -34,7 +35,7 @@
             android:id="@+id/textview_bg"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/text_dash"
+            android:text="@string/dash"
             android:textAlignment="center"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:textSize="180sp"
@@ -50,7 +51,7 @@
             android:id="@+id/textview_trend"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/text_dash"
+            android:text="@string/dash"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:textSize="100sp"
             app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
@@ -63,7 +64,7 @@
             android:id="@+id/textview_units"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/text_unit_mgdl"
+            android:text="@string/glucose_mgdl"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:textSize="24sp"
             app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
@@ -73,7 +74,7 @@
             android:id="@+id/textview_bg_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/main_never"
+            android:text="@string/dots"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textSize="30sp"
             app:layout_constraintBottom_toTopOf="@+id/textview_iob"
@@ -85,7 +86,7 @@
             android:id="@+id/textview_iob"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/main_active_insulin"
+            android:text="@string/main_screen__active_insulin"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textSize="30sp"
             app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
@@ -103,7 +104,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1">
 
-        <com.jjoe64.graphview.GraphView
+        <info.nightscout.android.medtronic.ChartSgv
             android:id="@+id/chart"
             android:layout_width="0dp"
             android:layout_height="0dp"

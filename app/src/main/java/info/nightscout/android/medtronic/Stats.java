@@ -75,30 +75,10 @@ public class Stats {
 
     public static Stats open() {
         return LazyHolder.open();
-
-        /*
-        LazyHolder.instance.open();
-        synchronized (Stats.class) {
-            LazyHolder.instance.open++;
-        }
-        //Log.d(TAG, "open called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
-        return LazyHolder.instance;
-        */
     }
 
     public static void close() {
         LazyHolder.close();
-        /*
-        synchronized (Stats.class) {
-            LazyHolder.instance.open--;
-            //Log.d(TAG, "close called [open=" + LazyHolder.instance.open + "]" + " rec: " + LazyHolder.instance.loadedRecords.size());
-            if (LazyHolder.instance.open < 1) {
-                LazyHolder.instance.writeRecords();
-                LazyHolder.instance.loadedRecords.clear();
-                LazyHolder.instance.open = 0;
-            }
-        }
-        */
     }
 
     public static int opened() {

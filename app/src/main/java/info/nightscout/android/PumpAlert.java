@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.model.medtronicNg.PumpHistoryAlarm;
 import info.nightscout.android.utils.FormatKit;
 import info.nightscout.android.utils.ToolKit;
@@ -26,6 +27,7 @@ public class PumpAlert {
 
     private boolean cleared;
     private boolean silenced;
+    private boolean repeated;
 
     private int faultNumber;
     private int notificationMode;
@@ -35,6 +37,8 @@ public class PumpAlert {
     private Date alarmedDate;
     private Date clearedDate;
 
+    private Date pumpDate;
+
     private byte[] alarmData;
 
     public enum TYPE {
@@ -42,11 +46,13 @@ public class PumpAlert {
         PUMP,
         SENSOR,
         REMINDER,
+        SMARTGUARD,
         AUTOMODE,
-        SYSTEM;
+        SYSTEM
     }
 
     public enum PRIORITY {
+        REDUNDANT(-9),
         LOWEST(-2),
         LOW(-1),
         NORMAL(0),
@@ -72,8 +78,10 @@ public class PumpAlert {
         alarmData = record.getAlarmData();
         cleared = record.isCleared();
         silenced = record.isSilenced();
+        repeated = record.isRepeated();
         clearedDate = record.getClearedDate();
         alarmedDate = record.getAlarmedDate();
+        pumpDate = MessageUtils.decodeDateTime(record.getAlarmedRTC() & 0xFFFFFFFFL, record.getAlarmedOFFSET());
         return this;
     }
 
@@ -94,10 +102,10 @@ public class PumpAlert {
         switch (code) {
 
             case 4:
-                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_4).format();
+                alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_4).format();
                 break;
             case 6:
-                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_6).format();
+                alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_6).format();
                 break;
             case 7:
                 alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_7).format();
@@ -109,7 +117,10 @@ public class PumpAlert {
                 alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_11).format();
                 break;
             case 15:
-                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_15).format();
+                alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_15).format();
+                break;
+            case 53:
+                alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_53).format();
                 break;
             case 58:
                 alert(TYPE.PUMP, PRIORITY.NORMAL).id(R.string.alert_58).format();
@@ -213,19 +224,19 @@ public class PumpAlert {
                 alert(TYPE.SENSOR, PRIORITY.HIGH).id(R.string.alert_805).glucose(1).format();
                 break;
             case 806:
-                alert(TYPE.PUMP, PRIORITY.LOWEST).id(R.string.alert_806).format();
+                alert(TYPE.SMARTGUARD, PRIORITY.LOW).id(R.string.alert_806).format();
                 break;
             case 807:
-                alert(TYPE.PUMP, PRIORITY.LOWEST).id(R.string.alert_807).clock(4).format();
+                alert(TYPE.SMARTGUARD, PRIORITY.LOW).id(R.string.alert_807).clock(4).format();
                 break;
             case 808:
-                alert(TYPE.PUMP, PRIORITY.NORMAL).id(R.string.alert_808).format();
+                alert(TYPE.SMARTGUARD, PRIORITY.LOW).id(R.string.alert_808).format();
                 break;
             case 809:
-                alert(TYPE.PUMP, PRIORITY.NORMAL).id(R.string.alert_809).glucose(1).format();
+                alert(TYPE.SMARTGUARD, PRIORITY.LOW).id(R.string.alert_809).glucose(1).format();
                 break;
             case 810:
-                alert(TYPE.PUMP, PRIORITY.LOWEST).id(R.string.alert_810).format();
+                alert(TYPE.SMARTGUARD, PRIORITY.LOW).id(R.string.alert_810).format();
                 break;
             case 811:
                 alert(TYPE.PUMP, PRIORITY.NORMAL).id(R.string.alert_811).format();
@@ -270,37 +281,97 @@ public class PumpAlert {
                 alert(TYPE.SENSOR, PRIORITY.LOWEST).id(R.string.alert_110).format();
                 break;
 
-            // auto mode alerts - best guess! ;)
+            // 670G auto mode alerts
 
+            // *** 819 and 820 may be other way around? ***
+
+            // Auto Mode off|Basal X started. Would you like to review the Auto Mode Readiness screen
+            // user turned off sensor / suspend has not been cleared within 4 hours / user in Safe Basal for maximum of 90 minutes
+            // history:false
+            // TW: *** seen when AM stopped after Auto Mode exit High SG
+            case 819:
+                alert(TYPE.AUTOMODE, PRIORITY.LOW).id(R.string.alert_819).pattern(0).format();
+                break;
+
+            // Auto Mode exit|Basal X started.Would you like to review the Auto Mode Readiness screen?
+            // user turned off sensor / suspend has not been cleared within 4 hours / user in Safe Basal for maximum of 90 minutes
+            // history:false
+            // TW: Auto Mode exit|User disabled *** seen when AM stopped to change sensor
             case 820:
-                alert(TYPE.AUTOMODE, PRIORITY.NORMAL).id(R.string.alert_820).pattern(0).format();
+                alert(TYPE.AUTOMODE, PRIORITY.HIGH).id(R.string.alert_820).pattern(0).format();
                 break;
+
+            // Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode.
+            // history:true
             case 821:
-                alert(TYPE.AUTOMODE, PRIORITY.LOW).id(R.string.alert_821).format();
+                alert(TYPE.AUTOMODE, PRIORITY.HIGH).id(R.string.alert_821).pattern(0).format();
                 break;
+
+            // Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.
+            // history:true
+            case 822:
+                alert(TYPE.AUTOMODE, PRIORITY.HIGH).id(R.string.alert_822).format();
+                break;
+
+            // Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.
+            // history:true
             case 823:
-                alert(TYPE.AUTOMODE, PRIORITY.NORMAL).id(R.string.alert_823).pattern(0).format();
+                alert(TYPE.AUTOMODE, PRIORITY.HIGH).id(R.string.alert_823).pattern(0).format();
                 break;
             case 824:
-                alert(TYPE.AUTOMODE, PRIORITY.LOW).id(R.string.alert_824).format();
+                alert(TYPE.AUTOMODE, PRIORITY.HIGH).id(R.string.alert_824).pattern(0).format();
                 break;
 
+            // *** unknown ***
+            // history:true
+            //case 825:
+
+            // *** unknown ***
+            //case 826:
+
+            // *** unconfirmed ***
+            // BG required|Enter a new BG for Auto Mode.
+            // history:true
+            // note: seen after a sensor Alert On Low, may contain sgv data
+            case 827:
+                alert(TYPE.AUTOMODE, PRIORITY.REDUNDANT).id(R.string.alert_827).format();
+                break;
+
+            // *** unknown ***
+            //case 828:
+
+            // BG required|Enter a new BG for Auto Mode.
+            // history:true
+            case 829:
+                alert(TYPE.AUTOMODE, PRIORITY.REDUNDANT).id(R.string.alert_829).format();
+                break;
             case 830:
-                alert(TYPE.AUTOMODE, PRIORITY.LOW).id(R.string.alert_830).format();
+                alert(TYPE.AUTOMODE, PRIORITY.REDUNDANT).id(R.string.alert_830).format();
                 break;
             case 831:
-                alert(TYPE.AUTOMODE, PRIORITY.LOW).id(R.string.alert_831).format();
+                alert(TYPE.AUTOMODE, PRIORITY.REDUNDANT).id(R.string.alert_831).format();
                 break;
 
+            // *** unconfirmed ***
+            // Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode
+            // history:true
+            // note: seen after a BG entered but no cal occurred and a cal is still required
+            case 832:
+                alert(TYPE.AUTOMODE, PRIORITY.NORMAL).id(R.string.alert_832).format();
+                break;
+
+            // Bolus recommended|For %1$s entered, a correction bolus is recommended.
+            // history:false
+            // note: if user does a bolus this message and bolus can obscure each other, option to disable this alert in NS? option for PO? note alert if bolus given?
             case 833:
-                alert(TYPE.PUMP, PRIORITY.LOWEST).id(R.string.alert_833).glucose(0).format();
+                alert(TYPE.PUMP, PRIORITY.REDUNDANT).id(R.string.alert_833).glucose(0).format();
                 break;
 
             // unknown alert
 
             default:
                 code = 0;
-                alert(TYPE.NA, PRIORITY.LOW).id(R.string.alert_0).format();
+                alert(TYPE.NA, PRIORITY.LOW).id((pumpDate != null && alarmHistory) ? R.string.alert_unknown_in_history : R.string.alert_unknown_not_in_history).format();
         }
 
         return this;
@@ -398,6 +469,8 @@ public class PumpAlert {
                 return FormatKit.getInstance().getString(R.string.alert_sensor);
             case REMINDER:
                 return FormatKit.getInstance().getString(R.string.alert_reminder);
+            case SMARTGUARD:
+                return FormatKit.getInstance().getString(R.string.alert_smartguard);
             case AUTOMODE:
                 return FormatKit.getInstance().getString(R.string.alert_automode);
             default:
@@ -436,16 +509,11 @@ public class PumpAlert {
         }
         sb.append("]");
 
-        return sb.toString();
-    }
+        if (pumpDate != null){
+            sb.append(String.format(" [Pump: %s]", FormatKit.getInstance().formatAsYMDHMS(pumpDate.getTime())));
+        }
 
-    public String getSilenced(boolean isAppended) {
-        if (!silenced) return "";
-        return String.format("%s%s%s",
-                isAppended ? " (" : "",
-                FormatKit.getInstance().getString(R.string.alert_silenced_tag),
-                isAppended ? ")" : ""
-        );
+        return sb.toString();
     }
 
     public String getCleared(boolean isAppended) {
@@ -457,6 +525,28 @@ public class PumpAlert {
                 FormatKit.getInstance().formatSecondsAsDHMS(duration),
                 isAppended ? ")" : ""
         );
+    }
+
+    public String getSilenced(boolean isAppended) {
+        if (!silenced) return "";
+        return String.format("%s%s%s",
+                isAppended ? " (" : "",
+                FormatKit.getInstance().getString(R.string.alert_silenced_tag),
+                isAppended ? ")" : ""
+        );
+    }
+
+    public String getRepeated(boolean isAppended) {
+        if (!repeated) return "";
+        return String.format("%s%s%s",
+                isAppended ? " (" : "",
+                FormatKit.getInstance().getString(R.string.alert_repeated_tag),
+                isAppended ? ")" : ""
+        );
+    }
+
+    public boolean isAlertKnown() {
+        return code > 0;
     }
 
     public int getCode() {

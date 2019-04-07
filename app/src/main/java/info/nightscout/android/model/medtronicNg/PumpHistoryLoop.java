@@ -6,12 +6,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import info.nightscout.android.R;
 import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
+import info.nightscout.android.utils.FormatKit;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -95,25 +97,58 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
                 treatment.setEventType("Temp Basal");
                 treatment.setDuration((float) 5);
                 treatment.setAbsolute((float) (deliveredAmount * 12));
-                treatment.setNotes("microbolus " + deliveredAmount + "U");
+                treatment.setNotes(String.format("%s %s",
+                        FormatKit.getInstance().getString(R.string.text__microbolus),
+                        FormatKit.getInstance().formatAsInsulin(deliveredAmount, 3)));
                 break;
 
             case TRANSITION_IN:
                 treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Profile Switch");
                 treatment.setProfile("Auto Mode");
-                treatment.setNotes("Auto Mode: active (" + PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string() + ")");
+                treatment.setNotes(String.format("%s: %s (%s)",
+                        FormatKit.getInstance().getString(R.string.text__Auto_Mode),
+                        FormatKit.getInstance().getString(R.string.text__active),
+                        PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string()));
                 break;
 
             case RESTART_BASAL:
                 treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Profile Switch");
                 treatment.setProfile(pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, basalPattern - 1));
-                treatment.setNotes("Auto Mode: stopped (" + PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string() + ")");
+                treatment.setNotes(String.format("%s: %s (%s)",
+                        FormatKit.getInstance().getString(R.string.text__Auto_Mode),
+                        FormatKit.getInstance().getString(R.string.text__stopped),
+                        PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string()));
                 break;
         }
 
         return nightscoutItems;
+    }
+
+    @Override
+    public List<MessageItem> message(PumpHistorySender sender, String senderID) {
+        List<MessageItem> messageItems = new ArrayList<>();
+
+        if (RECORDTYPE.TRANSITION_IN.equals(recordtype) && sender.isOpt(senderID, PumpHistorySender.SENDEROPT.AUTOMODE_ACTIVE)) {
+            messageItems.add(new MessageItem()
+                    .type(MessageItem.TYPE.AUTOMODE_ACTIVE)
+                    .date(eventDate)
+                    .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
+                    .title(FormatKit.getInstance().getString(R.string.text__Auto_Mode))
+                    .message(PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string()));
+        }
+
+        else if (RECORDTYPE.RESTART_BASAL.equals(recordtype) && sender.isOpt(senderID, PumpHistorySender.SENDEROPT.AUTOMODE_STOP)) {
+            messageItems.add(new MessageItem()
+                    .type(MessageItem.TYPE.AUTOMODE_STOP)
+                    .date(eventDate)
+                    .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
+                    .title(FormatKit.getInstance().getString(R.string.text__Auto_Mode))
+                    .message(PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string()));
+        }
+
+        return messageItems;
     }
 
     public static void microbolus(
@@ -234,9 +269,6 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
             }
         }
     }
-
-    @Override
-    public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {return new ArrayList<>();}
 
     @Override
     public String getSenderREQ() {

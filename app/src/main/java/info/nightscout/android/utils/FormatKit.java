@@ -55,13 +55,13 @@ public class FormatKit {
     public String formatAsGrams(Double value) {
         df.setMinimumFractionDigits(0);
         df.setMaximumFractionDigits(1);
-        return df.format(value) + mApplication.getApplicationContext().getString(R.string.text_gram);
+        return df.format(value) + mApplication.getApplicationContext().getString(R.string.gram_g);
     }
 
     public String formatAsExchanges(Double value) {
         df.setMinimumFractionDigits(0);
         df.setMaximumFractionDigits(1);
-        return df.format(value) + mApplication.getApplicationContext().getString(R.string.text_gram_exchange);
+        return df.format(value) + mApplication.getApplicationContext().getString(R.string.gram_exchange_ex);
     }
 
     public String formatAsInsulin(Double value) {
@@ -71,7 +71,7 @@ public class FormatKit {
     public String formatAsInsulin(Double value, int precision) {
         df.setMinimumFractionDigits(0);
         df.setMaximumFractionDigits(precision);
-        return df.format(value) + mApplication.getApplicationContext().getString(R.string.text_insulin_unit);
+        return df.format(value) + mApplication.getApplicationContext().getString(R.string.insulin_U);
     }
 
     public String formatAsGlucose(int value) {
@@ -98,13 +98,13 @@ public class FormatKit {
     }
 
     public String formatAsGlucoseMGDL(int value, boolean tag) {
-        return String.valueOf(value) + (tag ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mgdl) : "");
+        return String.valueOf(value) + (tag ? " " + mApplication.getApplicationContext().getString(R.string.glucose_mgdl) : "");
     }
 
     public String formatAsGlucoseMMOL(int value, boolean tag, int precision) {
         df.setMinimumFractionDigits(1);
         df.setMaximumFractionDigits(precision);
-        return df.format(value / MMOLXLFACTOR) + (tag ? " " + mApplication.getApplicationContext().getString(R.string.text_unit_mmol) : "");
+        return df.format(value / MMOLXLFACTOR) + (tag ? " " + mApplication.getApplicationContext().getString(R.string.glucose_mmol) : "");
     }
 
     public String formatAsDecimal(double value, int precision) {
@@ -138,45 +138,45 @@ public class FormatKit {
         int h = (seconds % 86400) / 3600;
         int m = (seconds % 3600) / 60;
         int s = seconds % 60;
-        return (d > 0 ? d + mApplication.getApplicationContext().getString(R.string.time_d) : "") +
-                ((h | d) > 0 ? h + mApplication.getApplicationContext().getString(R.string.time_h) : "") +
-                ((h | d | m) > 0 ? m + mApplication.getApplicationContext().getString(R.string.time_m) : "") +
-                s + mApplication.getApplicationContext().getString(R.string.time_s);
+        return (d > 0 ? d + mApplication.getApplicationContext().getString(R.string.day_d) : "") +
+                ((h | d) > 0 ? h + mApplication.getApplicationContext().getString(R.string.hour_h) : "") +
+                ((h | d | m) > 0 ? m + mApplication.getApplicationContext().getString(R.string.minute_m) : "") +
+                s + mApplication.getApplicationContext().getString(R.string.second_s);
     }
 
     public String formatMinutesAsDHM(int minutes) {
         int d = minutes / 1440;
         int h = (minutes % 1440) / 60;
         int m = minutes % 60;
-        return (d > 0 ? d + mApplication.getApplicationContext().getString(R.string.time_d) : "") +
-                ((h | d) > 0 ? h + mApplication.getApplicationContext().getString(R.string.time_h) : "") +
-                m + mApplication.getApplicationContext().getString(R.string.time_m);
+        return (d > 0 ? d + mApplication.getApplicationContext().getString(R.string.day_d) : "") +
+                ((h | d) > 0 ? h + mApplication.getApplicationContext().getString(R.string.hour_h) : "") +
+                m + mApplication.getApplicationContext().getString(R.string.minute_m);
     }
 
     public String formatMinutesAsHM(int minutes) {
         int h = minutes / 60;
         int m = minutes % 60;
-        return (h > 0 ? h + mApplication.getApplicationContext().getString(R.string.time_h) : "") +
-                (m > 0 ? m + mApplication.getApplicationContext().getString(R.string.time_m) : (h > 0 ? "" : "0" + mApplication.getApplicationContext().getString(R.string.time_m)));
+        return (h > 0 ? h + mApplication.getApplicationContext().getString(R.string.hour_h) : "") +
+                (m > 0 ? m + mApplication.getApplicationContext().getString(R.string.minute_m) : (h > 0 ? "" : "0" + mApplication.getApplicationContext().getString(R.string.minute_m)));
     }
 
     public String formatMinutesAsM(int minutes) {
-        return minutes + mApplication.getApplicationContext().getString(R.string.time_m);
+        return minutes + mApplication.getApplicationContext().getString(R.string.minute_m);
     }
 
     public String formatHoursAsDH(int hours) {
         int d = hours / 24;
         int h = hours % 24;
-        return d + mApplication.getApplicationContext().getString(R.string.time_d) +
-                h + mApplication.getApplicationContext().getString(R.string.time_h);
+        return d + mApplication.getApplicationContext().getString(R.string.day_d) +
+                h + mApplication.getApplicationContext().getString(R.string.hour_h);
     }
 
     public String formatHoursAsH(int hours) {
-        return hours + mApplication.getApplicationContext().getString(R.string.time_h);
+        return hours + mApplication.getApplicationContext().getString(R.string.hour_h);
     }
 
     public String formatDaysAsD(int days) {
-        return days + mApplication.getApplicationContext().getString(R.string.time_d);
+        return days + mApplication.getApplicationContext().getString(R.string.day_d);
     }
 
     public String formatAsPercent(int value) {
@@ -238,7 +238,7 @@ public class FormatKit {
     }
 
     public String formatAsMonth(long time) {
-        return new SimpleDateFormat("MM", Locale.getDefault()).format(time);
+        return new SimpleDateFormat("M", Locale.getDefault()).format(time);
     }
 
     public String formatAsMonthName(long time) {
@@ -262,11 +262,15 @@ public class FormatKit {
     }
 
     public String formatAsDayNameMonthNameDay(long time) {
-        return new SimpleDateFormat("EEEE MMMM dd", Locale.getDefault()).format(time);
+        return new SimpleDateFormat("EEEE MMMM d", Locale.getDefault()).format(time);
     }
 
     public String formatAsYMD(long time) {
-        return new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(time);
+        return new SimpleDateFormat("yyyy/M/d", Locale.getDefault()).format(time);
+    }
+
+    public String formatAsYMDHMS(long time) {
+        return new SimpleDateFormat("yyyy/M/d HH:mm:ss", Locale.getDefault()).format(time);
     }
 
     public String[] getStringArray(int id) {
@@ -274,7 +278,27 @@ public class FormatKit {
     }
 
     public String getQuantityString(int id, int value) {
-        return mApplication.getResources().getQuantityString(id, value, value);
+        String s;
+        try {
+            s = mApplication.getResources().getQuantityString(id, value, value);
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Could not get string: id = %s", id));
+            s = "[string id error]";
+        }
+        return s;
+    }
+
+    public String getQuantityString(String name, int value) {
+        int id;
+        try {
+            Resources res = mApplication.getResources();
+            id = res.getIdentifier(
+                    name, "string", mApplication.getPackageName());
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Could not get string: name = %s", name));
+            return "[string name error]";
+        }
+        return getQuantityString(id, value);
     }
 
     public String getString(int id) {

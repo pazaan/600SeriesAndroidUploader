@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.medtronic.UserLogMessage;
@@ -30,6 +31,7 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
+import static info.nightscout.android.history.PumpHistorySender.SENDER_ID_XDRIP;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
 import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
@@ -47,7 +49,7 @@ public class XDripPlusUploadService extends Service {
     private Realm storeRealm;
     private DataStore dataStore;
 
-    private static final SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
+    private SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
 
     private String device;
 
@@ -111,17 +113,17 @@ public class XDripPlusUploadService extends Service {
                         doXDripUploadStatus(pumpStatusEvents.first());
                     }
 
-                    List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ("XD");
+                    List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ(SENDER_ID_XDRIP);
 
                     for (PumpHistoryInterface record : records) {
                         if (((PumpHistoryCGM) record).getSgv() > 0) doXDripUploadCGM((PumpHistoryCGM) record, device);
                     }
 
-                    pumpHistoryHandler.setSenderRecordsACK(records, "XD");
+                    pumpHistoryHandler.setSenderRecordsACK(records, SENDER_ID_XDRIP);
 
                     if (!dataStore.isXdripPlusUploadAvailable()) {
-                        UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE,
-                                "Xdrip is available");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE, String.format("{id;%s} {id;%s}",
+                                R.string.ul_share__xdrip, R.string.ul_share__is_available));
                         storeRealm.executeTransaction(new Realm.Transaction() {
                             @Override
                             public void execute(@NonNull Realm realm) {
@@ -131,8 +133,8 @@ public class XDripPlusUploadService extends Service {
                     }
 
                 } catch (Exception e) {
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                            "Xdrip is not available");
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} {id;%s}",
+                            R.string.ul_share__xdrip, R.string.ul_share__is_not_available));
                     storeRealm.executeTransaction(new Realm.Transaction() {
                         @Override
                         public void execute(@NonNull Realm realm) {

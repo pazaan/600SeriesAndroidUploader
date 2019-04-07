@@ -11,6 +11,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
@@ -40,10 +41,10 @@ import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.upload.nightscout.NightscoutUploadService;
 import info.nightscout.android.urchin.UrchinService;
+import info.nightscout.android.utils.FormatKit;
 import info.nightscout.android.utils.RealmKit;
 import info.nightscout.android.xdrip_plus.XDripPlusUploadService;
 import io.realm.Realm;
-import io.realm.RealmList;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
@@ -66,15 +67,19 @@ public class MasterService extends Service {
 
     public static final int USB_DISCONNECT_NOFICATION_ID = 1;
     public static final int SERVICE_NOTIFICATION_ID = 2;
+    private static final int ALARM_ID = 102;
+
+    public static final long HEARTBEAT_PERIOD_MS = 5 * 60000L;
+    public static final long CNL_JITTER_MS = 5 * 60000L;
 
     private Context mContext;
 
     private MasterServiceReceiver masterServiceReceiver;
-    private UserLogMessageReceiver userLogMessageReceiver;
-    private BatteryReceiver batteryReceiver;
-    private UsbReceiver usbReceiver;
 
     private StatusNotification statusNotification;
+
+    private static PendingIntent pendingIntent;
+    private static AlarmManager alarmManager;
 
     private boolean serviceStart;
     private boolean serviceActive;
@@ -82,45 +87,6 @@ public class MasterService extends Service {
     private final static int uploaderBatteryLow = 15;
     private final static int uploaderBatteryVeryLow = 5;
     private static int uploaderBatteryLevel = 100;
-    public static int getUploaderBatteryLevel() {
-        return uploaderBatteryLevel;
-    }
-
-    private void updateUploaderBattery(int level) {
-        if (level > -1) {
-            // skip checks if previous level 100 (initial startup value)
-            if (uploaderBatteryLevel != 100) {
-                if ((100 - level) / (100 - uploaderBatteryVeryLow)
-                        > (100 - uploaderBatteryLevel) / (100 - uploaderBatteryVeryLow)) {
-
-                    new PumpHistoryHandler(this)
-                            .systemStatus(PumpHistorySystem.STATUS.UPLOADER_BATTERY_VERYLOW,
-                                    new Date(System.currentTimeMillis()), String.format("%16X", System.currentTimeMillis()),
-                                    new RealmList<>(Integer.toString(level)))
-                            .close();
-
-                } else if ((100 - level) / (100 - uploaderBatteryLow)
-                        > (100 - uploaderBatteryLevel) / (100 - uploaderBatteryLow)) {
-
-                    new PumpHistoryHandler(this)
-                            .systemStatus(PumpHistorySystem.STATUS.UPLOADER_BATTERY_LOW,
-                                    new Date(System.currentTimeMillis()), String.format("%16X", System.currentTimeMillis()),
-                                    new RealmList<>(Integer.toString(level)))
-                            .close();
-
-                } else if (level == 100 && level > uploaderBatteryLevel) {
-
-                    new PumpHistoryHandler(this)
-                            .systemStatus(PumpHistorySystem.STATUS.UPLOADER_BATTERY_FULL,
-                                    new Date(System.currentTimeMillis()), String.format("%16X", System.currentTimeMillis()),
-                                    new RealmList<>(Integer.toString(level)))
-                            .close();
-
-                }
-            }
-            uploaderBatteryLevel = level;
-        }
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -133,8 +99,6 @@ public class MasterService extends Service {
         Log.i(TAG, "onCreate called");
 
         mContext = this.getBaseContext();
-
-        RealmKit.compact(mContext);
 
         final Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
         final DataStore dataStore = storeRealm.where(DataStore.class).findFirst();
@@ -158,40 +122,39 @@ public class MasterService extends Service {
             });
 
             masterServiceReceiver = new MasterServiceReceiver();
-            IntentFilter masterServiceIntentFilter = new IntentFilter();
-            masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_ACTIVE);
-            masterServiceIntentFilter.addAction(Constants.ACTION_CNL_COMMS_FINISHED);
-            masterServiceIntentFilter.addAction(Constants.ACTION_STOP_SERVICE);
-            masterServiceIntentFilter.addAction(Constants.ACTION_READ_NOW);
-            masterServiceIntentFilter.addAction(Constants.ACTION_READ_PROFILE);
-            masterServiceIntentFilter.addAction(Constants.ACTION_URCHIN_UPDATE);
-            masterServiceIntentFilter.addAction(Constants.ACTION_STATUS_UPDATE);
-            masterServiceIntentFilter.addAction(Constants.ACTION_ALARM_RECEIVED);
-            registerReceiver(masterServiceReceiver, masterServiceIntentFilter);
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(Constants.ACTION_CNL_COMMS_ACTIVE);
+            intentFilter.addAction(Constants.ACTION_CNL_COMMS_FINISHED);
+            intentFilter.addAction(Constants.ACTION_CNL_COMMS_READY);
+            intentFilter.addAction(Constants.ACTION_STOP_SERVICE);
+            intentFilter.addAction(Constants.ACTION_READ_NOW);
+            intentFilter.addAction(Constants.ACTION_READ_PROFILE);
+            intentFilter.addAction(Constants.ACTION_READ_OVERDUE);
+            intentFilter.addAction(Constants.ACTION_SETTINGS_CHANGED);
+            intentFilter.addAction(Constants.ACTION_URCHIN_UPDATE);
+            intentFilter.addAction(Constants.ACTION_STATUS_UPDATE);
+            intentFilter.addAction(Constants.ACTION_HEARTBEAT);
+            intentFilter.addAction(Constants.ACTION_USERLOG_MESSAGE);
 
-            userLogMessageReceiver = new UserLogMessageReceiver();
-            IntentFilter userLogIntentFilter = new IntentFilter();
-            userLogIntentFilter.addAction(Constants.ACTION_USERLOG_MESSAGE);
-            registerReceiver(userLogMessageReceiver, userLogIntentFilter);
+            intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
+            intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+            intentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
 
-            batteryReceiver = new BatteryReceiver();
-            IntentFilter batteryIntentFilter = new IntentFilter();
-            batteryIntentFilter.addAction(Intent.ACTION_BATTERY_LOW);
-            batteryIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-            batteryIntentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
-            registerReceiver(batteryReceiver, batteryIntentFilter);
+            intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+            intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+            intentFilter.addAction(Constants.ACTION_USB_ACTIVITY);
+            intentFilter.addAction(Constants.ACTION_USB_PERMISSION);
+            intentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
 
-            usbReceiver = new UsbReceiver();
-            IntentFilter usbIntentFilter = new IntentFilter();
-            usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-            usbIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-            usbIntentFilter.addAction(Constants.ACTION_USB_ACTIVITY);
-            usbIntentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
-            registerReceiver(usbReceiver, usbIntentFilter);
+            registerReceiver(masterServiceReceiver, intentFilter);
 
             statusNotification = new StatusNotification();
 
             serviceStart = true;
+
+        } else {
+
+            serviceStart = false;
         }
 
         storeRealm.close();
@@ -207,9 +170,6 @@ public class MasterService extends Service {
         stopService(new Intent(mContext, UrchinService.class));
 
         if (statusNotification != null) statusNotification.endNotification();
-        if (userLogMessageReceiver != null) unregisterReceiver(userLogMessageReceiver);
-        if (usbReceiver != null) unregisterReceiver(usbReceiver);
-        if (batteryReceiver != null) unregisterReceiver(batteryReceiver);
         if (masterServiceReceiver != null) unregisterReceiver(masterServiceReceiver);
     }
 
@@ -257,9 +217,12 @@ public class MasterService extends Service {
             statusNotification.initNotification(mContext);
 
             serviceActive = true;
+            setHeartbeatAlarm();
 
-            uploadPollResults();
-            startCgmService();
+            // Android OS can kill and restart processes at any time
+            // ask the CNL service to check state as it may already be active
+            startService(new Intent(mContext, MedtronicCnlService.class)
+                    .setAction(MasterService.Constants.ACTION_CNL_CHECKSTATE));
         }
 
         return START_STICKY;
@@ -289,102 +252,164 @@ public class MasterService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            Log.d(TAG, "onReceive : " + action);
+            if (!action.equals(Constants.ACTION_USERLOG_MESSAGE))
+                Log.d(TAG, "receiver: " + action);
 
-            Log.d(TAG, "R-default=" + Realm.getGlobalInstanceCount(Realm.getDefaultConfiguration()));
-            Log.d(TAG, "R-store=" + Realm.getGlobalInstanceCount(UploaderApplication.getStoreConfiguration()));
-            Log.d(TAG, "R-log=" + Realm.getGlobalInstanceCount(UploaderApplication.getUserLogConfiguration()));
-            Log.d(TAG, "R-history=" + Realm.getGlobalInstanceCount(UploaderApplication.getHistoryConfiguration()));
+            switch (action) {
 
-            if (Constants.ACTION_CNL_COMMS_FINISHED.equals(action)) {
+                case Constants.ACTION_CNL_COMMS_ACTIVE:
+                    setHeartbeatAlarm();
+                    statusNotification.updateNotification(StatusNotification.NOTIFICATION.BUSY);
+                    break;
 
-                if (serviceActive) {
-                    PowerManager.WakeLock wl = getWakeLock(context, TAG, 10000);
+                case Constants.ACTION_CNL_COMMS_FINISHED:
+                    if (serviceActive) {
+                        PowerManager.WakeLock wl = getWakeLock(context, TAG, 10000);
 
-                    Log.d(TAG, "onReceive : cnl comms finished");
+                        runUploadServices();
 
-                    uploadPollResults();
+                        long nextpoll = intent.getLongExtra("nextpoll", 0);
 
-                    long nextpoll = intent.getLongExtra("nextpoll", 0);
+                        if (nextpoll > 0) {
+                            setPollingAlarm(nextpoll);
+                            statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, nextpoll);
+                        } else {
+                            statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+                        }
 
-                    if (nextpoll > 0) {
-                        setAlarm(nextpoll);
-                        statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, nextpoll);
+                        releaseWakeLock(wl);
+
                     } else {
-                        cancelAlarm();
-                        statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+                        Log.d(TAG, "onReceive : stopping master service");
+                        stopSelf();
                     }
+                    break;
 
-                    releaseWakeLock(wl);
+                case Constants.ACTION_CNL_COMMS_READY:
+                    RealmKit.compact(mContext);
+                    statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
+                    setHeartbeatAlarm();
+                    runUploadServices();
+                    if (checkUsbDevice()) {
+                        if (hasUsbPermission()) startCgmService();
+                        else usbNoPermission();
+                    }
+                    break;
 
-                } else {
-                    Log.d(TAG, "onReceive : stopping master service");
+                case Constants.ACTION_HEARTBEAT:
+                    setHeartbeatAlarm();
+                    runUploadServices();
+                    break;
+
+                case Constants.ACTION_STOP_SERVICE:
+                    cancelAlarm();
+                    serviceActive = false;
                     stopSelf();
-                }
+                    break;
 
-            } else if (Constants.ACTION_STOP_SERVICE.equals(action)) {
-                cancelAlarm();
-                serviceActive = false;
-                stopSelf();
+                case Constants.ACTION_READ_NOW:
+                    UserLogMessage.send(mContext, R.string.ul_main__requesting_poll_now);
+                    startService(new Intent(mContext, MedtronicCnlService.class)
+                            .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
+                    break;
 
-            } else if (Constants.ACTION_READ_NOW.equals(action)) {
-                UserLogMessage.send(mContext, R.string.ul_main_requesting_poll_now);
-                cancelAlarm();
-                startService(new Intent(mContext, MedtronicCnlService.class)
-                        .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
+                case Constants.ACTION_READ_PROFILE:
+                    UserLogMessage.send(mContext, R.string.ul_main__requesting_pump_profile);
+                    Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+                    storeRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(@NonNull Realm realm) {
+                            realm.where(DataStore.class).findFirst().setRequestProfile(true);
+                        }
+                    });
+                    storeRealm.close();
+                    break;
 
-            } else if (Constants.ACTION_READ_PROFILE.equals(action)) {
-                UserLogMessage.send(mContext, R.string.ul_main_requesting_pump_profile);
-                Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-                storeRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(@NonNull Realm realm) {
-                        realm.where(DataStore.class).findFirst().setRequestProfile(true);
+                case Constants.ACTION_READ_OVERDUE:
+                    if (isUsbOperational()
+                            && System.currentTimeMillis() - lastPollSuccess() > POLL_PERIOD_MS) {
+                        startService(new Intent(mContext, MedtronicCnlService.class)
+                                .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
                     }
-                });
-                storeRealm.close();
-                setAlarm(System.currentTimeMillis() + 1000L);
+                    break;
 
-            } else if (Constants.ACTION_CNL_COMMS_ACTIVE.equals(action)) {
-                statusNotification.updateNotification(StatusNotification.NOTIFICATION.BUSY);
+                case Constants.ACTION_SETTINGS_CHANGED:
+                    runUploadServices();
+                    break;
 
-            } else if (Constants.ACTION_URCHIN_UPDATE.equals(action)) {
-                startService(new Intent(mContext, UrchinService.class).setAction("update"));
+                case Constants.ACTION_URCHIN_UPDATE:
+                    startService(new Intent(mContext, UrchinService.class).setAction("update"));
+                    break;
 
-            } else if (Constants.ACTION_STATUS_UPDATE.equals(action)) {
-                statusNotification.updateNotification();
+                case Constants.ACTION_STATUS_UPDATE:
+                    statusNotification.updateNotification();
+                    break;
 
+                case Constants.ACTION_USERLOG_MESSAGE:
+                    UserLogMessage.getInstance().addAsync(
+                            (UserLogMessage.TYPE) intent.getSerializableExtra("type"),
+                            (UserLogMessage.FLAG) intent.getSerializableExtra("flag"),
+                            intent.getStringExtra("message"));
+                    break;
 
-                /*
-            } else if (Constants.ACTION_ALARM_RECEIVED.equals(action)) {
-                long time = intent.getLongExtra("time", 0);
-                Log.d(TAG, "Received alarm broadcast message at " + new Date(time));
-                userLogMessage.add("* alarm: " + new Date(time));
-                startService(new Intent(mContext, MedtronicCnlService.class)
-                        .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
-*/
+                // received from OS
+                case Intent.ACTION_BATTERY_LOW:
+                case Intent.ACTION_BATTERY_CHANGED:
+                case Intent.ACTION_BATTERY_OKAY:
+                    updateUploaderBattery(intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1));
+                    break;
+
+                // received from UsbActivity
+                case Constants.ACTION_USB_ACTIVITY:
+                    usbActivity();
+                    break;
+
+                // received from OS
+                case Constants.ACTION_USB_PERMISSION:
+                    usbPermission();
+                    break;
+
+                // received from OS
+                case UsbManager.ACTION_USB_DEVICE_ATTACHED:
+                    usbAttached();
+                    break;
+
+                // received from OS
+                case UsbManager.ACTION_USB_DEVICE_DETACHED:
+                    usbDetached();
+                    break;
+
+                // received from CnlService
+                case Constants.ACTION_NO_USB_PERMISSION:
+                    usbNoPermission();
+                    break;
             }
 
         }
     }
 
-    private static PendingIntent pendingIntent = null;
-    private static AlarmManager alarmManager = null;
-    private static final int ALARM_ID = 102;
+    private void setPollingAlarm(long time) {
+        Intent intent = new Intent(this, MedtronicCnlService.class).setAction(Constants.ACTION_CNL_READPUMP);
+        PendingIntent pi = PendingIntent.getService(this, ALARM_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        setAlarm(time, pi);
+    }
 
-    private void setAlarm(long time) {
+    private void setHeartbeatAlarm() {
+        Intent intent = new Intent(Constants.ACTION_HEARTBEAT);
+        PendingIntent pi = PendingIntent.getBroadcast(this, ALARM_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        setAlarm(System.currentTimeMillis() + HEARTBEAT_PERIOD_MS, pi);
+    }
+
+    private void setAlarm(long time, PendingIntent pi) {
         Log.d(TAG, "request to set Alarm at " + new Date(time));
 
-        if (alarmManager == null) {
+        if (alarmManager == null)
             alarmManager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
-        }
 
-        if (pendingIntent == null) {
-            Intent intent = new Intent(this, MedtronicCnlService.class).setAction(Constants.ACTION_CNL_READPUMP);
-            pendingIntent = PendingIntent.getService(this, ALARM_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        }
+        if (pendingIntent != null)
+            cancelAlarm();
 
-        cancelAlarm();
+        pendingIntent = pi;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(time, null), pendingIntent);
@@ -413,11 +438,27 @@ public class MasterService extends Service {
         long start = nextPollTime();
 
         if (start - now < delay) start = now + delay;
-        setAlarm(start);
+        setPollingAlarm(start);
         statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL, start);
 
         if (start - now > 10000L)
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, String.format("{id;%s} {time.poll;%s}", R.string.ul_next_poll_due_at, start));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, String.format("{id;%s} {time.poll;%s}", R.string.ul_poll__next_poll_due_at, start));
+    }
+
+    private long lastPollSuccess() {
+        long last = 0;
+        Realm realm = Realm.getDefaultInstance();
+
+        RealmResults<PumpStatusEvent> results = realm.where(PumpStatusEvent.class)
+                .greaterThan("eventDate", new Date(System.currentTimeMillis() - (24 * 60 * 60000L)))
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+
+        if (results.size() > 0)
+            last = results.first().getEventDate().getTime();
+
+        realm.close();
+        return last;
     }
 
     private long nextPollTime() {
@@ -482,126 +523,221 @@ public class MasterService extends Service {
         return nextRequestedPollTime;
     }
 
-    private void uploadPollResults() {
+    private void runUploadServices() {
+        Log.d(TAG, "Running upload services");
         startService(new Intent(mContext, UrchinService.class).setAction("update"));
         startService(new Intent(mContext, PushoverUploadService.class));
         startService(new Intent(mContext, XDripPlusUploadService.class));
         startService(new Intent(mContext, NightscoutUploadService.class));
     }
 
-    private class UserLogMessageReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            UserLogMessage.getInstance().addAsync(
-                    (UserLogMessage.TYPE) intent.getSerializableExtra("type"),
-                    (UserLogMessage.FLAG) intent.getSerializableExtra("flag"),
-                    intent.getStringExtra("message"));
-        }
+    public static int getUploaderBatteryLevel() {
+        return uploaderBatteryLevel;
     }
 
-    private class BatteryReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context arg0, Intent arg1) {
-            if (arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_LOW)
-                    || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)
-                    || arg1.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_OKAY)) {
-                updateUploaderBattery(arg1.getIntExtra(BatteryManager.EXTRA_LEVEL, -1));
-            }
-        }
-    }
+    private int batteryUpdateLastLevel = 100;
+    private long batteryUpdateTimestamp;
 
-    private class UsbReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
+    private void updateUploaderBattery(int level) {
+        if (level < 0) return;
+        uploaderBatteryLevel = level;
 
-            // received from UsbActivity
-            if (Constants.ACTION_USB_ACTIVITY.equals(action) || Constants.ACTION_HAS_USB_PERMISSION.equals(action)) {
-                Log.i(TAG, "USB device activity intent received");
+        long now = System.currentTimeMillis();
 
-                clearDisconnectionNotification();
+        // skip checks if previous level 100 (initial startup value)
 
-                Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-                storeRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(@NonNull Realm realm) {
-                        realm.where(DataStore.class).findFirst().clearAllCommsErrors();
-                    }
-                });
-                storeRealm.close();
+        if (batteryUpdateTimestamp < now && batteryUpdateLastLevel != 100) {
 
-                ((StatCnl) Stats.open().readRecord(StatCnl.class)).connected();
-                Stats.close();
+                if ((100 - level) / (100 - uploaderBatteryVeryLow)
+                        > (100 - batteryUpdateLastLevel) / (100 - uploaderBatteryVeryLow)) {
 
-                if (hasUsbPermission()) {
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Got permission for USB.");
-                    statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
-                    startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
-                } else {
-                    noPermission();
+                    new PumpHistoryHandler(this).systemEvent(PumpHistorySystem.STATUS.UPLOADER_BATTERY_VERYLOW)
+                            .data(level)
+                            .process()
+                            .closeHandler();
+                    batteryUpdateTimestamp = now + 5 * 60000L;
+
+                } else if ((100 - level) / (100 - uploaderBatteryLow)
+                        > (100 - batteryUpdateLastLevel) / (100 - uploaderBatteryLow)) {
+
+                    new PumpHistoryHandler(this).systemEvent(PumpHistorySystem.STATUS.UPLOADER_BATTERY_LOW)
+                            .data(level)
+                            .process()
+                            .closeHandler();
+                    batteryUpdateTimestamp = now + 5 * 60000L;
+
+                } else if (level == 100 && level > batteryUpdateLastLevel) {
+
+                    new PumpHistoryHandler(this).systemEvent(PumpHistorySystem.STATUS.UPLOADER_BATTERY_FULL)
+                            .data(level)
+                            .process()
+                            .closeHandler();
+                    batteryUpdateTimestamp = now + 60 * 60000L;
+
                 }
             }
 
-            // received from OS
-            else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                Log.i(TAG, "USB device attached intent received");
+        batteryUpdateLastLevel = level;
+    }
 
-                UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Contour Next Link plugged in.");
-
-                if (!hasUsbPermission()) {
-                    Log.d(TAG, "No permission for USB. Waiting.");
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, "Waiting for USB permission.");
-                }
-            }
-
-            // received from OS
-            else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                Log.w(TAG, "USB device detached intent received");
-
-                showDisconnectionNotification("USB Error", "Contour Next Link unplugged.");
-                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "USB error. Contour Next Link unplugged.");
-
-                statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
-
-                ((StatCnl) Stats.open().readRecord(StatCnl.class)).disconnected();
-                Stats.close();
-            }
-
-            // received from CnlService
-            else if (Constants.ACTION_NO_USB_PERMISSION.equals(action)) {
-                noPermission();
-            }
+    private void usbActivity() {
+        clearDisconnectionNotification();
+        if (hasUsbPermission()) {
+            cnlReady();
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.ul_usb__got_permission_for_usb);
+            statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
+            startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
+        } else {
+            usbNoPermission();
         }
     }
 
-    private void noPermission() {
-        Log.w(TAG, "No permission to read the USB device.");
-        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, "No permission to read the USB device.");
+    private void usbPermission() {
+        clearDisconnectionNotification();
+        if (hasUsbPermission()) {
+            cnlReady();
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.ul_usb__got_permission_for_usb);
+            statusNotification.updateNotification(StatusNotification.NOTIFICATION.NORMAL);
+            startCgmServiceDelayed(MedtronicCnlService.USB_WARMUP_TIME_MS);
+        } else {
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.ul_usb__user_has_not_granted_permission_for_usb);
+        }
+    }
+
+    private void cnlReady() {
+        Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        storeRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
+                DataStore dataStore = realm.where(DataStore.class).findFirst();
+                dataStore.clearAllCommsErrors();
+
+                long plug = System.currentTimeMillis();
+                dataStore.setCnlPlugTimestamp(plug);
+                long unplug = dataStore.getCnlUnplugTimestamp();
+                if (unplug == 0) unplug = plug;
+                if (plug - unplug > dataStore.getPushoverBackfillLimiter() * 60000L)
+                    dataStore.setCnlLimiterTimestamp(plug);
+            }
+        });
+        storeRealm.close();
+
+        StatCnl statCnl = ((StatCnl) Stats.open().readRecord(StatCnl.class));
+        statCnl.connected();
+        UserLogMessage.sendE(mContext, UserLogMessage.TYPE.NOTE, statCnl.toString());
+        Stats.close();
+    }
+
+    private void usbAttached() {
+        clearDisconnectionNotification();
+        UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.ul_usb__contour_next_link_plugged_in);
+        if (!hasUsbPermission()) {
+            Log.d(TAG, "No permission for USB. Waiting.");
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.ul_usb__waiting_for_usb_permission);
+        }
+    }
+
+    private void usbDetached() {
+        showDisconnectionNotification(FormatKit.getInstance().getString(R.string.ul_usb__usb_error),
+                FormatKit.getInstance().getString(R.string.ul_usb__contour_next_link_unplugged));
+        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s}. {id;%s}",
+                R.string.ul_usb__usb_error,
+                R.string.ul_usb__contour_next_link_unplugged));
 
         statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
 
-        final Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-        final DataStore dataStore = storeRealm.where(DataStore.class).findFirst();
+        ((StatCnl) Stats.open().readRecord(StatCnl.class)).disconnected();
+        Stats.close();
+
+        Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        storeRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
+                DataStore dataStore = realm.where(DataStore.class).findFirst();
+                long now = System.currentTimeMillis();
+                // allow for jitter, only change timestamp when >period since last plug
+                if (dataStore.getCnlUnplugTimestamp() == 0
+                        || now - dataStore.getCnlPlugTimestamp() > CNL_JITTER_MS)
+                    dataStore.setCnlUnplugTimestamp(now);
+            }
+        });
+        storeRealm.close();
+    }
+
+    private void usbNoPermission() {
+        Log.w(TAG, "No permission to read the USB device.");
+        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_permission_to_read_the_usb_device);
+
+        statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+
+        Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        DataStore dataStore = storeRealm.where(DataStore.class).findFirst();
         if (dataStore.isSysEnableUsbPermissionDialog()) {
             requestUsbPermission();
         } else {
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, "Unplug/plug the Contour Next Link and select 'use by default for this device' to make permission permanent.");
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.ul_usb__help_permission);
         }
         storeRealm.close();
     }
 
     private boolean hasUsbPermission() {
         UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
+        if (usbManager == null) return false;
         UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID);
-
-        return !(usbManager != null && cnlDevice != null && !usbManager.hasPermission(cnlDevice));
+        return !(cnlDevice != null && !usbManager.hasPermission(cnlDevice));
     }
 
     private void requestUsbPermission() {
+        Log.d(TAG, "requestUsbPermission");
         UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
         UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID);
-        PendingIntent permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(Constants.ACTION_HAS_USB_PERMISSION), 0);
+        PendingIntent permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(Constants.ACTION_USB_PERMISSION), 0);
         usbManager.requestPermission(cnlDevice, permissionIntent);
+    }
+
+    private boolean checkUsbDevice() {
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST)) {
+            Log.e(TAG, "Device does not support USB OTG");
+            statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_support));
+            return false;
+        }
+
+        UsbManager usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+
+        if (usbManager == null) {
+            Log.e(TAG, "USB connection error. mUsbManager == null");
+            statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_connection));
+            return false;
+        }
+
+        if (UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID) == null) {
+            Log.w(TAG, "USB connection error. Is the CNL plugged in?");
+            statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_connection));
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isUsbOperational() {
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST)) {
+            return false;
+        }
+
+        UsbManager usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+
+        if (usbManager == null) {
+            return false;
+        }
+
+        if (UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID) == null) {
+            return false;
+        }
+
+        return true;
     }
 
     private void showDisconnectionNotification(String title, String message) {
@@ -646,28 +782,23 @@ public class MasterService extends Service {
     }
 
     public final class Constants {
-        public static final String ACTION_USERLOG_MESSAGE = "info.nightscout.android.medtronic.STATUS_MESSAGE";
+        public static final String ACTION_USERLOG_MESSAGE = "info.nightscout.android.medtronic.USERLOG_MESSAGE";
         public static final String ACTION_CNL_COMMS_ACTIVE = "info.nightscout.android.medtronic.CNL_COMMS_ACTIVE";
         public static final String ACTION_CNL_COMMS_FINISHED = "info.nightscout.android.medtronic.CNL_COMMS_FINISHED";
+        public static final String ACTION_CNL_COMMS_READY = "info.nightscout.android.medtronic.CNL_COMMS_READY";
+        public static final String ACTION_CNL_READPUMP = "info.nightscout.android.medtronic.CNL_READPUMP";
+        public static final String ACTION_CNL_SHUTDOWN = "info.nightscout.android.medtronic.CNL_SHUTDOWN";
+        public static final String ACTION_CNL_CHECKSTATE = "info.nightscout.android.medtronic.CNL_STATE";
         public static final String ACTION_STOP_SERVICE = "info.nightscout.android.medtronic.STOP_SERVICE";
         public static final String ACTION_READ_NOW = "info.nightscout.android.medtronic.READ_NOW";
         public static final String ACTION_READ_PROFILE = "info.nightscout.android.medtronic.READ_PROFILE";
+        public static final String ACTION_READ_OVERDUE = "info.nightscout.android.medtronic.READ_OVERDUE";
+        public static final String ACTION_SETTINGS_CHANGED = "info.nightscout.android.medtronic.SETTINGS_CHANGED";
         public static final String ACTION_URCHIN_UPDATE = "info.nightscout.android.medtronic.URCHIN_UPDATE";
         public static final String ACTION_STATUS_UPDATE = "info.nightscout.android.medtronic.STATUS_UPDATE";
-
-        public static final String ACTION_TEST = "info.nightscout.android.medtronic.TEST";
-
+        public static final String ACTION_HEARTBEAT = "info.nightscout.android.medtronic.HEARTBEAT";
         public static final String ACTION_NO_USB_PERMISSION = "info.nightscout.android.medtronic.NO_USB_PERMISSION";
-        public static final String ACTION_HAS_USB_PERMISSION = "info.nightscout.android.medtronic.HAS_USB_PERMISSION";
-
-        public static final String ACTION_USB_ACTIVITY = "info.nightscout.android.medtronic.ACTION_USB_ACTIVITY";
-        public static final String ACTION_USB_REGISTER = "info.nightscout.android.medtronic.USB_REGISTER";
-
-        public static final String ACTION_CNL_READPUMP = "info.nightscout.android.medtronic.CNL_READPUMP";
-        public static final String ACTION_CNL_SHUTDOWN = "info.nightscout.android.medtronic.CNL_SHUTDOWN";
-
-        public static final String ACTION_ALARM_RECEIVED = "info.nightscout.android.medtronic.ACTION_ALARM_RECEIVED";
-
-        public static final String EXTENDED_DATA = "info.nightscout.android.medtronic.DATA";
+        public static final String ACTION_USB_PERMISSION = "info.nightscout.android.medtronic.USB_PERMISSION";
+        public static final String ACTION_USB_ACTIVITY = "info.nightscout.android.medtronic.USB_ACTIVITY";
     }
 }

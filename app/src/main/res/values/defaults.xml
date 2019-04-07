@@ -12,6 +12,8 @@
 
     <!-- Keys -->
 
+    <!-- key >values< should not be changed as they will exist as user pref key names in storage, name="xxx" can be refactored -->
+
     <string name="key_mmolxl">mmolxl</string>
     <string name="key_mmolDecimals">mmolDecimals</string>
     <string name="key_pollInterval">pollInterval</string>
@@ -37,8 +39,14 @@
     <string name="key_sysPumpHistoryDays">sysPumpHistoryDays</string>
     <string name="key_sysPumpHistoryFrequency">sysPumpHistoryFrequency</string>
     <string name="key_sysEnableEstimateSGV">sysEnableEstimateSGV</string>
+    <string name="key_sysEnableEstimateSGVeol">sysEnableEstimateSGVeol</string>
+    <string name="key_sysEnableEstimateSGVerror">sysEnableEstimateSGVerror</string>
     <string name="key_sysEnableReportISIG">sysEnableReportISIG</string>
+    <string name="key_sysReportISIGinclude">sysReportISIGinclude</string>
+    <string name="key_sysReportISIGminimum">sysReportISIGminimum</string>
+    <string name="key_sysReportISIGnewsensor">sysReportISIGnewsensor</string>
     <string name="key_sysEnableClashProtect">sysEnableClashProtect</string>
+    <string name="key_sysRssiAllowConnect">sysRssiAllowConnect</string>
     <string name="key_sysEnablePollOverride">sysEnablePollOverride</string>
     <string name="key_sysPollGracePeriod">sysPollGracePeriod</string>
     <string name="key_sysPollRecoveryPeriod">sysPollRecoveryPeriod</string>
@@ -58,9 +66,17 @@
 
     // nightscout
     <string name="key_nsEnableTreatments">nsEnableTreatments</string>
-    <string name="key_nsEnableHistorySync">nsEnableHistorySync</string>
+    <string name="key_nsEnableBasalTreatments">nsEnableBasalTreatments</string>
+    <string name="key_nsEnableBolusTreatments">nsEnableBolusTreatments</string>
+    <string name="key_nsEnteredBy">nsEnteredBy</string>
+
+    <string name="key_nsEnableDeviceStatus">nsEnableDeviceStatus</string>
+    <string name="key_nsEnableDevicePUMP">nsEnableDevicePUMP</string>
+    <string name="key_nsDeviceName">nsDeviceName</string>
+
     <string name="key_nsEnableFingerBG">nsEnableFingerBG</string>
     <string name="key_nsEnableCalibrationInfo">nsEnableCalibrationInfo</string>
+
     <string name="key_nsEnableSensorChange">nsEnableSensorChange</string>
     <string name="key_nsEnableReservoirChange">nsEnableReservoirChange</string>
     <string name="key_nsEnableInsulinChange">nsEnableInsulinChange</string>
@@ -68,24 +84,24 @@
     <string name="key_nsInsulinChangeThreshold">"nsInsulinChangeThreshold"</string>
     <string name="key_nsEnableBatteryChange">nsEnableBatteryChange</string>
     <string name="key_nsEnableLifetimes">nsEnableLifetimes</string>
+
     <string name="key_nsEnableProfileUpload">nsEnableProfileUpload</string>
     <string name="key_nsEnableProfileSingle">nsEnableProfileSingle</string>
     <string name="key_nsEnableProfileOffset">nsEnableProfileOffset</string>
     <string name="key_nsProfileDefault">nsProfileDefault</string>
     <string name="key_nsActiveInsulinTime">nsActiveInsulinTime</string>
     <string name="key_nsEnablePatternChange">nsEnablePatternChange</string>
-    <string name="key_nsEnableInsertBGasCGM">nsEnableInsertBGasCGM</string>
+
     <string name="key_nsEnableAlarms">nsEnableAlarms</string>
     <string name="key_nsAlarmExtended">nsAlarmExtended</string>
     <string name="key_nsAlarmCleared">nsAlarmCleared</string>
-    <string name="key_nsEnableSystemStatus">nsEnableSystemStatus</string>
-    <string name="key_nsEnableUploaderBatteryFull">nsEnableUploaderBatteryFull</string>
-    <string name="key_nsEnableUploaderUsbError">nsEnableUploaderUsbError</string>
     <string name="key_nsAlarmTTL">nsAlarmTTL</string>
-    <string name="key_nsEnableDailyTotals">nsEnableDailyTotals</string>
-    <string name="key_nsEnableFormatHTML">nsEnableFormatHTML</string>
 
-    <string name="key_nsGramsPerExchange">nsGramsPerExchange</string>
+    <string name="key_nsEnableSystemStatus">nsEnableSystemStatus</string>
+    <string name="key_nsSystemStatusUsbErrors">nsSystemStatusUsbErrors</string>
+    <string name="key_nsSystemStatusConnection">nsSystemStatusConnection</string>
+    <string name="key_nsSystemStatusBatteryLow">nsSystemStatusBatteryLow</string>
+    <string name="key_nsSystemStatusBatteryCharged">nsSystemStatusBatteryCharged</string>
 
     <string name="key_nameBasalPattern1">nameBasalPattern1</string>
     <string name="key_nameBasalPattern2">nameBasalPattern2</string>
@@ -95,22 +111,28 @@
     <string name="key_nameBasalPattern6">nameBasalPattern6</string>
     <string name="key_nameBasalPattern7">nameBasalPattern7</string>
     <string name="key_nameBasalPattern8">nameBasalPattern8</string>
-    <string name="key_nameTempBasalPreset1">nameTempBasalPreset1</string>
-    <string name="key_nameTempBasalPreset2">nameTempBasalPreset2</string>
-    <string name="key_nameTempBasalPreset3">nameTempBasalPreset3</string>
-    <string name="key_nameTempBasalPreset4">nameTempBasalPreset4</string>
-    <string name="key_nameTempBasalPreset5">nameTempBasalPreset5</string>
-    <string name="key_nameTempBasalPreset6">nameTempBasalPreset6</string>
-    <string name="key_nameTempBasalPreset7">nameTempBasalPreset7</string>
-    <string name="key_nameTempBasalPreset8">nameTempBasalPreset8</string>
-    <string name="key_nameBolusPreset1">nameBolusPreset1</string>
-    <string name="key_nameBolusPreset2">nameBolusPreset2</string>
-    <string name="key_nameBolusPreset3">nameBolusPreset3</string>
-    <string name="key_nameBolusPreset4">nameBolusPreset4</string>
-    <string name="key_nameBolusPreset5">nameBolusPreset5</string>
-    <string name="key_nameBolusPreset6">nameBolusPreset6</string>
-    <string name="key_nameBolusPreset7">nameBolusPreset7</string>
-    <string name="key_nameBolusPreset8">nameBolusPreset8</string>
+    <string name="key_nameTempBasalPreset1">nameTempBasalPreset01</string>
+    <string name="key_nameTempBasalPreset2">nameTempBasalPreset02</string>
+    <string name="key_nameTempBasalPreset3">nameTempBasalPreset03</string>
+    <string name="key_nameTempBasalPreset4">nameTempBasalPreset04</string>
+    <string name="key_nameTempBasalPreset5">nameTempBasalPreset05</string>
+    <string name="key_nameTempBasalPreset6">nameTempBasalPreset06</string>
+    <string name="key_nameTempBasalPreset7">nameTempBasalPreset07</string>
+    <string name="key_nameTempBasalPreset8">nameTempBasalPreset08</string>
+    <string name="key_nameBolusPreset1">nameBolusPreset01</string>
+    <string name="key_nameBolusPreset2">nameBolusPreset02</string>
+    <string name="key_nameBolusPreset3">nameBolusPreset03</string>
+    <string name="key_nameBolusPreset4">nameBolusPreset04</string>
+    <string name="key_nameBolusPreset5">nameBolusPreset05</string>
+    <string name="key_nameBolusPreset6">nameBolusPreset06</string>
+    <string name="key_nameBolusPreset7">nameBolusPreset07</string>
+    <string name="key_nameBolusPreset8">nameBolusPreset08</string>
+
+    <string name="key_nsEnableInsertBGasCGM">nsEnableInsertBGasCGM</string>
+
+    <string name="key_nsGramsPerExchange">nsGramsPerExchange</string>
+    <string name="key_nsEnableDailyTotals">nsEnableDailyTotals</string>
+    <string name="key_nsEnableFormatHTML">nsEnableFormatHTML</string>
 
     // urchin
     <string name="key_urchinEnable">urchinEnable</string>
@@ -133,6 +155,11 @@
     <string name="key_pushoverAPItoken">pushoverAPItoken</string>
     <string name="key_pushoverUSERtoken">pushoverUSERtoken</string>
 
+    <string name="key_pushoverEnablePriorityOverride">pushoverEnablePriorityOverride</string>
+    <string name="key_pushoverPriorityOverride">pushoverPriorityOverride</string>
+    <string name="key_pushoverEnableSoundOverride">pushoverEnableSoundOverride</string>
+    <string name="key_pushoverSoundOverride">pushoverSoundOverride</string>
+
     <string name="key_pushoverEnableOnHigh">pushoverEnableOnHigh</string>
     <string name="key_pushoverPriorityOnHigh">pushoverPriorityOnHigh</string>
     <string name="key_pushoverSoundOnHigh">pushoverSoundOnHigh</string>
@@ -145,9 +172,6 @@
     <string name="key_pushoverEnableBeforeLow">pushoverEnableBeforeLow</string>
     <string name="key_pushoverPriorityBeforeLow">pushoverPriorityBeforeLow</string>
     <string name="key_pushoverSoundBeforeLow">pushoverSoundBeforeLow</string>
-    <string name="key_pushoverEnableAutoModeExit">pushoverEnableAutoModeExit</string>
-    <string name="key_pushoverPriorityAutoModeExit">pushoverPriorityAutoModeExit</string>
-    <string name="key_pushoverSoundAutoModeExit">pushoverSoundAutoModeExit</string>
 
     <string name="key_pushoverEnablePumpEmergency">pushoverEnablePumpEmergency</string>
     <string name="key_pushoverPriorityPumpEmergency">pushoverPriorityPumpEmergency</string>
@@ -185,34 +209,63 @@
     <string name="key_pushoverPriorityDailyTotals">pushoverPriorityDailyTotals</string>
     <string name="key_pushoverSoundDailyTotals">pushoverSoundDailyTotals</string>
 
+    <string name="key_pushoverEnableAutoModeActive">pushoverEnableAutoModeActive</string>
+    <string name="key_pushoverPriorityAutoModeActive">pushoverPriorityAutoModeActive</string>
+    <string name="key_pushoverSoundAutoModeActive">pushoverSoundAutoModeActive</string>
+    <string name="key_pushoverEnableAutoModeStop">pushoverEnableAutoModeStop</string>
+    <string name="key_pushoverPriorityAutoModeStop">pushoverPriorityAutoModeStop</string>
+    <string name="key_pushoverSoundAutoModeStop">pushoverSoundAutoModeStop</string>
+    <string name="key_pushoverEnableAutoModeExit">pushoverEnableAutoModeExit</string>
+    <string name="key_pushoverPriorityAutoModeExit">pushoverPriorityAutoModeExit</string>
+    <string name="key_pushoverSoundAutoModeExit">pushoverSoundAutoModeExit</string>
+    <string name="key_pushoverEnableAutoModeMinMax">pushoverEnableAutoModeMinMax</string>
+    <string name="key_pushoverPriorityAutoModeMinMax">pushoverPriorityAutoModeMinMax</string>
+    <string name="key_pushoverSoundAutoModeMinMax">pushoverSoundAutoModeMinMax</string>
+
     <string name="key_pushoverEnableUploaderPumpErrors">pushoverEnableUploaderPumpErrors</string>
     <string name="key_pushoverPriorityUploaderPumpErrors">pushoverPriorityUploaderPumpErrors</string>
     <string name="key_pushoverSoundUploaderPumpErrors">pushoverSoundUploaderPumpErrors</string>
-    <string name="key_pushoverEnableUploaderPumpConnection">pushoverEnableUploaderPumpConnection</string>
-    <string name="key_pushoverPriorityUploaderPumpConnection">pushoverPriorityUploaderPumpConnection</string>
-    <string name="key_pushoverSoundUploaderPumpConnection">pushoverSoundUploaderPumpConnection</string>
+    <string name="key_pushoverEnableUploaderUsbErrors">pushoverEnableUploaderUsbErrors</string>
+    <string name="key_pushoverPriorityUploaderUsbErrors">pushoverPriorityUploaderUsbErrors</string>
+    <string name="key_pushoverSoundUploaderUsbErrors">pushoverSoundUploaderUsbErrors</string>
+    <string name="key_pushoverEnableUploaderStatus">pushoverEnableUploaderStatus</string>
+    <string name="key_pushoverPriorityUploaderStatus">pushoverPriorityUploaderStatus</string>
+    <string name="key_pushoverSoundUploaderStatus">pushoverSoundUploaderStatus</string>
+    <string name="key_pushoverEnableUploaderStatusConnection">pushoverEnableUploaderStatusConnection</string>
+    <string name="key_pushoverEnableUploaderStatusEstimate">pushoverEnableUploaderStatusEstimate</string>
     <string name="key_pushoverEnableUploaderBattery">pushoverEnableUploaderBattery</string>
     <string name="key_pushoverPriorityUploaderBattery">pushoverPriorityUploaderBattery</string>
     <string name="key_pushoverSoundUploaderBattery">pushoverSoundUploaderBattery</string>
     <string name="key_pushoverEnableBatteryLow">pushoverEnableBatteryLow</string>
     <string name="key_pushoverEnableBatteryCharged">pushoverEnableBatteryCharged</string>
 
+    <string name="key_pushoverEnableInfoExtended">pushoverInfoExtended</string>
+    <string name="key_pushoverEnableTitleTime">pushoverEnableTitleTime</string>
+    <string name="key_pushoverEnableTitleText">pushoverEnableTitleText</string>
+    <string name="key_pushoverTitleText">pushoverTitleText</string>
+
+    <string name="key_pushoverEmergencyRetry">pushoverEmergencyRetry</string>
+    <string name="key_pushoverEmergencyExpire">pushoverEmergencyExpire</string>
+
     <string name="key_pushoverEnableCleared">pushoverEnableCleared</string>
+    <string name="key_pushoverEnableClearedAcknowledged">pushoverEnableClearedAcknowledged</string>
     <string name="key_pushoverPriorityCleared">pushoverPriorityCleared</string>
     <string name="key_pushoverSoundCleared">pushoverSoundCleared</string>
+
     <string name="key_pushoverEnableSilenced">pushoverEnableSilenced</string>
+    <string name="key_pushoverEnableSilencedOverride">pushoverEnableSilencedOverride</string>
     <string name="key_pushoverPrioritySilenced">pushoverPrioritySilenced</string>
     <string name="key_pushoverSoundSilenced">pushoverSoundSilenced</string>
 
-    <string name="key_pushoverEnablePriorityOverride">pushoverEnablePriorityOverride</string>
-    <string name="key_pushoverPriorityOverride">pushoverPriorityOverride</string>
-    <string name="key_pushoverEnableSoundOverride">pushoverEnableSoundOverride</string>
-    <string name="key_pushoverSoundOverride">pushoverSoundOverride</string>
+    <string name="key_pushoverEnableBackfillOnStart">pushoverEnableBackfillOnStart</string>
+    <string name="key_pushoverBackfillPeriod">pushoverBackfillPeriod</string>
+    <string name="key_pushoverBackfillLimiter">pushoverBackfillLimiter</string>
+    <string name="key_pushoverEnableBackfillOverride">pushoverEnableBackfillOverride</string>
+    <string name="key_pushoverBackfillOverrideAge">pushoverBackfillOverrideAge</string>
+    <string name="key_pushoverPriorityBackfill">pushoverPriorityBackfill</string>
+    <string name="key_pushoverSoundBackfill">pushoverSoundBackfill</string>
 
-    <string name="key_pushoverInfoExtended">pushoverInfoExtended</string>
-    <string name="key_pushoverTitleTime">pushoverTitleTime</string>
-    <string name="key_pushoverEmergencyRetry">pushoverEmergencyRetry</string>
-    <string name="key_pushoverEmergencyExpire">pushoverEmergencyExpire</string>
+    <string name="key_pushoverSendToDevice">pushoverSendToDevice</string>
 
     <!-- Defaults -->
 
@@ -226,7 +279,7 @@
     <string name="default_screenSleep">1</string>
 
     <bool name="default_EnableRESTUpload">false</bool>
-    <string name="default_nightscoutURL">YOUR.NIGHTSCOUT.URL</string>
+    <string name="default_nightscoutURL">https://mysite.herokuapp.com</string>
     <string name="default_nightscoutSECRET">YOURAPISECRET</string>
     <bool name="default_enableXdripPlusUpload">false</bool>
 
@@ -237,10 +290,16 @@
     <string name="default_sysCgmHistoryDays">7</string>
     <bool name="default_sysEnablePumpHistory">true</bool>
     <string name="default_sysPumpHistoryDays">7</string>
-    <string name="default_sysPumpHistoryFrequency">90</string>
+    <string name="default_sysPumpHistoryFrequency">60</string>
     <bool name="default_sysEnableEstimateSGV">false</bool>
+    <bool name="default_sysEnableEstimateSGVeol">false</bool>
+    <bool name="default_sysEnableEstimateSGVerror">false</bool>
     <bool name="default_sysEnableReportISIG">false</bool>
+    <string name="default_sysReportISIGinclude">3</string>
+    <string name="default_sysReportISIGminimum">15</string>
+    <string name="default_sysReportISIGnewsensor">120</string>
     <bool name="default_sysEnableClashProtect">true</bool>
+    <string name="default_sysRssiAllowConnect">10</string>
     <bool name="default_sysEnablePollOverride">false</bool>
     <string name="default_sysPollGracePeriod">30000</string>
     <string name="default_sysPollRecoveryPeriod">90000</string>
@@ -260,59 +319,73 @@
 
     // nightscout
     <bool name="default_nsEnableTreatments">true</bool>
-    <bool name="default_nsEnableHistorySync">false</bool>
+    <bool name="default_nsEnableBasalTreatments">true</bool>
+    <bool name="default_nsEnableBolusTreatments">true</bool>
+    <string name="default_nsEnteredBy" />
+
+    <bool name="default_nsEnableDeviceStatus">true</bool>
+    <bool name="default_nsEnableDevicePUMP">true</bool>
+    <string name="default_nsDeviceName" />
+
     <bool name="default_nsEnableFingerBG">true</bool>
     <bool name="default_nsEnableCalibrationInfo">false</bool>
+
     <bool name="default_nsEnableSensorChange">true</bool>
     <bool name="default_nsEnableReservoirChange">true</bool>
-    <bool name="default_nsEnableInsulinChange">false</bool>
     <string name="default_nsCannulaChangeThreshold">"0"</string>
+    <bool name="default_nsEnableInsulinChange">false</bool>
     <string name="default_nsInsulinChangeThreshold">"0"</string>
     <bool name="default_nsEnableBatteryChange">true</bool>
     <bool name="default_nsEnableLifetimes">false</bool>
+
     <bool name="default_nsEnableProfileUpload">true</bool>
     <bool name="default_nsEnableProfileSingle">true</bool>
     <bool name="default_nsEnableProfileOffset">true</bool>
     <string name="default_nsProfileDefault">0</string>
     <string name="default_nsActiveInsulinTime">3</string>
     <bool name="default_nsEnablePatternChange">true</bool>
-    <bool name="default_nsEnableInsertBGasCGM">false</bool>
-    <bool name="default_nsEnableAlarms">false</bool>
+
+    <bool name="default_nsEnableAlarms">true</bool>
     <bool name="default_nsAlarmExtended">true</bool>
-    <bool name="default_nsAlarmCleared">true</bool>
-    <bool name="default_nsEnableSystemStatus">false</bool>
-    <bool name="default_nsEnableUploaderBatteryFull">false</bool>
-    <bool name="default_nsEnableUploaderUsbError">false</bool>
+    <bool name="default_nsAlarmCleared">false</bool>
     <string name="default_nsAlarmTTL">24</string>
-    <bool name="default_nsEnableDailyTotals">true</bool>
-    <bool name="default_nsEnableFormatHTML">true</bool>
+
+    <bool name="default_nsEnableSystemStatus">true</bool>
+    <bool name="default_nsSystemStatusUsbErrors">true</bool>
+    <bool name="default_nsSystemStatusConnection">false</bool>
+    <bool name="default_nsSystemStatusBatteryLow">false</bool>
+    <bool name="default_nsSystemStatusBatteryCharged">false</bool>
+
+    <string name="default_nameBasalPattern1">@string/pump_default__basal_pattern_1</string>
+    <string name="default_nameBasalPattern2">@string/pump_default__basal_pattern_2</string>
+    <string name="default_nameBasalPattern3">@string/pump_default__basal_pattern_3</string>
+    <string name="default_nameBasalPattern4">@string/pump_default__basal_pattern_4</string>
+    <string name="default_nameBasalPattern5">@string/pump_default__basal_pattern_5</string>
+    <string name="default_nameBasalPattern6">@string/pump_default__basal_pattern_6</string>
+    <string name="default_nameBasalPattern7">@string/pump_default__basal_pattern_7</string>
+    <string name="default_nameBasalPattern8">@string/pump_default__basal_pattern_8</string>
+    <string name="default_nameTempBasalPreset1">@string/pump_default__temp_basal_preset_1</string>
+    <string name="default_nameTempBasalPreset2">@string/pump_default__temp_basal_preset_2</string>
+    <string name="default_nameTempBasalPreset3">@string/pump_default__temp_basal_preset_3</string>
+    <string name="default_nameTempBasalPreset4">@string/pump_default__temp_basal_preset_4</string>
+    <string name="default_nameTempBasalPreset5">@string/pump_default__temp_basal_preset_5</string>
+    <string name="default_nameTempBasalPreset6">@string/pump_default__temp_basal_preset_6</string>
+    <string name="default_nameTempBasalPreset7">@string/pump_default__temp_basal_preset_7</string>
+    <string name="default_nameTempBasalPreset8">@string/pump_default__temp_basal_preset_8</string>
+    <string name="default_nameBolusPreset1">@string/pump_default__bolus_preset_1</string>
+    <string name="default_nameBolusPreset2">@string/pump_default__bolus_preset_2</string>
+    <string name="default_nameBolusPreset3">@string/pump_default__bolus_preset_3</string>
+    <string name="default_nameBolusPreset4">@string/pump_default__bolus_preset_4</string>
+    <string name="default_nameBolusPreset5">@string/pump_default__bolus_preset_5</string>
+    <string name="default_nameBolusPreset6">@string/pump_default__bolus_preset_6</string>
+    <string name="default_nameBolusPreset7">@string/pump_default__bolus_preset_7</string>
+    <string name="default_nameBolusPreset8">@string/pump_default__bolus_preset_8</string>
+
+    <bool name="default_nsEnableInsertBGasCGM">false</bool>
 
     <string name="default_nsGramsPerExchange">15</string>
-
-    <string name="default_nameBasalPattern1">@string/BASAL_PATTERN_1</string>
-    <string name="default_nameBasalPattern2">@string/BASAL_PATTERN_2</string>
-    <string name="default_nameBasalPattern3">@string/BASAL_PATTERN_3</string>
-    <string name="default_nameBasalPattern4">@string/BASAL_PATTERN_4</string>
-    <string name="default_nameBasalPattern5">@string/BASAL_PATTERN_5</string>
-    <string name="default_nameBasalPattern6">@string/BASAL_PATTERN_6</string>
-    <string name="default_nameBasalPattern7">@string/BASAL_PATTERN_7</string>
-    <string name="default_nameBasalPattern8">@string/BASAL_PATTERN_8</string>
-    <string name="default_nameTempBasalPreset1">@string/TEMP_BASAL_PRESET_0</string>
-    <string name="default_nameTempBasalPreset2">@string/TEMP_BASAL_PRESET_1</string>
-    <string name="default_nameTempBasalPreset3">@string/TEMP_BASAL_PRESET_2</string>
-    <string name="default_nameTempBasalPreset4">@string/TEMP_BASAL_PRESET_3</string>
-    <string name="default_nameTempBasalPreset5">@string/TEMP_BASAL_PRESET_4</string>
-    <string name="default_nameTempBasalPreset6">@string/TEMP_BASAL_PRESET_5</string>
-    <string name="default_nameTempBasalPreset7">@string/TEMP_BASAL_PRESET_6</string>
-    <string name="default_nameTempBasalPreset8">@string/TEMP_BASAL_PRESET_7</string>
-    <string name="default_nameBolusPreset1">@string/BOLUS_PRESET_0</string>
-    <string name="default_nameBolusPreset2">@string/BOLUS_PRESET_1</string>
-    <string name="default_nameBolusPreset3">@string/BOLUS_PRESET_2</string>
-    <string name="default_nameBolusPreset4">@string/BOLUS_PRESET_3</string>
-    <string name="default_nameBolusPreset5">@string/BOLUS_PRESET_4</string>
-    <string name="default_nameBolusPreset6">@string/BOLUS_PRESET_5</string>
-    <string name="default_nameBolusPreset7">@string/BOLUS_PRESET_6</string>
-    <string name="default_nameBolusPreset8">@string/BOLUS_PRESET_7</string>
+    <bool name="default_nsEnableDailyTotals">true</bool>
+    <bool name="default_nsEnableFormatHTML">true</bool>
 
     // urchin
     <bool name="default_urchinEnable">false</bool>
@@ -326,30 +399,38 @@
     <string name="default_urchinUnitsStyle">1</string>
     <string name="default_urchinBatteyStyle">1</string>
     <string name="default_urchinConcatenateStyle">2</string>
-    <string name="default_urchinCustomText1"> </string>
-    <string name="default_urchinCustomText2"> </string>
-    <string name="default_urchinStatusLayout">0</string>
+    <string name="default_urchinCustomText1">NS</string>
+    <string name="default_urchinCustomText2">:)</string>
+    <string name="default_urchinStatusLayout_Empty">0</string>
+    <string name="default_urchinStatusLayout_Nextline">1</string>
+    <string name="default_urchinStatusLayout_Text_Space">2</string>
+    <string name="default_urchinStatusLayout_ActiveInsulin">12</string>
+    <string name="default_urchinStatusLayout_Basal">13</string>
+    <string name="default_urchinStatusLayout_Calibrate">19</string>
+    <string name="default_urchinStatusLayout_Battery">21</string>
 
     // pushover
     <bool name="default_pushoverEnable">false</bool>
-    <string name="default_pushoverAPItoken"> </string>
-    <string name="default_pushoverUSERtoken"> </string>
+    <string name="default_pushoverAPItoken" />
+    <string name="default_pushoverUSERtoken" />
+
+    <bool name="default_pushoverEnablePriorityOverride">false</bool>
+    <string name="default_pushoverPriorityOverride">&LOWEST;</string>
+    <bool name="default_pushoverEnableSoundOverride">false</bool>
+    <string name="default_pushoverSoundOverride">none</string>
 
     <bool name="default_pushoverEnableOnHigh">true</bool>
-    <string name="default_pushoverPriorityOnHigh">&EMERGENCY;</string>
-    <string name="default_pushoverSoundOnHigh">persistent</string>
+    <string name="default_pushoverPriorityOnHigh">&HIGH;</string>
+    <string name="default_pushoverSoundOnHigh">updown</string>
     <bool name="default_pushoverEnableOnLow">true</bool>
     <string name="default_pushoverPriorityOnLow">&EMERGENCY;</string>
     <string name="default_pushoverSoundOnLow">persistent</string>
     <bool name="default_pushoverEnableBeforeHigh">true</bool>
-    <string name="default_pushoverPriorityBeforeHigh">&HIGH;</string>
+    <string name="default_pushoverPriorityBeforeHigh">&NORMAL;</string>
     <string name="default_pushoverSoundBeforeHigh">updown</string>
     <bool name="default_pushoverEnableBeforeLow">true</bool>
     <string name="default_pushoverPriorityBeforeLow">&HIGH;</string>
     <string name="default_pushoverSoundBeforeLow">updown</string>
-    <bool name="default_pushoverEnableAutoModeExit">true</bool>
-    <string name="default_pushoverPriorityAutoModeExit">&HIGH;</string>
-    <string name="default_pushoverSoundAutoModeExit">updown</string>
 
     <bool name="default_pushoverEnablePumpEmergency">true</bool>
     <string name="default_pushoverPriorityPumpEmergency">&EMERGENCY;</string>
@@ -387,33 +468,62 @@
     <string name="default_pushoverPriorityDailyTotals">&NORMAL;</string>
     <string name="default_pushoverSoundDailyTotals">bike</string>
 
+    <bool name="default_pushoverEnableAutoModeActive">false</bool>
+    <string name="default_pushoverPriorityAutoModeActive">&NORMAL;</string>
+    <string name="default_pushoverSoundAutoModeActive">bike</string>
+    <bool name="default_pushoverEnableAutoModeStop">false</bool>
+    <string name="default_pushoverPriorityAutoModeStop">&NORMAL;</string>
+    <string name="default_pushoverSoundAutoModeStop">bike</string>
+    <bool name="default_pushoverEnableAutoModeExit">true</bool>
+    <string name="default_pushoverPriorityAutoModeExit">&HIGH;</string>
+    <string name="default_pushoverSoundAutoModeExit">updown</string>
+    <bool name="default_pushoverEnableAutoModeMinMax">true</bool>
+    <string name="default_pushoverPriorityAutoModeMinMax">&HIGH;</string>
+    <string name="default_pushoverSoundAutoModeMinMax">updown</string>
+
     <bool name="default_pushoverEnableUploaderPumpErrors">true</bool>
     <string name="default_pushoverPriorityUploaderPumpErrors">&EMERGENCY;</string>
     <string name="default_pushoverSoundUploaderPumpErrors">persistent</string>
-    <bool name="default_pushoverEnableUploaderPumpConnection">true</bool>
-    <string name="default_pushoverPriorityUploaderPumpConnection">&NORMAL;</string>
-    <string name="default_pushoverSoundUploaderPumpConnection">bike</string>
+    <bool name="default_pushoverEnableUploaderUsbErrors">true</bool>
+    <string name="default_pushoverPriorityUploaderUsbErrors">&EMERGENCY;</string>
+    <string name="default_pushoverSoundUploaderUsbErrors">persistent</string>
+    <bool name="default_pushoverEnableUploaderStatus">true</bool>
+    <string name="default_pushoverPriorityUploaderStatus">&NORMAL;</string>
+    <string name="default_pushoverSoundUploaderStatus">bike</string>
+    <bool name="default_pushoverEnableUploaderStatusConnection">false</bool>
+    <bool name="default_pushoverEnableUploaderStatusEstimate">true</bool>
     <bool name="default_pushoverEnableUploaderBattery">true</bool>
     <string name="default_pushoverPriorityUploaderBattery">&NORMAL;</string>
     <string name="default_pushoverSoundUploaderBattery">bike</string>
     <bool name="default_pushoverEnableBatteryLow">true</bool>
-    <bool name="default_pushoverEnableBatteryCharged">true</bool>
+    <bool name="default_pushoverEnableBatteryCharged">false</bool>
+
+    <bool name="default_pushoverEnableInfoExtended">true</bool>
+    <bool name="default_pushoverEnableTitleTime">true</bool>
+    <bool name="default_pushoverEnableTitleText">false</bool>
+    <string name="default_pushoverTitleText">NS</string>
+
+    <string name="default_pushoverEmergencyRetry">30</string>
+    <string name="default_pushoverEmergencyExpire">3600</string>
 
     <bool name="default_pushoverEnableCleared">true</bool>
+    <bool name="default_pushoverEnableClearedAcknowledged">false</bool>
     <string name="default_pushoverPriorityCleared">&LOW;</string>
     <string name="default_pushoverSoundCleared">none</string>
+
     <bool name="default_pushoverEnableSilenced">false</bool>
+    <bool name="default_pushoverEnableSilencedOverride">false</bool>
     <string name="default_pushoverPrioritySilenced">&NORMAL;</string>
     <string name="default_pushoverSoundSilenced">none</string>
 
-    <bool name="default_pushoverEnablePriorityOverride">false</bool>
-    <string name="default_pushoverPriorityOverride">&LOWEST;</string>
-    <bool name="default_pushoverEnableSoundOverride">false</bool>
-    <string name="default_pushoverSoundOverride">none</string>
+    <bool name="default_pushoverEnableBackfillOnStart">true</bool>
+    <string name="default_pushoverBackfillPeriod">480</string>
+    <string name="default_pushoverBackfillLimiter">120</string>
+    <bool name="default_pushoverEnableBackfillOverride">false</bool>
+    <string name="default_pushoverBackfillOverrideAge">120</string>
+    <string name="default_pushoverPriorityBackfill">&LOW;</string>
+    <string name="default_pushoverSoundBackfill">none</string>
 
-    <bool name="default_pushoverInfoExtended">true</bool>
-    <bool name="default_pushoverTitleTime">true</bool>
-    <string name="default_pushoverEmergencyRetry">30</string>
-    <string name="default_pushoverEmergencyExpire">3600</string>
+    <string name="default_pushoverSendToDevice" />
 
 </resources>

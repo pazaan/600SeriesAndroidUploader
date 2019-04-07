@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
-import info.nightscout.android.upload.nightscout.NightScoutUpload;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -131,10 +130,6 @@ public interface TreatmentsEndpoints {
 
         public String getCreated_at() {
             return created_at;
-        }
-
-        public void setCreated_at(String created_at) {
-            this.created_at = created_at;
         }
 
         public String getDevice() {
@@ -290,20 +285,22 @@ public interface TreatmentsEndpoints {
         }
 
         public void setCreated_at(Date created_at) {
-            this.created_at = NightScoutUpload.formatDateForNS(created_at);
+            this.created_at = NightscoutUpload.formatDateForNS(created_at);
         }
     }
 
-    // find treatment using key
-    @GET("/api/v1/treatments.json")
-    Call<List<Treatment>> checkKey(@Query("find[created_at][$gte]") String date,
-                                   @Query("find[key600]") String key);
+    // https://docs.mongodb.com/v3.6/reference/operator/query/
 
-    // find treatment using key within date range
+    // find treatments using key
     @GET("/api/v1/treatments.json")
-    Call<List<Treatment>> checkKey(@Query("find[created_at][$gte]") String from,
-                                   @Query("find[created_at][$lte]") String to,
-                                   @Query("find[key600]") String key);
+    Call<List<Treatment>> findKey(@Query("find[created_at][$gte]") String from,
+                                  @Query("find[key600]") String key);
+
+    // find treatments using key within date range
+    @GET("/api/v1/treatments.json")
+    Call<List<Treatment>> findKey(@Query("find[created_at][$gte]") String from,
+                                  @Query("find[created_at][$lte]") String to,
+                                  @Query("find[key600]") String key);
 
     // find treatments using date range
     @GET("/api/v1/treatments.json")
@@ -319,9 +316,45 @@ public interface TreatmentsEndpoints {
                                            @Query("find[key600][$not][$exists]") String empty,
                                            @Query("count") String count);
 
+    // find treatment using partial key within date range
+    @GET("/api/v1/treatments.json")
+    Call<List<Treatment>> findKeyRegex(@Query("find[created_at][$gte]") String from,
+                                       @Query("find[created_at][$lte]") String to,
+                                       @Query("find[key600][$regex]") String key,
+                                       @Query("count") String count);
+
+    @GET("/api/v1/treatments.json")
+    Call<List<Treatment>> findNotesRegex(@Query("find[created_at][$gte]") String from,
+                                         @Query("find[created_at][$lte]") String to,
+                                         @Query("find[notes][$regex]") String notes,
+                                         @Query("count") String count);
+
+    @GET("/api/v1/treatments.json")
+    Call<List<Treatment>> findKeyRegexNoPumpMAC(@Query("find[created_at][$gte]") String from,
+                                                @Query("find[created_at][$lte]") String to,
+                                                @Query("find[key600][$regex]") String key,
+                                                @Query("find[pumpMAC600][$not][$exists]") String pumpMAC600,
+                                                @Query("count") String count);
+
+    @GET("/api/v1/treatments.json")
+    Call<List<Treatment>> findNotesRegexNoPumpMAC(@Query("find[created_at][$gte]") String from,
+                                                  @Query("find[created_at][$lte]") String to,
+                                                  @Query("find[notes][$regex]") String notes,
+                                                  @Query("find[key600][$exists]") String key600,
+                                                  @Query("find[pumpMAC600][$not][$exists]") String pumpMAC600,
+                                                  @Query("count") String count);
+
+    // NS v0.11.1 delete handling changed to work as query based
+    // regression caused the id based method to be limited to 4 days max causing deletes older then this to not complete
+
     // delete using id
     @DELETE("/api/v1/treatments/{id}")
     Call<ResponseBody> deleteID(@Path("id") String id);
+
+    // query based delete
+    @DELETE("/api/v1/treatments.json")
+    Call<ResponseBody> deleteID(@Query("find[created_at]") String date,
+                                @Query("find[_id]") String id);
 
     @Headers({
             "Accept: application/json",

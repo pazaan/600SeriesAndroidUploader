@@ -30,6 +30,8 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate called");
+
         super.onCreate(savedInstanceState);
         final SettingsFragment that = this;
 
@@ -66,7 +68,25 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         updatePrefSummary(pref);
     }
 
-    //
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "onDestroy called");
+        super.onDestroy();
+    }
+
+    @Override
+    public void onResume() {
+        Log.d(TAG, "onResume called");
+        super.onResume();
+        getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+    }
+
+    @Override
+    public void onPause() {
+        Log.d(TAG, "onPause called");
+        getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
 
     /**
      * set lowBatPollInterval to normal poll interval at least
@@ -95,18 +115,6 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         if (lowBatPollIntervalPref.findIndexOfValue(currentValue) == -1) {
             lowBatPollIntervalPref.setValueIndex(0);
         }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
-    }
-
-    @Override
-    public void onPause() {
-        getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-        super.onPause();
     }
 
     // iterate through all preferences and update to saved value

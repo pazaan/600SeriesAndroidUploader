@@ -37,6 +37,7 @@ public class StatPoll extends RealmObject implements StatInterface {
     private int historyReqRecency;
     private int historyReqAlert;
     private int historyReqAlertRecheck;
+    private int historyReqAlertCleared;
     private int historyReqAutoMode;
     private int historyReqTreatment;
     private int historyReqBG;
@@ -62,7 +63,7 @@ public class StatPoll extends RealmObject implements StatInterface {
 
     @Override
     public String toString() {
-        return String.format("Run: %s Connect: %s/%s RSSI: %s%% weak: %s(%s%%) Status: %s Error: %s CgmNA: %s CgmOld: %s CgmLost: %s HistoryCgm: %s/%s HistoryPump: %s/%s Recency: %s Stale: %s Alert: %s~%s Automode: %s Treatment: %s BG: %s~%s Consumable: %s Backfill: %s Estimate: %s  Timers: %s~%sms %s~%sms",
+        return String.format("Run: %s Connect: %s/%s RSSI: %s%% weak: %s(%s%%) Status: %s Error: %s CgmNA: %s CgmOld: %s CgmLost: %s HistoryCgm: %s/%s HistoryPump: %s/%s Recency: %s Stale: %s Alert: %s~%s~%s Automode: %s Treatment: %s BG: %s~%s Consumable: %s Backfill: %s Estimate: %s  Timers: %s~%sms %s~%sms",
                 pollCount,
                 pollConnect,
                 pollConnect + pollNoConnect,
@@ -82,6 +83,7 @@ public class StatPoll extends RealmObject implements StatInterface {
                 historyReqStale,
                 historyReqAlert,
                 historyReqAlertRecheck,
+                historyReqAlertCleared,
                 historyReqAutoMode,
                 historyReqTreatment,
                 historyReqBG,
@@ -212,7 +214,6 @@ public class StatPoll extends RealmObject implements StatInterface {
         return pollCgmLost;
     }
 
-
     public int getHistoryCgmRequest() {
         return historyCgmRequest;
     }
@@ -275,6 +276,14 @@ public class StatPoll extends RealmObject implements StatInterface {
 
     public void incHistoryReqAlertRecheck() {
         historyReqAlertRecheck++;
+    }
+
+    public int getHistoryReqAlertCleared() {
+        return historyReqAlertCleared;
+    }
+
+    public void incHistoryReqAlertCleared() {
+        historyReqAlertCleared++;
     }
 
     public int getHistoryReqAutoMode() {

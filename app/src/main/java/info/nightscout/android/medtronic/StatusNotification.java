@@ -112,7 +112,6 @@ public class StatusNotification {
         Log.d(TAG, "updateNotification called");
         if (updateThread == null) {
             updateThread = new Update();
-            updateThread.setPriority(Thread.MIN_PRIORITY);
             updateThread.start();
         }
     }
@@ -170,20 +169,20 @@ public class StatusNotification {
 
                     sgv = String.format(
                             results.first().isEstimate()
-                                    ? FormatKit.getInstance().getString(R.string.status_SGV_estimated_value)
-                                    : FormatKit.getInstance().getString(R.string.status_SGV_value),
+                                    ? FormatKit.getInstance().getString(R.string.notification__SGV_value_estimated)
+                                    : FormatKit.getInstance().getString(R.string.notification__SGV_value),
                             FormatKit.getInstance().formatAsGlucose(sgvValue, false, true)
                     );
 
                     delta = String.format(
-                            FormatKit.getInstance().getString(R.string.status_DELTA_value),
+                            FormatKit.getInstance().getString(R.string.notification__DELTA_value),
                             (deltaValue > 0 ? "+" :"") +
                                     (FormatKit.getInstance().formatAsGlucose(deltaValue, false, 2))
                     );
 
-                    estimate = results.first().isEstimate() ? FormatKit.getInstance().getString(R.string.status_ESTIMATE) : "";
+                    estimate = results.first().isEstimate() ? FormatKit.getInstance().getString(R.string.notification__ESTIMATE) : "";
 
-                } else sgv = FormatKit.getInstance().getString(R.string.status_SGV_not_available);
+                } else sgv = FormatKit.getInstance().getString(R.string.notification__SGV_not_available);
 
                 int color = COLOR_NO_DATA;
                 if (sgvAge >= 0 && sgvAge <= 15) {
@@ -195,18 +194,19 @@ public class StatusNotification {
                         color = COLOR_SGV_YELLOW;
                     else
                         color = COLOR_SGV_RED;
-                } else if (currentTime - pumpStatusEventRealmResults.first().getEventDate().getTime() > 15 * 60000L) {
+                } else if (pumpStatusEventRealmResults.size() > 0
+                        && currentTime - pumpStatusEventRealmResults.first().getEventDate().getTime() > 15 * 60000L) {
                     color = COLOR_SGV_STALE;
                 }
 
                 String next = "";
                 if (mode == NOTIFICATION.NORMAL && nextpoll > 0)
                     next = String.format(
-                            FormatKit.getInstance().getString(R.string.status_NEXTPOLL_time),
+                            FormatKit.getInstance().getString(R.string.notification__NEXTPOLL_time),
                             FormatKit.getInstance().formatAsClock(nextpoll)
                     );
                 else if (mode == NOTIFICATION.BUSY)
-                    next = FormatKit.getInstance().getString(R.string.status_BUSY);
+                    next = FormatKit.getInstance().getString(R.string.notification__BUSY);
 
                 String iob = iob();
                 String basal = basal();
@@ -234,7 +234,7 @@ public class StatusNotification {
                 );
 
                 if (mode == NOTIFICATION.ERROR) {
-                    content = FormatKit.getInstance().getString(R.string.status_ERROR);
+                    content = FormatKit.getInstance().getString(R.string.notification__ERROR);
                     summary = content;
                 }
 
@@ -313,15 +313,15 @@ public class StatusNotification {
             switch (cgmException) {
                 case NA:
                     return String.format(
-                            FormatKit.getInstance().getString(R.string.status_CAL_remainingtime),
+                            FormatKit.getInstance().getString(R.string.notification__CAL_remainingtime),
                             FormatKit.getInstance().formatMinutesAsHM(results.first().getCalibrationDueMinutes()));
                 case SENSOR_INIT:
                     return String.format(
-                            FormatKit.getInstance().getString(R.string.status_WARMUP_remainingtime),
+                            FormatKit.getInstance().getString(R.string.notification__WARMUP_remainingtime),
                             FormatKit.getInstance().formatMinutesAsHM(results.first().getCalibrationDueMinutes()));
                 default:
                     return String.format(
-                            FormatKit.getInstance().getString(R.string.status_CGM_EXCEPTION),
+                            FormatKit.getInstance().getString(R.string.notification__CGM_EXCEPTION),
                             cgmException.string());
             }
         }
@@ -335,7 +335,7 @@ public class StatusNotification {
                 && currentTime - pumpStatusEventRealmResults.first().getEventDate().getTime() < 4 * 60 * 60000L) {
 
             return String.format(
-                    FormatKit.getInstance().getString(R.string.status_IOB_value),
+                    FormatKit.getInstance().getString(R.string.notification__IOB_value),
                     FormatKit.getInstance().formatAsInsulin((double) pumpStatusEventRealmResults.first().getActiveInsulin())
             );
         }
@@ -363,13 +363,13 @@ public class StatusNotification {
                         && PumpHistoryBasal.RECORDTYPE.SUSPEND.equals(pumpHistoryBasalRealmResults.first().getRecordtype()))
 
                     return String.format(
-                            FormatKit.getInstance().getString(R.string.status_SUSPEND_time),
+                            FormatKit.getInstance().getString(R.string.notification__SUSPEND_time),
                             FormatKit.getInstance().formatAsClock(pumpHistoryBasalRealmResults.first().getEventDate().getTime())
                     );
 
                 else
 
-                    return FormatKit.getInstance().getString(R.string.status_SUSPEND);
+                    return FormatKit.getInstance().getString(R.string.notification__SUSPEND);
 
             } else if (pumpStatusEventRealmResults.first().isTempBasalActive()) {
                 int percent = pumpStatusEventRealmResults.first().getTempBasalPercentage();
@@ -388,7 +388,7 @@ public class StatusNotification {
                 if (PumpHistoryParser.TEMP_BASAL_PRESET.TEMP_BASAL_PRESET_0.equals(preset))
 
                     return String.format(
-                            FormatKit.getInstance().getString(R.string.status_TEMPBASAL_rate_remainingtime),
+                            FormatKit.getInstance().getString(R.string.notification__TEMPBASAL_rate_remainingtime),
                             rateString,
                             FormatKit.getInstance().formatMinutesAsDHM(minutes)
                     );
@@ -396,7 +396,7 @@ public class StatusNotification {
                 else
 
                     return String.format(
-                            FormatKit.getInstance().getString(R.string.status_TEMPBASAL_rate_remainingtime_preset),
+                            FormatKit.getInstance().getString(R.string.notification__TEMPBASAL_rate_remainingtime_preset),
                             rateString,
                             FormatKit.getInstance().formatMinutesAsDHM(minutes),
                             FormatKit.getInstance().getNameTempBasalPreset(preset)
@@ -407,7 +407,7 @@ public class StatusNotification {
                 if (pattern != 0)
 
                     return String.format(
-                            FormatKit.getInstance().getString(R.string.status_BASAL_rate_pattern),
+                            FormatKit.getInstance().getString(R.string.notification__BASAL_rate_pattern),
                             FormatKit.getInstance().formatAsInsulin((double) pumpStatusEventRealmResults.first().getBasalRate(), 3),
                             FormatKit.getInstance().getNameBasalPattern(pattern)
                     );
@@ -415,7 +415,7 @@ public class StatusNotification {
                 else
 
                     return String.format(
-                            FormatKit.getInstance().getString(R.string.status_BASAL_rate),
+                            FormatKit.getInstance().getString(R.string.notification__BASAL_rate),
                             FormatKit.getInstance().formatAsInsulin((double) pumpStatusEventRealmResults.first().getBasalRate(), 3)
                     );
 
@@ -452,7 +452,7 @@ public class StatusNotification {
             if (factor.length() == 0)
 
                 return String.format(
-                        FormatKit.getInstance().getString(R.string.status_BG_value_time),
+                        FormatKit.getInstance().getString(R.string.notification__BG_value_time),
                         bg,
                         time
                 );
@@ -460,7 +460,7 @@ public class StatusNotification {
             else
 
                 return String.format(
-                        FormatKit.getInstance().getString(R.string.status_BG_value_time_factor),
+                        FormatKit.getInstance().getString(R.string.notification__BG_value_time_factor),
                         bg,
                         time,
                         factor
@@ -478,7 +478,7 @@ public class StatusNotification {
                 && (pumpStatusEventRealmResults.first().isBolusingSquare() || pumpStatusEventRealmResults.first().isBolusingDual())) {
 
             return String.format(
-                    FormatKit.getInstance().getString(R.string.status_BOLUSING_delivered_remainingtime),
+                    FormatKit.getInstance().getString(R.string.notification__BOLUSING_delivered_remainingtime),
                     FormatKit.getInstance().formatAsInsulin((double) pumpStatusEventRealmResults.first().getBolusingDelivered()),
                     FormatKit.getInstance().formatMinutesAsDHM(pumpStatusEventRealmResults.first().getBolusingMinutesRemaining())
             );
@@ -500,7 +500,7 @@ public class StatusNotification {
             if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(pumpHistoryBolusRealmResults.first().getBolusType()))
 
                 return String.format(
-                        FormatKit.getInstance().getString(R.string.status_DUALBOLUS_delivered_duration_time),
+                        FormatKit.getInstance().getString(R.string.notification__DUALBOLUS_delivered_duration_time),
                         FormatKit.getInstance().formatAsInsulin(pumpHistoryBolusRealmResults.first().getNormalDeliveredAmount()),
                         pumpHistoryBolusRealmResults.first().isSquareDelivered()
                                 ? FormatKit.getInstance().formatAsInsulin(pumpHistoryBolusRealmResults.first().getSquareDeliveredAmount())
@@ -514,7 +514,7 @@ public class StatusNotification {
             else if (PumpHistoryParser.BOLUS_TYPE.SQUARE_WAVE.equals(pumpHistoryBolusRealmResults.first().getBolusType()))
 
                 return String.format(
-                        FormatKit.getInstance().getString(R.string.status_SQUAREBOLUS_delivered_duration_time),
+                        FormatKit.getInstance().getString(R.string.notification__SQUAREBOLUS_delivered_duration_time),
                         pumpHistoryBolusRealmResults.first().isSquareDelivered()
                                 ? FormatKit.getInstance().formatAsInsulin(pumpHistoryBolusRealmResults.first().getSquareDeliveredAmount())
                                 : FormatKit.getInstance().formatAsInsulin(pumpHistoryBolusRealmResults.first().getSquareProgrammedAmount()),
@@ -527,7 +527,7 @@ public class StatusNotification {
             else
 
                 return String.format(
-                        FormatKit.getInstance().getString(R.string.status_BOLUS_delivered_time),
+                        FormatKit.getInstance().getString(R.string.notification__BOLUS_delivered_time),
                         pumpHistoryBolusRealmResults.first().isNormalDelivered()
                                 ? FormatKit.getInstance().formatAsInsulin(pumpHistoryBolusRealmResults.first().getNormalDeliveredAmount())
                                 : FormatKit.getInstance().formatAsInsulin(pumpHistoryBolusRealmResults.first().getNormalProgrammedAmount()),
@@ -544,7 +544,7 @@ public class StatusNotification {
         if (pumpStatusEventRealmResults.size() > 0
                 && pumpStatusEventRealmResults.first().getAlert() > 0
                 && currentTime - pumpStatusEventRealmResults.first().getEventDate().getTime() < 24 * 60 * 60000L) {
-            return FormatKit.getInstance().getString(R.string.status_ALERT);
+            return FormatKit.getInstance().getString(R.string.notification__ALERT);
         }
 
         return "";
@@ -568,7 +568,7 @@ public class StatusNotification {
                 pumpAlert = new PumpAlert().faultNumber(pumpStatusEventRealmResults.first().getAlert()).build();
 
             return String.format(
-                    FormatKit.getInstance().getString(R.string.status_ALERT_message),
+                    FormatKit.getInstance().getString(R.string.notification__ALERT_message),
                     pumpAlert.getMessage()
             );
         }

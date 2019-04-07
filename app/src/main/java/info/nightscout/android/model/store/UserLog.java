@@ -51,6 +51,12 @@ public class UserLog extends RealmObject {
             for (String part : parts) {
                 String data[] = part.split(";");
                 switch (data[0]) {
+                    case "str":
+                        sb.append(FormatKit.getInstance().getString(data[1]));
+                        break;
+                    case "qstr":
+                        sb.append(FormatKit.getInstance().getQuantityString(data[1], Integer.parseInt(data[2])));
+                        break;
                     case "id":
                         sb.append(FormatKit.getInstance().getString(Integer.parseInt(data[1])));
                         break;

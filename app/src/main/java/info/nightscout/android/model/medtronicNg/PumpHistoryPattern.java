@@ -50,6 +50,11 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
+        if (!pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN_CHANGE)) {
+            HistoryUtils.nightscoutDeleteTreatment(nightscoutItems, this, senderID);
+            return nightscoutItems;
+        }
+
         TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
         treatment.setEventType("Profile Switch");
 
@@ -66,9 +71,9 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
     public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {
         List<MessageItem> messageItems = new ArrayList<>();
 
-        String title = FormatKit.getInstance().getString(R.string.info_Basal);
+        String title = FormatKit.getInstance().getString(R.string.text__Basal);
         String message = String.format("%s %s <- %s",
-                FormatKit.getInstance().getString(R.string.info_Pattern),
+                FormatKit.getInstance().getString(R.string.text__Pattern),
                 pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1),
                 pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, oldPatternNumber - 1));
 

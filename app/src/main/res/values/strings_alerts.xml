@@ -10,21 +10,30 @@
 
     <!-- alert title -->
 
-    <string name = "alert_na">Alert</string>
-    <string name = "alert_system">System Alert</string>
-    <string name = "alert_pump">Pump Alert</string>
-    <string name = "alert_sensor">Sensor Alert</string>
-    <string name = "alert_reminder">Reminder</string>
-    <string name = "alert_automode">AutoMode Alert</string>
+    <string name="alert_na">Alert</string>
+    <string name="alert_system">System Alert</string>
+    <string name="alert_pump">Pump Alert</string>
+    <string name="alert_smartguard">SmartGuard</string>
+    <string name="alert_sensor">Sensor Alert</string>
+    <string name="alert_reminder">Reminder</string>
+    <string name="alert_automode">Auto Mode Alert</string>
 
     <!-- alert additional -->
 
-    <string name = "alert_cleared">Cleared Alert</string>
-    <string name = "alert_cleared_reminder">Cleared Reminder</string>
-    <string name = "alert_cleared_tag">cleared</string>
+    <string name="alert_cleared">Cleared Alert</string>
+    <string name="alert_cleared_reminder">Cleared Reminder</string>
+    <string name="alert_cleared_tag">cleared</string>
 
-    <string name = "alert_silenced">Silenced Alert</string>
-    <string name = "alert_silenced_tag">silenced</string>
+    <string name="alert_silenced">Silenced Alert</string>
+    <string name="alert_silenced_tag">silenced</string>
+
+    <string name="alert_repeated">Repeated Alert</string>
+    <string name="alert_repeated_tag">repeated</string>
+
+    <!-- default when no alert definition found -->
+
+    <string name="alert_unknown_in_history">Unknown|Please check your PUMP Alarm History and report the FULL alert message as shown on the pump. Include the #code and data in brackets as shown here and send to the dev team.</string>
+    <string name="alert_unknown_not_in_history">Unknown|Alert does not show in the pumps alarm history and is only displayed as an on-screen notification. Please take a photo of the alert as displayed on the pump when available. Include the #code and data in brackets as shown here and send to the dev team.</string>
 
     <!-- alert strings
 
@@ -33,270 +42,305 @@
 
      -->
 
-    <!-- default when no alert definition found -->
-
-    <string name = "alert_0">Unknown|Please check your pump alarm history and report the full alert message and #code to the dev team.</string>
-
     <!-- taken from pump alarm history -->
 
-    <string name = "alert_4">Pump error 4|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
-    <string name = "alert_6">Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.</string>
-    <string name = "alert_7">Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.</string>
-    <string name = "alert_8">Insulin flow blocked|Estimated 0U insulin in reservoir. Change reservoir and infusion set.</string>
-    <string name = "alert_11">Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.</string>
-    <string name = "alert_15">Pump error 15|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
-    <string name = "alert_58">Battery Failed|Insert a new AA battery.</string>
-    <string name = "alert_61">Stuck button|Button pressed for more than 3 minutes</string>
-    <string name = "alert_70">Fill Cannula?|Select Fill to fill cannula or select Done if not needed.</string>
-    <string name = "alert_73">Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.</string>
-    <string name = "alert_84">Insert Battery|Delivery stopped. Insert a new battery now.</string>
+    <string name="alert_4">Pump error 4|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name="alert_6">Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.</string>
+    <string name="alert_7">Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.</string>
+    <string name="alert_8">Insulin flow blocked|Estimated 0U insulin in reservoir. Change reservoir and infusion set.</string>
+    <string name="alert_11">Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.</string>
+    <string name="alert_15">Pump error 15|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name="alert_53">Pump error 53|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name="alert_58">Battery Failed|Insert a new AA battery.</string>
+    <string name="alert_61">Stuck button|Button pressed for more than 3 minutes</string>
+    <string name="alert_70">Fill Cannula?|Select Fill to fill cannula or select Done if not needed.</string>
+    <string name="alert_73">Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.</string>
+    <string name="alert_84">Insert Battery|Delivery stopped. Insert a new battery now.</string>
 
-    <string name = "alert_100">Bolus Not Delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.</string>
-    <string name = "alert_104">Low battery Pump|Replace battery soon.</string>
-    <string name = "alert_105">Low Reservoir %1$s remain|Change reservoir soon.</string>
-    <string name = "alert_106">Low Reservoir %1$s hours remain|Change reservoir soon.</string>
-    <string name = "alert_113">Reservoir estimate at 0U|To ensure insulin delivery change reservoir.</string>
-    <string name = "alert_117">Active Insulin cleared|Any Active Insulin amount has been cleared.</string>
+    <string name="alert_100">Bolus Not Delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.</string>
+    <string name="alert_104">Low battery Pump|Replace battery soon.</string>
+    <string name="alert_105">Low Reservoir %1$s remain|Change reservoir soon.</string>
+    <string name="alert_106">Low Reservoir %1$s hours remain|Change reservoir soon.</string>
+    <string name="alert_113">Reservoir estimate at 0U|To ensure insulin delivery change reservoir.</string>
+    <string name="alert_117">Active Insulin cleared|Any Active Insulin amount has been cleared.</string>
 
-    <string name = "alert_775">Calibrate Now|Check BG and calibrate sensor.</string>
-    <string name = "alert_776">Calibration not accepted|Recheck BG and calibrate sensor.</string>
-    <string name = "alert_777">Change Sensor|Sensor not working properly. Insert new sensor.</string>
-    <string name = "alert_780">Lost sensor signal|Move pump closer to transmitter. May take 15 minutes to find signal.</string>
-    <string name = "alert_781">Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.</string>
-    <string name = "alert_784">Rise Alert|Sensor glucose rising rapidly.</string>
-    <string name = "alert_786">No calibration occurred|Confirm sensor signal. Calibrate by %1$s.</string>
-    <string name = "alert_787">No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.</string>
-    <string name = "alert_788">BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.</string>
-    <string name = "alert_789">Change Sensor|Insert new sensor and Start New Sensor.</string>
-    <string name = "alert_790">Cannot find sensor signal|Disconnect and reconnect transmitter. Notice if transmitter light blinks.</string>
-    <string name = "alert_791">Sensor signal not found|Did transmitter light blink when connected to sensor?</string>
-    <string name = "alert_794">Sensor expired|Insert new sensor.</string>
-    <string name = "alert_795">Check connection|Ensure transmitter and sensor connection is secure.</string>
-    <string name = "alert_796">Sensor signal not found|See User Guide.</string>
-    <string name = "alert_797">Sensor connected|Start new sensor.</string>
-    <string name = "alert_798">Sensor connected|If new sensor, select Start New. If not, select Reconnect.</string>
-    <string name = "alert_799">Sensor warm-up started|Warm-up takes up to 2 hours. you will be notified when calibration is needed.</string>
-    <string name = "alert_801">SG value not available|If problem continues, see User Guide.</string>
-    <string name = "alert_802">Alert On Low %1$s|Low sensor glucose. Check BG.</string>
-    <string name = "alert_803">Alert On Low while suspended|Low sensor glucose. Insulin delivery suspended. Check BG.</string>
-    <string name = "alert_805">Alert Before Low %1$s|Sensor glucose approaching Low Limit. Check BG.</string>
-    <string name = "alert_806">Basal Delivery Resumed|(quiet)</string>
-    <string name = "alert_807">Basal delivery resumed|Basal delivery resumed at %1$s after suspend by sensor. Check BG.</string>
-    <string name = "alert_808">Basal Delivery Resumed|Maximum 2 hour suspend time reached. Check BG.</string>
-    <string name = "alert_809">Suspend On Low|Delivery stopped. Sensor glucose %1$s. Check BG.</string>
-    <string name = "alert_810">Suspend Before Low|(quiet</string>
-    <string name = "alert_811">Suspend Before Low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.</string>
-    <string name = "alert_812">Suspend Before Low|Patient unresponsive, medical device emergency</string>
-    <string name = "alert_814">Basal Delivery Resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.</string>
-    <string name = "alert_815">Basal Delivery Resumed|Low settings change caused basal to be resumed. Check BG.</string>
-    <string name = "alert_816">Alert On High %1$s|High sensor glucose. Check BG.</string>
-    <string name = "alert_817">Alert Before High %1$s|Sensor glucose approaching High Limit. Check BG.</string>
-    <string name = "alert_869">Calibrate by %1$s|Check BG and calibrate sensor to continue receiving sensor information.</string>
-    <string name = "alert_870">Low Transmitter Battery|Recharge transmitter within 24 hours.</string>
+    <string name="alert_775">Calibrate Now|Check BG and calibrate sensor.</string>
+    <string name="alert_776">Calibration not accepted|Recheck BG and calibrate sensor.</string>
+    <string name="alert_777">Change Sensor|Sensor not working properly. Insert new sensor.</string>
+    <string name="alert_780">Lost sensor signal|Move pump closer to transmitter. May take 15 minutes to find signal.</string>
+    <string name="alert_781">Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.</string>
+    <string name="alert_784">Rise Alert|Sensor glucose rising rapidly.</string>
+    <string name="alert_786">No calibration occurred|Confirm sensor signal. Calibrate by %1$s.</string>
+    <string name="alert_787">No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.</string>
+    <string name="alert_788">BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.</string>
+    <string name="alert_789">Change Sensor|Insert new sensor and Start New Sensor.</string>
+    <string name="alert_790">Cannot find sensor signal|Disconnect and reconnect transmitter. Notice if transmitter light blinks.</string>
+    <string name="alert_791">Sensor signal not found|Did transmitter light blink when connected to sensor?</string>
+    <string name="alert_794">Sensor expired|Insert new sensor.</string>
+    <string name="alert_795">Check connection|Ensure transmitter and sensor connection is secure.</string>
+    <string name="alert_796">Sensor signal not found|See User Guide.</string>
+    <string name="alert_797">Sensor connected|Start new sensor.</string>
+    <string name="alert_798">Sensor connected|If new sensor, select Start New. If not, select Reconnect.</string>
+    <string name="alert_799">Sensor warm-up started|Warm-up takes up to 2 hours. you will be notified when calibration is needed.</string>
+    <string name="alert_801">SG value not available|If problem continues, see User Guide.</string>
+    <string name="alert_802">Alert On Low %1$s|Low sensor glucose. Check BG.</string>
+    <string name="alert_803">Alert On Low while suspended|Low sensor glucose. Insulin delivery suspended. Check BG.</string>
+    <string name="alert_805">Alert Before Low %1$s|Sensor glucose approaching Low Limit. Check BG.</string>
+    <string name="alert_806">Basal Delivery Resumed|(quiet)</string>
+    <string name="alert_807">Basal delivery resumed|Basal delivery resumed at %1$s after suspend by sensor. Check BG.</string>
+    <string name="alert_808">Basal Delivery Resumed|Maximum 2 hour suspend time reached. Check BG.</string>
+    <string name="alert_809">Suspend On Low|Delivery stopped. Sensor glucose %1$s. Check BG.</string>
+    <string name="alert_810">Suspend Before Low|(quiet)</string>
+    <string name="alert_811">Suspend Before Low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.</string>
+    <string name="alert_812">Suspend Before Low|Patient unresponsive, medical device emergency</string>
+    <string name="alert_814">Basal Delivery Resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.</string>
+    <string name="alert_815">Basal Delivery Resumed|Low settings change caused basal to be resumed. Check BG.</string>
+    <string name="alert_816">Alert On High %1$s|High sensor glucose. Check BG.</string>
+    <string name="alert_817">Alert Before High %1$s|Sensor glucose approaching High Limit. Check BG.</string>
+    <string name="alert_869">Calibrate by %1$s|Check BG and calibrate sensor to continue receiving sensor information.</string>
+    <string name="alert_870">Low Transmitter Battery|Recharge transmitter within 24 hours.</string>
 
     <!-- not shown in the pump alarm history, only as an active alert -->
 
-    <string name = "alert_103">BG Check %1$s hr since last bolus|Check BG</string>
-    <string name = "alert_107">Missed Meal Bolus|No bolus delivered during the time set in the reminder.</string>
-    <string name = "alert_108">%1$s at %2$s</string>
-    <string name = "alert_108_list">Personal 1|Personal 2|Personal 3|Personal 4|Personal 5|Personal 6|BG Check|Medication</string>
-    <string name = "alert_109">Set Change Reminder: %1$s since the last set change|Time to change reservoir and infusion set.</string>
-    <string name = "alert_109_list">One day|Two days|Three days</string>
-    <string name = "alert_110">Sensor alert occurred|Check Alarm History for silenced alerts.</string>
+    <string name="alert_103">BG Check %1$s hr since last bolus|Check BG</string>
+    <string name="alert_107">Missed Meal Bolus|No bolus delivered during the time set in the reminder.</string>
+    <string name="alert_108">%1$s at %2$s</string>
+    <string name="alert_108_list">Personal 1|Personal 2|Personal 3|Personal 4|Personal 5|Personal 6|BG Check|Medication</string>
+    <string name="alert_109">Set Change Reminder: %1$s since the last set change|Time to change reservoir and infusion set.</string>
+    <string name="alert_109_list">One day|Two days|Three days</string>
+    <string name="alert_110">Sensor alert occurred|Check Alarm History for silenced alerts.</string>
 
-    <!-- auto mode alerts - best guess! ;) -->
+    <!--  670G auto mode alerts -->
 
-    <string name = "alert_820">Auto Mode exit|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
-    <string name = "alert_821">Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode.</string>
-    <string name = "alert_823">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
-    <string name = "alert_824">Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.</string>
+    <string name="alert_819">Auto Mode off|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
+    <string name="alert_820">Auto Mode exit|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
+    <string name="alert_821">Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode</string>
+    <string name="alert_822">Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.</string>
+    <string name="alert_823">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
+    <string name="alert_824">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
+    <string name="alert_827">BG required|Enter a new BG for Auto Mode.</string>
+    <string name="alert_829">BG required|Enter a new BG for Auto Mode.</string>
+    <string name="alert_830">BG required|Enter a new BG for Auto Mode.</string>
+    <string name="alert_831">BG required|Enter a new BG for Auto Mode.</string>
+    <string name="alert_832">Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode</string>
+    <string name="alert_833">Bolus recommended|For %1$s entered, a correction bolus is recommended.</string>
 
-    <string name = "alert_830">BG required|Enter a new BG for Auto Mode.</string>
-    <string name = "alert_831">Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode.</string>
+    <!-- unqualified alerts -->
 
-    <string name = "alert_833">Bolus recommended|For %1$s entered, a correction bolus is recommended.</string>
+    <string name="alert_99001">Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.</string>
+    <string name="alert_99002">Battery not compatible|See User Guide.</string>
+    <string name="alert_99003">Bolus stopped|Cannot resume bolus or cannula fill. %1$s of %2$s delivered. %3$s not delivered. If needed, enter values again.</string>
+    <string name="alert_99004">Cannot connect device|This device is incompatible with your pump. See User Guide.</string>
+    <string name="alert_99005">Check settings|Startup Wizard settings complete. Check and set up your other settings.</string>
+    <string name="alert_99006">Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.</string>
+    <string name="alert_99007">Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.</string>
+    <string name="alert_99008">Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.</string>
+    <string name="alert_99009">Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.</string>
+    <string name="alert_99010">Loading incomplete|Remove reservoir and select Rewind to restart loading.</string>
+    <string name="alert_99011">Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.</string>
+    <string name="alert_99012">Max Fill reached|%1$s. Did you see drops at the end of tubing?</string>
+    <string name="alert_99013">Max Fill reached|%1$s. Remove reservoir and select Rewind to restart New Reservoir procedure.</string>
+    <string name="alert_99014">No reservoir detected|Rewind before loading reservoir.</string>
+    <string name="alert_99015">Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.</string>
+    <string name="alert_99016">Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then reenter your settings. See User Guide.</string>
+    <string name="alert_99017">Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.</string>
+    <string name="alert_99018">Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name="alert_99019">Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name="alert_99020">Resume bolus?|%1$s of %2$s delivered. Resume delivery of %3$s?</string>
+    <string name="alert_99021">Resume Dual bolus?|%1$s of %2$s delivered. Resume delivery of %3$s for %4$s hr?</string>
+    <string name="alert_99022">Resume Dual bolus?|%1$s of %2$s delivered. Resume delivery of %3$s now, and %4$s Square for %5$s hr?</string>
+    <string name="alert_99023">Resume Square bolus? %1$s of %2$s delivered for %3$s hr. Resume delivery of %4$s for %5$s hr?</string>
+    <string name="alert_99024">Wrong key pressed|Try again</string>
+
+    <string name="alert_99101">Change sensor|Second calibration not accepted. Insert new sensor.</string>
+    <string name="alert_99102">Transmitter battery depleted|Recharge transmitter now.</string>
+
+    <string name="alert_99201">Auto Mode started|Current action canceled.</string>
+    <string name="alert_99202">Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</string>
+    <string name="alert_99203">High BG %1$s|Check infusion set. Check ketones. Monitor BG.</string>
 
 </resources>
 
-<!---
+    <!---
 
-    Alert messages are available in the pump user guide. The fault code is assigned as discovered from the pumps alert history.
+        Alert messages are available in the pump user guide. The fault code is assigned as discovered from the pumps alert history.
 
-    *** 640G User Guide UK/IE - Pump alarms, alerts, and messages ***
+        *** 640G User Guide UK/IE - Pump alarms, alerts, and messages ***
 
-    117|Active Insulin cleared|Any Active Insulin amount has been cleared.
-    xxx|Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.
-    058|Battery failed|Insert a new AA battery.
-    xxx|Battery not compatible|See User Guide.
-    100|Bolus not delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.
-    xxx|Bolus stopped|Cannot resume bolus or cannula fill. XX.XXX of YY.YYY U delivered. ZZ.ZZZ U not delivered. If needed, enter values again.
-    xxx|Cannot connect device|This device is incompatible with your pump. See User Guide.
-    xxx|Check settings|Startup Wizard settings complete. Check and set up your other settings.
-    xxx|Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.
-    xxx|Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.
-    070|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
-    084|Insert battery|Delivery stopped. Insert a new battery now.
-    007|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
-    008|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
-    xxx|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
-    xxx|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
-    xxx|Loading incomplete|Remove reservoir and select Rewind to restart loading.
-    104|Low battery Pump|Replace battery soon.
-    105|Low reservoir|XX hours remaining. Change reservoir.
-    106|Low reservoir|XX units remaining. Change reservoir.
-    xxx|Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.
-    xxx|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
-    xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
-    xxx|No reservoir detected|Rewind before loading reservoir.
-    xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
-    006|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
-    xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then reenter your settings. See User Guide.
-    xxx|Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.
-    xxx|Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
-    xxx|Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
-    073|Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.
-    011|Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.
-    113|Reservoir estimate at 0 U|To ensure insulin delivery, change reservoir.
-    xxx|Resume bolus?|XXX of YYY U delivered. Resume delivery of ZZZ U?
-    xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U for XX:XX hr?
-    xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U now, and AA U Square for XX:XX hr?
-    xxx|Resume Square bolus? XX of YY U delivered for XX:XX hr. Resume delivery of ZZ U for XX:XX hr?
-    061|Stuck button|Button pressed for more than 3 minutes
-    xxx|Wrong key pressed|Try again
+        117|Active Insulin cleared|Any Active Insulin amount has been cleared.
+        xxx|Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.
+        058|Battery failed|Insert a new AA battery.
+        xxx|Battery not compatible|See User Guide.
+        100|Bolus not delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.
+        xxx|Bolus stopped|Cannot resume bolus or cannula fill. XX.XXX of YY.YYY U delivered. ZZ.ZZZ U not delivered. If needed, enter values again.
+        xxx|Cannot connect device|This device is incompatible with your pump. See User Guide.
+        xxx|Check settings|Startup Wizard settings complete. Check and set up your other settings.
+        xxx|Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.
+        xxx|Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.
+        070|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
+        084|Insert battery|Delivery stopped. Insert a new battery now.
+        007|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
+        008|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
+        xxx|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
+        xxx|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
+        xxx|Loading incomplete|Remove reservoir and select Rewind to restart loading.
+        104|Low battery Pump|Replace battery soon.
+        105|Low reservoir|XX hours remaining. Change reservoir.
+        106|Low reservoir|XX units remaining. Change reservoir.
+        xxx|Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.
+        xxx|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
+        xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
+        xxx|No reservoir detected|Rewind before loading reservoir.
+        xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
+        006|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
+        xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then reenter your settings. See User Guide.
+        xxx|Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.
+        xxx|Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
+        xxx|Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
+        073|Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.
+        011|Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.
+        113|Reservoir estimate at 0 U|To ensure insulin delivery, change reservoir.
+        xxx|Resume bolus?|XXX of YYY U delivered. Resume delivery of ZZZ U?
+        xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U for XX:XX hr?
+        xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U now, and AA U Square for XX:XX hr?
+        xxx|Resume Square bolus? XX of YY U delivered for XX:XX hr. Resume delivery of ZZ U for XX:XX hr?
+        061|Stuck button|Button pressed for more than 3 minutes
+        xxx|Wrong key pressed|Try again
 
-    *** 640G User Guide UK/IE - CGM (sensor) alarms, alerts, and messages ***
+        *** 640G User Guide UK/IE - CGM (sensor) alarms, alerts, and messages ***
 
-    817|Alert before high|Sensor glucose approaching High Limit. Check BG.
-    805|Alert before low|Sensor glucose approaching Low Limit. Check BG.
-    816|Alert on high XX.X mmol/L|High sensor glucose. Check BG.
-    802|Alert on low XX.X mmol/L|Low sensor glucose. Check BG.
-    803|Alert on low XX.X mmol/L|Low sensor glucose. Insulin delivery suspended since XX:XX. Check BG.
-    807|Basal delivery resumed|Basal delivery resumed at XX:XX after suspend by sensor. Check BG.
-    815|Basal delivery resumed|Low settings change caused basal to be resumed at XX:XX. Check BG.
-    808|Basal delivery resumed|Maximum 2 hour suspend time reached. Check BG.
-    814|Basal delivery resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.
-    788|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
-    775|Calibrate now|Check BG and calibrate sensor.
-    776|Calibration not accepted|Recheck BG and calibrate sensor.
-    790|Cannot find sensor signal|Disconnect and reconnect transmitter, then select OK. Notice if transmitter light blinks.
-    789|Change sensor|Insert new sensor and Start New Sensor.
-    xxx|Change sensor|Second calibration not accepted. Insert new sensor.
-    777|Change sensor|Sensor not working properly. Insert new sensor.
-    795|Check connection|Ensure transmitter and sensor connection is secure, then select OK.
-    780|Lost sensor signal|Move Pump closer to transmitter. May take 15 minutes to find signal.
-    870|Low battery transmitter|Recharge transmitter within 24 hours.
-    812|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
-    786|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX.
-    787|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
-    781|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
-    784|Rise Alert|Sensor glucose rising rapidly.
-    110|Sensor alert occurred|Check Alarm History for silenced alerts.
-    798|Sensor connected|If new sensor, select Start New. If not, select Reconnect.
-    797|Sensor connected|Start new sensor.
-    794|Sensor expired|Insert new sensor.
-    791|Sensor signal not found|Did transmitter light blink when connected to sensor?
-    796|Sensor signal not found|See User Guide.
-    801|SG value not available|If problem continues, see User Guide.
-    799|Sensor warm-up started|Warm-up takes up to 2 hours. You will be notified when calibration is needed.
-    811|Suspend before low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.
-    809|Suspend on low|Delivery stopped. Sensor glucose XX.X mmol/L. Check BG.
-    xxx|Transmitter battery depleted|Recharge transmitter now.
+        817|Alert before high|Sensor glucose approaching High Limit. Check BG.
+        805|Alert before low|Sensor glucose approaching Low Limit. Check BG.
+        816|Alert on high XX.X mmol/L|High sensor glucose. Check BG.
+        802|Alert on low XX.X mmol/L|Low sensor glucose. Check BG.
+        803|Alert on low XX.X mmol/L|Low sensor glucose. Insulin delivery suspended since XX:XX. Check BG.
+        807|Basal delivery resumed|Basal delivery resumed at XX:XX after suspend by sensor. Check BG.
+        815|Basal delivery resumed|Low settings change caused basal to be resumed at XX:XX. Check BG.
+        808|Basal delivery resumed|Maximum 2 hour suspend time reached. Check BG.
+        814|Basal delivery resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.
+        788|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
+        775|Calibrate now|Check BG and calibrate sensor.
+        776|Calibration not accepted|Recheck BG and calibrate sensor.
+        790|Cannot find sensor signal|Disconnect and reconnect transmitter, then select OK. Notice if transmitter light blinks.
+        789|Change sensor|Insert new sensor and Start New Sensor.
+        xxx|Change sensor|Second calibration not accepted. Insert new sensor.
+        777|Change sensor|Sensor not working properly. Insert new sensor.
+        795|Check connection|Ensure transmitter and sensor connection is secure, then select OK.
+        780|Lost sensor signal|Move Pump closer to transmitter. May take 15 minutes to find signal.
+        870|Low battery transmitter|Recharge transmitter within 24 hours.
+        812|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
+        786|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX.
+        787|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
+        781|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
+        784|Rise Alert|Sensor glucose rising rapidly.
+        110|Sensor alert occurred|Check Alarm History for silenced alerts.
+        798|Sensor connected|If new sensor, select Start New. If not, select Reconnect.
+        797|Sensor connected|Start new sensor.
+        794|Sensor expired|Insert new sensor.
+        791|Sensor signal not found|Did transmitter light blink when connected to sensor?
+        796|Sensor signal not found|See User Guide.
+        801|SG value not available|If problem continues, see User Guide.
+        799|Sensor warm-up started|Warm-up takes up to 2 hours. You will be notified when calibration is needed.
+        811|Suspend before low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.
+        809|Suspend on low|Delivery stopped. Sensor glucose XX.X mmol/L. Check BG.
+        xxx|Transmitter battery depleted|Recharge transmitter now.
 
-    *** 670G User Guide US - Pump alarms, alerts, and messages ***
+        *** 670G User Guide US - Pump alarms, alerts, and messages ***
 
-    117|Active Insulin cleared|Any Active Insulin amount has been cleared.
-    008|Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.
-    058|Battery failed|Insert a new AA battery.
-    xxx|Battery not compatible|See User Guide.
-    100|Bolus not delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.
-    xxx|Bolus stopped|Cannot resume bolus or cannula fill. XX.XXX of YY.YYY U delivered. ZZ.ZZZ U not delivered. If needed, enter values again.
-    xxx|Cannot connect device|This device is incompatible with your pump. See User Guide.
-    xxx|Check settings|Startup Wizard settings complete. Check and set up your other settings.
-    xxx|Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.
-    xxx|Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.
-    070|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
-    xxx|High BG XXX mg/dL|Check infusion set. Check ketones. Consider insulin injection. Monitor BG.
-    084|Insert battery|Delivery stopped. Insert a new battery now.
-    007|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
-    008|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
-    xxx|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
-    xxx|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
-    xxx|Loading incomplete|Remove reservoir and select Rewind to restart loading.
-    104|Low battery Pump| Replace battery soon.
-    xxx|Low BG XX mg/dL| Treat Low BG. Do not bolus until BG is normal. Monitor BG.
-    106|Low reservoir|XX units remaining. Change reservoir.
-    xxx|Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.
-    xxx|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
-    xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
-    xxx|No reservoir detected|Rewind before loading reservoir.
-    xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
-    006|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
-    xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then re-enter your settings. See User Guide.
-    xxx|Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.
-    xxx|Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
-    xxx|Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
-    073|Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.
-    011|Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.
-    113|Reservoir estimate at 0 U|To ensure insulin delivery, change reservoir.
-    xxx|Resume bolus?|XXX of YYY U delivered. Resume delivery of ZZZ U?
-    xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U for XX:XX hr?
-    xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U now, and AA U Square for XX:XX hr?
-    xxx|Resume Square bolus? XX of YY U delivered for XX:XX hr. Resume delivery of ZZ U for XX:XX hr?
-    xxx|Rewind required|Delivery stopped. Rewind was required due to pump error. Select OK to continue. See User Guide.
-    061|Stuck button|Button pressed for more than 3 minutes.
+        117|Active Insulin cleared|Any Active Insulin amount has been cleared.
+        008|Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.
+        058|Battery failed|Insert a new AA battery.
+        xxx|Battery not compatible|See User Guide.
+        100|Bolus not delivered|Bolus entry timed out before delivery. If bolus intended, enter values again.
+        xxx|Bolus stopped|Cannot resume bolus or cannula fill. XX.XXX of YY.YYY U delivered. ZZ.ZZZ U not delivered. If needed, enter values again.
+        xxx|Cannot connect device|This device is incompatible with your pump. See User Guide.
+        xxx|Check settings|Startup Wizard settings complete. Check and set up your other settings.
+        xxx|Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.
+        xxx|Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.
+        070|Fill Cannula?|Select Fill to fill cannula or select Done if not needed.
+        xxx|High BG XXX mg/dL|Check infusion set. Check ketones. Consider insulin injection. Monitor BG.
+        084|Insert battery|Delivery stopped. Insert a new battery now.
+        007|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
+        008|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
+        xxx|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
+        xxx|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
+        xxx|Loading incomplete|Remove reservoir and select Rewind to restart loading.
+        104|Low battery Pump| Replace battery soon.
+        xxx|Low BG XX mg/dL| Treat Low BG. Do not bolus until BG is normal. Monitor BG.
+        106|Low reservoir|XX units remaining. Change reservoir.
+        xxx|Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.
+        xxx|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
+        xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
+        xxx|No reservoir detected|Rewind before loading reservoir.
+        xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
+        006|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
+        xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then re-enter your settings. See User Guide.
+        xxx|Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.
+        xxx|Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
+        xxx|Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.
+        073|Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.
+        011|Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.
+        113|Reservoir estimate at 0 U|To ensure insulin delivery, change reservoir.
+        xxx|Resume bolus?|XXX of YYY U delivered. Resume delivery of ZZZ U?
+        xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U for XX:XX hr?
+        xxx|Resume Dual bolus?|XX of YY U delivered. Resume delivery of ZZ U now, and AA U Square for XX:XX hr?
+        xxx|Resume Square bolus? XX of YY U delivered for XX:XX hr. Resume delivery of ZZ U for XX:XX hr?
+        xxx|Rewind required|Delivery stopped. Rewind was required due to pump error. Select OK to continue. See User Guide.
+        061|Stuck button|Button pressed for more than 3 minutes.
 
-    *** 670G User Guide US - CGM (sensor) alarms, alerts, and messages ***
+        *** 670G User Guide US - CGM (sensor) alarms, alerts, and messages ***
 
-    817|Alert before high|Sensor glucose approaching High Limit. Check BG.
-    805|Alert before low|Sensor glucose approaching Low Limit. Check BG.
-    816|Alert on high|XXX mg/dL High sensor glucose. Check BG.
-    802|Alert on low|XXX mg/dL Low sensor glucose. Check BG.
-    803|Alert on low|XXX mg/dL Low sensor glucose. Insulin delivery suspended since XX:XX AM/PM. Check BG.
-    807|Basal delivery resumed|Basal delivery resumed at XX:XX AM/PM after suspend by sensor. Check BG.
-    815|Basal delivery resumed|Low settings change caused basal to be resumed at XX:XX AM/PM. Check BG.
-    808|Basal delivery resumed|Maximum 2 hour suspend time reached. Check BG.
-    814|Basal delivery resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.
-    788|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
-    775|Calibrate now|Check BG and calibrate sensor.
-    776|Calibration not accepted|Wait at least 15 minutes. Wash hands, test BG again and calibrate.
-    790|Cannot find sensor signal|Disconnect and reconnect transmitter, then select OK. Notice if transmitter light blinks.
-    789|Change sensor|Insert new sensor and Start New Sensor.
-    xxx|Change sensor|Second calibration not accepted. Insert new sensor.
-    795|Check connection|Ensure transmitter and sensor connection is secure, then select OK.
-    780|Lost sensor signal|Move Pump closer to transmitter. May take 15 minutes to find signal.
-    870|Low battery transmitter|Recharge transmitter within 24 hours.
-    xxx|Low SG XX mg/dL|SG is under 50 mg/dL. Check BG and treat.
-    812|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
-    786|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX AM/PM.
-    787|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
-    781|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
-    784|Rise Alert|Sensor glucose rising rapidly.
-    xxx|Searching for transmitter
-    110|Sensor alert occurred|Check Alarm History for silenced alerts.
-    798|Sensor connected|If new sensor, select Start New. If not, select Reconnect.
-    797|Sensor connected|Start new sensor.
-    794|Sensor expired|Insert new sensor.
-    791|Sensor signal not found|Did transmitter light blink when connected to sensor?
-    796|Sensor signal not found|See User Guide.
-    799|Sensor warm-up started|Warm-up takes up to 2 hours. You will be notified when calibration is needed.
-    xxx|Sensor updating|Do not calibrate unless notified. This could take up to 3 hours.
-    811|Suspend before low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.
-    809|Suspend on low|Delivery stopped. Sensor glucose XXX mg/dL. Check BG.
-    xxx|Transmitter battery depleted|Recharge transmitter now.
+        817|Alert before high|Sensor glucose approaching High Limit. Check BG.
+        805|Alert before low|Sensor glucose approaching Low Limit. Check BG.
+        816|Alert on high|XXX mg/dL High sensor glucose. Check BG.
+        802|Alert on low|XXX mg/dL Low sensor glucose. Check BG.
+        803|Alert on low|XXX mg/dL Low sensor glucose. Insulin delivery suspended since XX:XX AM/PM. Check BG.
+        807|Basal delivery resumed|Basal delivery resumed at XX:XX AM/PM after suspend by sensor. Check BG.
+        815|Basal delivery resumed|Low settings change caused basal to be resumed at XX:XX AM/PM. Check BG.
+        808|Basal delivery resumed|Maximum 2 hour suspend time reached. Check BG.
+        814|Basal delivery resumed|Maximum 2 hour suspend time reached. SG is still under Low limit. Check BG.
+        788|BG not received|Place pump close to transmitter. Select OK to resend BG to transmitter.
+        775|Calibrate now|Check BG and calibrate sensor.
+        776|Calibration not accepted|Wait at least 15 minutes. Wash hands, test BG again and calibrate.
+        790|Cannot find sensor signal|Disconnect and reconnect transmitter, then select OK. Notice if transmitter light blinks.
+        789|Change sensor|Insert new sensor and Start New Sensor.
+        xxx|Change sensor|Second calibration not accepted. Insert new sensor.
+        795|Check connection|Ensure transmitter and sensor connection is secure, then select OK.
+        780|Lost sensor signal|Move Pump closer to transmitter. May take 15 minutes to find signal.
+        870|Low battery transmitter|Recharge transmitter within 24 hours.
+        xxx|Low SG XX mg/dL|SG is under 50 mg/dL. Check BG and treat.
+        812|Medical device|CALL FOR EMERGENCY ASSISTANCE. I have diabetes.
+        786|No calibration occurred|Confirm sensor signal. Calibrate by XX:XX AM/PM.
+        787|No calibration occurred|Confirm sensor signal. Check BG again to calibrate sensor.
+        781|Possible signal interference|Move away from electronic devices. May take 15 minutes to find signal.
+        784|Rise Alert|Sensor glucose rising rapidly.
+        xxx|Searching for transmitter
+        110|Sensor alert occurred|Check Alarm History for silenced alerts.
+        798|Sensor connected|If new sensor, select Start New. If not, select Reconnect.
+        797|Sensor connected|Start new sensor.
+        794|Sensor expired|Insert new sensor.
+        791|Sensor signal not found|Did transmitter light blink when connected to sensor?
+        796|Sensor signal not found|See User Guide.
+        799|Sensor warm-up started|Warm-up takes up to 2 hours. You will be notified when calibration is needed.
+        xxx|Sensor updating|Do not calibrate unless notified. This could take up to 3 hours.
+        811|Suspend before low|Delivery stopped. Sensor glucose approaching Low Limit. Check BG.
+        809|Suspend on low|Delivery stopped. Sensor glucose XXX mg/dL. Check BG.
+        xxx|Transmitter battery depleted|Recharge transmitter now.
 
-    *** 670G User Guide US - Auto Mode alerts and messages ***
+        *** 670G User Guide US - Auto Mode alerts and messages ***
 
-    xxx|Auto Mode started|Current action canceled.
-    xxx|Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low
-    xxx|Auto Mode exit|Basal X started. Would you like to review the Auto Mode Readiness screen?
-    xxx|Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern X resumed.
-    xxx|Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.
-    xxx|Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode.
-    xxx|Auto Mode off|Basal X started. Would you like to review the Auto Mode Readiness screen?
-    xxx|BG required|Enter a new BG for Auto Mode.
-    xxx|Bolus recommended|For XXX mg/dL entered, a correction bolus is recommended.
-    xxx|Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode.
+        xxx|Auto Mode started|Current action canceled.
+        xxx|Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low
 
-    xxx|High BG XXX mg/dL|Check infusion set. Check ketones. Monitor BG.
+        xxx|Auto Mode exit|Basal X started. Would you like to review the Auto Mode Readiness screen?
+        xxx|Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern X resumed.
+        xxx|Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.
+        xxx|Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode.
+        xxx|Auto Mode off|Basal X started. Would you like to review the Auto Mode Readiness screen?
+        xxx|BG required|Enter a new BG for Auto Mode.
+        xxx|Bolus recommended|For XXX mg/dL entered, a correction bolus is recommended.
+        xxx|Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode.
 
--->
+        xxx|High BG XXX mg/dL|Check infusion set. Check ketones. Monitor BG.
+
+    -->

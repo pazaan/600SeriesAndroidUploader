@@ -38,6 +38,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
+    @Index
     private boolean history = false; // history or status? we add these initially as polled from the status message and fill in extra details during history pulls
 
     @Index
@@ -52,30 +53,33 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     private double rateOfChange;
     private byte sensorStatus;
     private byte readingStatus;
+
+    @Index
     private byte sensorException;
 
     private boolean backfilledData;
     private boolean settingsChanged;
+    @Index
     private boolean noisyData;
+    @Index
     private boolean discardData;
+    @Index
     private boolean sensorError;
 
     private String cgmTrend; // only available when added via the status message
 
+    @Index
     private boolean estimate;
-    private byte estimateQuality;
 
     @Override
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        NS_TREND trend = cgmTrend != null
-                ? NS_TREND.valueOf(cgmTrend)
-                : NS_TREND.NONE; // setting the trend to NONE in NS shows symbol: <">
+        NS_TREND trend = cgmTrend == null ? null : NS_TREND.valueOf(cgmTrend);
 
         int sgv = this.sgv;
 
-        if (!estimate) {
+        if (!estimate || sgv == 0) {
 
             switch (PumpHistoryParser.CGM_EXCEPTION.convert(sensorException)) {
                 case SENSOR_CAL_NEEDED:
@@ -98,22 +102,26 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
                     break;
                 case SENSOR_CAL_PENDING:
                 case SENSOR_INIT:
+                case SENSOR_ERROR:
                     trend = NS_TREND.NOT_COMPUTABLE;
                     sgv = NS_ERROR.NO_ANTENNA.value;
                     break;
+                default:
             }
 
         } else {
             // limit range for NS as it uses some values as flags
             if (sgv < 40) sgv = 40;
             else if (sgv > 400) sgv = 400;
+            trend = NS_TREND.NONE; // setting the trend to NONE in NS shows symbol: <">
         }
 
         if (sgv > 0) {
             EntriesEndpoints.Entry entry = HistoryUtils.nightscoutEntry(nightscoutItems, this, senderID);
             entry.setType("sgv");
             entry.setSgv(sgv);
-            entry.setDirection(trend.string());
+            if (trend != null) entry.setDirection(trend.string());
+            if (estimate) nightscoutItems.get(0).update();
         }
 
         return nightscoutItems;
@@ -426,13 +434,5 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
     public void setEstimate(boolean estimate) {
         this.estimate = estimate;
-    }
-
-    public void setEstimateQuality(byte estimateQuality) {
-        this.estimateQuality = estimateQuality;
-    }
-
-    public byte getEstimateQuality() {
-        return estimateQuality;
     }
 }

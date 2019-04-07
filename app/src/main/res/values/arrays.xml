@@ -9,9 +9,9 @@
 <resources>
 
     <string-array name="debug_log_level">
-        <item>@string/debug_log_level_error</item>
-        <item>@string/debug_log_level_info</item>
-        <item>@string/debug_log_level_debug</item>
+        <item>@string/debug_log_level__error</item>
+        <item>@string/debug_log_level__info</item>
+        <item>@string/debug_log_level__debug</item>
     </string-array>
 
     <string-array name="debug_log_level_values">
@@ -55,10 +55,10 @@
     </string-array>
 
     <string-array name="screen_sleep">
-        <item>@string/screen_sleep_always</item>
-        <item>@string/screen_sleep_portrait</item>
-        <item>@string/screen_sleep_landscape</item>
-        <item>@string/screen_sleep_never</item>
+        <item>@string/pref_screen_sleep_always_sleep</item>
+        <item>@string/pref_screen_sleep_portrait_mode_only</item>
+        <item>@string/pref_screen_sleep_landscape_mode_only</item>
+        <item>@string/pref_screen_sleep_never_sleep</item>
     </string-array>
 
     <string-array name="screen_sleep_values">
@@ -106,6 +106,36 @@
         <item>120</item>
     </string-array>
 
+    <string-array name="rssi_allowconnect">
+        <item>5&percent;</item>
+        <item>6&percent;</item>
+        <item>7&percent;</item>
+        <item>8&percent;</item>
+        <item>9&percent;</item>
+        <item>10&percent;</item>
+        <item>15&percent;</item>
+        <item>20&percent;</item>
+        <item>25&percent;</item>
+        <item>30&percent;</item>
+        <item>40&percent;</item>
+        <item>50&percent;</item>
+    </string-array>
+
+    <string-array name="rssi_allowconnect_values">
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+        <item>25</item>
+        <item>30</item>
+        <item>40</item>
+        <item>50</item>
+    </string-array>
+
     <string-array name="profile_default">
         <item>@string/Use_Active</item>
         <item>{pattern;1}</item>
@@ -131,21 +161,21 @@
     </string-array>
 
     <string-array name="cannula_change_threshold">
-        <item>@string/Fill_Cannula</item>
-        <item>{string;Prime_Cannula} {insulin;0.10}+</item>
-        <item>{string;Prime_Cannula} {insulin;0.20}+</item>
-        <item>{string;Prime_Cannula} {insulin;0.30}+</item>
-        <item>{string;Prime_Cannula} {insulin;0.40}+</item>
-        <item>{string;Prime_Cannula} {insulin;0.50}+</item>
-        <item>{string;Prime_Cannula} {insulin;0.60}+</item>
-        <item>{string;Prime_Cannula} {insulin;0.70}+</item>
-        <item>{string;Prime_Cannula} {insulin;0.80}+</item>
-        <item>{string;Prime_Cannula} {insulin;0.90}+</item>
-        <item>{string;Prime_Cannula} {insulin;1.00}+</item>
-        <item>{string;Prime_Cannula} {insulin;2.00}+</item>
-        <item>{string;Prime_Cannula} {insulin;3.00}+</item>
-        <item>{string;Prime_Cannula} {insulin;4.00}+</item>
-        <item>{string;Prime_Cannula} {insulin;5.00}+</item>
+        <item>@string/pref_ns_cannula_change_Fill_Cannula</item>
+        <item>{prime_cannula} {insulin;0.10}+</item>
+        <item>{prime_cannula} {insulin;0.20}+</item>
+        <item>{prime_cannula} {insulin;0.30}+</item>
+        <item>{prime_cannula} {insulin;0.40}+</item>
+        <item>{prime_cannula} {insulin;0.50}+</item>
+        <item>{prime_cannula} {insulin;0.60}+</item>
+        <item>{prime_cannula} {insulin;0.70}+</item>
+        <item>{prime_cannula} {insulin;0.80}+</item>
+        <item>{prime_cannula} {insulin;0.90}+</item>
+        <item>{prime_cannula} {insulin;1.00}+</item>
+        <item>{prime_cannula} {insulin;2.00}+</item>
+        <item>{prime_cannula} {insulin;3.00}+</item>
+        <item>{prime_cannula} {insulin;4.00}+</item>
+        <item>{prime_cannula} {insulin;5.00}+</item>
     </string-array>
 
     <string-array name="cannula_change_threshold_values">
@@ -167,9 +197,9 @@
     </string-array>
 
     <string-array name="insulin_change_threshold">
-        <item>@string/New_Reservoir</item>
-        <item>@string/Reservoir_1_8ml</item>
-        <item>@string/Reservoir_3_0ml</item>
+        <item>@string/pref_ns_insulin_change_New_Reservoir</item>
+        <item>@string/pref_ns_insulin_change_Reservoir_1_8ml</item>
+        <item>@string/pref_ns_insulin_change_Reservoir_3_0ml</item>
         <item>{insulin;100}</item>
         <item>{insulin;110}</item>
         <item>{insulin;120}</item>
@@ -391,7 +421,7 @@
     </string-array>
 
     <string-array name="urchin_basal_scale">
-        <item>@string/text_off</item>
+        <item>@string/off</item>
         <item>1</item>
         <item>2</item>
         <item>3</item>
@@ -453,20 +483,20 @@
     </string-array>
 
     <string-array name="urchin_time">
-        <item>12 {string;time_hour}: \'7.45\'</item>
-        <item>12 {string;time_hour} {string;time_am_a}/{string;time_pm_p}: \'7.45{string;time_pm_p}\'</item>
-        <item>12 {string;time_hour} {string;time_AM_A}/{string;time_PM_P}: \'7.45{string;time_PM_P}\'</item>
-        <item>12 {string;time_hour} {string;time_am}/{string;time_pm}: \'7.45{string;time_pm}\'</item>
-        <item>12 {string;time_hour} {string;time_AM}/{string;time_PM}: \'7.45{string;time_PM}\'</item>
-        <item>24 {string;time_hour}: \'19.45\'</item>
+        <item>12 {hour}: \'7.45\'</item>
+        <item>12 {hour} {am_pm;a}/{am_pm;p}: \'7.45{am_pm;p}\'</item>
+        <item>12 {hour} {am_pm;A}/{am_pm;P}: \'7.45{am_pm;P}\'</item>
+        <item>12 {hour} {am_pm;am}/{am_pm;pm}: \'7.45{am_pm;pm}\'</item>
+        <item>12 {hour} {am_pm;AM}/{am_pm;PM}: \'7.45{am_pm;PM}\'</item>
+        <item>24 {hour}: \'19.45\'</item>
     </string-array>
 
     <string-array name="urchin_duration">
-        <item>{string;time_minute}: \'115\'</item>
-        <item>{string;time_minute}: \'115{string;time_m}\'</item>
-        <item>{string;time_hour}/{string;time_minute}: \'1{string;time_h}55\' \'45\'</item>
-        <item>{string;time_hour}/{string;time_minute}: \'1{string;time_h}55\' \'45{string;time_m}\'</item>
-        <item>{string;time_hour}/{string;time_minute}: \'1{string;time_h}55{string;time_m}\' \'45{string;time_m}\'</item>
+        <item>{minute}: \'115\'</item>
+        <item>{minute}: \'115{minute_m}\'</item>
+        <item>{hour}/{minute}: \'1{hour_h}55\' \'45\'</item>
+        <item>{hour}/{minute}: \'1{hour_h}55\' \'45{minute_m}\'</item>
+        <item>{hour}/{minute}: \'1{hour_h}55{minute_m}\' \'45{minute_m}\'</item>
     </string-array>
 
     <string-array name="urchin_battery">
@@ -475,26 +505,26 @@
         <item>0&dash;99</item>
         <item>0&dash;99&percent;</item>
         <item>0&dash;9</item>
-        <item>{string;urchin_disp_Battery_Hi}&dash;{string;urchin_disp_Battery_Lo}</item>
-        <item>{string;urchin_disp_Battery_High}&dash;{string;urchin_disp_Battery_Medium}&dash;{string;urchin_disp_Battery_Low}</item>
-        <item>{string;urchin_disp_Battery_Full}&dash;{string;urchin_disp_Battery_High}&dash;{string;urchin_disp_Battery_Medium}&dash;{string;urchin_disp_Battery_Low}&dash;{string;urchin_disp_Battery_Empty}</item>
+        <item>{urchin_hi}&dash;{urchin_lo}</item>
+        <item>{urchin_high}&dash;{urchin_medium}&dash;{urchin_low}</item>
+        <item>{urchin_full}&dash;{urchin_high}&dash;{urchin_medium}&dash;{urchin_low}&dash;{urchin_empty}</item>
     </string-array>
 
     <string-array name="urchin_units">
-        <item>{string;urchin_text_none}: \'99\'</item>
-        <item>{string;urchin_text_unit_u}: <small>\'99{string;urchin_text_unit_u}\'</small></item>
-        <item>{string;urchin_text_unit_U}: <small>\'99{string;urchin_text_unit_U}\'</small></item>
+        <item>{urchin_none}: \'99\'</item>
+        <item>{urchin_u}: <small>\'99{urchin_u}\'</small></item>
+        <item>{urchin_U}: <small>\'99{urchin_U}\'</small></item>
     </string-array>
 
     <string-array name="urchin_concatenate">
-        <item>{string;urchin_text_none}: \'{insulin;2.5}{duration;75}\'</item>
-        <item>{string;urchin_text_space}: \'{insulin;2.5} {duration;75}\'</item>
-        <item>{string;urchin_text_dot}: \'{insulin;2.5}·{duration;75}\'</item>
-        <item>{string;urchin_text_bullet}: \'{insulin;2.5}•{duration;75}\'</item>
-        <item>{string;urchin_text_dash}: \'{insulin;2.5}&dash;{duration;75}\'</item>
-        <item>{string;urchin_text_forward_slash}: \'{insulin;2.5}/{duration;75}\'</item>
-        <item>{string;urchin_text_backslash}: \'{insulin;2.5}\\{duration;75}\'</item>
-        <item>{string;urchin_text_line}: \'{insulin;2.5}|{duration;75}\'</item>
+        <item>{urchin_none}: \'{insulin;2.5}{duration;75}\'</item>
+        <item>{urchin_space}: \'{insulin;2.5} {duration;75}\'</item>
+        <item>{urchin_dot}: \'{insulin;2.5}·{duration;75}\'</item>
+        <item>{urchin_bullet}: \'{insulin;2.5}•{duration;75}\'</item>
+        <item>{urchin_dash}: \'{insulin;2.5}&dash;{duration;75}\'</item>
+        <item>{urchin_forward_slash}: \'{insulin;2.5}/{duration;75}\'</item>
+        <item>{urchin_backslash}: \'{insulin;2.5}\\{duration;75}\'</item>
+        <item>{urchin_line}: \'{insulin;2.5}|{duration;75}\'</item>
     </string-array>
 
     <string-array name="urchin_values">
@@ -578,11 +608,11 @@
     </string-array>
 
     <string-array name="pushover_priority">
-        <item>@string/pushover_lowest</item>
-        <item>@string/pushover_low</item>
-        <item>@string/pushover_normal</item>
-        <item>@string/pushover_high</item>
-        <item>@string/pushover_emergency</item>
+        <item>@string/pref_pushover_priority_lowest</item>
+        <item>@string/pref_pushover_priority_low</item>
+        <item>@string/pref_pushover_priority_normal</item>
+        <item>@string/pref_pushover_priority_high</item>
+        <item>@string/pref_pushover_priority_emergency</item>
     </string-array>
 
     <string-array name="pushover_priority_values">
@@ -637,6 +667,103 @@
         <item>3600</item>
         <item>7200</item>
         <item>10800</item>
+    </string-array>
+
+    <string-array name="pushover_backfill">
+        <item>{minutes;30}</item>
+        <item>{hours;1}</item>
+        <item>{hours;2}</item>
+        <item>{hours;3}</item>
+        <item>{hours;4}</item>
+        <item>{hours;5}</item>
+        <item>{hours;6}</item>
+        <item>{hours;7}</item>
+        <item>{hours;8}</item>
+        <item>{hours;9}</item>
+        <item>{hours;10}</item>
+        <item>{hours;11}</item>
+        <item>{hours;12}</item>
+        <item>{hours;24}</item>
+    </string-array>
+
+    <string-array name="pushover_backfill_values">
+        <item>30</item>
+        <item>60</item>
+        <item>120</item>
+        <item>180</item>
+        <item>240</item>
+        <item>300</item>
+        <item>360</item>
+        <item>420</item>
+        <item>480</item>
+        <item>540</item>
+        <item>600</item>
+        <item>1200</item>
+    </string-array>
+
+    <string-array name="ReportISIGinclude">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+    </string-array>
+
+    <string-array name="ReportISIGminimum">
+        <item>{minutes;5}</item>
+        <item>{minutes;10}</item>
+        <item>{minutes;15}</item>
+        <item>{minutes;20}</item>
+        <item>{minutes;25}</item>
+        <item>{minutes;30}</item>
+        <item>{minutes;40}</item>
+        <item>{minutes;50}</item>
+        <item>{minutes;60}</item>
+    </string-array>
+
+    <string-array name="ReportISIGminimum_values">
+        <item>5</item>
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+        <item>25</item>
+        <item>30</item>
+        <item>40</item>
+        <item>50</item>
+        <item>60</item>
+    </string-array>
+
+    <string-array name="ReportISIGnewsensor">
+        <item>{hours;1}</item>
+        <item>{hours;2}</item>
+        <item>{hours;3}</item>
+        <item>{hours;4}</item>
+        <item>{hours;5}</item>
+        <item>{hours;6}</item>
+        <item>{hours;8}</item>
+        <item>{hours;10}</item>
+        <item>{hours;12}</item>
+        <item>{hours;16}</item>
+        <item>{hours;20}</item>
+        <item>{hours;24}</item>
+    </string-array>
+
+    <string-array name="ReportISIGnewsensor_values">
+        <item>60</item>
+        <item>120</item>
+        <item>180</item>
+        <item>240</item>
+        <item>300</item>
+        <item>360</item>
+        <item>480</item>
+        <item>600</item>
+        <item>720</item>
+        <item>960</item>
+        <item>1200</item>
+        <item>1440</item>
     </string-array>
 
 </resources>

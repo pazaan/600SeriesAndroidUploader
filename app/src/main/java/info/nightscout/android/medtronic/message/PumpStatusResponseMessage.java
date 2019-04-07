@@ -103,7 +103,7 @@ public class PumpStatusResponseMessage extends MedtronicSendMessageResponseMessa
         super(pumpSession, payload);
 
         if (!MedtronicSendMessageRequestMessage.MessageType.READ_PUMP_STATUS.response(read16BEtoUInt(payload, 0x01))) {
-            Log.e(TAG, "Invalid message received for PumpTime");
+            Log.e(TAG, "Invalid message received for PumpStatus");
             throw new UnexpectedMessageException("Invalid message received for PumpStatus");
         }
 

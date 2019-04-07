@@ -62,9 +62,9 @@ public class Eula {
 
         if (!preferences.getBoolean(PREFERENCE_EULA_ACCEPTED, false)) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-            builder.setTitle(R.string.eula_title);
+            builder.setTitle(R.string.eula__title);
             builder.setCancelable(true);
-            builder.setPositiveButton(R.string.eula_accept, new DialogInterface.OnClickListener() {
+            builder.setPositiveButton(R.string.eula__accept, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     accept(preferences);
                     if (activity instanceof OnEulaAgreedTo) {
@@ -74,7 +74,7 @@ public class Eula {
                     aDialog = null;
                 }
             });
-            builder.setNegativeButton(R.string.eula_refuse, new DialogInterface.OnClickListener() {
+            builder.setNegativeButton(R.string.eula__refuse, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                 	if (activity instanceof OnEulaAgreedTo) {
                         ((OnEulaAgreedTo) activity).onEulaRefusedTo();
@@ -94,7 +94,7 @@ public class Eula {
                     aDialog = null;
                 }
             });
-            builder.setMessage(R.string.eula_message);
+            builder.setMessage(R.string.eula__message);
             aDialog = builder.create();
             aDialog.show();
            

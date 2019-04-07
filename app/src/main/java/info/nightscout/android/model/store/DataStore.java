@@ -7,32 +7,39 @@ import java.util.Date;
 
 import info.nightscout.android.R;
 import io.realm.RealmObject;
-import io.realm.annotations.Index;
 
 public class DataStore extends RealmObject {
-    @Index
-    private long timestamp;
 
-    // do not send cgm/pump backfill data prior to this date
-    // used to stop overwriting older NS entries
-    // user option to override (we clear old data from NS to stop multiple entries and refresh using keys)
-    private Date nightscoutLimitDate = null;
+    private long initTimestamp;
+    private long startupTimestamp;
+    private long cnlUnplugTimestamp;
+    private long cnlPlugTimestamp;
+    private long cnlLimiterTimestamp;
+
+    private boolean nightscoutInitCleanup;
     private long nightscoutCgmCleanFrom;
     private long nightscoutPumpCleanFrom;
     private long nightscoutAlwaysUpdateTimestamp; // items for upload will always update prior to this time
 
-    private boolean nightscoutUpload = false;
+    private boolean nightscoutUpload;
     private String nightscoutURL = "";
     private String nightscoutSECRET = "";
-    private long nightscoutReportTime = 0;
-    private boolean nightscoutAvailable = false;
-    private boolean nightscoutCareportal = false;
+    private long nightscoutReportTime;
+    private boolean nightscoutAvailable;
+    private boolean nightscoutCareportal;
+    private boolean nightscoutUseQuery;
+    private boolean nightscoutUseProfile;
 
-    private boolean requestProfile = false;
-    private boolean requestPumpHistory = false;
-    private boolean requestCgmHistory = false;
-    private boolean requestEstimate = false;
-    private boolean requestIsig = false;
+    private boolean requestProfile;
+    private boolean requestPumpHistory;
+    private boolean requestCgmHistory;
+    private boolean requestEstimate;
+    private boolean requestIsig;
+
+    private boolean reportIsigAvailable;
+    private long reportIsigTimestamp;
+
+    private boolean prefsProcessed;
 
     private String lastStatReport;
 
@@ -46,6 +53,16 @@ public class DataStore extends RealmObject {
     private int pumpLostSensorError;
     private int pumpClockError;
     private int pumpBatteryError;
+
+    private boolean resendPumpHistoryBasal;
+    private boolean resendPumpHistoryBolus;
+    private boolean resendPumpHistoryBG;
+    private boolean resendPumpHistoryMisc;
+    private boolean resendPumpHistoryAlarm;
+    private boolean resendPumpHistorySystem;
+    private boolean resendPumpHistoryDaily;
+    private boolean resendPumpHistoryPattern;
+    private boolean resendPumpHistoryBolusExChanged;
 
     // user preferences
 
@@ -64,8 +81,14 @@ public class DataStore extends RealmObject {
     private int sysPumpHistoryDays;
     private int sysPumpHistoryFrequency;
     private boolean sysEnableEstimateSGV;
+    private boolean sysEnableEstimateSGVeol;
+    private boolean sysEnableEstimateSGVerror;
     private boolean sysEnableReportISIG;
+    private int sysReportISIGinclude;
+    private int sysReportISIGminimum;
+    private int sysReportISIGnewsensor;
     private boolean sysEnableClashProtect;
+    private int sysRssiAllowConnect;
     private boolean sysEnablePollOverride;
     private long sysPollGracePeriod;
     private long sysPollRecoveryPeriod;
@@ -79,7 +102,12 @@ public class DataStore extends RealmObject {
     private boolean dbgEnableUploadErrors;
 
     private boolean nsEnableTreatments;
-    private boolean nsEnableHistorySync;
+    private boolean nsEnableBasalTreatments;
+    private boolean nsEnableBolusTreatments;
+    private String nsEnteredBy;
+    private boolean nsEnableDeviceStatus;
+    private boolean nsEnableDevicePUMP;
+    private String nsDeviceName;
     private boolean nsEnableFingerBG;
     private boolean nsEnableCalibrationInfo;
     private boolean nsEnableSensorChange;
@@ -96,14 +124,17 @@ public class DataStore extends RealmObject {
     private float nsActiveInsulinTime;
     private boolean nsEnablePatternChange;
     private int nsGramsPerExchange;
-    private boolean nsGramsPerExchangeChanged = false;
     private boolean nsEnableInsertBGasCGM;
     private boolean nsEnableAlarms;
     private boolean nsAlarmExtended;
     private boolean nsAlarmCleared;
+
     private boolean nsEnableSystemStatus;
-    private boolean nsEnableUploaderBatteryFull;
-    private boolean nsEnableUploaderUsbError;
+    private boolean nsSystemStatusUsbErrors;
+    private boolean nsSystemStatusConnection;
+    private boolean nsSystemStatusBatteryLow;
+    private boolean nsSystemStatusBatteryCharged;
+
     private int nsAlarmTTL;
     private boolean nsEnableDailyTotals;
     private boolean nsEnableFormatHTML;
@@ -148,12 +179,6 @@ public class DataStore extends RealmObject {
     private String nameBolusPreset7;
     private String nameBolusPreset8;
 
-    private boolean nameBasalPatternChanged = false;
-
-    private boolean pushoverEnable;
-    private String pushoverAPItoken;
-    private String pushoverUSERtoken;
-
     private boolean pushoverValidated;
     private boolean pushoverError;
     private String pushoverAPItokenCheck;
@@ -161,6 +186,15 @@ public class DataStore extends RealmObject {
     private long pushoverAppLimit;
     private long pushoverAppRemaining;
     private long pushoverAppReset;
+
+    private boolean pushoverEnable;
+    private String pushoverAPItoken;
+    private String pushoverUSERtoken;
+
+    private boolean pushoverEnablePriorityOverride;
+    private String pushoverPriorityOverride;
+    private boolean pushoverEnableSoundOverride;
+    private String pushoverSoundOverride;
 
     private boolean pushoverEnableOnHigh;
     private String pushoverPriorityOnHigh;
@@ -174,9 +208,19 @@ public class DataStore extends RealmObject {
     private boolean pushoverEnableBeforeLow;
     private String pushoverPriorityBeforeLow;
     private String pushoverSoundBeforeLow;
+
+    private boolean pushoverEnableAutoModeActive;
+    private String pushoverPriorityAutoModeActive;
+    private String pushoverSoundAutoModeActive;
+    private boolean pushoverEnableAutoModeStop;
+    private String pushoverPriorityAutoModeStop;
+    private String pushoverSoundAutoModeStop;
     private boolean pushoverEnableAutoModeExit;
     private String pushoverPriorityAutoModeExit;
     private String pushoverSoundAutoModeExit;
+    private boolean pushoverEnableAutoModeMinMax;
+    private String pushoverPriorityAutoModeMinMax;
+    private String pushoverSoundAutoModeMinMax;
 
     private boolean pushoverEnablePumpEmergency;
     private String pushoverPriorityPumpEmergency;
@@ -217,34 +261,50 @@ public class DataStore extends RealmObject {
     private boolean pushoverEnableUploaderPumpErrors;
     private String pushoverPriorityUploaderPumpErrors;
     private String pushoverSoundUploaderPumpErrors;
-    private boolean pushoverEnableUploaderPumpConnection;
-    private String pushoverPriorityUploaderPumpConnection;
-    private String pushoverSoundUploaderPumpConnection;
+    private boolean pushoverEnableUploaderUsbErrors;
+    private String pushoverPriorityUploaderUsbErrors;
+    private String pushoverSoundUploaderUsbErrors;
+    private boolean pushoverEnableUploaderStatus;
+    private String pushoverPriorityUploaderStatus;
+    private String pushoverSoundUploaderStatus;
+    private boolean pushoverEnableUploaderStatusConnection;
+    private boolean pushoverEnableUploaderStatusEstimate;
     private boolean pushoverEnableUploaderBattery;
     private String pushoverPriorityUploaderBattery;
     private String pushoverSoundUploaderBattery;
     private boolean pushoverEnableBatteryLow;
     private boolean pushoverEnableBatteryCharged;
 
-    private boolean pushoverEnableCleared;
-    private String pushoverPriorityCleared;
-    private String pushoverSoundCleared;
-    private boolean pushoverEnableSilenced;
-    private String pushoverPrioritySilenced;
-    private String pushoverSoundSilenced;
+    private boolean pushoverEnableInfoExtended;
+    private boolean pushoverEnableTitleTime;
+    private boolean pushoverEnableTitleText;
+    private String pushoverTitleText;
 
-    private boolean pushoverInfoExtended;
-    private boolean pushoverTitleTime;
     private String pushoverEmergencyRetry;
     private String pushoverEmergencyExpire;
 
-    private boolean pushoverEnablePriorityOverride;
-    private String pushoverPriorityOverride;
-    private boolean pushoverEnableSoundOverride;
-    private String pushoverSoundOverride;
+    private boolean pushoverEnableCleared;
+    private boolean pushoverEnableClearedAcknowledged;
+    private String pushoverPriorityCleared;
+    private String pushoverSoundCleared;
+
+    private boolean pushoverEnableSilenced;
+    private boolean pushoverEnableSilencedOverride;
+    private String pushoverPrioritySilenced;
+    private String pushoverSoundSilenced;
+
+    private boolean pushoverEnableBackfillOnStart;
+    private int pushoverBackfillPeriod;
+    private int pushoverBackfillLimiter;
+    private boolean pushoverEnableBackfillOverride;
+    private int pushoverBackfillOverrideAge;
+    private String pushoverPriorityBackfill;
+    private String pushoverSoundBackfill;
+
+    private String pushoverSendToDevice;
 
     public DataStore() {
-        this.timestamp = new Date().getTime();
+        this.initTimestamp = new Date().getTime();
     }
 
     public void copyPrefs(Context c, SharedPreferences p)
@@ -269,8 +329,14 @@ public class DataStore extends RealmObject {
         sysPumpHistoryDays = getInt(c, p, R.string.key_sysPumpHistoryDays, R.string.default_sysPumpHistoryDays);
         sysPumpHistoryFrequency = getInt(c, p, R.string.key_sysPumpHistoryFrequency, R.string.default_sysPumpHistoryFrequency);
         sysEnableEstimateSGV = getBoolean(c, p, R.string.key_sysEnableEstimateSGV, R.bool.default_sysEnableEstimateSGV);
+        sysEnableEstimateSGVeol = getBoolean(c, p, R.string.key_sysEnableEstimateSGVeol, R.bool.default_sysEnableEstimateSGVeol);
+        sysEnableEstimateSGVerror = getBoolean(c, p, R.string.key_sysEnableEstimateSGVerror, R.bool.default_sysEnableEstimateSGVerror);
         sysEnableReportISIG = getBoolean(c, p, R.string.key_sysEnableReportISIG, R.bool.default_sysEnableReportISIG);
+        sysReportISIGinclude = getInt(c, p,R.string.key_sysReportISIGinclude, R.string.default_sysReportISIGinclude);
+        sysReportISIGminimum = getInt(c, p,R.string.key_sysReportISIGminimum, R.string.default_sysReportISIGminimum);
+        sysReportISIGnewsensor = getInt(c, p,R.string.key_sysReportISIGnewsensor, R.string.default_sysReportISIGnewsensor);
         sysEnableClashProtect = getBoolean(c, p, R.string.key_sysEnableClashProtect, R.bool.default_sysEnableClashProtect);
+        sysRssiAllowConnect = getInt(c, p, R.string.key_sysRssiAllowConnect, R.string.default_sysRssiAllowConnect);
         sysEnablePollOverride = getBoolean(c, p, R.string.key_sysEnablePollOverride, R.bool.default_sysEnablePollOverride);
         sysPollGracePeriod = getLong(c, p, R.string.key_sysPollGracePeriod, R.string.default_sysPollGracePeriod);
         sysPollRecoveryPeriod = getLong(c, p, R.string.key_sysPollRecoveryPeriod, R.string.default_sysPollRecoveryPeriod);
@@ -284,9 +350,107 @@ public class DataStore extends RealmObject {
         dbgEnableExtendedErrors = getBoolean(c, p, R.string.key_dbgEnableExtendedErrors, R.bool.default_dbgEnableExtendedErrors);
         dbgEnableUploadErrors = getBoolean(c, p, R.string.key_dbgEnableUploadErrors, R.bool.default_dbgEnableUploadErrors);
 
+        // nightscout pref changes dynamic re-uploads / deletes
+        if (prefsProcessed) {
+            if (nsEnableBasalTreatments != getBoolean(c, p, R.string.key_nsEnableBasalTreatments, R.bool.default_nsEnableBasalTreatments)) {
+                resendPumpHistoryBasal = true;
+            }
+            if (nsEnableBolusTreatments != getBoolean(c, p, R.string.key_nsEnableBolusTreatments, R.bool.default_nsEnableBolusTreatments)
+                    || nsGramsPerExchange != getInt(c, p, R.string.key_nsGramsPerExchange, R.string.default_nsGramsPerExchange)
+                    ) {
+                resendPumpHistoryBolus = true;
+            }
+            if (nsEnableFingerBG != getBoolean(c, p, R.string.key_nsEnableFingerBG, R.bool.default_nsEnableFingerBG)
+                    || nsEnableCalibrationInfo != getBoolean(c, p, R.string.key_nsEnableCalibrationInfo, R.bool.default_nsEnableCalibrationInfo)
+                    ) {
+                resendPumpHistoryBG = true;
+                resendPumpHistoryMisc = true;
+            }
+            if (nsEnableInsertBGasCGM != getBoolean(c, p, R.string.key_nsEnableInsertBGasCGM, R.bool.default_nsEnableInsertBGasCGM)) {
+                resendPumpHistoryBG = true;
+            }
+            if (nsEnableSensorChange != getBoolean(c, p, R.string.key_nsEnableSensorChange, R.bool.default_nsEnableSensorChange)
+                    || nsEnableReservoirChange != getBoolean(c, p, R.string.key_nsEnableReservoirChange, R.bool.default_nsEnableReservoirChange)
+                    || nsEnableInsulinChange != getBoolean(c, p, R.string.key_nsEnableInsulinChange, R.bool.default_nsEnableInsulinChange)
+                    || nsEnableBatteryChange != getBoolean(c, p, R.string.key_nsEnableBatteryChange, R.bool.default_nsEnableBatteryChange)
+                    || nsEnableLifetimes != getBoolean(c, p, R.string.key_nsEnableLifetimes, R.bool.default_nsEnableLifetimes)
+                    || nsCannulaChangeThreshold != getInt(c, p, R.string.key_nsCannulaChangeThreshold, R.string.default_nsCannulaChangeThreshold)
+                    || nsInsulinChangeThreshold != getInt(c, p, R.string.key_nsInsulinChangeThreshold, R.string.default_nsInsulinChangeThreshold)
+                    ) {
+                resendPumpHistoryMisc = true;
+            }
+            if (nsActiveInsulinTime != getFloat(c, p, R.string.key_nsActiveInsulinTime, R.string.default_nsActiveInsulinTime)
+                    || nsProfileDefault != getInt(c, p, R.string.key_nsProfileDefault, R.string.default_nsProfileDefault)
+                    ) {
+                requestProfile = true;
+            }
+            if (nsAlarmExtended != getBoolean(c, p, R.string.key_nsAlarmExtended, R.bool.default_nsAlarmExtended)
+                    || nsAlarmCleared != getBoolean(c, p, R.string.key_nsAlarmCleared, R.bool.default_nsAlarmCleared)
+                    || nsSystemStatusUsbErrors != getBoolean(c, p, R.string.key_nsSystemStatusUsbErrors, R.bool.default_nsSystemStatusUsbErrors)
+                    || nsSystemStatusConnection != getBoolean(c, p, R.string.key_nsSystemStatusConnection, R.bool.default_nsSystemStatusConnection)
+                    || nsSystemStatusBatteryLow != getBoolean(c, p, R.string.key_nsSystemStatusBatteryLow, R.bool.default_nsSystemStatusBatteryLow)
+                    || nsSystemStatusBatteryCharged != getBoolean(c, p, R.string.key_nsSystemStatusBatteryCharged, R.bool.default_nsSystemStatusBatteryCharged)
+                    ) {
+                resendPumpHistoryAlarm = true;
+            }
+            if (nsSystemStatusUsbErrors != getBoolean(c, p, R.string.key_nsSystemStatusUsbErrors, R.bool.default_nsSystemStatusUsbErrors)
+                    || nsSystemStatusConnection != getBoolean(c, p, R.string.key_nsSystemStatusConnection, R.bool.default_nsSystemStatusConnection)
+                    || nsSystemStatusBatteryLow != getBoolean(c, p, R.string.key_nsSystemStatusBatteryLow, R.bool.default_nsSystemStatusBatteryLow)
+                    || nsSystemStatusBatteryCharged != getBoolean(c, p, R.string.key_nsSystemStatusBatteryCharged, R.bool.default_nsSystemStatusBatteryCharged)
+                    ) {
+                resendPumpHistorySystem = true;
+            }
+            if (nsEnableDailyTotals != getBoolean(c, p, R.string.key_nsEnableDailyTotals, R.bool.default_nsEnableDailyTotals)) {
+                resendPumpHistoryDaily = true;
+            }
+            if (nsEnablePatternChange != getBoolean(c, p, R.string.key_nsEnablePatternChange, R.bool.default_nsEnablePatternChange)) {
+                resendPumpHistoryPattern = true;
+            }
+            if (!nameBasalPattern1.equals(getString(c, p, R.string.key_nameBasalPattern1, R.string.default_nameBasalPattern1))
+                    || !nameBasalPattern2.equals(getString(c, p, R.string.key_nameBasalPattern2, R.string.default_nameBasalPattern2))
+                    || !nameBasalPattern3.equals(getString(c, p, R.string.key_nameBasalPattern3, R.string.default_nameBasalPattern3))
+                    || !nameBasalPattern4.equals(getString(c, p, R.string.key_nameBasalPattern4, R.string.default_nameBasalPattern4))
+                    || !nameBasalPattern5.equals(getString(c, p, R.string.key_nameBasalPattern5, R.string.default_nameBasalPattern5))
+                    || !nameBasalPattern6.equals(getString(c, p, R.string.key_nameBasalPattern6, R.string.default_nameBasalPattern6))
+                    || !nameBasalPattern7.equals(getString(c, p, R.string.key_nameBasalPattern7, R.string.default_nameBasalPattern7))
+                    || !nameBasalPattern8.equals(getString(c, p, R.string.key_nameBasalPattern8, R.string.default_nameBasalPattern8))
+                    ) {
+                resendPumpHistoryPattern = true;
+                requestProfile = true;
+            }
+            if (!nameTempBasalPreset1.equals(getString(c, p, R.string.key_nameTempBasalPreset1, R.string.default_nameTempBasalPreset1))
+                    || !nameTempBasalPreset2.equals(getString(c, p, R.string.key_nameTempBasalPreset2, R.string.default_nameTempBasalPreset2))
+                    || !nameTempBasalPreset3.equals(getString(c, p, R.string.key_nameTempBasalPreset3, R.string.default_nameTempBasalPreset3))
+                    || !nameTempBasalPreset4.equals(getString(c, p, R.string.key_nameTempBasalPreset4, R.string.default_nameTempBasalPreset4))
+                    || !nameTempBasalPreset5.equals(getString(c, p, R.string.key_nameTempBasalPreset5, R.string.default_nameTempBasalPreset5))
+                    || !nameTempBasalPreset6.equals(getString(c, p, R.string.key_nameTempBasalPreset6, R.string.default_nameTempBasalPreset6))
+                    || !nameTempBasalPreset7.equals(getString(c, p, R.string.key_nameTempBasalPreset7, R.string.default_nameTempBasalPreset7))
+                    || !nameTempBasalPreset8.equals(getString(c, p, R.string.key_nameTempBasalPreset8, R.string.default_nameTempBasalPreset8))
+                    ) {
+                resendPumpHistoryBasal = true;
+            }
+            if (!nameBolusPreset1.equals(getString(c, p, R.string.key_nameBolusPreset1, R.string.default_nameBolusPreset1))
+                    || !nameBolusPreset2.equals(getString(c, p, R.string.key_nameBolusPreset2, R.string.default_nameBolusPreset2))
+                    || !nameBolusPreset3.equals(getString(c, p, R.string.key_nameBolusPreset3, R.string.default_nameBolusPreset3))
+                    || !nameBolusPreset4.equals(getString(c, p, R.string.key_nameBolusPreset4, R.string.default_nameBolusPreset4))
+                    || !nameBolusPreset5.equals(getString(c, p, R.string.key_nameBolusPreset5, R.string.default_nameBolusPreset5))
+                    || !nameBolusPreset6.equals(getString(c, p, R.string.key_nameBolusPreset6, R.string.default_nameBolusPreset6))
+                    || !nameBolusPreset7.equals(getString(c, p, R.string.key_nameBolusPreset7, R.string.default_nameBolusPreset7))
+                    || !nameBolusPreset8.equals(getString(c, p, R.string.key_nameBolusPreset8, R.string.default_nameBolusPreset8))
+                    ){
+                resendPumpHistoryBolus = true;
+            }
+        }
+
         // nightscout
         nsEnableTreatments = getBoolean(c, p, R.string.key_nsEnableTreatments, R.bool.default_nsEnableTreatments);
-        nsEnableHistorySync = getBoolean(c, p, R.string.key_nsEnableHistorySync, R.bool.default_nsEnableHistorySync);
+        nsEnableBasalTreatments = getBoolean(c, p, R.string.key_nsEnableBasalTreatments, R.bool.default_nsEnableBasalTreatments);
+        nsEnableBolusTreatments = getBoolean(c, p, R.string.key_nsEnableBolusTreatments, R.bool.default_nsEnableBolusTreatments);
+        nsEnteredBy = getString(c, p, R.string.key_nsEnteredBy, R.string.default_nsEnteredBy);
+        nsEnableDeviceStatus = getBoolean(c, p, R.string.key_nsEnableDeviceStatus, R.bool.default_nsEnableDeviceStatus);
+        nsEnableDevicePUMP = getBoolean(c, p, R.string.key_nsEnableDevicePUMP, R.bool.default_nsEnableDevicePUMP);
+        nsDeviceName = getString(c, p, R.string.key_nsDeviceName, R.string.default_nsDeviceName);
+
         nsEnableFingerBG = getBoolean(c, p, R.string.key_nsEnableFingerBG, R.bool.default_nsEnableFingerBG);
         nsEnableCalibrationInfo = getBoolean(c, p, R.string.key_nsEnableCalibrationInfo, R.bool.default_nsEnableCalibrationInfo);
         nsEnableSensorChange = getBoolean(c, p, R.string.key_nsEnableSensorChange, R.bool.default_nsEnableSensorChange);
@@ -307,25 +471,23 @@ public class DataStore extends RealmObject {
         nsAlarmExtended = getBoolean(c, p, R.string.key_nsAlarmExtended, R.bool.default_nsAlarmExtended);
         nsAlarmCleared = getBoolean(c, p, R.string.key_nsAlarmCleared, R.bool.default_nsAlarmCleared);
         nsEnableSystemStatus = getBoolean(c, p, R.string.key_nsEnableSystemStatus, R.bool.default_nsEnableSystemStatus);
-        nsEnableUploaderBatteryFull = getBoolean(c, p, R.string.key_nsEnableUploaderBatteryFull, R.bool.default_nsEnableUploaderBatteryFull);
-        nsEnableUploaderUsbError = getBoolean(c, p, R.string.key_nsEnableUploaderUsbError, R.bool.default_nsEnableUploaderUsbError);
+        nsSystemStatusUsbErrors = getBoolean(c, p, R.string.key_nsSystemStatusUsbErrors, R.bool.default_nsSystemStatusUsbErrors);
+        nsSystemStatusConnection = getBoolean(c, p, R.string.key_nsSystemStatusConnection, R.bool.default_nsSystemStatusConnection);
+        nsSystemStatusBatteryLow = getBoolean(c, p, R.string.key_nsSystemStatusBatteryLow, R.bool.default_nsSystemStatusBatteryLow);
+        nsSystemStatusBatteryCharged = getBoolean(c, p, R.string.key_nsSystemStatusBatteryCharged, R.bool.default_nsSystemStatusBatteryCharged);
         nsAlarmTTL = getInt(c, p, R.string.key_nsAlarmTTL, R.string.default_nsAlarmTTL);
         nsEnableDailyTotals = getBoolean(c, p, R.string.key_nsEnableDailyTotals, R.bool.default_nsEnableDailyTotals);
         nsEnableFormatHTML = getBoolean(c, p, R.string.key_nsEnableFormatHTML, R.bool.default_nsEnableFormatHTML);
+        nsGramsPerExchange = getInt(c, p, R.string.key_nsGramsPerExchange, R.string.default_nsGramsPerExchange);
 
-        int nsGramsPerExchange = getInt(c, p, R.string.key_nsGramsPerExchange, R.string.default_nsGramsPerExchange);
-        if (this.nsGramsPerExchange != 0 && this.nsGramsPerExchange != nsGramsPerExchange)
-            nsGramsPerExchangeChanged = true;
-        this.nsGramsPerExchange = nsGramsPerExchange;
-
-        nameBasalPattern1 = checkBasalPattern(nameBasalPattern1, getString(c, p, R.string.key_nameBasalPattern1, R.string.default_nameBasalPattern1));
-        nameBasalPattern2 = checkBasalPattern(nameBasalPattern2, getString(c, p, R.string.key_nameBasalPattern2, R.string.default_nameBasalPattern2));
-        nameBasalPattern3 = checkBasalPattern(nameBasalPattern3, getString(c, p, R.string.key_nameBasalPattern3, R.string.default_nameBasalPattern3));
-        nameBasalPattern4 = checkBasalPattern(nameBasalPattern4, getString(c, p, R.string.key_nameBasalPattern4, R.string.default_nameBasalPattern4));
-        nameBasalPattern5 = checkBasalPattern(nameBasalPattern5, getString(c, p, R.string.key_nameBasalPattern5, R.string.default_nameBasalPattern5));
-        nameBasalPattern6 = checkBasalPattern(nameBasalPattern6, getString(c, p, R.string.key_nameBasalPattern6, R.string.default_nameBasalPattern6));
-        nameBasalPattern7 = checkBasalPattern(nameBasalPattern7, getString(c, p, R.string.key_nameBasalPattern7, R.string.default_nameBasalPattern7));
-        nameBasalPattern8 = checkBasalPattern(nameBasalPattern8, getString(c, p, R.string.key_nameBasalPattern8, R.string.default_nameBasalPattern8));
+        nameBasalPattern1 = getString(c, p, R.string.key_nameBasalPattern1, R.string.default_nameBasalPattern1);
+        nameBasalPattern2 = getString(c, p, R.string.key_nameBasalPattern2, R.string.default_nameBasalPattern2);
+        nameBasalPattern3 = getString(c, p, R.string.key_nameBasalPattern3, R.string.default_nameBasalPattern3);
+        nameBasalPattern4 = getString(c, p, R.string.key_nameBasalPattern4, R.string.default_nameBasalPattern4);
+        nameBasalPattern5 = getString(c, p, R.string.key_nameBasalPattern5, R.string.default_nameBasalPattern5);
+        nameBasalPattern6 = getString(c, p, R.string.key_nameBasalPattern6, R.string.default_nameBasalPattern6);
+        nameBasalPattern7 = getString(c, p, R.string.key_nameBasalPattern7, R.string.default_nameBasalPattern7);
+        nameBasalPattern8 = getString(c, p, R.string.key_nameBasalPattern8, R.string.default_nameBasalPattern8);
         nameTempBasalPreset1 = getString(c, p, R.string.key_nameTempBasalPreset1, R.string.default_nameTempBasalPreset1);
         nameTempBasalPreset2 = getString(c, p, R.string.key_nameTempBasalPreset2, R.string.default_nameTempBasalPreset2);
         nameTempBasalPreset3 = getString(c, p, R.string.key_nameTempBasalPreset3, R.string.default_nameTempBasalPreset3);
@@ -363,7 +525,7 @@ public class DataStore extends RealmObject {
         for (int i=0; i < count; i++) {
             urchinStatusLayout[i] = (byte) Integer.parseInt(p.getString(
                     c.getString(R.string.key_urchinStatusLayout) + (i + 1),
-                    c.getString(R.string.default_urchinStatusLayout)));
+                    c.getString(R.string.default_urchinStatusLayout_Empty)));
         }
         this.urchinStatusLayout = urchinStatusLayout;
 
@@ -378,6 +540,11 @@ public class DataStore extends RealmObject {
             pushoverUSERtokenCheck = "";
         }
 
+        pushoverEnablePriorityOverride = getBoolean(c, p, R.string.key_pushoverEnablePriorityOverride, R.bool.default_pushoverEnablePriorityOverride);
+        pushoverPriorityOverride = getString(c, p, R.string.key_pushoverPriorityOverride, R.string.default_pushoverPriorityOverride);
+        pushoverEnableSoundOverride = getBoolean(c, p, R.string.key_pushoverEnableSoundOverride, R.bool.default_pushoverEnableSoundOverride);
+        pushoverSoundOverride = getString(c, p, R.string.key_pushoverSoundOverride, R.string.default_pushoverSoundOverride);
+
         pushoverEnableOnHigh = getBoolean(c, p, R.string.key_pushoverEnableOnHigh, R.bool.default_pushoverEnableOnHigh);
         pushoverPriorityOnHigh = getString(c, p, R.string.key_pushoverPriorityOnHigh, R.string.default_pushoverPriorityOnHigh);
         pushoverSoundOnHigh = getString(c, p, R.string.key_pushoverSoundOnHigh, R.string.default_pushoverSoundOnHigh);
@@ -390,9 +557,19 @@ public class DataStore extends RealmObject {
         pushoverEnableBeforeLow = getBoolean(c, p, R.string.key_pushoverEnableBeforeLow, R.bool.default_pushoverEnableBeforeLow);
         pushoverPriorityBeforeLow = getString(c, p, R.string.key_pushoverPriorityBeforeLow, R.string.default_pushoverPriorityBeforeLow);
         pushoverSoundBeforeLow = getString(c, p, R.string.key_pushoverSoundBeforeLow, R.string.default_pushoverSoundBeforeLow);
+
+        pushoverEnableAutoModeActive = getBoolean(c, p, R.string.key_pushoverEnableAutoModeActive, R.bool.default_pushoverEnableAutoModeActive);
+        pushoverPriorityAutoModeActive = getString(c, p, R.string.key_pushoverPriorityAutoModeActive, R.string.default_pushoverPriorityAutoModeActive);
+        pushoverSoundAutoModeActive = getString(c, p, R.string.key_pushoverSoundAutoModeActive, R.string.default_pushoverSoundAutoModeActive);
+        pushoverEnableAutoModeStop = getBoolean(c, p, R.string.key_pushoverEnableAutoModeStop, R.bool.default_pushoverEnableAutoModeStop);
+        pushoverPriorityAutoModeStop = getString(c, p, R.string.key_pushoverPriorityAutoModeStop, R.string.default_pushoverPriorityAutoModeStop);
+        pushoverSoundAutoModeStop = getString(c, p, R.string.key_pushoverSoundAutoModeStop, R.string.default_pushoverSoundAutoModeStop);
         pushoverEnableAutoModeExit = getBoolean(c, p, R.string.key_pushoverEnableAutoModeExit, R.bool.default_pushoverEnableAutoModeExit);
         pushoverPriorityAutoModeExit = getString(c, p, R.string.key_pushoverPriorityAutoModeExit, R.string.default_pushoverPriorityAutoModeExit);
         pushoverSoundAutoModeExit = getString(c, p, R.string.key_pushoverSoundAutoModeExit, R.string.default_pushoverSoundAutoModeExit);
+        pushoverEnableAutoModeMinMax = getBoolean(c, p, R.string.key_pushoverEnableAutoModeMinMax, R.bool.default_pushoverEnableAutoModeMinMax);
+        pushoverPriorityAutoModeMinMax = getString(c, p, R.string.key_pushoverPriorityAutoModeMinMax, R.string.default_pushoverPriorityAutoModeMinMax);
+        pushoverSoundAutoModeMinMax = getString(c, p, R.string.key_pushoverSoundAutoModeMinMax, R.string.default_pushoverSoundAutoModeMinMax);
 
         pushoverEnablePumpEmergency = getBoolean(c, p, R.string.key_pushoverEnablePumpEmergency, R.bool.default_pushoverEnablePumpEmergency);
         pushoverPriorityPumpEmergency = getString(c, p, R.string.key_pushoverPriorityPumpEmergency, R.string.default_pushoverPriorityPumpEmergency);
@@ -433,32 +610,49 @@ public class DataStore extends RealmObject {
         pushoverEnableUploaderPumpErrors = getBoolean(c, p, R.string.key_pushoverEnableUploaderPumpErrors, R.bool.default_pushoverEnableUploaderPumpErrors);
         pushoverPriorityUploaderPumpErrors = getString(c, p, R.string.key_pushoverPriorityUploaderPumpErrors, R.string.default_pushoverPriorityUploaderPumpErrors);
         pushoverSoundUploaderPumpErrors = getString(c, p, R.string.key_pushoverSoundUploaderPumpErrors, R.string.default_pushoverSoundUploaderPumpErrors);
-        pushoverEnableUploaderPumpConnection = getBoolean(c, p, R.string.key_pushoverEnableUploaderPumpConnection, R.bool.default_pushoverEnableUploaderPumpConnection);
-        pushoverPriorityUploaderPumpConnection = getString(c, p, R.string.key_pushoverPriorityUploaderPumpConnection, R.string.default_pushoverPriorityUploaderPumpConnection);
-        pushoverSoundUploaderPumpConnection = getString(c, p, R.string.key_pushoverSoundUploaderPumpConnection, R.string.default_pushoverSoundUploaderPumpConnection);
+        pushoverEnableUploaderUsbErrors = getBoolean(c, p, R.string.key_pushoverEnableUploaderUsbErrors, R.bool.default_pushoverEnableUploaderUsbErrors);
+        pushoverPriorityUploaderUsbErrors = getString(c, p, R.string.key_pushoverPriorityUploaderUsbErrors, R.string.default_pushoverPriorityUploaderUsbErrors);
+        pushoverSoundUploaderUsbErrors = getString(c, p, R.string.key_pushoverSoundUploaderUsbErrors, R.string.default_pushoverSoundUploaderUsbErrors);
+        pushoverEnableUploaderStatus = getBoolean(c, p, R.string.key_pushoverEnableUploaderStatus, R.bool.default_pushoverEnableUploaderStatus);
+        pushoverPriorityUploaderStatus = getString(c, p, R.string.key_pushoverPriorityUploaderStatus, R.string.default_pushoverPriorityUploaderStatus);
+        pushoverSoundUploaderStatus = getString(c, p, R.string.key_pushoverSoundUploaderStatus, R.string.default_pushoverSoundUploaderStatus);
+        pushoverEnableUploaderStatusConnection = getBoolean(c, p, R.string.key_pushoverEnableUploaderStatusConnection, R.bool.default_pushoverEnableUploaderStatusConnection);
+        pushoverEnableUploaderStatusEstimate = getBoolean(c, p, R.string.key_pushoverEnableUploaderStatusEstimate, R.bool.default_pushoverEnableUploaderStatusEstimate);
         pushoverEnableUploaderBattery = getBoolean(c, p, R.string.key_pushoverEnableUploaderBattery, R.bool.default_pushoverEnableUploaderBattery);
         pushoverPriorityUploaderBattery = getString(c, p, R.string.key_pushoverPriorityUploaderBattery, R.string.default_pushoverPriorityUploaderBattery);
         pushoverSoundUploaderBattery = getString(c, p, R.string.key_pushoverSoundUploaderBattery, R.string.default_pushoverSoundUploaderBattery);
         pushoverEnableBatteryLow = getBoolean(c, p, R.string.key_pushoverEnableBatteryLow, R.bool.default_pushoverEnableBatteryLow);
         pushoverEnableBatteryCharged = getBoolean(c, p, R.string.key_pushoverEnableBatteryCharged, R.bool.default_pushoverEnableBatteryCharged);
 
-        pushoverEnableCleared = getBoolean(c, p, R.string.key_pushoverEnableCleared, R.bool.default_pushoverEnableCleared);
-        pushoverPriorityCleared = getString(c, p, R.string.key_pushoverPriorityCleared, R.string.default_pushoverPriorityCleared);
-        pushoverSoundCleared = getString(c, p, R.string.key_pushoverSoundCleared, R.string.default_pushoverSoundCleared);
-        pushoverEnableSilenced = getBoolean(c, p, R.string.key_pushoverEnableSilenced, R.bool.default_pushoverEnableSilenced);
-        pushoverPrioritySilenced = getString(c, p, R.string.key_pushoverPrioritySilenced, R.string.default_pushoverPrioritySilenced);
-        pushoverSoundSilenced = getString(c, p, R.string.key_pushoverSoundSilenced, R.string.default_pushoverSoundSilenced);
+        pushoverEnableInfoExtended = getBoolean(c, p, R.string.key_pushoverEnableInfoExtended, R.bool.default_pushoverEnableInfoExtended);
+        pushoverEnableTitleTime = getBoolean(c, p, R.string.key_pushoverEnableTitleTime, R.bool.default_pushoverEnableTitleTime);
+        pushoverEnableTitleText = getBoolean(c, p, R.string.key_pushoverEnableTitleText, R.bool.default_pushoverEnableTitleText);
+        pushoverTitleText = getString(c, p, R.string.key_pushoverTitleText, R.string.default_pushoverTitleText);
 
-        pushoverEnablePriorityOverride = getBoolean(c, p, R.string.key_pushoverEnablePriorityOverride, R.bool.default_pushoverEnablePriorityOverride);
-        pushoverPriorityOverride = getString(c, p, R.string.key_pushoverPriorityOverride, R.string.default_pushoverPriorityOverride);
-        pushoverEnableSoundOverride = getBoolean(c, p, R.string.key_pushoverEnableSoundOverride, R.bool.default_pushoverEnableSoundOverride);
-        pushoverSoundOverride = getString(c, p, R.string.key_pushoverSoundOverride, R.string.default_pushoverSoundOverride);
-
-        pushoverInfoExtended = getBoolean(c, p, R.string.key_pushoverInfoExtended, R.bool.default_pushoverInfoExtended);
-        pushoverTitleTime = getBoolean(c, p, R.string.key_pushoverTitleTime, R.bool.default_pushoverTitleTime);
         pushoverEmergencyRetry = getString(c, p, R.string.key_pushoverEmergencyRetry, R.string.default_pushoverEmergencyRetry);
         pushoverEmergencyExpire = getString(c, p, R.string.key_pushoverEmergencyExpire, R.string.default_pushoverEmergencyExpire);
 
+        pushoverEnableCleared = getBoolean(c, p, R.string.key_pushoverEnableCleared, R.bool.default_pushoverEnableCleared);
+        pushoverEnableClearedAcknowledged = getBoolean(c, p, R.string.key_pushoverEnableClearedAcknowledged, R.bool.default_pushoverEnableClearedAcknowledged);
+        pushoverPriorityCleared = getString(c, p, R.string.key_pushoverPriorityCleared, R.string.default_pushoverPriorityCleared);
+        pushoverSoundCleared = getString(c, p, R.string.key_pushoverSoundCleared, R.string.default_pushoverSoundCleared);
+
+        pushoverEnableSilenced = getBoolean(c, p, R.string.key_pushoverEnableSilenced, R.bool.default_pushoverEnableSilenced);
+        pushoverEnableSilencedOverride = getBoolean(c, p, R.string.key_pushoverEnableSilencedOverride, R.bool.default_pushoverEnableSilencedOverride);
+        pushoverPrioritySilenced = getString(c, p, R.string.key_pushoverPrioritySilenced, R.string.default_pushoverPrioritySilenced);
+        pushoverSoundSilenced = getString(c, p, R.string.key_pushoverSoundSilenced, R.string.default_pushoverSoundSilenced);
+
+        pushoverEnableBackfillOnStart = getBoolean(c, p, R.string.key_pushoverEnableBackfillOnStart, R.bool.default_pushoverEnableBackfillOnStart);
+        pushoverBackfillPeriod = getInt(c, p, R.string.key_pushoverBackfillPeriod, R.string.default_pushoverBackfillPeriod);
+        pushoverBackfillLimiter = getInt(c, p, R.string.key_pushoverBackfillLimiter, R.string.default_pushoverBackfillLimiter);
+        pushoverEnableBackfillOverride = getBoolean(c, p, R.string.key_pushoverEnableBackfillOverride, R.bool.default_pushoverEnableBackfillOverride);
+        pushoverBackfillOverrideAge = getInt(c, p, R.string.key_pushoverBackfillOverrideAge, R.string.default_pushoverBackfillOverrideAge);
+        pushoverPriorityBackfill = getString(c, p, R.string.key_pushoverPriorityBackfill, R.string.default_pushoverPriorityBackfill);
+        pushoverSoundBackfill = getString(c, p, R.string.key_pushoverSoundBackfill, R.string.default_pushoverSoundBackfill);
+
+        pushoverSendToDevice = getString(c, p, R.string.key_pushoverSendToDevice, R.string.default_pushoverSendToDevice);
+
+        prefsProcessed = true;
     }
 
     private Boolean getBoolean(Context c, SharedPreferences p, int k, int d) {
@@ -481,26 +675,12 @@ public class DataStore extends RealmObject {
         return p.getString(c.getString(k), c.getString(d));
     }
 
-    private String checkBasalPattern(String oldName, String newName) {
-        if (oldName != null && !oldName.equals(newName))
-            nameBasalPatternChanged = true;
-        return newName;
-    }
-
     public String getLastStatReport() {
         return lastStatReport;
     }
 
     public void setLastStatReport(String lastStatReport) {
         this.lastStatReport = lastStatReport;
-    }
-
-    public Date getNightscoutLimitDate() {
-        return nightscoutLimitDate;
-    }
-
-    public void setNightscoutLimitDate(Date nightscoutLimitDate) {
-        this.nightscoutLimitDate = nightscoutLimitDate;
     }
 
     public long getNightscoutCgmCleanFrom() {
@@ -525,6 +705,14 @@ public class DataStore extends RealmObject {
 
     public void setNightscoutAlwaysUpdateTimestamp(long nightscoutAlwaysUpdateTimestamp) {
         this.nightscoutAlwaysUpdateTimestamp = nightscoutAlwaysUpdateTimestamp;
+    }
+
+    public boolean isNightscoutInitCleanup() {
+        return nightscoutInitCleanup;
+    }
+
+    public void setNightscoutInitCleanup(boolean nightscoutInitCleanup) {
+        this.nightscoutInitCleanup = nightscoutInitCleanup;
     }
 
     public boolean isNightscoutUpload() {
@@ -573,6 +761,22 @@ public class DataStore extends RealmObject {
 
     public void setNightscoutCareportal(boolean nightscoutCareportal) {
         this.nightscoutCareportal = nightscoutCareportal;
+    }
+
+    public boolean isNightscoutUseQuery() {
+        return nightscoutUseQuery;
+    }
+
+    public void setNightscoutUseQuery(boolean nightscoutUseQuery) {
+        this.nightscoutUseQuery = nightscoutUseQuery;
+    }
+
+    public boolean isNightscoutUseProfile() {
+        return nightscoutUseProfile;
+    }
+
+    public void setNightscoutUseProfile(boolean nightscoutUseProfile) {
+        this.nightscoutUseProfile = nightscoutUseProfile;
     }
 
     public boolean isRequestProfile() {
@@ -755,12 +959,36 @@ public class DataStore extends RealmObject {
         return sysEnableEstimateSGV;
     }
 
+    public boolean isSysEnableEstimateSGVeol() {
+        return sysEnableEstimateSGVeol;
+    }
+
+    public boolean isSysEnableEstimateSGVerror() {
+        return sysEnableEstimateSGVerror;
+    }
+
     public boolean isSysEnableReportISIG() {
         return sysEnableReportISIG;
     }
 
+    public int getSysReportISIGinclude() {
+        return sysReportISIGinclude;
+    }
+
+    public int getSysReportISIGminimum() {
+        return sysReportISIGminimum;
+    }
+
+    public int getSysReportISIGnewsensor() {
+        return sysReportISIGnewsensor;
+    }
+
     public boolean isSysEnableClashProtect() {
         return sysEnableClashProtect;
+    }
+
+    public int getSysRssiAllowConnect() {
+        return sysRssiAllowConnect;
     }
 
     public boolean isSysEnablePollOverride() {
@@ -803,12 +1031,104 @@ public class DataStore extends RealmObject {
         return dbgEnableUploadErrors;
     }
 
+    public boolean isResendPumpHistoryBasal() {
+        return resendPumpHistoryBasal;
+    }
+
+    public void setResendPumpHistoryBasal(boolean resendPumpHistoryBasal) {
+        this.resendPumpHistoryBasal = resendPumpHistoryBasal;
+    }
+
+    public boolean isResendPumpHistoryBolus() {
+        return resendPumpHistoryBolus;
+    }
+
+    public void setResendPumpHistoryBolus(boolean resendPumpHistoryBolus) {
+        this.resendPumpHistoryBolus = resendPumpHistoryBolus;
+    }
+
+    public boolean isResendPumpHistoryBG() {
+        return resendPumpHistoryBG;
+    }
+
+    public void setResendPumpHistoryBG(boolean resendPumpHistoryBG) {
+        this.resendPumpHistoryBG = resendPumpHistoryBG;
+    }
+
+    public boolean isResendPumpHistoryMisc() {
+        return resendPumpHistoryMisc;
+    }
+
+    public void setResendPumpHistoryMisc(boolean resendPumpHistoryMisc) {
+        this.resendPumpHistoryMisc = resendPumpHistoryMisc;
+    }
+
+    public boolean isResendPumpHistoryAlarm() {
+        return resendPumpHistoryAlarm;
+    }
+
+    public void setResendPumpHistoryAlarm(boolean resendPumpHistoryAlarm) {
+        this.resendPumpHistoryAlarm = resendPumpHistoryAlarm;
+    }
+
+    public boolean isResendPumpHistorySystem() {
+        return resendPumpHistorySystem;
+    }
+
+    public void setResendPumpHistorySystem(boolean resendPumpHistorySystem) {
+        this.resendPumpHistorySystem = resendPumpHistorySystem;
+    }
+
+    public boolean isResendPumpHistoryDaily() {
+        return resendPumpHistoryDaily;
+    }
+
+    public void setResendPumpHistoryDaily(boolean resendPumpHistoryDaily) {
+        this.resendPumpHistoryDaily = resendPumpHistoryDaily;
+    }
+
+    public boolean isResendPumpHistoryPattern() {
+        return resendPumpHistoryPattern;
+    }
+
+    public void setResendPumpHistoryPattern(boolean resendPumpHistoryPattern) {
+        this.resendPumpHistoryPattern = resendPumpHistoryPattern;
+    }
+
+    public boolean isResendPumpHistoryBolusExChanged() {
+        return resendPumpHistoryBolusExChanged;
+    }
+
+    public void setResendPumpHistoryBolusExChanged(boolean resendPumpHistoryBolusExChanged) {
+        this.resendPumpHistoryBolusExChanged = resendPumpHistoryBolusExChanged;
+    }
+
     public boolean isNsEnableTreatments() {
         return nsEnableTreatments;
     }
 
-    public boolean isNsEnableHistorySync() {
-        return nsEnableHistorySync;
+    public boolean isNsEnableBasalTreatments() {
+        return nsEnableBasalTreatments;
+    }
+
+    public boolean isNsEnableBolusTreatments() {
+        return nsEnableBolusTreatments;
+    }
+
+    public String getNsEnteredBy() {
+        return nsEnteredBy;
+    }
+
+    public boolean isNsEnableDeviceStatus() {
+        return nsEnableDeviceStatus;
+    }
+
+    public boolean isNsEnableDevicePUMP() {
+        return nsEnableDevicePUMP;
+    }
+
+    public String getNsDeviceName() {
+        return nsDeviceName;
     }
 
     public boolean isNsEnableFingerBG() {
@@ -875,14 +1195,6 @@ public class DataStore extends RealmObject {
         return nsGramsPerExchange;
     }
 
-    public void setNsGramsPerExchangeChanged(boolean nsGramsPerExchangeChanged) {
-        this.nsGramsPerExchangeChanged = nsGramsPerExchangeChanged;
-    }
-
-    public boolean isNsGramsPerExchangeChanged() {
-        return nsGramsPerExchangeChanged;
-    }
-
     public boolean isNsEnableInsertBGasCGM() {
         return nsEnableInsertBGasCGM;
     }
@@ -902,11 +1214,21 @@ public class DataStore extends RealmObject {
     public boolean isNsEnableSystemStatus() {
         return nsEnableSystemStatus;
     }
-    public boolean isNsEnableUploaderBatteryFull() {
-        return nsEnableSystemStatus && nsEnableUploaderBatteryFull;
+
+    public boolean isNsSystemStatusUsbErrors() {
+        return nsSystemStatusUsbErrors;
     }
-    public boolean isnsEnableUploaderUsbError() {
-        return nsEnableSystemStatus && nsEnableUploaderUsbError;
+
+    public boolean isNsSystemStatusConnection() {
+        return nsSystemStatusConnection;
+    }
+
+    public boolean isNsSystemStatusBatteryLow() {
+        return nsSystemStatusBatteryLow;
+    }
+
+    public boolean isNsSystemStatusBatteryCharged() {
+        return nsSystemStatusBatteryCharged;
     }
 
     public int getNsAlarmTTL() {
@@ -1119,14 +1441,6 @@ public class DataStore extends RealmObject {
         return "";
     }
 
-    public boolean isNameBasalPatternChanged() {
-        return nameBasalPatternChanged;
-    }
-
-    public void setNameBasalPatternChanged(boolean nameBasalPatternChanged) {
-        this.nameBasalPatternChanged = nameBasalPatternChanged;
-    }
-
     public boolean isPushoverEnable() {
         return pushoverEnable;
     }
@@ -1251,6 +1565,30 @@ public class DataStore extends RealmObject {
         return pushoverSoundBeforeLow;
     }
 
+    public boolean isPushoverEnableAutoModeActive() {
+        return pushoverEnableAutoModeActive;
+    }
+
+    public String getPushoverPriorityAutoModeActive() {
+        return pushoverPriorityAutoModeActive;
+    }
+
+    public String getPushoverSoundAutoModeActive() {
+        return pushoverSoundAutoModeActive;
+    }
+
+    public boolean isPushoverEnableAutoModeStop() {
+        return pushoverEnableAutoModeStop;
+    }
+
+    public String getPushoverPriorityAutoModeStop() {
+        return pushoverPriorityAutoModeStop;
+    }
+
+    public String getPushoverSoundAutoModeStop() {
+        return pushoverSoundAutoModeStop;
+    }
+
     public boolean isPushoverEnableAutoModeExit() {
         return pushoverEnableAutoModeExit;
     }
@@ -1261,6 +1599,18 @@ public class DataStore extends RealmObject {
 
     public String getPushoverSoundAutoModeExit() {
         return pushoverSoundAutoModeExit;
+    }
+
+    public boolean isPushoverEnableAutoModeMinMax() {
+        return pushoverEnableAutoModeMinMax;
+    }
+
+    public String getPushoverPriorityAutoModeMinMax() {
+        return pushoverPriorityAutoModeMinMax;
+    }
+
+    public String getPushoverSoundAutoModeMinMax() {
+        return pushoverSoundAutoModeMinMax;
     }
 
     public boolean isPushoverEnablePumpEmergency() {
@@ -1411,16 +1761,36 @@ public class DataStore extends RealmObject {
         return pushoverSoundUploaderPumpErrors;
     }
 
-    public boolean isPushoverEnableUploaderPumpConnection() {
-        return pushoverEnableUploaderPumpConnection;
+    public boolean isPushoverEnableUploaderUsbErrors() {
+        return pushoverEnableUploaderUsbErrors;
     }
 
-    public String getPushoverPriorityUploaderPumpConnection() {
-        return pushoverPriorityUploaderPumpConnection;
+    public String getPushoverPriorityUploaderUsbErrors() {
+        return pushoverPriorityUploaderUsbErrors;
     }
 
-    public String getPushoverSoundUploaderPumpConnection() {
-        return pushoverSoundUploaderPumpConnection;
+    public String getPushoverSoundUploaderUsbErrors() {
+        return pushoverSoundUploaderUsbErrors;
+    }
+
+    public boolean isPushoverEnableUploaderStatus() {
+        return pushoverEnableUploaderStatus;
+    }
+
+    public String getPushoverPriorityUploaderStatus() {
+        return pushoverPriorityUploaderStatus;
+    }
+
+    public String getPushoverSoundUploaderStatus() {
+        return pushoverSoundUploaderStatus;
+    }
+
+    public boolean isPushoverEnableUploaderStatusConnection() {
+        return pushoverEnableUploaderStatusConnection;
+    }
+
+    public boolean isPushoverEnableUploaderStatusEstimate() {
+        return pushoverEnableUploaderStatusEstimate;
     }
 
     public boolean isPushoverEnableUploaderBattery() {
@@ -1467,12 +1837,12 @@ public class DataStore extends RealmObject {
         return pushoverSoundSilenced;
     }
 
-    public boolean isPushoverInfoExtended() {
-        return pushoverInfoExtended;
+    public boolean isPushoverEnableInfoExtended() {
+        return pushoverEnableInfoExtended;
     }
 
-    public boolean isPushoverTitleTime() {
-        return pushoverTitleTime;
+    public boolean isPushoverEnableTitleTime() {
+        return pushoverEnableTitleTime;
     }
 
     public String getPushoverEmergencyRetry() {
@@ -1498,198 +1868,108 @@ public class DataStore extends RealmObject {
     public String getPushoverSoundOverride() {
         return pushoverSoundOverride;
     }
+
+    public boolean isPushoverEnableTitleText() {
+        return pushoverEnableTitleText;
+    }
+
+    public String getPushoverTitleText() {
+        return pushoverTitleText;
+    }
+
+    public boolean isPushoverEnableClearedAcknowledged() {
+        return pushoverEnableClearedAcknowledged;
+    }
+
+    public boolean isPushoverEnableSilencedOverride() {
+        return pushoverEnableSilencedOverride;
+    }
+
+    public boolean isPushoverEnableBackfillOnStart() {
+        return pushoverEnableBackfillOnStart;
+    }
+
+    public int getPushoverBackfillPeriod() {
+        return pushoverBackfillPeriod;
+    }
+
+    public int getPushoverBackfillLimiter() {
+        return pushoverBackfillLimiter;
+    }
+
+    public boolean isPushoverEnableBackfillOverride() {
+        return pushoverEnableBackfillOverride;
+    }
+
+    public int getPushoverBackfillOverrideAge() {
+        return pushoverBackfillOverrideAge;
+    }
+
+    public String getPushoverPriorityBackfill() {
+        return pushoverPriorityBackfill;
+    }
+
+    public String getPushoverSoundBackfill() {
+        return pushoverSoundBackfill;
+    }
+
+    public String getPushoverSendToDevice() {
+        return pushoverSendToDevice;
+    }
+
+    public long getInitTimestamp() {
+        return initTimestamp;
+    }
+
+    public void setInitTimestamp(long initTimestamp) {
+        this.initTimestamp = initTimestamp;
+    }
+
+    public long getStartupTimestamp() {
+        return startupTimestamp;
+    }
+
+    public void setStartupTimestamp(long startupTimestamp) {
+        this.startupTimestamp = startupTimestamp;
+    }
+
+    public long getCnlUnplugTimestamp() {
+        return cnlUnplugTimestamp;
+    }
+
+    public void setCnlUnplugTimestamp(long cnlUnplugTimestamp) {
+        this.cnlUnplugTimestamp = cnlUnplugTimestamp;
+    }
+
+    public long getCnlPlugTimestamp() {
+        return cnlPlugTimestamp;
+    }
+
+    public void setCnlPlugTimestamp(long cnlPlugTimestamp) {
+        this.cnlPlugTimestamp = cnlPlugTimestamp;
+    }
+
+    public long getCnlLimiterTimestamp() {
+        return cnlLimiterTimestamp;
+    }
+
+    public void setCnlLimiterTimestamp(long cnlLimiterTimestamp) {
+        this.cnlLimiterTimestamp = cnlLimiterTimestamp;
+    }
+
+    public long getReportIsigTimestamp() {
+        return reportIsigTimestamp;
+    }
+
+    public void setReportIsigTimestamp(long reportIsigTimestamp) {
+        this.reportIsigTimestamp = reportIsigTimestamp;
+    }
+
+    public boolean isReportIsigAvailable() {
+        return reportIsigAvailable;
+    }
+
+    public void setReportIsigAvailable(boolean reportIsigAvailable) {
+        this.reportIsigAvailable = reportIsigAvailable;
+    }
 }
-
-/*
-        sysEnableCgmHistory = p.getBoolean("sysEnableCgmHistory", Boolean.parseBoolean(c.getString(R.string.default_sysEnableCgmHistory)));
-        sysCgmHistoryDays = Integer.parseInt(p.getString("sysCgmHistoryDays", c.getString(R.string.default_sysCgmHistoryDays)));
-        sysEnablePumpHistory = p.getBoolean("sysEnablePumpHistory", Boolean.parseBoolean(c.getString(R.string.default_sysEnablePumpHistory)));
-        sysPumpHistoryDays = Integer.parseInt(p.getString("sysPumpHistoryDays", c.getString(R.string.default_sysPumpHistoryDays)));
-        sysPumpHistoryFrequency = Integer.parseInt(p.getString("sysPumpHistoryFrequency", c.getString(R.string.default_sysPumpHistoryFrequency)));
-        sysEnableEstimateSGV = p.getBoolean("sysEnableEstimateSGV", Boolean.parseBoolean(c.getString(R.string.default_sysEnableEstimateSGV)));
-        sysEnableReportISIG = p.getBoolean("sysEnableReportISIG", Boolean.parseBoolean(c.getString(R.string.default_sysEnableReportISIG)));
-        sysEnableClashProtect = p.getBoolean("sysEnableClashProtect", Boolean.parseBoolean(c.getString(R.string.default_sysEnableClashProtect)));
-        sysEnablePollOverride = p.getBoolean("sysEnablePollOverride", Boolean.parseBoolean(c.getString(R.string.default_sysEnablePollOverride)));
-        sysPollGracePeriod = Long.parseLong(p.getString("sysPollGracePeriod", c.getString(R.string.default_sysPollGracePeriod)));
-        sysPollRecoveryPeriod = Long.parseLong(p.getString("sysPollRecoveryPeriod", c.getString(R.string.default_sysPollRecoveryPeriod)));
-        sysPollWarmupPeriod = Long.parseLong(p.getString("sysPollWarmupPeriod", c.getString(R.string.default_sysPollWarmupPeriod)));
-        sysPollErrorRetry = Long.parseLong(p.getString("sysPollErrorRetry", c.getString(R.string.default_sysPollErrorRetry)));
-        sysPollOldSgvRetry = Long.parseLong(p.getString("sysPollOldSgvRetry", c.getString(R.string.default_sysPollOldSgvRetry)));
-        sysEnableWait500ms = p.getBoolean("sysEnableWait500ms", Boolean.parseBoolean(c.getString(R.string.default_sysEnableWait500ms)));
-        sysEnableUsbPermissionDialog = p.getBoolean("sysEnableUsbPermissionDialog", Boolean.parseBoolean(c.getString(R.string.default_sysEnableUsbPermissionDialog)));
-// debug
-        dbgEnableExtendedErrors = p.getBoolean("dbgEnableExtendedErrors", false);
-                dbgEnableUploadErrors = p.getBoolean("dbgEnableUploadErrors", true);
-
-                // nightscout
-                nsEnableTreatments = p.getBoolean("nsEnableTreatments", true);
-                nsEnableHistorySync = p.getBoolean("nsEnableHistorySync", false);
-                nsEnableFingerBG = p.getBoolean("nsEnableFingerBG", true);
-                nsEnableCalibrationInfo = p.getBoolean("nsEnableCalibrationInfo", false);
-                nsEnableSensorChange = p.getBoolean("nsEnableSensorChange", true);
-                nsEnableReservoirChange = p.getBoolean("nsEnableReservoirChange", true);
-                nsEnableInsulinChange = p.getBoolean("nsEnableInsulinChange", false);
-                nsCannulaChangeThreshold = Integer.parseInt(p.getString("nsCannulaChangeThreshold", "0"));
-                nsInsulinChangeThreshold = Integer.parseInt(p.getString("nsInsulinChangeThreshold", "0"));
-                nsEnableBatteryChange = p.getBoolean("nsEnableBatteryChange", true);
-                nsEnableLifetimes = p.getBoolean("nsEnableLifetimes", false);
-                nsEnableProfileUpload = p.getBoolean("nsEnableProfileUpload", true);
-                nsEnableProfileSingle = p.getBoolean("nsEnableProfileSingle", true);
-                nsEnableProfileOffset = p.getBoolean("nsEnableProfileOffset", true);
-                nsProfileDefault = Integer.parseInt(p.getString("nsProfileDefault", "0"));
-                nsActiveInsulinTime = Float.parseFloat(p.getString("nsActiveInsulinTime", "3"));
-                nsEnablePatternChange = p.getBoolean("nsEnablePatternChange", true);
-                nsEnableInsertBGasCGM = p.getBoolean("nsEnableInsertBGasCGM", false);
-                nsEnableAlarms = p.getBoolean("nsEnableAlarms", false);
-                nsAlarmExtended = p.getBoolean("nsAlarmExtended", true);
-                nsAlarmCleared = p.getBoolean("nsAlarmCleared", true);
-                nsEnableSystemStatus = p.getBoolean("nsEnableSystemStatus", false);
-                nsAlarmTTL = Integer.parseInt(p.getString("nsAlarmTTL", "24"));
-                nsEnableDailyTotals = p.getBoolean("nsEnableDailyTotals", true);
-                nsEnableFormatHTML = p.getBoolean("nsEnableFormatHTML", true);
-
-                int nsGramsPerExchange = Integer.parseInt(p.getString("nsGramsPerExchange", "15"));
-                if (this.nsGramsPerExchange != 0 && this.nsGramsPerExchange != nsGramsPerExchange)
-                nsGramsPerExchangeChanged = true;
-                this.nsGramsPerExchange = nsGramsPerExchange;
-
-                nameBasalPattern1 = checkBasalPattern(nameBasalPattern1, p.getString("nameBasalPattern1", c.getString(R.string.BASAL_PATTERN_1)));
-                nameBasalPattern2 = checkBasalPattern(nameBasalPattern2, p.getString("nameBasalPattern2", c.getString(R.string.BASAL_PATTERN_2)));
-                nameBasalPattern3 = checkBasalPattern(nameBasalPattern3, p.getString("nameBasalPattern3", c.getString(R.string.BASAL_PATTERN_3)));
-                nameBasalPattern4 = checkBasalPattern(nameBasalPattern4, p.getString("nameBasalPattern4", c.getString(R.string.BASAL_PATTERN_4)));
-                nameBasalPattern5 = checkBasalPattern(nameBasalPattern5, p.getString("nameBasalPattern5", c.getString(R.string.BASAL_PATTERN_5)));
-                nameBasalPattern6 = checkBasalPattern(nameBasalPattern6, p.getString("nameBasalPattern6", c.getString(R.string.BASAL_PATTERN_6)));
-                nameBasalPattern7 = checkBasalPattern(nameBasalPattern7, p.getString("nameBasalPattern7", c.getString(R.string.BASAL_PATTERN_7)));
-                nameBasalPattern8 = checkBasalPattern(nameBasalPattern8, p.getString("nameBasalPattern8", c.getString(R.string.BASAL_PATTERN_8)));
-                nameTempBasalPreset1 = p.getString("nameTempBasalPreset1", c.getString(R.string.TEMP_BASAL_PRESET_0));
-                nameTempBasalPreset2 = p.getString("nameTempBasalPreset2", c.getString(R.string.TEMP_BASAL_PRESET_1));
-                nameTempBasalPreset3 = p.getString("nameTempBasalPreset3", c.getString(R.string.TEMP_BASAL_PRESET_2));
-                nameTempBasalPreset4 = p.getString("nameTempBasalPreset4", c.getString(R.string.TEMP_BASAL_PRESET_3));
-                nameTempBasalPreset5 = p.getString("nameTempBasalPreset5", c.getString(R.string.TEMP_BASAL_PRESET_4));
-                nameTempBasalPreset6 = p.getString("nameTempBasalPreset6", c.getString(R.string.TEMP_BASAL_PRESET_5));
-                nameTempBasalPreset7 = p.getString("nameTempBasalPreset7", c.getString(R.string.TEMP_BASAL_PRESET_6));
-                nameTempBasalPreset8 = p.getString("nameTempBasalPreset8", c.getString(R.string.TEMP_BASAL_PRESET_7));
-                nameBolusPreset1 = p.getString("nameBolusPreset1", c.getString(R.string.BOLUS_PRESET_0));
-                nameBolusPreset2 = p.getString("nameBolusPreset2", c.getString(R.string.BOLUS_PRESET_1));
-                nameBolusPreset3 = p.getString("nameBolusPreset3", c.getString(R.string.BOLUS_PRESET_2));
-                nameBolusPreset4 = p.getString("nameBolusPreset4", c.getString(R.string.BOLUS_PRESET_3));
-                nameBolusPreset5 = p.getString("nameBolusPreset5", c.getString(R.string.BOLUS_PRESET_4));
-                nameBolusPreset6 = p.getString("nameBolusPreset6", c.getString(R.string.BOLUS_PRESET_5));
-                nameBolusPreset7 = p.getString("nameBolusPreset7", c.getString(R.string.BOLUS_PRESET_6));
-                nameBolusPreset8 = p.getString("nameBolusPreset8", c.getString(R.string.BOLUS_PRESET_7));
-
-                // urchin
-                urchinEnable = p.getBoolean("urchinEnable", false);
-                urchinBasalPeriod = Integer.parseInt(p.getString("urchinBasalPeriod", "23"));
-                urchinBasalScale = Integer.parseInt(p.getString("urchinBasalScale", "0"));
-                urchinBolusGraph = p.getBoolean("urchinBolusGraph", false);
-                urchinBolusTags = p.getBoolean("urchinBolusTags", false);
-                urchinBolusPop = Integer.parseInt(p.getString("urchinBolusPop", "0"));
-                urchinTimeStyle = Integer.parseInt(p.getString("urchinTimeStyle", "1"));
-                urchinDurationStyle = Integer.parseInt(p.getString("urchinDurationStyle", "1"));
-                urchinUnitsStyle = Integer.parseInt(p.getString("urchinUnitsStyle", "1"));
-                urchinBatteyStyle = Integer.parseInt(p.getString("urchinBatteyStyle", "1"));
-                urchinConcatenateStyle = Integer.parseInt(p.getString("urchinConcatenateStyle", "2"));
-                urchinCustomText1 = p.getString("urchinCustomText1", "");
-                urchinCustomText2 = p.getString("urchinCustomText2", "");
-
-                int count = 35;
-                byte[] urchinStatusLayout = new byte[count];
-                for (int i=0; i < count; i++) {
-        urchinStatusLayout[i] = (byte) Integer.parseInt(p.getString("urchinStatusLayout" + (i + 1), "0"));
-        }
-        this.urchinStatusLayout = urchinStatusLayout;
-
-        // pushover
-        pushoverEnable = p.getBoolean("pushoverEnable", false);
-        pushoverAPItoken = p.getString("pushoverAPItoken", "");
-        pushoverUSERtoken = p.getString("pushoverUSERtoken", "");
-
-        if (!pushoverEnable) {
-        // will force a validation check when pushover re-enabled
-        pushoverAPItokenCheck = "";
-        pushoverUSERtokenCheck = "";
-        }
-
-        pushoverEnableOnHigh = p.getBoolean("pushoverEnableOnHigh", true);
-        pushoverPriorityOnHigh = p.getString("pushoverPriorityOnHigh", "emergency");
-        pushoverSoundOnHigh = p.getString("pushoverSoundOnHigh", "persistent");
-        pushoverEnableOnLow = p.getBoolean("pushoverEnableOnLow", true);
-        pushoverPriorityOnLow = p.getString("pushoverPriorityOnLow", "emergency");
-        pushoverSoundOnLow = p.getString("pushoverSoundOnLow", "persistent");
-        pushoverEnableBeforeHigh = p.getBoolean("pushoverEnableBeforeHigh", true);
-        pushoverPriorityBeforeHigh = p.getString("pushoverPriorityBeforeHigh", "high");
-        pushoverSoundBeforeHigh = p.getString("pushoverSoundBeforeHigh", "updown");
-        pushoverEnableBeforeLow = p.getBoolean("pushoverEnableBeforeLow", true);
-        pushoverPriorityBeforeLow = p.getString("pushoverPriorityBeforeLow", "high");
-        pushoverSoundBeforeLow = p.getString("pushoverSoundBeforeLow", "updown");
-        pushoverEnableAutoModeExit = p.getBoolean("pushoverEnableAutoModeExit", true);
-        pushoverPriorityAutoModeExit = p.getString("pushoverPriorityAutoModeExit", "high");
-        pushoverSoundAutoModeExit = p.getString("pushoverSoundAutoModeExit", "updown");
-
-        pushoverEnablePumpEmergency = p.getBoolean("pushoverEnablePumpEmergency", true);
-        pushoverPriorityPumpEmergency = p.getString("pushoverPriorityPumpEmergency", "emergency");
-        pushoverSoundPumpEmergency = p.getString("pushoverSoundPumpEmergency", "persistent");
-        pushoverEnablePumpActionable = p.getBoolean("pushoverEnablePumpActionable", true);
-        pushoverPriorityPumpActionable = p.getString("pushoverPriorityPumpActionable", "high");
-        pushoverSoundPumpActionable = p.getString("pushoverSoundPumpActionable", "updown");
-        pushoverEnablePumpInformational = p.getBoolean("pushoverEnablePumpInformational", true);
-        pushoverPriorityPumpInformational = p.getString("pushoverPriorityPumpInformational", "normal");
-        pushoverSoundPumpInformational = p.getString("pushoverSoundPumpInformational", "bike");
-        pushoverEnablePumpReminder = p.getBoolean("pushoverEnablePumpReminder", true);
-        pushoverPriorityPumpReminder = p.getString("pushoverPriorityPumpReminder", "normal");
-        pushoverSoundPumpReminder = p.getString("pushoverSoundPumpReminder", "tugboat");
-
-        pushoverEnableBolus = p.getBoolean("pushoverEnableBolus", true);
-        pushoverPriorityBolus = p.getString("pushoverPriorityBolus", "normal");
-        pushoverSoundBolus = p.getString("pushoverSoundBolus", "classical");
-        pushoverEnableBasal = p.getBoolean("pushoverEnableBasal", true);
-        pushoverPriorityBasal = p.getString("pushoverPriorityBasal", "normal");
-        pushoverSoundBasal = p.getString("pushoverSoundBasal", "pianobar");
-        pushoverEnableSuspendResume = p.getBoolean("pushoverEnableSuspendResume", true);
-        pushoverPrioritySuspendResume = p.getString("pushoverPrioritySuspendResume", "normal");
-        pushoverSoundSuspendResume = p.getString("pushoverSoundSuspendResume", "gamelan");
-        pushoverEnableBG = p.getBoolean("pushoverEnableBG", true);
-        pushoverPriorityBG = p.getString("pushoverPriorityBG", "normal");
-        pushoverSoundBG = p.getString("pushoverSoundBG", "bike");
-        pushoverEnableCalibration = p.getBoolean("pushoverEnableCalibration", false);
-        pushoverPriorityCalibration = p.getString("pushoverPriorityCalibration", "normal");
-        pushoverSoundCalibration = p.getString("pushoverSoundCalibration", "bike");
-        pushoverEnableConsumables = p.getBoolean("pushoverEnableConsumables", true);
-        pushoverPriorityConsumables = p.getString("pushoverPriorityConsumables", "normal");
-        pushoverSoundConsumables = p.getString("pushoverSoundConsumables", "bike");
-        pushoverLifetimeInfo = p.getBoolean("pushoverLifetimeInfo", false);
-        pushoverEnableDailyTotals = p.getBoolean("pushoverEnableDailyTotals", true);
-        pushoverPriorityDailyTotals = p.getString("pushoverPriorityDailyTotals", "normal");
-        pushoverSoundDailyTotals = p.getString("pushoverSoundDailyTotals", "bike");
-
-        pushoverEnableUploaderPumpErrors = p.getBoolean("pushoverEnableUploaderPumpErrors", true);
-        pushoverPriorityUploaderPumpErrors = p.getString("pushoverPriorityUploaderPumpErrors", "emergency");
-        pushoverSoundUploaderPumpErrors = p.getString("pushoverSoundUploaderPumpErrors", "persistent");
-        pushoverEnableUploaderPumpConnection = p.getBoolean("pushoverEnableUploaderPumpConnection", true);
-        pushoverPriorityUploaderPumpConnection = p.getString("pushoverPriorityUploaderPumpConnection", "normal");
-        pushoverSoundUploaderPumpConnection = p.getString("pushoverSoundUploaderPumpConnection", "bike");
-        pushoverEnableUploaderBattery = p.getBoolean("pushoverEnableUploaderBattery", true);
-        pushoverPriorityUploaderBattery = p.getString("pushoverPriorityUploaderBattery", "normal");
-        pushoverSoundUploaderBattery = p.getString("pushoverSoundUploaderBattery", "bike");
-        pushoverEnableBatteryLow = p.getBoolean("pushoverEnableBatteryLow", true);
-        pushoverEnableBatteryCharged = p.getBoolean("pushoverEnableBatteryCharged", true);
-
-        pushoverEnableCleared = p.getBoolean("pushoverEnableCleared", true);
-        pushoverPriorityCleared = p.getString("pushoverPriorityCleared", "low");
-        pushoverSoundCleared = p.getString("pushoverSoundCleared", "none");
-        pushoverEnableSilenced = p.getBoolean("pushoverEnableSilenced", false);
-        pushoverPrioritySilenced = p.getString("pushoverPrioritySilenced", "normal");
-        pushoverSoundSilenced = p.getString("pushoverSoundSilenced", "none");
-
-        pushoverEnablePriorityOverride = p.getBoolean("pushoverEnablePriorityOverride", false);
-        pushoverPriorityOverride = p.getString("pushoverPriorityOverride", "-2");
-        pushoverEnableSoundOverride = p.getBoolean("pushoverEnableSoundOverride", false);
-        pushoverSoundOverride = p.getString("pushoverSoundOverride", "none");
-
-        pushoverInfoExtended = p.getBoolean("pushoverInfoExtended", true);
-        pushoverTitleTime = p.getBoolean("pushoverTitleTime", true);
-        pushoverEmergencyRetry = p.getString("pushoverEmergencyRetry", "30");
-        pushoverEmergencyExpire = p.getString("pushoverEmergencyExpire", "3600");
-
-*/

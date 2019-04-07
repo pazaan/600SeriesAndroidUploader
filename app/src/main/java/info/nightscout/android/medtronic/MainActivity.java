@@ -9,6 +9,7 @@ import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,15 +19,22 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.menu.MenuView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Layout;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
 import android.text.format.DateUtils;
+import android.text.style.AlignmentSpan;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -38,7 +46,7 @@ import android.widget.Toast;
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
 import com.jjoe64.graphview.DefaultLabelFormatter;
-import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.OnDataPointTapListener;
 import com.jjoe64.graphview.series.PointsGraphSeries;
@@ -51,7 +59,6 @@ import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.io.Serializable;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -60,6 +67,7 @@ import info.nightscout.android.R;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.eula.Eula;
 import info.nightscout.android.eula.Eula.OnEulaAgreedTo;
+import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
@@ -83,10 +91,24 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Context mContext;
 
     private boolean mEnableCgmService;
+    private boolean settingsChanged;
     private SharedPreferences mPrefs;
 
-    private GraphView mChart;
+    private ChartSgv mChart;
     private int chartZoom;
+    private long chartTimeOffset;
+
+    private long chartChangeTimestamp;
+
+    private boolean landscape;
+
+    private RealmResults<PumpHistoryCGM> displayChartResults;
+    private RealmResults<PumpStatusEvent> displayPumpResults;
+    private RealmResults<PumpHistoryCGM> displayCgmResults;
+    private long timeLastSGV;
+    private int pumpBattery;
+
+    private Toast toast;
 
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
@@ -101,31 +123,76 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate called");
+        Log.i(TAG, "onCreate called");
         super.onCreate(savedInstanceState);
 
         mContext = this.getBaseContext();
 
         RealmKit.compact(mContext);
 
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
+        final boolean versionChanged = !mPrefs.getString("versionName", "n/a").equals(getString(R.string.versionName));
+        final long now = System.currentTimeMillis();
+
         storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        dataStore = storeRealm.where(DataStore.class).findFirst();
+        if (dataStore == null) {
+            Log.i(TAG, "Creating initial dataStore in Realm");
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
+                    dataStore = realm.createObject(DataStore.class);
+                    dataStore.setStartupTimestamp(now);
+                    dataStore.setCnlPlugTimestamp(now);
+                    dataStore.setCnlUnplugTimestamp(now);
+                    dataStore.setCnlLimiterTimestamp(now);
+                }
+            });
+        }
+
+        if (versionChanged) {
+            Log.i(TAG, String.format("Version changed: %s --> %s. Clearing log and setting init timestamp.",
+                    mPrefs.getString("versionName", "n/a"), getString(R.string.versionName)));
+            mPrefs.edit().putString("versionName", getString(R.string.versionName)).commit();
+            // clear the log as string resource ids may have changed
+            try {
+                Realm realm = Realm.getInstance(UploaderApplication.getUserLogConfiguration());
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        realm.deleteAll();
+                    }
+                });
+                realm.close();
+            } catch (Exception ignored) {
+            }
+            // set the init time, init cleanup and always update older items in nightscout
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
+                    dataStore.setInitTimestamp(now);
+                    dataStore.setNightscoutInitCleanup(true);
+                    dataStore.setNightscoutAlwaysUpdateTimestamp(now);
+                }
+            });
+
+            // v0.7.0 changed minimum backfill period to 7 days
+            if (mPrefs.getString(getString(R.string.key_sysCgmHistoryDays), "").equals("1"))
+                mPrefs.edit().putString(getString(R.string.key_sysCgmHistoryDays), "7").apply();
+            if (mPrefs.getString(getString(R.string.key_sysPumpHistoryDays), "").equals("1"))
+                mPrefs.edit().putString(getString(R.string.key_sysPumpHistoryDays), "7").apply();
+            }
+
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(@NonNull Realm realm) {
-                dataStore = storeRealm.where(DataStore.class).findFirst();
-
-                if (dataStore == null)
-                    dataStore = realm.createObject(DataStore.class);
-
-                // limit date for NS backfill sync period, set to this init date to stop overwrite of older NS data (pref option to override)
-                if (dataStore.getNightscoutLimitDate() == null)
-                    dataStore.setNightscoutLimitDate(new Date(System.currentTimeMillis()));
+                dataStore.copyPrefs(mContext, mPrefs);
             }
         });
 
-        mPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         mPrefs.registerOnSharedPreferenceChangeListener(this);
-        copyPrefsToDataStore(mPrefs);
 
         setContentView(R.layout.activity_main);
 
@@ -162,31 +229,31 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         final PrimaryDrawerItem itemSettings = new PrimaryDrawerItem()
-                .withName(R.string.main_menu_settings)
+                .withName(R.string.main_menu__settings)
                 .withIcon(GoogleMaterial.Icon.gmd_settings)
                 .withSelectable(false);
         final PrimaryDrawerItem itemRegisterUsb = new PrimaryDrawerItem()
-                .withName(R.string.main_menu_registered_devices)
+                .withName(R.string.main_menu__registered_devices)
                 .withIcon(GoogleMaterial.Icon.gmd_usb)
                 .withSelectable(false);
         final PrimaryDrawerItem itemStopCollecting = new PrimaryDrawerItem()
-                .withName(R.string.main_menu_stop_collecting_data)
+                .withName(R.string.main_menu__stop_collecting_data)
                 .withIcon(GoogleMaterial.Icon.gmd_power_settings_new)
                 .withSelectable(false);
         final PrimaryDrawerItem itemGetNow = new PrimaryDrawerItem()
-                .withName(R.string.main_menu_read_data_now)
+                .withName(R.string.main_menu__read_data_now)
                 .withIcon(GoogleMaterial.Icon.gmd_refresh)
                 .withSelectable(false);
         final PrimaryDrawerItem itemUpdateProfile = new PrimaryDrawerItem()
-                .withName(R.string.main_menu_update_pump_profile)
+                .withName(R.string.main_menu__update_pump_profile)
                 .withIcon(GoogleMaterial.Icon.gmd_insert_chart)
                 .withSelectable(false);
         final PrimaryDrawerItem itemClearLog = new PrimaryDrawerItem()
-                .withName(R.string.main_menu_clear_log)
+                .withName(R.string.main_menu__clear_log)
                 .withIcon(GoogleMaterial.Icon.gmd_clear_all)
                 .withSelectable(false);
         final PrimaryDrawerItem itemCheckForUpdate = new PrimaryDrawerItem()
-                .withName(R.string.main_menu_check_for_app_update)
+                .withName(R.string.main_menu__check_for_app_update)
                 .withIcon(GoogleMaterial.Icon.gmd_update)
                 .withSelectable(false);
 
@@ -227,17 +294,17 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             if (mEnableCgmService) {
                                 sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_NOW));
                             } else {
-                                UserLogMessage.getInstance().add(R.string.ul_main_cgm_service_disabled);
+                                UserLogMessage.getInstance().add(R.string.ul_main__cgm_service_disabled);
                             }
                         } else if (drawerItem.equals(itemUpdateProfile)) {
                             if (mEnableCgmService) {
                                 if (dataStore.isNsEnableProfileUpload()) {
                                     sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_PROFILE));
                                 } else {
-                                    UserLogMessage.getInstance().add(getString(R.string.ul_main_pump_profile_disabled));
+                                    UserLogMessage.getInstance().add(getString(R.string.ul_main__pump_profile_disabled));
                                 }
                             } else {
-                                UserLogMessage.getInstance().add(R.string.ul_main_cgm_service_disabled);
+                                UserLogMessage.getInstance().add(R.string.ul_main__cgm_service_disabled);
                             }
                         } else if (drawerItem.equals(itemClearLog)) {
                             UserLogMessage.getInstance().clear();
@@ -250,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 })
                 .build();
 
-        final Boolean landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+        landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
 
         chartZoom = Integer.parseInt(mPrefs.getString("chartZoom", "3"));
 
@@ -260,22 +327,49 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getViewport().setScalable(false);
         mChart.getViewport().setScrollable(false);
 
-        emptyChart();
+        // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1
+        // setOnXAxisBoundsChangedListener is n/a in this version
+        // setHumanRounding is n/a in this version
 
-// due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setOnXAxisBoundsChangedListener is n/a in this version
-/*
-        mChart.getViewport().setOnXAxisBoundsChangedListener(new Viewport.OnXAxisBoundsChangedListener() {
+        mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
+
+        float factor = landscape ? 1.2f : 1.0f;
+        float pixels = dipToPixels(getApplicationContext(), 12 * factor);
+        mChart.getGridLabelRenderer().setTextSize(pixels);
+        mChart.getGridLabelRenderer().setLabelHorizontalHeight((int) (pixels * 0.65));
+        mChart.getGridLabelRenderer().reloadStyles();
+
+        mChart.getGridLabelRenderer().setLabelFormatter(
+                new DefaultLabelFormatter()
+                {
+                    @Override
+                    public String formatLabel(double value, boolean isValueX) {
+                        if (!isValueX)
+                            return FormatKit.getInstance().formatAsGlucose((int) value);
+                        else if (landscape)
+                            return FormatKit.getInstance().formatAsClock((long) value);
+                        else
+                            return FormatKit.getInstance().formatAsClockNoAmPm((long) value);
+                    }
+                }
+        );
+
+        updateChart(null, now);
+
+        mChart.setOnTouchListener(new OnSwipeTouchListener(mContext)
+        {
             @Override
-            public void onXAxisBoundsChanged(double minX, double maxX, Reason reason) {
-                double rightX = mChart.getSeries().get(0).getHighestValueX();
-                hasZoomedChart = (rightX != maxX || rightX - chartZoom * 60 * 60 * 1000 != minX);
+            public void onSwipeLeft() {
+                chartTimeOffset -= chartZoom * 60 * 60000L;
+                chartViewAdjusted();
             }
-        });
-*/
-
-        mChart.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onSwipeRight() {
+                chartTimeOffset += chartZoom * 60 * 60000L;
+                chartViewAdjusted();
+            }
+            @Override
+            public void onLongClick() {
                 switch (chartZoom) {
                     case 1:
                         chartZoom = 3;
@@ -293,58 +387,167 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         chartZoom = 1;
                 }
                 mPrefs.edit().putString("chartZoom", Integer.toString(chartZoom)).apply();
-                refreshDisplayChart();
+                chartViewAdjusted();
+            }
 
-                String text = getString(R.string.main_chart, chartZoom);
-                Snackbar.make(v, text, Snackbar.LENGTH_SHORT)
-                        .setAction("Action", null).show();
+        });
 
-                return true;
+        findViewById(R.id.view_sgv).setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                chartTimeOffset = 0;
+                chartViewAdjusted();
             }
         });
 
-        mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
-
-        float factor = 1.0f;
-        if (landscape) factor = 1.2f;
-
-        float pixels = dipToPixels(getApplicationContext(), 12 * factor);
-        mChart.getGridLabelRenderer().setTextSize(pixels);
-        mChart.getGridLabelRenderer().setLabelHorizontalHeight((int) (pixels * 0.65));
-        mChart.getGridLabelRenderer().reloadStyles();
-
-// due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1 and setHumanRounding is n/a in this version
-//        mChart.getGridLabelRenderer().setHumanRounding(false);
-
-        mChart.getGridLabelRenderer().setLabelFormatter(
-                new DefaultLabelFormatter() {
-                    @Override
-                    public String formatLabel(double value, boolean isValueX) {
-                        if (!isValueX)
-                            return FormatKit.getInstance().formatAsGlucose((int) value);
-                        else if (landscape)
-                            return FormatKit.getInstance().formatAsClock((long) value);
-                        else
-                            return FormatKit.getInstance().formatAsClockNoAmPm((long) value);
-                    }
-                }
-        );
-
-        String screenSleep = mPrefs.getString("screenSleep", "1");
-        if (screenSleep.equals("3")
-                || (screenSleep.equals("1") && landscape)
-                || (screenSleep.equals("2") && !landscape))
-            mChart.setKeepScreenOn(true);
-        else
-            mChart.setKeepScreenOn(false);
+        setScreenSleepMode();
 
         if (!landscape)
             userLogDisplay = new UserLogDisplay(mContext);
     }
 
+    private void setScreenSleepMode() {
+        if (mChart != null) {
+            String sleep = mPrefs.getString("screenSleep", "1");
+            if (sleep.equals("3")
+                    || (sleep.equals("1") && landscape)
+                    || (sleep.equals("2") && !landscape))
+                mChart.setKeepScreenOn(true);
+            else
+                mChart.setKeepScreenOn(false);
+        }
+    }
+
+    private void chartViewAdjusted() {
+        chartChangeTimestamp = System.currentTimeMillis();
+
+        long end = timeLastSGV == 0 ? chartChangeTimestamp - chartTimeOffset : timeLastSGV - chartTimeOffset;
+        long start = end - chartZoom * 60 * 60000L;
+
+        String t = String.format(getString(R.string.main_screen__value_hour_chart), chartZoom);
+
+        String m = String.format("\n%s %s",
+                FormatKit.getInstance().formatAsMonthName(start),
+                FormatKit.getInstance().formatAsDay(start)
+        );
+
+        String d = String.format("\n%s - %s",
+                FormatKit.getInstance().formatAsDayClock(start),
+                FormatKit.getInstance().formatAsDayClock(end)
+        );
+
+        SpannableStringBuilder ssb = new SpannableStringBuilder();
+        ssb.append(t);
+        ssb.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), ssb.length() - t.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        ssb.setSpan(new StyleSpan(Typeface.BOLD), ssb.length() - t.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        ssb.append(m);
+        ssb.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), ssb.length() - m.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        ssb.setSpan(new RelativeSizeSpan(0.75f), ssb.length() - m.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        ssb.append(d);
+        ssb.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), ssb.length() - d.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        ssb.setSpan(new RelativeSizeSpan(0.85f), ssb.length() - d.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        toast = serveToast(ssb, toast, findViewById(R.id.view_sgv));
+
+        refreshDisplayChart();
+    }
+
+    private Toast serveToast(SpannableStringBuilder ssb, Toast toast, View v) {
+        if (toast != null) toast.cancel();
+
+        toast = Toast.makeText(mContext, ssb, Toast.LENGTH_SHORT);
+
+        View parent = (View) v.getParent();
+        int parentHeight = parent.getHeight();
+        int yOffset = (parentHeight / 2) - (v.getTop() + ((v.getBottom() - v.getTop()) / 2));
+
+        toast.setGravity(Gravity.NO_GRAVITY, 0, -yOffset);
+        toast.show();
+        return toast;
+    }
+
+    public class OnSwipeTouchListener implements View.OnTouchListener {
+
+        private final GestureDetector gestureDetector;
+
+        public OnSwipeTouchListener(Context context) {
+            gestureDetector = new GestureDetector(context, new GestureListener());
+        }
+
+        public void onClick() {
+        }
+
+        public void onDoubleClick() {
+        }
+
+        public void onLongClick() {
+        }
+
+        public void onSwipeLeft() {
+        }
+
+        public void onSwipeRight() {
+        }
+
+        public boolean onTouch(View v, MotionEvent event) {
+            v.performClick();
+            return gestureDetector.onTouchEvent(event);
+        }
+
+        private final class GestureListener extends GestureDetector.SimpleOnGestureListener {
+
+            private static final int SWIPE_DISTANCE_THRESHOLD = 100;
+            private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return super.onDown(e);
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                onClick();
+                return super.onSingleTapConfirmed(e);
+            }
+
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                onDoubleClick();
+                return super.onDoubleTap(e);
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+                onLongClick();
+                super.onLongPress(e);
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                float distanceX = e2.getX() - e1.getX();
+                float distanceY = e2.getY() - e1.getY();
+                if (Math.abs(distanceX) > Math.abs(distanceY) && Math.abs(distanceX) > SWIPE_DISTANCE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                    if (distanceX > 0)
+                        onSwipeRight();
+                    else
+                        onSwipeLeft();
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
+
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         Log.d(TAG, "onSaveInstanceState called");
+        outState.putLong("chartChangeTimestamp", chartChangeTimestamp);
+        outState.putLong("chartTimeOffset", chartTimeOffset);
+        outState.putBoolean("settingsChanged", settingsChanged);
         super.onSaveInstanceState(outState);
     }
 
@@ -352,6 +555,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         Log.d(TAG, "onRestoreInstanceState called");
         super.onRestoreInstanceState(savedInstanceState);
+        chartChangeTimestamp = savedInstanceState.getLong("chartChangeTimestamp", 0);
+        chartTimeOffset = savedInstanceState.getLong("chartTimeOffset", 0);
+        settingsChanged = savedInstanceState.getBoolean("settingsChanged", false);
     }
 
     @Override
@@ -366,7 +572,16 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         checkForUpdateBackground(5);
 
         startDisplay();
-        if (userLogDisplay != null) userLogDisplay.start(dataStore.isDbgEnableExtendedErrors());
+        if (userLogDisplay != null)
+            userLogDisplay.start(dataStore.isDbgEnableExtendedErrors());
+
+        if (mEnableCgmService)
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_OVERDUE));
+
+        if (settingsChanged) {
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_SETTINGS_CHANGED));
+            settingsChanged = false;
+        }
     }
 
     @Override
@@ -397,10 +612,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         Log.d(TAG, "onDestroy called");
         super.onDestroy();
 
+        PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
+
         if (!mEnableCgmService) stopMasterService();
+        if (realmAsyncTask != null) realmAsyncTask.cancel();
 
         shutdownMessage();
-        PreferenceManager.getDefaultSharedPreferences(getBaseContext()).unregisterOnSharedPreferenceChangeListener(this);
 
         closeRealm();
     }
@@ -450,12 +667,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             historyRealm = Realm.getInstance(UploaderApplication.getHistoryConfiguration());
     }
 
-
     synchronized private void openRealmDatastore() {
         if (storeRealm == null) {
             storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-        }
-        if (dataStore == null) {
             dataStore = storeRealm.where(DataStore.class).findFirst();
         }
     }
@@ -494,26 +708,26 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         // userlog message at startup when no service is running
         if (!mPrefs.getBoolean("EnableCgmService", false)) {
 
-            UserLogMessage.getInstance().add(UserLogMessage.TYPE.STARTUP, R.string.ul_main_hello);
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.STARTUP, R.string.ul_main__hello);
 
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
                     String.format("{id;%s}: {id;%s}",
-                            R.string.ul_main_uploading,
-                            dataStore.isNightscoutUpload() ? R.string.text_enabled : R.string.text_disabled));
+                            R.string.ul_main__uploading,
+                            dataStore.isNightscoutUpload() ? R.string.enabled : R.string.disabled));
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
                     String.format("{id;%s}: {id;%s}",
-                            R.string.ul_main_treatments,
-                            dataStore.isNsEnableTreatments() ? R.string.text_enabled : R.string.text_disabled
+                            R.string.ul_main__treatments,
+                            dataStore.isNsEnableTreatments() ? R.string.enabled : R.string.disabled
                     ));
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
                     String.format("{id;%s}: {qid;%s;%s}",
-                            R.string.ul_main_poll_interval,
+                            R.string.ul_main__poll_interval,
                             R.plurals.minutes,
                             dataStore.getPollInterval() / 60000L
                     ));
             UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
                     String.format("{id;%s}: {qid;%s;%s}",
-                            R.string.ul_main_low_battery_poll_interval,
+                            R.string.ul_main__low_battery_poll_interval,
                             R.plurals.minutes,
                             dataStore.getLowBatPollInterval() / 60000L
                     ));
@@ -522,15 +736,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             if (historyFrequency > 0) {
                 UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
                         String.format("{id;%s}: {qid;%s;%s}",
-                                R.string.ul_main_auto_mode_update,
+                                R.string.ul_main__auto_mode_update,
                                 R.plurals.minutes,
                                 historyFrequency
                         ));
             } else {
                 UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
                         String.format("{id;%s}: {id;%s}",
-                                R.string.ul_main_auto_mode_update,
-                                R.string.ul_main_events_only
+                                R.string.ul_main__auto_mode_update,
+                                R.string.ul_main__events_only
                         ));
             }
 
@@ -541,7 +755,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void shutdownMessage() {
         // userlog message at shutdown when 'stop collecting data' selected
         if (!mPrefs.getBoolean("EnableCgmService", false)) {
-            UserLogMessage.getInstance().add(UserLogMessage.TYPE.SHUTDOWN, R.string.ul_main_goodbye);
+            UserLogMessage.getInstance().add(UserLogMessage.TYPE.SHUTDOWN, R.string.ul_main__goodbye);
             UserLogMessage.getInstance().add("---------------------------------------------------");
         }
     }
@@ -566,7 +780,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private void startMasterService() {
         Log.i(TAG, "startMasterService called");
         if (mEnableCgmService) {
-            mPrefs.edit().putBoolean("EnableCgmService", true).commit();
+            if (!mPrefs.getBoolean("EnableCgmService", false)) {
+                mPrefs.edit().putBoolean("EnableCgmService", true).commit();
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setStartupTimestamp(System.currentTimeMillis());
+                    }
+                });
+            }
             startService(new Intent(this, MasterService.class));
         } else {
             mPrefs.edit().putBoolean("EnableCgmService", false).commit();
@@ -576,19 +798,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void stopMasterService() {
         Log.i(TAG, "stopMasterService called");
-        UserLogMessage.getInstance().add(UserLogMessage.TYPE.INFO, R.string.ul_main_shutting_down_cgm_service);
+        UserLogMessage.getInstance().add(UserLogMessage.TYPE.INFO, R.string.ul_main__shutting_down_cgm_service);
         mPrefs.edit().putBoolean("EnableCgmService", false).commit();
         sendBroadcast(new Intent(MasterService.Constants.ACTION_STOP_SERVICE));
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.d(TAG, "onSharedPreferenceChanged called");
-
-        copyPrefsToDataStore(sharedPreferences);
-
-        if (mEnableCgmService)
-            sendBroadcast(new Intent(MasterService.Constants.ACTION_STATUS_UPDATE));
+        Log.d(TAG, "onSharedPreferenceChanged called, key = " + key);
 
         if (key.equals(getString(R.string.key_eulaAccepted))) {
             if (!sharedPreferences.getBoolean(getString(R.string.key_eulaAccepted), getResources().getBoolean(R.bool.default_eulaAccepted))) {
@@ -599,20 +816,64 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 startMasterService();
             }
         }
-        else if (key.equals("chartZoom"))
-            chartZoom = Integer.parseInt(sharedPreferences.getString("chartZoom", "3"));
-        else if (key.contains("urchin") && mEnableCgmService)
-            sendBroadcast(new Intent(MasterService.Constants.ACTION_URCHIN_UPDATE));
+
+        else if (key.equals(getString(R.string.key_chartZoom))) {
+            chartZoom = Integer.parseInt(sharedPreferences.getString(getString(R.string.key_chartZoom), getString(R.string.default_chartZoom)));
+        }
+
+        else if (key.equals(getString(R.string.key_screenSleep))) {
+            setScreenSleepMode();
+        }
+
+        else if (key != "EnableCgmService") {
+            updatePrefs();
+            if (mEnableCgmService) {
+                if (key.contains("urchin") && mEnableCgmService) {
+                    sendBroadcast(new Intent(MasterService.Constants.ACTION_URCHIN_UPDATE));
+                } else {
+                    sendBroadcast(new Intent(MasterService.Constants.ACTION_STATUS_UPDATE));
+                    // send message to master service after exiting the settings menu
+                    settingsChanged = true;
+                }
+            }
+        }
     }
 
-    public void copyPrefsToDataStore(final SharedPreferences sharedPreferences) {
-        openRealmDatastore();
-        storeRealm.executeTransaction(new Realm.Transaction() {
-            @Override
-            public void execute(@NonNull Realm realm) {
-                dataStore.copyPrefs(mContext, sharedPreferences);
+    private io.realm.RealmAsyncTask realmAsyncTask;
+
+    public void updatePrefs() {
+        try {
+            if (storeRealm == null) {
+                realmAsyncTask = Realm.getInstanceAsync(UploaderApplication.getStoreConfiguration(), new Realm.Callback() {
+                    @Override
+                    public void onSuccess(Realm realm) {
+                        storeRealm = realm;
+                        dataStore = realm.where(DataStore.class).findFirst();
+                        realmAsyncTask = null;
+                        copyPrefsToDataStore();
+                    }
+                });
+            } else {
+                copyPrefsToDataStore();
             }
-        });
+        } catch (Exception e) {
+            Log.e(TAG, "updatePrefs could not complete: " + e.getMessage());
+        }
+    }
+
+    private void copyPrefsToDataStore() {
+        try {
+            storeRealm.executeTransactionAsync(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
+                    Log.d(TAG, "copyPrefsToDataStore async started");
+                    realm.where(DataStore.class).findFirst()
+                            .copyPrefs(mContext, mPrefs);
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "copyPrefsToDataStore could not complete: " + e.getMessage());
+        }
     }
 
     @Override
@@ -635,11 +896,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         startActivity(manageCNLIntent);
     }
 
-    private RealmResults<PumpStatusEvent> displayPumpResults;
-    private RealmResults<PumpHistoryCGM> displayCgmResults;
-    private long timeLastSGV;
-    private int pumpBattery;
-
     private void startDisplay() {
         Log.d(TAG, "startDisplay");
         startDisplayPump();
@@ -651,6 +907,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mUiRefreshHandler.removeCallbacks(mUiRefreshRunnable);
         stopDisplayPump();
         stopDisplayCgm();
+        stopDisplayChart();
     }
 
     private void startDisplayPump() {
@@ -664,13 +921,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             @Override
             public void onChange(@NonNull RealmResults realmResults, @NonNull OrderedCollectionChangeSet changeSet) {
                 Log.d(TAG, "displayPumpResults triggered size=" + displayPumpResults.size());
-/*
-                if (changeSet.getState().equals(OrderedCollectionChangeSet.State.INITIAL)
-                        || (changeSet.getState().equals(OrderedCollectionChangeSet.State.UPDATE)
-                        && changeSet.getInsertions().length > 0)) {
-                    refreshDisplayPump();
-                }
-*/
                 refreshDisplayPump();
             }
         });
@@ -696,14 +946,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             @Override
             public void onChange(@NonNull RealmResults realmResults, @NonNull OrderedCollectionChangeSet changeSet) {
                 Log.d(TAG, "displayCgmResults triggered size=" + displayCgmResults.size());
-/*
-                if (changeSet.getState().equals(OrderedCollectionChangeSet.State.INITIAL)
-                        || (changeSet.getState().equals(OrderedCollectionChangeSet.State.UPDATE)
-                        && changeSet.getInsertions().length > 0)) {
-                    refreshDisplayCgm();
-                    refreshDisplayChart();
-                }
-*/
                 refreshDisplayCgm();
                 refreshDisplayChart();
             }
@@ -732,7 +974,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         }
 
         TextView textViewIOB = findViewById(R.id.textview_iob);
-        textViewIOB.setText(String.format(Locale.getDefault(), "%s: %.2f %s", getString(R.string.main_active_insulin), iob, getString(R.string.text_insulin_unit)));
+        textViewIOB.setText(String.format(Locale.getDefault(), "%s: %.2f %s", getString(R.string.main_screen__active_insulin), iob, getString(R.string.insulin_U)));
     }
 
     private void refreshDisplayCgm() {
@@ -745,9 +987,9 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         TextView textViewBg = findViewById(R.id.textview_bg);
         TextView textViewUnits = findViewById(R.id.textview_units);
         if (dataStore.isMmolxl()) {
-            textViewUnits.setText(R.string.text_unit_mmol);
+            textViewUnits.setText(R.string.glucose_mmol);
         } else {
-            textViewUnits.setText(R.string.text_unit_mgdl);
+            textViewUnits.setText(R.string.glucose_mgdl);
         }
         TextView textViewTrend = findViewById(R.id.textview_trend);
 
@@ -806,7 +1048,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             long nextRun = 60000L;
 
             TextView textViewBgTime = findViewById(R.id.textview_bg_time);
-            String timeString = getString(R.string.main_never);
+            String timeString = getString(R.string.dots);
 
             if (timeLastSGV > 0) {
                 nextRun = 60000L - (System.currentTimeMillis() - timeLastSGV) % 60000L;
@@ -839,7 +1081,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         batIcon.setIcon(getResources().getDrawable(R.drawable.battery_100));
                         break;
                     default:
-                        batIcon.setTitle(getResources().getString(R.string.menu_name_status));
+                        batIcon.setTitle(getResources().getString(R.string.main_screen__icon_nightscout_status));
                         batIcon.setIcon(getResources().getDrawable(R.drawable.battery_unknown));
                 }
             } else {
@@ -854,58 +1096,64 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void refreshDisplayChart() {
         Log.d(TAG, "refreshDisplayChart");
-
-        if (displayCgmResults.size() > 0)
-
-            updateChart(displayCgmResults.where()
-                    .greaterThan("eventDate", new Date(
-                            displayCgmResults.last().getEventDate().getTime() - 24 * 60 * 60000L))
-                    .sort("eventDate", Sort.ASCENDING)
-                    .findAll());
-
-        else emptyChart();
+        stopDisplayChart();
+        startDisplayChart();
     }
 
-    private void emptyChart() {
-        long now = System.currentTimeMillis();
-        long left = now - chartZoom * 60 * 60000L;
-
-        mChart.getViewport().setXAxisBoundsManual(true);
-        mChart.getViewport().setMaxX(now);
-        mChart.getViewport().setMinX(left);
-
-        mChart.getViewport().setYAxisBoundsManual(true);
-        mChart.getViewport().setMinY(80);
-        mChart.getViewport().setMaxY(180);
-
-        mChart.removeAllSeries();
-
-        mChart.postInvalidate();
-    }
-
-    private void updateChart(RealmResults<PumpHistoryCGM> results) {
-
-        // empty chart when no data available
-        if (results.size() == 0) {
-            emptyChart();
-            return;
+    private void stopDisplayChart() {
+        Log.d(TAG, "stopDisplayChart");
+        if (displayChartResults != null) {
+            displayChartResults.removeAllChangeListeners();
+            displayChartResults = null;
         }
+    }
 
-        long current = results.last().getEventDate().getTime();
+    private void startDisplayChart() {
+        Log.d(TAG, "startDisplayChart");
+
+        // reset if last chart interaction was over 5 mins
+        if (System.currentTimeMillis() - chartChangeTimestamp > 5 * 60000L)
+            chartTimeOffset = 0;
+
+        final long timestamp = timeLastSGV == 0 ? System.currentTimeMillis() : timeLastSGV - chartTimeOffset;
+
+        displayChartResults = historyRealm.where(PumpHistoryCGM.class)
+                .notEqualTo("sgv", 0)
+                .greaterThan("eventDate", new Date(timestamp - 24 * 60 * 60000L))
+                .lessThanOrEqualTo("eventDate", new Date(timestamp + 5 * 60000L))
+                .sort("eventDate", Sort.ASCENDING)
+                .findAllAsync();
+
+        displayChartResults.addChangeListener(new OrderedRealmCollectionChangeListener<RealmResults<PumpHistoryCGM>>() {
+            @Override
+            public void onChange(@NonNull RealmResults<PumpHistoryCGM> realmResults, @NonNull OrderedCollectionChangeSet changeSet) {
+                Log.d(TAG, "displayChartResults triggered size=" + displayChartResults.size());
+                updateChart(realmResults, timestamp);
+            }
+        });
+    }
+
+    private void updateChart(RealmResults<PumpHistoryCGM> results, long timestamp) {
 
         // calc X & Y chart bounds with readable stepping for mmol & mg/dl
         // X needs offsetting as graphview will not always show points near edges
-        long minX = (((current + 150000L - (chartZoom * 60 * 60 * 1000L)) / 60000L) * 60000L);
-        long maxX = current + 90000L;
+        long minX = (((timestamp + 150000L - (chartZoom * 60 * 60 * 1000L)) / 60000L) * 60000L);
+        long maxX = timestamp + 90000L;
+        double minY = 100;
+        double maxY = 100;
 
-        RealmResults<PumpHistoryCGM> minmaxY = results.where()
-                .greaterThan("eventDate", new Date(minX))
-                .sort("sgv", Sort.ASCENDING)
-                .findAll();
+        if (results != null) {
+            RealmResults<PumpHistoryCGM> minmaxY = results.where()
+                    .greaterThan("eventDate", new Date(minX))
+                    .sort("sgv", Sort.ASCENDING)
+                    .findAll();
+            if (minmaxY.size() > 0) {
+                minY = minmaxY.first().getSgv();
+                maxY = minmaxY.last().getSgv();
+            }
+        }
+
         long rangeY, minRangeY;
-        double minY = minmaxY.first().getSgv();
-        double maxY = minmaxY.last().getSgv();
-
         if (mPrefs.getBoolean("mmolxl", false)) {
             minY = Math.floor((minY / MMOLXLFACTOR) * 2);
             maxY = Math.ceil((maxY / MMOLXLFACTOR) * 2);
@@ -932,58 +1180,97 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         mChart.getViewport().setMaxX(maxX);
 
         // create chart
-        DataPoint[] entries = new DataPoint[results.size()];
-
-        int pos = 0;
-        for (PumpHistoryCGM event : results) {
-            // turn your data into Entry objects
-            entries[pos++] = new DataPoint(event.getEventDate(), (double) event.getSgv(), event.isEstimate());
+        DataPoint[] entries;;
+        if (results != null && results.size() > 0) {
+            entries = new DataPoint[results.size()];
+            int pos = 0;
+            for (PumpHistoryCGM event : results) {
+                entries[pos++] = new DataPoint(
+                        event.getEventDate(),
+                        (double) event.getSgv(),
+                        event.isEstimate(),
+                        PumpHistoryParser.CGM_EXCEPTION.convert(event.getSensorException())
+                );
+            }
+        } else {
+            entries = new DataPoint[] {new DataPoint(
+                    new Date(0),
+                    100,
+                    false,
+                    PumpHistoryParser.CGM_EXCEPTION.NA)};
         }
 
         if (mChart.getSeries().size() == 0) {
-//                long now = System.currentTimeMillis();
-//                entries = new DataPoint[1000];
-//                int j = 0;
-//                for(long i = now - 24*60*60*1000; i < now - 30*60*1000; i+= 5*60*1000) {
-//                    entries[j++] = new DataPoint(i, (float) (Math.random()*200 + 89));
-//                }
-//                entries = Arrays.copyOfRange(entries, 0, j);
 
             PointsGraphSeries sgvSeries = new PointsGraphSeries(entries);
 
             sgvSeries.setOnDataPointTapListener(new OnDataPointTapListener() {
                 @Override
                 public void onTap(Series series, DataPointInterface dataPoint) {
-                    String s = String.format("%s ~ %s",
-                            FormatKit.getInstance().formatAsDayClock((long) dataPoint.getX()),
-                            FormatKit.getInstance().formatAsGlucose((int) dataPoint.getY(), true, true)
+                    long timestamp = (long) dataPoint.getX();
+                    int sgv = (int) dataPoint.getY();
+
+                    PumpHistoryParser.CGM_EXCEPTION ex = ((MainActivity.DataPoint) dataPoint).getException();
+
+                    String t = String.format("%s : %s",
+                            FormatKit.getInstance().formatAsDayNameMonthNameDay(timestamp),
+                            FormatKit.getInstance().formatAsClock(timestamp)
                     );
-                    Toast.makeText(getBaseContext(), s, Toast.LENGTH_SHORT).show();
+
+                    String v = String.format("\n%s",
+                            FormatKit.getInstance().formatAsGlucose(sgv, true, true)
+                    );
+
+                    SpannableStringBuilder ssb = new SpannableStringBuilder();
+                    ssb.append(t);
+                    ssb.setSpan(new RelativeSizeSpan(0.85f), ssb.length() - t.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                    if (ex != PumpHistoryParser.CGM_EXCEPTION.SENSOR_OK) {
+                        String x = String.format("\n(%s)", ex.string());
+                        ssb.append(x);
+                        ssb.setSpan(new RelativeSizeSpan(0.75f), ssb.length() - x.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        ssb.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), ssb.length() - x.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+
+                    ssb.append(v);
+                    ssb.setSpan(new AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), ssb.length() - v.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    ssb.setSpan(new StyleSpan(Typeface.BOLD), ssb.length() - v.length(), ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                    toast = serveToast(ssb, toast, findViewById(R.id.view_sgv));
                 }
             });
 
             sgvSeries.setCustomShape(new PointsGraphSeries.CustomShape() {
                 @Override
                 public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
+                    float factor = landscape ? 1.3f : 1.0f;
+                    float dotSize;
                     double sgv = dataPoint.getY();
 
-                    float factor = 1.0f;
-                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE)
-                        factor = 1.3f;
+                    switch (((MainActivity.DataPoint) dataPoint).getException()) {
+                        case SENSOR_END_OF_LIFE:
+                            paint.setColor(0xFFA0A0A0);
+                            break;
+                        case SENSOR_ERROR:
+                        case SENSOR_CHANGE_CAL_ERROR:
+                        case SENSOR_CHANGE_SENSOR_ERROR:
+                            paint.setColor(0xFFC040C0);
+                            break;
+                        case SENSOR_CAL_NEEDED:
+                        case SENSOR_CAL_PENDING:
+                            paint.setColor(0xFF0080FF);
+                            break;
+                        default:
+                            if (sgv < 80)
+                                paint.setColor(Color.RED);
+                            else if (sgv <= 180)
+                                paint.setColor(Color.GREEN);
+                            else if (sgv <= 260)
+                                paint.setColor(Color.YELLOW);
+                            else
+                                paint.setColor(Color.RED);
+                    }
 
-                    if (((MainActivity.DataPoint) dataPoint).isEstimate())
-                        paint.setColor(0xFF0080FF);
-
-                    else if (sgv < 80)
-                        paint.setColor(Color.RED);
-                    else if (sgv <= 180)
-                        paint.setColor(Color.GREEN);
-                    else if (sgv <= 260)
-                        paint.setColor(Color.YELLOW);
-                    else
-                        paint.setColor(Color.RED);
-
-                    float dotSize;
                     switch (chartZoom) {
                         case 1:
                             dotSize = 3.5f * factor;
@@ -1011,9 +1298,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             mChart.addSeries(sgvSeries);
         }
 
-        else if (entries.length > 0) {
-            ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
-        }
+        else ((PointsGraphSeries) mChart.getSeries().get(0)).resetData(entries);
 
     }
 
@@ -1024,15 +1309,21 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         private double y;
 
         private boolean estimate;
+        private PumpHistoryParser.CGM_EXCEPTION exception;
 
-        public DataPoint(Date x, double y, boolean estimate) {
+        public DataPoint(Date x, double y, boolean estimate, PumpHistoryParser.CGM_EXCEPTION exception) {
             this.x = x.getTime();
             this.y = y;
             this.estimate = estimate;
+            this.exception = exception;
         }
 
         public boolean isEstimate() {
             return estimate;
+        }
+
+        public PumpHistoryParser.CGM_EXCEPTION getException() {
+            return exception;
         }
 
         @Override
@@ -1154,13 +1445,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     if (userLogResults != null && adapter != null && realmRecyclerView != null) {
                         int p = realmRecyclerView.findFirstVisibleItemPosition();
                         if (p >= 0 && p < userLogResults.size()) {
-/*
-                            RealmResults<UserLog> rr = userLogResults.where()
-                                    .lessThan("timestamp", userLogResults.get(p).getTimestamp())
-                                    .equalTo("type", extended ? UserLogMessage.TYPE.NOTE.value() : UserLogMessage.TYPE.STARTUP.value())
-                                    .sort("timestamp", Sort.DESCENDING)
-                                    .findAll();
-*/
+
                             RealmResults<UserLog> rr;
                             if (extended) {
                                 rr = userLogResults.where()
@@ -1169,15 +1454,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                                         .sort("timestamp", Sort.DESCENDING)
                                         .findAll();
                             } else {
-                                long skip = 1 * 60 * 60000L;
-                                long tz = Calendar.getInstance().getTimeZone().getRawOffset() + Calendar.getInstance().getTimeZone().getDSTSavings();
-                                long t = (((userLogResults.get(p).getTimestamp() + tz) / skip) * skip) - tz;
                                 rr = userLogResults.where()
-                                        .greaterThanOrEqualTo("timestamp", t)
-                                        .sort("timestamp", Sort.ASCENDING)
+                                        .lessThan("timestamp", userLogResults.get(p).getTimestamp() - 60 * 60000L)
+                                        .equalTo("type", UserLogMessage.TYPE.WARN.value())
+                                        .sort("timestamp", Sort.DESCENDING)
                                         .findAll();
                             }
-
                             int to = 0;
                             if (rr.size() > 0) {
                                 int ss = userLogResults.indexOf(rr.first());
@@ -1207,7 +1489,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                         int p = realmRecyclerView.findFirstVisibleItemPosition();
                         int c = realmRecyclerView.getRecycleView().getLayoutManager().getChildCount();
 
-                        if (p >= 0 && p < t && t - p - c > 6)
+                        if (p >= 0 && p < t && t - p - c > 4)
                             fab = true;
                     }
                     if (fab) {

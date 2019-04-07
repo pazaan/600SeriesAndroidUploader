@@ -34,7 +34,7 @@ public class StatPushover extends RealmObject implements StatInterface {
                 error,
                 validError,
                 messagesSent,
-                remaining,
+                limit - remaining,
                 limit,
                 resetTime == 0 ? "-" : FormatKit.getInstance().formatAsYMD(resetTime)
         );
