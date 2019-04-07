@@ -16,12 +16,15 @@ import java.nio.ByteOrder;
  */
 
 public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRequestMessage<T> {
+    private static final String TAG = MedtronicSendMessageRequestMessage.class.getSimpleName();
+
     static int ENVELOPE_SIZE = 11;
     static int ENCRYPTED_ENVELOPE_SIZE = 3;
     static int CRC_SIZE = 2;
 
     public enum MessageType {
         EHSM_SESSION(0x0412, 0x0412),
+        CHANGE_PUMP_TIME(0x0404, 0x0405),
         READ_PUMP_TIME(0x0403, 0x0407),
         READ_PUMP_STATUS(0x0112, 0x013C),
         READ_BASAL_PATTERN(0x0116, 0x0123),
@@ -48,10 +51,6 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
             this.response = (short) response;
         }
 
-        public int request() {
-            return this.request & 0x0000FFFF;
-        }
-
         public boolean response(int response) {
             return (this.response & 0x0000FFFF) == response;
         }
@@ -59,10 +58,16 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         public byte[] response() {
             return new byte[]{(byte) (this.request >> 8), (byte) (this.request)};
         }
+
+        public static MessageType convert(short value) {
+            for (MessageType messageType : MessageType.values())
+                if (messageType.response == value) return messageType;
+            return MessageType.NO_TYPE;
+        }
     }
 
     protected MedtronicSendMessageRequestMessage(MessageType messageType, MedtronicCnlSession pumpSession, byte[] payload) throws EncryptionException, ChecksumException {
-        super(CommandType.SEND_MESSAGE, CommandAction.PUMP_REQUEST, pumpSession, buildPayload(messageType, pumpSession, payload));
+        super(CommandType.SEND_MESSAGE, CommandAction.TRANSMIT_PACKET, pumpSession, buildPayload(messageType, pumpSession, payload));
     }
 
     @Override
@@ -92,6 +97,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         // 0x01 optional but using this does increase comms speed without needing to engage EHSM session request
         // 0x01 must be set when EHSM session is operational or risk pump radio channel changing
         // I suspect that BeginEHSM / EndEHSM are only ever needed if bulk data is being sent to pump!
+        // The 0x01 flag may only be absolutely required when the pump sends a EHSM request during multi-packet transfers
 
         byte modeFlags = 0x10; // encrypted mode
 
@@ -120,7 +126,7 @@ public abstract class MedtronicSendMessageRequestMessage<T>  extends MedtronicRe
         payloadBuffer.put((byte) sendPayloadBuffer.capacity());
 
         String outputString = HexDump.dumpHexString(sendPayloadBuffer.array());
-        Log.d("PUMP", "PAYLOAD: " + outputString);
+        Log.d(TAG, String.format("*** REQUEST: %s (%04X) PAYLOAD: %s", messageType.name(), messageType.request, outputString));
 
         payloadBuffer.put(encrypt( pumpSession.getKey(), pumpSession.getIV(), sendPayloadBuffer.array()));
 

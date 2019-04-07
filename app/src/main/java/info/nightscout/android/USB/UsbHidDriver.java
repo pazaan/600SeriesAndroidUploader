@@ -9,16 +9,10 @@ import android.util.Log;
 
 import java.io.IOException;
 
-/**
- * USB HID Driver implementation.
- *
- * @author mike wakerly (opensource@hoho.com), Lennart Goedhart (lennart@omnibase.com.au)
- * @see <a
- * href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
- * Serial Bus Class Definitions for Communication Devices, v1.1</a>
- */
-public class UsbHidDriver extends CommonUsbDriver {
+// simplified usb driver targeting CNL comms
+// keeps overhead to a minimum allowing for high speed transfer of bulk packets from pump to cnl to uploader
 
+public class UsbHidDriver {
     private final String TAG = UsbHidDriver.class.getSimpleName();
 
     private UsbInterface mInterface;
@@ -26,10 +20,14 @@ public class UsbHidDriver extends CommonUsbDriver {
     private UsbEndpoint mReadEndpoint;
     private UsbEndpoint mWriteEndpoint;
 
+    private UsbDevice mDevice;
+    private UsbDeviceConnection mConnection;
+
     private boolean isConnectionOpen = false;
 
     public UsbHidDriver(UsbDevice device, UsbDeviceConnection connection) {
-        super(device, connection);
+        mDevice = device;
+        mConnection = connection;
     }
 
     public static UsbDevice getUsbDevice(UsbManager usbManager, int vendorId, int productId) {
@@ -53,7 +51,6 @@ public class UsbHidDriver extends CommonUsbDriver {
         return null;
     }
 
-    @Override
     public void open() throws IOException {
         Log.d(TAG, "Claiming HID interface.");
         mInterface = mDevice.getInterface(0);
@@ -68,72 +65,34 @@ public class UsbHidDriver extends CommonUsbDriver {
         mWriteEndpoint = mInterface.getEndpoint(0);
         Log.d(TAG, "Write endpoint direction: " + mWriteEndpoint.getDirection());
         isConnectionOpen = true;
-        mConnection.releaseInterface(mInterface);
     }
 
-    @Override
     public void close() {
-        if (mConnection != null) {
-            mConnection.close();
+        synchronized (UsbHidDriver.class) {
+            if (mConnection != null && isConnectionOpen) {
+                Log.d(TAG, "Releasing HID interface.");
+                if (!mConnection.releaseInterface(mInterface))
+                    Log.w(TAG, "releaseInterface returned false");
+                mConnection.close();
+            }
+            isConnectionOpen = false;
         }
-        isConnectionOpen = false;
     }
 
-    @Override
-    public int read(byte[] dest, int timeoutMillis) throws IOException {
-        final int numBytesRead;
-        synchronized (mReadBufferLock) {
-            mConnection.claimInterface(mInterface, true);
-            int readAmt = Math.min(dest.length, mReadBuffer.length);
-            numBytesRead = mConnection.bulkTransfer(mReadEndpoint, mReadBuffer, readAmt,
-                    timeoutMillis);
-            if (numBytesRead > 0) {
-                System.arraycopy(mReadBuffer, 0, dest, 0, numBytesRead);
-            }
-            
-            mConnection.releaseInterface(mInterface);
-        }
-        return numBytesRead;
+    public int read(byte[] dest, int timeoutMillis) {
+        return mConnection.bulkTransfer(mReadEndpoint, dest, dest.length,
+                timeoutMillis);
     }
 
-    @Override
-    public int write(byte[] src, int timeoutMillis) throws IOException {
-        int offset = 0;
-
-        while (offset < src.length) {
-            final int writeLength;
-            final int amtWritten;
-
-            synchronized (mWriteBufferLock) {
-                final byte[] writeBuffer;
-
-                writeLength = Math.min(src.length - offset, mWriteBuffer.length);
-                if (offset == 0) {
-                    writeBuffer = src;
-                } else {
-                    // bulkTransfer does not support offsets, make a copy.
-                    System.arraycopy(src, offset, mWriteBuffer, 0, writeLength);
-                    writeBuffer = mWriteBuffer;
-                }
-
-                mConnection.claimInterface(mInterface, true);
-                amtWritten = mConnection.bulkTransfer(mWriteEndpoint, writeBuffer, writeLength,
-                        timeoutMillis);
-                mConnection.releaseInterface(mInterface);
-            }
-            if (amtWritten <= 0) {
-                throw new IOException("Error writing " + writeLength
-                        + " bytes at offset " + offset + " length=" + src.length);
-            }
-
-            Log.d(TAG, "Wrote amt=" + amtWritten + " attempted=" + writeLength);
-            offset += amtWritten;
+    public void write(byte[] src, int timeoutMillis) throws IOException {
+        if (mConnection.bulkTransfer(mWriteEndpoint, src, src.length,
+                timeoutMillis) <= 0) {
+            throw new IOException("Error writing to usb endpoint");
         }
-        return offset;
     }
 
-    @Override
     public boolean isConnectionOpen() {
         return isConnectionOpen;
     }
+
 }

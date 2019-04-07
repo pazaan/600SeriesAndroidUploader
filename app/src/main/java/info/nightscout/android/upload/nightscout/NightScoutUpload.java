@@ -3,30 +3,27 @@ package info.nightscout.android.upload.nightscout;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
+import info.nightscout.android.R;
+import info.nightscout.android.history.NightscoutItem;
+import info.nightscout.android.history.PumpHistoryParser;
+import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
 import info.nightscout.android.model.store.DataStore;
-import info.nightscout.api.DeviceEndpoints;
-import info.nightscout.api.DeviceEndpoints.Iob;
-import info.nightscout.api.DeviceEndpoints.Battery;
-import info.nightscout.api.DeviceEndpoints.PumpStatus;
-import info.nightscout.api.DeviceEndpoints.PumpInfo;
-import info.nightscout.api.DeviceEndpoints.DeviceStatus;
-import info.nightscout.api.EntriesEndpoints;
-import info.nightscout.api.ProfileEndpoints;
-import info.nightscout.api.TreatmentsEndpoints;
-import info.nightscout.api.UploadApi;
-import info.nightscout.api.UploadItem;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.Iob;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.Battery;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.PumpStatus;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.PumpInfo;
+import info.nightscout.android.upload.nightscout.DeviceEndpoints.DeviceStatus;
+import info.nightscout.android.utils.FormatKit;
 import io.realm.Realm;
 import okhttp3.ResponseBody;
 import retrofit2.Response;
@@ -56,20 +53,32 @@ public class NightScoutUpload {
     private Realm storeRealm;
     private DataStore dataStore;
 
+    private PumpHistorySender pumpHistorySender;
+
+    private String device;
+    private String info;
+
     NightScoutUpload() {}
 
-    public void doRESTUpload(Realm storeRealm, DataStore dataStore,
+    public void doRESTUpload(PumpHistorySender pumpHistorySender, Realm storeRealm, DataStore dataStore,
                              String url,
                              String secret,
                              int uploaderBatteryLevel,
+                             String device,
+                             String info,
                              List<PumpStatusEvent> statusRecords,
                              List<PumpHistoryInterface> records)
             throws Exception {
 
+        this.pumpHistorySender = pumpHistorySender;
+
         this.storeRealm = storeRealm;
         this.dataStore = dataStore;
 
-        UploadApi uploadApi = new UploadApi(url, formToken(secret));
+        this.device = device;
+        this.info = info;
+
+        UploadApi uploadApi = new UploadApi(url, secret);
 
         deviceEndpoints = uploadApi.getDeviceEndpoints();
         entriesEndpoints = uploadApi.getEntriesEndpoints();
@@ -80,13 +89,14 @@ public class NightScoutUpload {
         uploadEvents(records);
     }
 
+    // Format date to Zulu (UTC) time
     public static String formatDateForNS(Date date) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-        SimpleDateFormat dftz = new SimpleDateFormat("Z", Locale.getDefault());
-        String tz = dftz.format(date);
-        if (tz.length() == 5 && (tz.startsWith("+") || tz.startsWith("-")))
-            return df.format(date) + tz.subSequence(0,3) + ":" + tz.subSequence(3,5);
-        return df.format(date);
+        return formatDateForNS(date.getTime());
+    }
+    public static String formatDateForNS(long time) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdf.format(time) + "Z";
     }
 
     private void uploadEvents(List<PumpHistoryInterface> records) throws Exception {
@@ -97,14 +107,14 @@ public class NightScoutUpload {
         List<TreatmentsEndpoints.Treatment> treatments = new ArrayList<>();
 
         for (PumpHistoryInterface record : records) {
-            List<UploadItem> uploadItems = record.nightscout(dataStore);
-            for (UploadItem uploadItem : uploadItems) {
-                if (uploadItem.isEntry())
-                    processEntry(uploadItem.getMode(), uploadItem.getEntry(), entries);
-                else if (uploadItem.isTreatment())
-                    processTreatment(uploadItem.getMode(), uploadItem.getTreatment(), treatments);
-                else if (uploadItem.isProfile())
-                    processProfile(uploadItem.getMode(), uploadItem.getProfile());
+            List<NightscoutItem> nightscoutItems = record.nightscout(pumpHistorySender, "NS");
+            for (NightscoutItem nightscoutItem : nightscoutItems) {
+                if (nightscoutItem.isEntry())
+                    processEntry(modeOverride(nightscoutItem), nightscoutItem.getEntry(), entries);
+                else if (nightscoutItem.isTreatment())
+                    processTreatment(modeOverride(nightscoutItem), nightscoutItem.getTreatment(), treatments);
+                else if (nightscoutItem.isProfile())
+                    processProfile(nightscoutItem.getMode(), nightscoutItem.getProfile());
             }
         }
 
@@ -120,30 +130,45 @@ public class NightScoutUpload {
         }
     }
 
-    private void processEntry(UploadItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
+    private NightscoutItem.MODE modeOverride(NightscoutItem nightscoutItem) {
+        // items normally check if a record already exists in nightscout before writing
+        // can override to always update when items are older then a certain time
+        NightscoutItem.MODE mode = nightscoutItem.getMode();
+        if (mode == NightscoutItem.MODE.CHECK
+                && nightscoutItem.getTimestamp() < dataStore.getNightscoutAlwaysUpdateTimestamp())
+            mode = NightscoutItem.MODE.UPDATE;
+        return mode;
+    }
+
+    private void processEntry(NightscoutItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
 
         String key = entry.getKey600();
+
         Response<List<EntriesEndpoints.Entry>> response = entriesEndpoints.checkKey("2017", key).execute();
 
         if (response.isSuccessful()) {
             List<EntriesEndpoints.Entry> list = response.body();
-            int count = list.size();
-            if (count > 0) {
+            if (list.size() > 0) {
                 Log.d(TAG, "found " + list.size() + " already in nightscout for KEY: " + key);
 
-                if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1) {
-                    Response<ResponseBody> responseBody = entriesEndpoints.deleteKey("2017", key).execute();
-                    if (responseBody.isSuccessful()) {
-                        Log.d(TAG, "deleted " + count + " with KEY: " + key);
-                    } else {
-                        Log.d(TAG, "no DELETE response from nightscout site");
-                        throw new Exception("(processEntry) " + responseBody.message());
+                for (EntriesEndpoints.Entry item : list) {
+                    if (item.getPumpMAC600() == null ||
+                            (item.getPumpMAC600().equals(entry.getPumpMAC600()) &&
+                                    mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE)) {
+                        Response<ResponseBody> responseBody = entriesEndpoints.deleteKey(item.getDate().toString(), key).execute();
+                        if (responseBody.isSuccessful()) {
+                            Log.d(TAG, "deleted this item! ID: " + item.get_id() + " with KEY: " + key);
+                        } else {
+                            Log.d(TAG, "no DELETE response from nightscout site");
+                            throw new Exception("(processEntry) " + responseBody.message());
+                        }
                     }
-                } else return;
+                }
             }
 
-            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+            if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
                 Log.d(TAG, "queued item for nightscout entries bulk upload, KEY: " + key);
+                entry.setDevice(device);
                 entries.add(entry);
             }
 
@@ -153,32 +178,34 @@ public class NightScoutUpload {
         }
     }
 
-    private void processTreatment(UploadItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
+    private void processTreatment(NightscoutItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
 
         String key = treatment.getKey600();
+
         Response<List<TreatmentsEndpoints.Treatment>> response = treatmentsEndpoints.checkKey("2017", key).execute();
 
         if (response.isSuccessful()) {
             List<TreatmentsEndpoints.Treatment> list = response.body();
-            int count = list.size();
-            if (count > 0) {
+            if (list.size() > 0) {
                 Log.d(TAG, "found " + list.size() + " already in nightscout for KEY: " + key);
 
-                while (count > 0 && (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1)) {
-                    Response<ResponseBody> responseBody = treatmentsEndpoints.deleteID(list.get(count - 1).get_id()).execute();
-                    if (responseBody.isSuccessful()) {
-                        Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + list.get(count - 1).get_id());
-                    } else {
-                        Log.d(TAG, "no DELETE response from nightscout site");
-                        throw new Exception("(processTreatment) " + responseBody.message());
+                for (TreatmentsEndpoints.Treatment item : list) {
+                    if (item.getPumpMAC600() == null ||
+                            (item.getPumpMAC600().equals(treatment.getPumpMAC600()) &&
+                                    mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE)) {
+                        Response<ResponseBody> responseBody = treatmentsEndpoints.deleteID(item.get_id()).execute();
+                        if (responseBody.isSuccessful()) {
+                            Log.d(TAG, "deleted this item! ID: " + item.get_id() + " with KEY: " + key);
+                        } else {
+                            Log.d(TAG, "no DELETE response from nightscout site");
+                            throw new Exception("(processTreatment) " + responseBody.message());
+                        }
                     }
-                    count--;
                 }
 
-                if (count > 0) return;
             }
 
-            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+            if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
                 Log.d(TAG, "queued item for nightscout treatments bulk upload, KEY: " + key);
                 treatments.add(treatment);
             }
@@ -189,7 +216,7 @@ public class NightScoutUpload {
         }
     }
 
-    private void processProfile(UploadItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
+    private void processProfile(NightscoutItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
 
         String key = profile.getKey600();
         Response<List<ProfileEndpoints.Profile>> response = profileEndpoints.getProfiles().execute();
@@ -229,7 +256,7 @@ public class NightScoutUpload {
                     if (count > 0) {
                         Log.d(TAG, "found " + count + " already in nightscout for KEY: " + key);
 
-                        if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.DELETE || count > 1) {
+                        if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE || count > 1) {
                             for (ProfileEndpoints.Profile item : list) {
                                 foundKey = item.getKey600();
                                 if (foundKey != null && foundKey.equals(key)) {
@@ -251,7 +278,7 @@ public class NightScoutUpload {
                 }
             }
 
-            if (mode == UploadItem.MODE.UPDATE || mode == UploadItem.MODE.CHECK) {
+            if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
                 Log.d(TAG, "new item sending to nightscout profile, KEY: " + key);
                 Response<ResponseBody> responseBody = profileEndpoints.sendProfile(profile).execute();
                 if (!responseBody.isSuccessful()) {
@@ -268,6 +295,8 @@ public class NightScoutUpload {
 
     private void uploadStatus(List<PumpStatusEvent> records, int uploaderBatteryLevel) throws Exception {
 
+        String info = this.info;
+
         List<DeviceEndpoints.DeviceStatus> deviceEntries = new ArrayList<>();
         for (PumpStatusEvent record : records) {
 
@@ -275,85 +304,133 @@ public class NightScoutUpload {
             Battery battery = new Battery(record.getBatteryPercentage());
             PumpStatus pumpstatus;
 
+            if (record.isCgmLostSensor())
+                info = "";
+
             // shorten pump status when needed to accommodate mobile browsers
             boolean shorten = false;
-            if ((record.isBolusingSquare() || record.isBolusingDual()) && record.isTempBasalActive())
+            if (info.length() > 0
+                    || (record.isBolusingSquare() || record.isBolusingDual()) && record.isTempBasalActive()) {
                 shorten = true;
+            }
 
-            String statusPUMP = "normal";
+            StringBuilder sb = new StringBuilder();
+
+            if (record.getAlert() > 0) {
+                sb.append("⚠");
+            }
             if (record.isBolusingNormal()) {
-                statusPUMP = "bolusing";
-            } else if (record.isSuspended()) {
-                statusPUMP = "suspended";
-            } else {
+                sb.append(sb.length() == 0 ? "" : " ");
+                sb.append("bolusing");
+            }
+            else if (record.isSuspended()) {
+                sb.append(sb.length() == 0 ? "" : " ");
+                sb.append("suspended");
+            }
+            else if (record.isBolusingSquare() || record.isBolusingDual() || record.getTempBasalMinutesRemaining() > 0) {
                 if (record.isBolusingSquare()) {
+                    sb.append(sb.length() == 0 ? "" : " ");
                     if (shorten)
-                        statusPUMP = "S>" + record.getBolusingDelivered() + "u-" + record.getBolusingMinutesRemaining() + "m";
+                        sb.append(String.format("S>%s-%s",
+                                FormatKit.getInstance().formatAsInsulin((double) record.getBolusingDelivered()),
+                                FormatKit.getInstance().formatMinutesAsDHM(record.getBolusingMinutesRemaining())));
                     else
-                        statusPUMP = "square>>" + record.getBolusingDelivered() + "u-" + (record.getBolusingMinutesRemaining() >= 60 ? record.getBolusingMinutesRemaining() / 60 + "h" : "") + record.getBolusingMinutesRemaining() % 60 + "m";
+                        sb.append(String.format("Square>%s-%s",
+                                FormatKit.getInstance().formatAsInsulin((double) record.getBolusingDelivered()),
+                                FormatKit.getInstance().formatMinutesAsDHM(record.getBolusingMinutesRemaining())));
                     shorten = true;
                 } else if (record.isBolusingDual()) {
+                    sb.append(sb.length() == 0 ? "" : " ");
                     if (shorten)
-                        statusPUMP = "D>" + record.getBolusingDelivered() + "-" + record.getBolusingMinutesRemaining() + "m";
+                        sb.append(String.format("D>%s-%s",
+                                FormatKit.getInstance().formatAsInsulin((double) record.getBolusingDelivered()),
+                                FormatKit.getInstance().formatMinutesAsDHM(record.getBolusingMinutesRemaining())));
                     else
-                        statusPUMP = "dual>>" + record.getBolusingDelivered() + "u-" + (record.getBolusingMinutesRemaining() >= 60 ? record.getBolusingMinutesRemaining() / 60 + "h" : "") + record.getBolusingMinutesRemaining() % 60 + "m";
+                        sb.append(String.format("Dual>%s-%s",
+                                FormatKit.getInstance().formatAsInsulin((double) record.getBolusingDelivered()),
+                                FormatKit.getInstance().formatMinutesAsDHM(record.getBolusingMinutesRemaining())));
                     shorten = true;
                 }
                 if (record.getTempBasalMinutesRemaining() > 0 & record.getTempBasalPercentage() != 0) {
+                    sb.append(sb.length() == 0 ? "" : " ");
                     if (shorten)
-                        statusPUMP = " T>" + record.getTempBasalPercentage() + "%-" + record.getTempBasalMinutesRemaining() + "m";
+                        sb.append(String.format("T>%s-%s",
+                                FormatKit.getInstance().formatAsPercent(record.getTempBasalPercentage()),
+                                FormatKit.getInstance().formatMinutesAsDHM(record.getTempBasalMinutesRemaining())));
                     else
-                        statusPUMP = "temp>>" + record.getTempBasalPercentage() + "%-" + (record.getTempBasalMinutesRemaining() >= 60 ? record.getTempBasalMinutesRemaining() / 60 + "h" : "") + record.getTempBasalMinutesRemaining() % 60 + "m";
+                        sb.append(String.format("Temp>%s-%s",
+                                FormatKit.getInstance().formatAsPercent(record.getTempBasalPercentage()),
+                                FormatKit.getInstance().formatMinutesAsDHM(record.getTempBasalMinutesRemaining())));
                     shorten = true;
                 } else if (record.getTempBasalMinutesRemaining() > 0) {
+                    sb.append(sb.length() == 0 ? "" : " ");
                     if (shorten)
-                        statusPUMP = " T>" + record.getTempBasalRate() + "-" + record.getTempBasalMinutesRemaining() + "m";
+                        sb.append(String.format("T>%s-%s",
+                                FormatKit.getInstance().formatAsInsulin((double) record.getTempBasalRate()),
+                                FormatKit.getInstance().formatMinutesAsDHM(record.getTempBasalMinutesRemaining())));
                     else
-                        statusPUMP = "temp>>" + record.getTempBasalRate() + "u-" + (record.getTempBasalMinutesRemaining() >= 60 ? record.getTempBasalMinutesRemaining() / 60 + "h" : "") + record.getTempBasalMinutesRemaining() % 60 + "m";
+                        sb.append(String.format("Temp>%s-%s",
+                                FormatKit.getInstance().formatAsInsulin((double) record.getTempBasalRate()),
+                                FormatKit.getInstance().formatMinutesAsDHM(record.getTempBasalMinutesRemaining())));
                     shorten = true;
                 }
             }
 
-            if (record.getAlert() > 0)
-                statusPUMP = "⚠ " + statusPUMP;
+            sb.append(sb.length() == 0 ? "" : " ");
+            sb.append("|");
 
-            String statusCGM = "";
             if (record.isCgmActive()) {
-                if (record.getTransmitterBattery() > 80)
-                    statusCGM = shorten ? "" : ":::: ";
-                else if (record.getTransmitterBattery() > 55)
-                    statusCGM = shorten ? "" : ":::. ";
-                else if (record.getTransmitterBattery() > 30)
-                    statusCGM = shorten ? "" : "::.. ";
-                else if (record.getTransmitterBattery() > 10)
-                    statusCGM = shorten ? "" : ":... ";
-                else
-                    statusCGM = shorten ? "" : ".... ";
-                if (record.isCgmCalibrating())
-                    statusCGM += shorten ? "CAL" : "calibrating";
-                else if (record.isCgmCalibrationComplete())
-                    statusCGM += shorten ? "CAL" : "cal.complete";
-                else {
-                    if (record.isCgmWarmUp())
-                        statusCGM += shorten ? "WU" : "warmup ";
-                    if (record.getCalibrationDueMinutes() > 0) {
-                        if (shorten)
-                            statusCGM += (record.getCalibrationDueMinutes() >= 120 ? record.getCalibrationDueMinutes() / 60 + "h" : record.getCalibrationDueMinutes() + "m");
-                        else
-                            statusCGM += (record.getCalibrationDueMinutes() >= 60 ? record.getCalibrationDueMinutes() / 60 + "h" : "") + record.getCalibrationDueMinutes() % 60 + "m";
-                    }
-                    else
-                        statusCGM += shorten ? "cal.now" : "calibrate now!";
+                if (!shorten || sb.length() <= 5) {
+                    sb.append(sb.length() == 0 ? "" : " ");
+                    sb.append(FormatKit.getInstance().formatAsPercent(record.getTransmitterBattery()));
                 }
+
+                PumpHistoryParser.CGM_EXCEPTION cgmException;
+                if (record.isCgmException())
+                    cgmException = PumpHistoryParser.CGM_EXCEPTION.convert(
+                            record.getCgmExceptionType());
+                else if (record.isCgmCalibrating())
+                    cgmException = PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_PENDING;
+                else
+                    cgmException = PumpHistoryParser.CGM_EXCEPTION.NA;
+
+                if (cgmException != PumpHistoryParser.CGM_EXCEPTION.NA) {
+                    sb.append(sb.length() == 0 ? "" : " ");
+                    sb.append(shorten ? cgmException.abbriviation() : cgmException.string());
+                }
+
+                if (record.getCalibrationDueMinutes() > 0) {
+                    sb.append(sb.length() == 0 ? "" : " ");
+                    sb.append(shorten ?
+                            (record.getCalibrationDueMinutes() >= 100 ?
+                                    record.getCalibrationDueMinutes() / 60 + FormatKit.getInstance().getString(R.string.time_h)
+                                    : record.getCalibrationDueMinutes() + FormatKit.getInstance().getString(R.string.time_m))
+                            :
+                            (record.getCalibrationDueMinutes() >= 60 ?
+                                    record.getCalibrationDueMinutes() / 60 + FormatKit.getInstance().getString(R.string.time_h)
+                                            + record.getCalibrationDueMinutes() % 60 + FormatKit.getInstance().getString(R.string.time_m)
+                                    : record.getCalibrationDueMinutes() % 60 + FormatKit.getInstance().getString(R.string.time_m))
+                    );
+                }
+
+            } else if (record.isCgmLostSensor()) {
+                sb.append(sb.length() == 0 ? "" : " ");
+                sb.append(shorten ? "lost" : "lost sensor");
             } else {
-                statusCGM += shorten ? "n/a" : "cgm n/a";
+                sb.append(sb.length() == 0 ? "" : " ");
+                sb.append("no cgm");
             }
 
-            pumpstatus = new PumpStatus(false, false, statusPUMP + " " + statusCGM);
+            if (info.length() > 0) {
+                sb.append(sb.length() == 0 ? "" : " ");
+                sb.append(info);
+            }
+
+            pumpstatus = new PumpStatus(false, false, sb.toString());
 
             PumpInfo pumpInfo = new PumpInfo(
                     formatDateForNS(record.getEventDate()),
-                    new BigDecimal(record.getReservoirAmount()).setScale(0, BigDecimal.ROUND_HALF_UP),
+                    new BigDecimal(record.getReservoirAmount()).setScale(1, BigDecimal.ROUND_HALF_UP),
                     iob,
                     battery,
                     pumpstatus
@@ -379,7 +456,7 @@ public class NightScoutUpload {
 
         if (dataStore.isNsEnableHistorySync()) {
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US);
 
             long now = System.currentTimeMillis();
 
@@ -426,7 +503,7 @@ public class NightScoutUpload {
 
                     storeRealm.executeTransaction(new Realm.Transaction() {
                         @Override
-                        public void execute(Realm realm) {
+                        public void execute(@NonNull Realm realm) {
                             dataStore.setNightscoutCgmCleanFrom(cgmFrom);
                         }
                     });
@@ -486,7 +563,7 @@ public class NightScoutUpload {
                 if (success) {
                     storeRealm.executeTransaction(new Realm.Transaction() {
                         @Override
-                        public void execute(Realm realm) {
+                        public void execute(@NonNull Realm realm) {
                             dataStore.setNightscoutPumpCleanFrom(pumpFromFinal);
                         }
                     });
@@ -496,16 +573,4 @@ public class NightScoutUpload {
         }
     }
 
-    @NonNull
-    private String formToken(String secret) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-1");
-        byte[] bytes = secret.getBytes("UTF-8");
-        digest.update(bytes, 0, bytes.length);
-        bytes = digest.digest();
-        StringBuilder sb = new StringBuilder(bytes.length * 2);
-        for (byte b : bytes) {
-            sb.append(String.format("%02x", b & 0xff));
-        }
-        return sb.toString();
-    }
 }

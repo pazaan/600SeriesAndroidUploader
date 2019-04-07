@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import info.nightscout.android.medtronic.PumpHistoryParser;
-import info.nightscout.android.model.store.DataStore;
-import info.nightscout.api.EntriesEndpoints;
-import info.nightscout.api.UploadItem;
+import info.nightscout.android.history.HistoryUtils;
+import info.nightscout.android.history.MessageItem;
+import info.nightscout.android.history.NightscoutItem;
+import info.nightscout.android.history.PumpHistoryParser;
+import info.nightscout.android.history.PumpHistorySender;
+import info.nightscout.android.medtronic.exception.IntegrityException;
+import info.nightscout.android.upload.nightscout.EntriesEndpoints;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -22,18 +25,21 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     private static final String TAG = PumpHistoryCGM.class.getSimpleName();
 
     @Index
-    private Date eventDate;
+    private String senderREQ = "";
+    @Index
+    private String senderACK = "";
+    @Index
+    private String senderDEL = "";
 
     @Index
-    private boolean uploadREQ = false;
-    private boolean uploadACK = false;
-
-    private boolean xdripREQ = false;
-    private boolean xdripACK = false; // TODO - refactor xdrip service
+    private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
-    private boolean history = false; // update or status? we add these initially as polled from status and fill in extra details during update pulls
+    @Index
+    private boolean history = false; // history or status? we add these initially as polled from the status message and fill in extra details during history pulls
 
     @Index
     private int cgmRTC;
@@ -47,135 +53,277 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     private double rateOfChange;
     private byte sensorStatus;
     private byte readingStatus;
+
+    @Index
     private byte sensorException;
 
     private boolean backfilledData;
     private boolean settingsChanged;
+    @Index
     private boolean noisyData;
+    @Index
     private boolean discardData;
+    @Index
     private boolean sensorError;
 
     private String cgmTrend; // only available when added via the status message
 
-    @Override
-    public List nightscout(DataStore dataStore) {
-        List<UploadItem> uploadItems = new ArrayList<>();
+    @Index
+    private boolean estimate;
 
-        int sgvNS = sgv;
-        if (sgvNS == 0) {
-            if (sensorException == 2) // SENSOR_CAL_NEEDED
-                sgvNS = 5; // nightscout: '?NC' SENSOR_NOT_CALIBRATED
-            else if (sensorException == 5) // SENSOR_CHANGE_SENSOR_ERROR
-                sgvNS = 1; // nightscout: '?SN' SENSOR_NOT_ACTIVE
-            else if (sensorException == 6) // SENSOR_END_OF_LIFE
-                sgvNS = 1; // nightscout: '?SN' SENSOR_NOT_ACTIVE
+    @Override
+    public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
+        List<NightscoutItem> nightscoutItems = new ArrayList<>();
+
+        NS_TREND trend = cgmTrend == null ? null : NS_TREND.valueOf(cgmTrend);
+
+        int sgv = this.sgv;
+
+        if (!estimate || sgv == 0) {
+
+            switch (PumpHistoryParser.CGM_EXCEPTION.convert(sensorException)) {
+                case SENSOR_CAL_NEEDED:
+                    trend = NS_TREND.NOT_COMPUTABLE;
+                    sgv = NS_ERROR.SENSOR_NOT_CALIBRATED.value;
+                    break;
+                case SENSOR_CHANGE_CAL_ERROR:
+                case SENSOR_CHANGE_SENSOR_ERROR:
+                case SENSOR_END_OF_LIFE:
+                    trend = NS_TREND.NOT_COMPUTABLE;
+                    sgv = NS_ERROR.SENSOR_NOT_ACTIVE.value;
+                    break;
+                case SENSOR_READING_LOW:
+                    trend = NS_TREND.RATE_OUT_OF_RANGE;
+                    sgv = 40;
+                    break;
+                case SENSOR_READING_HIGH:
+                    trend = NS_TREND.RATE_OUT_OF_RANGE;
+                    sgv = 400;
+                    break;
+                case SENSOR_CAL_PENDING:
+                case SENSOR_INIT:
+                case SENSOR_ERROR:
+                    trend = NS_TREND.NOT_COMPUTABLE;
+                    sgv = NS_ERROR.NO_ANTENNA.value;
+                    break;
+                default:
+            }
+
+        } else {
+            // limit range for NS as it uses some values as flags
+            if (sgv < 40) sgv = 40;
+            else if (sgv > 400) sgv = 400;
+            trend = NS_TREND.NONE; // setting the trend to NONE in NS shows symbol: <">
         }
 
-        if (sgvNS > 0) {
-            UploadItem uploadItem = new UploadItem();
-            uploadItems.add(uploadItem);
-            EntriesEndpoints.Entry entry = uploadItem.ack(uploadACK).entry();
-
-            entry.setKey600(key);
+        if (sgv > 0) {
+            EntriesEndpoints.Entry entry = HistoryUtils.nightscoutEntry(nightscoutItems, this, senderID);
             entry.setType("sgv");
-            entry.setDate(eventDate.getTime());
-            entry.setDateString(eventDate.toString());
-
-            entry.setSgv(sgvNS);
-            if (cgmTrend != null)
-                entry.setDirection(PumpHistoryParser.TextEN.valueOf("NS_TREND_" + cgmTrend).getText());
+            entry.setSgv(sgv);
+            if (trend != null) entry.setDirection(trend.string());
+            if (estimate) nightscoutItems.get(0).update();
         }
 
-        return uploadItems;
+        return nightscoutItems;
     }
 
-    public static void event(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                             int sgv,
-                             double isig,
-                             double vctr,
-                             double rateOfChange,
-                             byte sensorStatus,
-                             byte readingStatus,
-                             boolean backfilledData,
-                             boolean settingsChanged,
-                             boolean noisyData,
-                             boolean discardData,
-                             boolean sensorError,
-                             byte sensorException) {
+    public static void cgmFromHistory(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int sgv,
+            double isig,
+            double vctr,
+            double rateOfChange,
+            byte sensorStatus,
+            byte readingStatus,
+            boolean backfilledData,
+            boolean settingsChanged,
+            boolean noisyData,
+            boolean discardData,
+            boolean sensorError,
+            byte sensorException) throws IntegrityException {
 
-        PumpHistoryCGM object = realm.where(PumpHistoryCGM.class)
+        PumpHistoryCGM record = realm.where(PumpHistoryCGM.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("cgmRTC", eventRTC)
                 .findFirst();
-        if (object == null) {
-            // create new entry
-            object = realm.createObject(PumpHistoryCGM.class);
-            object.setKey("CGM" + String.format("%08X", eventRTC));
-            object.setHistory(true);
-            object.setEventDate(eventDate);
-            object.setCgmRTC(eventRTC);
-            object.setCgmOFFSET(eventOFFSET);
-            object.setSgv(sgv);
-            object.setIsig(isig);
-            object.setVctr(vctr);
-            object.setSensorStatus(sensorStatus);
-            object.setReadingStatus(readingStatus);
-            object.setRateOfChange(rateOfChange);
-            object.setBackfilledData(backfilledData);
-            object.setSettingsChanged(settingsChanged);
-            object.setNoisyData(noisyData);
-            object.setDiscardData(discardData);
-            object.setSensorError(sensorError);
-            object.setSensorException(sensorException);
-            if (sgv > 0) object.setUploadREQ(true);
 
-        } else if (!object.isHistory()) {
-            // update the entry
-            object.setHistory(true);
-            object.setIsig(isig);
-            object.setVctr(vctr);
-            object.setSensorStatus(sensorStatus);
-            object.setReadingStatus(readingStatus);
-            object.setRateOfChange(rateOfChange);
-            object.setBackfilledData(backfilledData);
-            object.setSettingsChanged(settingsChanged);
-            object.setNoisyData(noisyData);
-            object.setDiscardData(discardData);
-            object.setSensorError(sensorError);
-            object.setSensorException(sensorException);
+        if (record == null) {
+            // create new entry
+            record = realm.createObject(PumpHistoryCGM.class);
+            record.pumpMAC = pumpMAC;
+            record.key = HistoryUtils.key("CGM", eventRTC);
+            record.history = true;
+            record.eventDate = eventDate;
+            record.cgmRTC = eventRTC;
+            record.cgmOFFSET = eventOFFSET;
+            record.isig = isig;
+            record.vctr = vctr;
+            record.sensorStatus = sensorStatus;
+            record.readingStatus = readingStatus;
+            record.rateOfChange = rateOfChange;
+            record.backfilledData = backfilledData;
+            record.settingsChanged = settingsChanged;
+            record.noisyData = noisyData;
+            record.discardData = discardData;
+            record.sensorError = sensorError;
+            sgv(record, sgv, null, sensorException);
+            pumpHistorySender.setSenderREQ(record);
+        }
+
+        else {
+            HistoryUtils.integrity(record, eventDate);
+            if (!record.history) {
+                // update the entry
+                record.history = true;
+                record.isig = isig;
+                record.vctr = vctr;
+                record.sensorStatus = sensorStatus;
+                record.readingStatus = readingStatus;
+                record.rateOfChange = rateOfChange;
+                record.backfilledData = backfilledData;
+                record.settingsChanged = settingsChanged;
+                record.noisyData = noisyData;
+                record.discardData = discardData;
+                record.sensorError = sensorError;
+                record.sensorException = sensorException;
+            }
         }
     }
 
-    public static void cgm(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                           int sgv,
-                           byte sensorException,
-                           String trend) {
+    public static void cgmFromStatus(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int sgv,
+            byte sensorException,
+            String trend) throws IntegrityException {
 
-        PumpHistoryCGM object = realm.where(PumpHistoryCGM.class)
+        PumpHistoryCGM record = realm.where(PumpHistoryCGM.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("cgmRTC", eventRTC)
                 .findFirst();
-        if (object == null) {
+
+        if (record == null) {
             // create new entry
-            object = realm.createObject(PumpHistoryCGM.class);
-            object.setKey("CGM" + String.format("%08X", eventRTC));
-            object.setHistory(false);
-            object.setEventDate(eventDate);
-            object.setCgmRTC(eventRTC);
-            object.setCgmOFFSET(eventOFFSET);
-            object.setSgv(sgv);
-            object.setSensorException(sensorException);
-            object.setCgmTrend(trend);
-            object.setUploadREQ(true);
+            record = realm.createObject(PumpHistoryCGM.class);
+            record.pumpMAC = pumpMAC;
+            record.key = HistoryUtils.key("CGM", eventRTC);
+            record.history = false;
+            record.eventDate = eventDate;
+            record.cgmRTC = eventRTC;
+            record.cgmOFFSET = eventOFFSET;
+            sgv(record, sgv, trend, sensorException);
+            pumpHistorySender.setSenderREQ(record);
+        }
+
+        else HistoryUtils.integrity(record, eventDate);
+    }
+
+    private static void sgv(PumpHistoryCGM record, int sgv, String trend, byte sensorException) {
+        // 600 pumps produce a exception for low/high readings but no actual sgv
+        // it will show 'below 40 / 2.2' or 'above 400 / 22.2' on the pump
+        // for continuity and graph visibility we set
+        // reading low: <= 40 mg/dl (2.2 mmol) as 40
+        // reading high: >= 400 mg/dl (22.2 mmol) as 400
+        if (sgv == 0) {
+            switch (PumpHistoryParser.CGM_EXCEPTION.convert(sensorException)) {
+                case SENSOR_READING_LOW:
+                    trend = NS_TREND.RATE_OUT_OF_RANGE.name();
+                    sgv = 40;
+                    break;
+                case SENSOR_READING_HIGH:
+                    trend = NS_TREND.RATE_OUT_OF_RANGE.name();
+                    sgv = 400;
+                    break;
+            }
+        }
+        record.sgv = sgv;
+        record.cgmTrend = trend;
+        record.sensorException = sensorException;
+    }
+
+    public enum NS_TREND {
+        NONE("NONE"),
+        DOUBLE_UP("DoubleUp"),
+        SINGLE_UP("SingleUp"),
+        FOURTY_FIVE_UP("FortyFiveUp"),
+        FLAT("Flat"),
+        FOURTY_FIVE_DOWN("FortyFiveDown"),
+        SINGLE_DOWN("SingleDown"),
+        DOUBLE_DOWN("DoubleDown"),
+        NOT_COMPUTABLE("NOT COMPUTABLE"),
+        RATE_OUT_OF_RANGE("RATE OUT OF RANGE"),
+        NOT_SET("NONE");
+
+        private String string;
+
+        NS_TREND(String string) {
+            this.string = string;
+        }
+
+        public String string() {
+            return this.string;
+        }
+    }
+
+    public enum NS_ERROR {
+        SENSOR_NOT_ACTIVE(1, "?SN"),
+        MINIMAL_DEVIATION(2, "?MD"),
+        NO_ANTENNA(3, "?NA"),
+        SENSOR_NOT_CALIBRATED(5, "?NC"),
+        COUNTS_DEVIATION(6, "?CD"),
+        ABSOLUTE_DEVIATION(9, "?AD"),
+        POWER_DEVIATION(10, "???"),
+        BAD_RF(12, "?RF");
+
+        private int value;
+        private String string;
+
+        NS_ERROR(int value, String string) {
+            this.value = value;
+            this.string = string;
+        }
+
+        public int value() {
+            return this.value;
+        }
+
+        public String string() {
+            return this.string;
         }
     }
 
     @Override
-    public String getKey() {
-        return key;
+    public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {return new ArrayList<>();}
+
+    @Override
+    public String getSenderREQ() {
+        return senderREQ;
     }
 
     @Override
-    public void setKey(String key) {
-        this.key = key;
+    public void setSenderREQ(String senderREQ) {
+        this.senderREQ = senderREQ;
+    }
+
+    @Override
+    public String getSenderACK() {
+        return senderACK;
+    }
+
+    @Override
+    public void setSenderACK(String senderACK) {
+        this.senderACK = senderACK;
+    }
+
+    @Override
+    public String getSenderDEL() {
+        return senderDEL;
+    }
+
+    @Override
+    public void setSenderDEL(String senderDEL) {
+        this.senderDEL = senderDEL;
     }
 
     @Override
@@ -189,170 +337,102 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     }
 
     @Override
-    public boolean isUploadREQ() {
-        return uploadREQ;
+    public String getKey() {
+        return key;
     }
 
     @Override
-    public void setUploadREQ(boolean uploadREQ) {
-        this.uploadREQ = uploadREQ;
+    public void setKey(String key) {
+        this.key = key;
     }
 
     @Override
-    public boolean isUploadACK() {
-        return uploadACK;
+    public long getPumpMAC() {
+        return pumpMAC;
     }
 
     @Override
-    public void setUploadACK(boolean uploadACK) {
-        this.uploadACK = uploadACK;
-    }
-
-    @Override
-    public boolean isXdripREQ() {
-        return xdripREQ;
-    }
-
-    @Override
-    public void setXdripREQ(boolean xdripREQ) {
-        this.xdripREQ = xdripREQ;
-    }
-
-    @Override
-    public boolean isXdripACK() {
-        return xdripACK;
-    }
-
-    @Override
-    public void setXdripACK(boolean xdripACK) {
-        this.xdripACK = xdripACK;
-    }
-
-    public int getCgmRTC() {
-        return cgmRTC;
-    }
-
-    public void setCgmRTC(int cgmRTC) {
-        this.cgmRTC = cgmRTC;
-    }
-
-    public int getCgmOFFSET() {
-        return cgmOFFSET;
-    }
-
-    public void setCgmOFFSET(int cgmOFFSET) {
-        this.cgmOFFSET = cgmOFFSET;
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public boolean isHistory() {
         return history;
     }
 
-    public void setHistory(boolean history) {
-        this.history = history;
+    public int getCgmRTC() {
+        return cgmRTC;
+    }
+
+    public int getCgmOFFSET() {
+        return cgmOFFSET;
     }
 
     public int getSgv() {
         return sgv;
     }
 
-    public void setSgv(int sgv) {
-        this.sgv = sgv;
-    }
-
     public double getIsig() {
         return isig;
-    }
-
-    public void setIsig(double isig) {
-        this.isig = isig;
     }
 
     public double getVctr() {
         return vctr;
     }
 
-    public void setVctr(double vctr) {
-        this.vctr = vctr;
-    }
-
     public double getRateOfChange() {
         return rateOfChange;
-    }
-
-    public void setRateOfChange(double rateOfChange) {
-        this.rateOfChange = rateOfChange;
     }
 
     public byte getSensorStatus() {
         return sensorStatus;
     }
 
-    public void setSensorStatus(byte sensorStatus) {
-        this.sensorStatus = sensorStatus;
-    }
-
     public byte getReadingStatus() {
         return readingStatus;
-    }
-
-    public void setReadingStatus(byte readingStatus) {
-        this.readingStatus = readingStatus;
-    }
-
-    public boolean isBackfilledData() {
-        return backfilledData;
-    }
-
-    public void setBackfilledData(boolean backfilledData) {
-        this.backfilledData = backfilledData;
-    }
-
-    public boolean isSettingsChanged() {
-        return settingsChanged;
-    }
-
-    public void setSettingsChanged(boolean settingsChanged) {
-        this.settingsChanged = settingsChanged;
-    }
-
-    public boolean isNoisyData() {
-        return noisyData;
-    }
-
-    public void setNoisyData(boolean noisyData) {
-        this.noisyData = noisyData;
-    }
-
-    public boolean isDiscardData() {
-        return discardData;
-    }
-
-    public void setDiscardData(boolean discardData) {
-        this.discardData = discardData;
-    }
-
-    public boolean isSensorError() {
-        return sensorError;
-    }
-
-    public void setSensorError(boolean sensorError) {
-        this.sensorError = sensorError;
     }
 
     public byte getSensorException() {
         return sensorException;
     }
 
-    public void setSensorException(byte sensorException) {
-        this.sensorException = sensorException;
+    public boolean isBackfilledData() {
+        return backfilledData;
+    }
+
+    public boolean isSettingsChanged() {
+        return settingsChanged;
+    }
+
+    public boolean isNoisyData() {
+        return noisyData;
+    }
+
+    public boolean isDiscardData() {
+        return discardData;
+    }
+
+    public boolean isSensorError() {
+        return sensorError;
     }
 
     public String getCgmTrend() {
         return cgmTrend;
     }
 
-    public void setCgmTrend(String cgmTrend) {
-        this.cgmTrend = cgmTrend;
+    public void setSgv(int sgv) {
+        this.sgv = sgv;
+    }
+
+    public void setHistory(boolean history) {
+        this.history = history;
+    }
+
+    public boolean isEstimate() {
+        return estimate;
+    }
+
+    public void setEstimate(boolean estimate) {
+        this.estimate = estimate;
     }
 }

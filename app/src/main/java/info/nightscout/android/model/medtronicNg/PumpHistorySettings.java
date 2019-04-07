@@ -2,10 +2,13 @@ package info.nightscout.android.model.medtronicNg;
 
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import info.nightscout.android.model.store.DataStore;
+import info.nightscout.android.history.MessageItem;
+import info.nightscout.android.history.NightscoutItem;
+import info.nightscout.android.history.PumpHistorySender;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -20,14 +23,16 @@ public class PumpHistorySettings extends RealmObject implements PumpHistoryInter
     private static final String TAG = PumpHistorySettings.class.getSimpleName();
 
     @Index
-    private Date eventDate;
+    private String senderREQ = "";
+    @Index
+    private String senderACK = "";
+    @Index
+    private String senderDEL = "";
 
     @Index
-    private boolean uploadREQ = false;
-    private boolean uploadACK = false;
-
-    private boolean xdripREQ = false;
-    private boolean xdripACK = false;
+    private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -43,23 +48,60 @@ public class PumpHistorySettings extends RealmObject implements PumpHistoryInter
     private byte[] targets;
 
     @Override
-    public List nightscout(DataStore dataStore) { return null; }
+    public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) { return new ArrayList<>(); }
 
-    public static void change(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                            int eventType) {
+    public static void change(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            int eventType) {
 
-        PumpHistorySettings object = realm.where(PumpHistorySettings.class)
+        PumpHistorySettings record = realm.where(PumpHistorySettings.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("settingsType", eventType)
                 .equalTo("settingsRTC", eventRTC)
                 .findFirst();
-        if (object == null) {
+        if (record == null) {
             Log.d(TAG, "*new*" + " settings change: " + eventType);
-            object = realm.createObject(PumpHistorySettings.class);
-            object.setEventDate(eventDate);
-            object.setSettingsRTC(eventRTC);
-            object.setSettingsOFFSET(eventOFFSET);
-            object.setSettingsType(eventType);
+            record = realm.createObject(PumpHistorySettings.class);
+            record.pumpMAC = pumpMAC;
+            record.eventDate = eventDate;
+            record.settingsRTC = eventRTC;
+            record.settingsOFFSET = eventOFFSET;
+            record.settingsType = eventType;
         }
+    }
+
+    @Override
+    public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {return new ArrayList<>();}
+
+    @Override
+    public String getSenderREQ() {
+        return senderREQ;
+    }
+
+    @Override
+    public void setSenderREQ(String senderREQ) {
+        this.senderREQ = senderREQ;
+    }
+
+    @Override
+    public String getSenderACK() {
+        return senderACK;
+    }
+
+    @Override
+    public void setSenderACK(String senderACK) {
+        this.senderACK = senderACK;
+    }
+
+    @Override
+    public String getSenderDEL() {
+        return senderDEL;
+    }
+
+    @Override
+    public void setSenderDEL(String senderDEL) {
+        this.senderDEL = senderDEL;
     }
 
     @Override
@@ -73,46 +115,6 @@ public class PumpHistorySettings extends RealmObject implements PumpHistoryInter
     }
 
     @Override
-    public boolean isUploadREQ() {
-        return uploadREQ;
-    }
-
-    @Override
-    public void setUploadREQ(boolean uploadREQ) {
-        this.uploadREQ = uploadREQ;
-    }
-
-    @Override
-    public boolean isUploadACK() {
-        return uploadACK;
-    }
-
-    @Override
-    public void setUploadACK(boolean uploadACK) {
-        this.uploadACK = uploadACK;
-    }
-
-    @Override
-    public boolean isXdripREQ() {
-        return xdripREQ;
-    }
-
-    @Override
-    public void setXdripREQ(boolean xdripREQ) {
-        this.xdripREQ = xdripREQ;
-    }
-
-    @Override
-    public boolean isXdripACK() {
-        return xdripACK;
-    }
-
-    @Override
-    public void setXdripACK(boolean xdripACK) {
-        this.xdripACK = xdripACK;
-    }
-
-    @Override
     public String getKey() {
         return key;
     }
@@ -122,59 +124,41 @@ public class PumpHistorySettings extends RealmObject implements PumpHistoryInter
         this.key = key;
     }
 
-    public int getSettingsType() {
-        return settingsType;
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
     }
 
-    public void setSettingsType(int settingsType) {
-        this.settingsType = settingsType;
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
+    }
+
+    public int getSettingsType() {
+        return settingsType;
     }
 
     public int getSettingsRTC() {
         return settingsRTC;
     }
 
-    public void setSettingsRTC(int settingsRTC) {
-        this.settingsRTC = settingsRTC;
-    }
-
     public int getSettingsOFFSET() {
         return settingsOFFSET;
-    }
-
-    public void setSettingsOFFSET(int settingsOFFSET) {
-        this.settingsOFFSET = settingsOFFSET;
     }
 
     public byte[] getBasalPaterns() {
         return basalPaterns;
     }
 
-    public void setBasalPaterns(byte[] basalPaterns) {
-        this.basalPaterns = basalPaterns;
-    }
-
     public byte[] getCarbRatios() {
         return carbRatios;
-    }
-
-    public void setCarbRatios(byte[] carbRatios) {
-        this.carbRatios = carbRatios;
     }
 
     public byte[] getSensitivity() {
         return sensitivity;
     }
 
-    public void setSensitivity(byte[] sensitivity) {
-        this.sensitivity = sensitivity;
-    }
-
     public byte[] getTargets() {
         return targets;
-    }
-
-    public void setTargets(byte[] targets) {
-        this.targets = targets;
     }
 }

@@ -1,9 +1,6 @@
 package info.nightscout.android.medtronic.message;
 
-import android.util.Log;
-
 import java.io.IOException;
-import java.util.Locale;
 
 import info.nightscout.android.medtronic.MedtronicCnlSession;
 import info.nightscout.android.medtronic.exception.ChecksumException;
@@ -23,16 +20,11 @@ public class ChannelNegotiateResponseMessage extends ContourNextLinkBinaryRespon
 
         byte[] responseBytes = this.encode();
 
-        Log.d(TAG, "negotiateChannel: Check response length");
-        if (responseBytes.length > 46) {
-            radioChannel = responseBytes[76];
-            radioRSSI = responseBytes[59];
-            if (responseBytes[76] != pumpSession.getRadioChannel()) {
-                throw new IOException(String.format(Locale.getDefault(), "Expected to get a message for channel %d. Got %d", pumpSession.getRadioChannel(), responseBytes[76]));
+        if (responseBytes.length == 0x4F) {
+            if (responseBytes[0x4C] == pumpSession.getRadioChannel()) {
+                radioChannel = responseBytes[0x4C];
+                radioRSSI = responseBytes[0x3B];
             }
-        } else {
-            radioChannel = ((byte) 0);
-            radioRSSI = ((byte) 0);
         }
     }
 

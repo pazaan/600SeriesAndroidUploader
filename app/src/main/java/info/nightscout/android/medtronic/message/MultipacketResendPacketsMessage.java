@@ -22,7 +22,7 @@ public class MultipacketResendPacketsMessage extends MedtronicSendMessageRequest
 
     public MultipacketResendPacketsMessage send(UsbHidDriver mDevice) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
 
-        sendToPump(mDevice, mPumpSession, TAG);
+        sendToPump(mDevice, TAG);
 
         return null;
     }

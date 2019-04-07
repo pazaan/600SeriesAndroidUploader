@@ -76,11 +76,11 @@ public class EditTextPreferenceURCHIN extends EditTextPreference {
 
         for (int i = 0; i < text.length(); i++) {
             if (!legalCharacters.contains(text.substring(i, i+1)))
-                return getContext().getString(R.string.error_msg_illegal_characters);
+                return getContext().getString(R.string.pref_error_text_illegal_characters);
         }
 
         if (text.length() > 30)
-            return getContext().getString(R.string.error_msg_exceeds_length);
+            return getContext().getString(R.string.pref_error_text_exceeds_length);
 
         return null;
     }
