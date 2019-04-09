@@ -390,7 +390,7 @@ public class MedtronicCnlReader {
         long minRTC = maxRTC - ((90 * 24 * 60 * 60) - 3600);
 
         // adjust min RTC to allow for a new pump with <90 days on the RTC clock
-        if (minRTC < 0x80000000L) minRTC = 0x80000000L;
+        if (minRTC < 0x80000000L) minRTC = 0x80000001L;
         Log.d (TAG, "getHistory: minRTC=" + HexDump.toHexString(minRTC) + " maxRTC=" + HexDump.toHexString(maxRTC));
 
         long reqStartRTC = MessageUtils.rtcFromTime(startTime + sessionClockDifference, sessionOFFSET);

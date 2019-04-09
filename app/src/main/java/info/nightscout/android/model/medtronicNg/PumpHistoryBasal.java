@@ -288,7 +288,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                     .equalTo("recordtype", RECORDTYPE.COMPLETED.value())
                     .equalTo("completed", false)
                     .greaterThan("eventRTC", eventRTC)
-                    .lessThan("eventRTC", eventRTC + (duration + 1) * 60)
+                    .lessThan("eventRTC", HistoryUtils.offsetRTC(eventRTC, (duration + 1) * 60))
                     .findFirst();
             if (completedRecord != null) {
                 boolean canceled = completedRecord.canceled;
@@ -345,7 +345,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                     .equalTo("pumpMAC", pumpMAC)
                     .equalTo("recordtype", RECORDTYPE.PROGRAMMED.value())
                     .equalTo("completed", false)
-                    .greaterThan("eventRTC", eventRTC - (duration + 1) * 60)
+                    .greaterThan("eventRTC", HistoryUtils.offsetRTC(eventRTC, - (duration + 1) * 60))
                     .lessThan("eventRTC", eventRTC)
                     .findFirst();
             if (programmedRecord != null) {
@@ -418,7 +418,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                     .equalTo("pumpMAC", pumpMAC)
                     .equalTo("recordtype", RECORDTYPE.SUSPEND.value())
                     .equalTo("completed", false)
-                    .greaterThan("eventRTC", eventRTC - 24 * 60 * 60)
+                    .greaterThan("eventRTC", HistoryUtils.offsetRTC(eventRTC, - 24 * 60 * 60))
                     .lessThan("eventRTC", eventRTC)
                     .sort("eventDate", Sort.DESCENDING)
                     .findAll();
@@ -435,7 +435,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                     .equalTo("pumpMAC", pumpMAC)
                     .equalTo("recordtype", RECORDTYPE.PROGRAMMED.value())
                     .equalTo("completed", false)
-                    .greaterThan("eventRTC", eventRTC - 24 * 60 * 60)
+                    .greaterThan("eventRTC", HistoryUtils.offsetRTC(eventRTC, - 24 * 60 * 60))
                     .lessThan("eventRTC", eventRTC)
                     .sort("eventDate", Sort.DESCENDING)
                     .findAll();

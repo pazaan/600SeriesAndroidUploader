@@ -147,7 +147,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setSplitNow(String.valueOf(splitNow));
             treatment.setSplitExt(String.valueOf(splitExt));
             treatment.setRelative((float) ((squareProgrammedAmount * 60) / squareProgrammedDuration));
-            notes.append(String.format("%s%s %s:%s %s %s",
+            notes.append(String.format("%s%s %s : %s %s %s",
                     notes.length() == 0 ? "" : " ",
                     FormatKit.getInstance().getString(R.string.text__Dual_Bolus),
                     FormatKit.getInstance().formatAsInsulin(normalProgrammedAmount),
@@ -194,7 +194,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setSplitNow(String.valueOf(splitNow));
             treatment.setSplitExt(String.valueOf(splitExt));
             treatment.setRelative((float) ((squareDeliveredAmount * 60) / squareDeliveredDuration));
-            notes.append(String.format("%s* %s: %s %s:%s %s %s",
+            notes.append(String.format("%s* %s: %s %s : %s %s %s",
                     notes.length() == 0 ? "" : formatSeperator,
                     FormatKit.getInstance().getString(R.string.text__cancelled),
                     FormatKit.getInstance().getString(R.string.text__delivered),
@@ -330,7 +330,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
         } else if (normalDelivered && squareDelivered && squareProgrammedAmount != squareDeliveredAmount) {
             date = squareDeliveredDate;
             title = FormatKit.getInstance().getString(R.string.text__Bolus);
-            message += String.format("%s: %s %s:%s %s %s",
+            message += String.format("%s: %s %s : %s %s %s",
                     FormatKit.getInstance().getString(R.string.text__cancelled),
                     FormatKit.getInstance().getString(R.string.text__delivered),
                     FormatKit.getInstance().formatAsInsulin(normalDeliveredAmount),
@@ -369,7 +369,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                                 FormatKit.getInstance().getString(R.string.text__completed)) : ""
                 );
             } else if (PumpHistoryParser.BOLUS_TYPE.DUAL_WAVE.equals(bolusType)) {
-                message += String.format("%s %s:%s %s %s%s",
+                message += String.format("%s %s : %s %s %s%s",
                         FormatKit.getInstance().getString(R.string.text__Dual),
                         FormatKit.getInstance().formatAsInsulin(normalProgrammedAmount),
                         FormatKit.getInstance().formatAsInsulin(squareProgrammedAmount),
@@ -412,22 +412,22 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                 .beginGroup()
                 .equalTo("pumpMAC", pumpMAC)
                 .equalTo("bolusRef", bolusRef)
-                .greaterThanOrEqualTo("programmedRTC", eventRTC - (8 * 60 * 60))
-                .lessThanOrEqualTo("programmedRTC", eventRTC + (8 * 60 * 60))
+                .greaterThanOrEqualTo("programmedRTC", HistoryUtils.offsetRTC(eventRTC, -8 * 60 * 60))
+                .lessThanOrEqualTo("programmedRTC", HistoryUtils.offsetRTC(eventRTC, 8 * 60 * 60))
                 .endGroup()
                 .or()
                 .beginGroup()
                 .equalTo("pumpMAC", pumpMAC)
                 .equalTo("bolusRef", bolusRef)
-                .greaterThanOrEqualTo("normalDeliveredRTC", eventRTC - (8 * 60 * 60))
-                .lessThanOrEqualTo("normalDeliveredRTC", eventRTC + (8 * 60 * 60))
+                .greaterThanOrEqualTo("normalDeliveredRTC", HistoryUtils.offsetRTC(eventRTC, -8 * 60 * 60))
+                .lessThanOrEqualTo("normalDeliveredRTC", HistoryUtils.offsetRTC(eventRTC, 8 * 60 * 60))
                 .endGroup()
                 .or()
                 .beginGroup()
                 .equalTo("pumpMAC", pumpMAC)
                 .equalTo("bolusRef", bolusRef)
-                .greaterThanOrEqualTo("squareDeliveredRTC", eventRTC - (8 * 60 * 60))
-                .lessThanOrEqualTo("squareDeliveredRTC", eventRTC + (8 * 60 * 60))
+                .greaterThanOrEqualTo("squareDeliveredRTC", HistoryUtils.offsetRTC(eventRTC, -8 * 60 * 60))
+                .lessThanOrEqualTo("squareDeliveredRTC", HistoryUtils.offsetRTC(eventRTC, 8 * 60 * 60))
                 .endGroup()
                 .findFirst();
 
@@ -442,7 +442,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                         .equalTo("bolusRef", -1)
                         .equalTo("estimate", true)
                         .equalTo("finalEstimate", normalProgrammedAmount + squareProgrammedAmount)
-                        .greaterThan("estimateRTC", eventRTC - (5 * 60))
+                        .greaterThan("estimateRTC", HistoryUtils.offsetRTC(eventRTC, -5 * 60))
                         .lessThanOrEqualTo("estimateRTC", eventRTC)
                         .findFirst();
             }
@@ -535,8 +535,8 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
                     .notEqualTo("bolusRef", -1)
                     .equalTo("estimate", false)
                     .equalTo("totalProgrammedAmount", finalEstimate)
-                    .greaterThan("programmedRTC", eventRTC - 60)
-                    .lessThan("programmedRTC", eventRTC + (5 * 60))
+                    .greaterThan("programmedRTC", HistoryUtils.offsetRTC(eventRTC, - 60))
+                    .lessThan("programmedRTC", HistoryUtils.offsetRTC(eventRTC, 5 * 60))
                     .beginGroup()
                     .equalTo("bolusSource", PumpHistoryParser.BOLUS_SOURCE.BOLUS_WIZARD.value())
                     .or()

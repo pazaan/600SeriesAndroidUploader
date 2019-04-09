@@ -217,14 +217,14 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                     .equalTo("pumpMAC", pumpMAC)
                     .equalTo("bg", bg)
                     .greaterThanOrEqualTo("bgRTC", eventRTC)
-                    .lessThanOrEqualTo("bgRTC", eventRTC + 15 * 60)
+                    .lessThanOrEqualTo("bgRTC", HistoryUtils.offsetRTC(eventRTC, 15 * 60))
                     .sort("eventDate", Sort.ASCENDING)
                     .findFirst();
         } else {
             record = realm.where(PumpHistoryBG.class)
                     .equalTo("pumpMAC", pumpMAC)
                     .equalTo("bg", bg)
-                    .greaterThan("bgRTC", eventRTC - 15 * 60)
+                    .greaterThan("bgRTC", HistoryUtils.offsetRTC(eventRTC,- 15 * 60))
                     .lessThanOrEqualTo("bgRTC", eventRTC)
                     .sort("eventDate", Sort.DESCENDING)
                     .findFirst();
@@ -237,7 +237,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                     .equalTo("calibration", true)
                     .equalTo("calibrationFlag", false)
                     .greaterThanOrEqualTo("calibrationRTC", eventRTC)
-                    .lessThan("calibrationRTC", eventRTC + 20 * 60)
+                    .lessThan("calibrationRTC", HistoryUtils.offsetRTC(eventRTC, 20 * 60))
                     .sort("eventDate", Sort.ASCENDING)
                     .findFirst();
             if (record == null) {
@@ -292,7 +292,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             // look for a bg
             record = realm.where(PumpHistoryBG.class)
                     .equalTo("pumpMAC", pumpMAC)
-                    .greaterThan("bgRTC", eventRTC - 20 * 60)
+                    .greaterThan("bgRTC", HistoryUtils.offsetRTC(eventRTC, - 20 * 60))
                     .lessThanOrEqualTo("bgRTC", eventRTC)
                     .equalTo("calibrationFlag", true)
                     .equalTo("calibration", false)

@@ -241,7 +241,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
         PumpHistoryLoop transitionRecord = realm.where(PumpHistoryLoop.class)
                 .equalTo("pumpMAC", pumpMAC)
                 .equalTo("recordtype", RECORDTYPE.TRANSITION_OUT.value())
-                .greaterThan("eventRTC", eventRTC - (5 * 60))
+                .greaterThan("eventRTC", HistoryUtils.offsetRTC(eventRTC, - 5 * 60))
                 .lessThanOrEqualTo("eventRTC", eventRTC)
                 .findFirst();
 

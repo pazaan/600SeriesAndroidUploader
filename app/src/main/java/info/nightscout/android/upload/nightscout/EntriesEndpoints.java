@@ -73,7 +73,7 @@ public interface EntriesEndpoints {
         }
 
         public void setDateString(Date date) {
-            this.dateString = NightscoutUpload.formatDateForNS(date);
+            this.dateString = NightscoutUploadProcess.formatDateForNS(date);
         }
 
         public Long getDate() {
