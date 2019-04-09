@@ -108,6 +108,10 @@ public class HexDump {
         return new String(buf);
     }
 
+    public static String toHexString(short i) {
+        return toHexString(toByteArray(i));
+    }
+
     public static String toHexString(int i) {
         return toHexString(toByteArray(i));
     }
@@ -119,6 +123,13 @@ public class HexDump {
     public static byte[] toByteArray(byte b) {
         byte[] array = new byte[1];
         array[0] = b;
+        return array;
+    }
+
+    public static byte[] toByteArray(short i) {
+        byte[] array = new byte[2];
+        array[1] = (byte) (i & 0x00FF);
+        array[0] = (byte) ((i >> 8) & 0x00FF);
         return array;
     }
 

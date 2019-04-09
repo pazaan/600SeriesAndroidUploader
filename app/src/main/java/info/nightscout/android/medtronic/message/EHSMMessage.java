@@ -22,7 +22,7 @@ public class EHSMMessage extends  MedtronicSendMessageRequestMessage<ContourNext
 
     @Override
     public ContourNextLinkResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        sendToPump(mDevice, mPumpSession, TAG);
+        sendToPump(mDevice, TAG);
         return null;
     }
 }

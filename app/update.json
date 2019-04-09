@@ -1,14 +1,12 @@
 {
-  "latestVersion": "0.6.0",
-  "latestVersionCode": "10",
-  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.6.0",
+  "latestVersion": "0.6.1",
+  "latestVersionCode": "11",
+  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.6.1",
   "releaseNotes": [
-    "- Automatically builds Nightscout profile from pump settings",
-    "- New setting to read and back-fill historical CGM data",
-    "- Upload treatments, adding bolus information and carbs",
-    "- Supports operating without CGM data (fingerstick and bolus entries only)",
-    "- Adds support for basal rates",
-    "- Adds support for 670G Auto Mode",
-    "- Crash fixes"
+    "- Nightscout alarm triggers for calibration and expired sensor",
+    "- Option to change Grams Per Exchange value",
+    "- Option to use old method for requesting USB permission",
+    "- Messaging for busy states",
+    "- Bug and crash fixes"
   ]
 }

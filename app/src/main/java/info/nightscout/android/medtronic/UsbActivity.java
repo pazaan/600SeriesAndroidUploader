@@ -7,7 +7,10 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
+import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.service.MasterService;
+import info.nightscout.android.model.store.DataStore;
+import io.realm.Realm;
 
 /**
  * Created by Pogman on 8.9.17.
@@ -28,14 +31,33 @@ public class UsbActivity extends AppCompatActivity {
         // else let the service know we have usb permission and to start/resume polling
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (!prefs.getBoolean("EnableCgmService", false)) {
+
+        boolean service = false;
+
+        if (prefs.getBoolean("EnableCgmService", false)) {
+
+            Realm storeRealm = null;
+            try {
+                storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+                if (storeRealm.where(DataStore.class).findFirst() != null) service = true;
+            } catch (Exception ignored) {
+            } finally {
+                if (storeRealm != null && !storeRealm.isClosed()) storeRealm.close();
+            }
+
+        }
+
+        if (service) {
+            Log.d(TAG, "starting master service");
+            startService(new Intent(this, MasterService.class));
+            // notify usb activity received
+            // may only receive intent from os after permission has been accepted or set as default for app
+            // older os versions will send intent on usb connect whatever permission state
+            sendBroadcast(new Intent(MasterService.Constants.ACTION_USB_ACTIVITY));
+        } else {
             Log.d(TAG, "starting main activity");
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
-        } else {
-            Log.d(TAG, "starting master service");
-            startService(new Intent(this, MasterService.class));
-            sendBroadcast(new Intent(MasterService.Constants.ACTION_HAS_USB_PERMISSION));
         }
 
         finish();

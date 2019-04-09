@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="info.nightscout.android">
-
-    <uses-sdk android:minSdkVersion="14" android:maxSdkVersion="23"
-        tools:overrideLibrary="com.github.mikephil.charting.data.realm"/>
 
     <uses-feature android:name="android.hardware.usb.host" />
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Android 9 (API level 28) or higher and use foreground services must request the FOREGROUND_SERVICE permission -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <!-- allow to disable battery optimization -->
     <uses-permission-sdk-23 android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
@@ -29,21 +29,19 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!-- configChanges="uiMode" added to avoid restart of AsyncTasks when phone is plugged into charger/dock (for phones that can do usb otg & charging simultaneously -->
         <activity
             android:name=".medtronic.MainActivity"
             android:icon="@drawable/ic_launcher"
             android:label="@string/app_name"
-            android:launchMode="singleTask"
-            android:persistableMode="persistNever"
-            android:configChanges="uiMode">
-
+            android:launchMode="singleTask">
         </activity>
+
         <activity
             android:name=".settings.SettingsActivity"
             android:icon="@drawable/ic_launcher"
             android:label="Settings"
             android:theme="@style/SettingsTheme" />
+
         <activity
             android:name=".SplashActivity"
             android:theme="@style/SplashTheme">
@@ -91,8 +89,17 @@
             android:stopWithTask="false"
             />
         <service
-            android:name=".medtronic.service.MedtronicCnlService"
+            android:name=".pushover.PushoverUploadService"
             android:icon="@drawable/ic_launcher"
+            android:stopWithTask="false"
+            />
+        <service
+            android:name=".urchin.UrchinService"
+            android:icon="@drawable/ic_launcher"
+            android:stopWithTask="false"
+            />
+        <service
+            android:name=".medtronic.service.MedtronicCnlService"
             android:stopWithTask="false"
             android:process=":cnl"
             />
@@ -102,8 +109,6 @@
             android:stopWithTask="false"
             />
 
-        <receiver android:name=".medtronic.service.MedtronicCnlAlarmReceiver"
-            />
         <receiver android:name=".AutoStartReceiver">
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
@@ -111,6 +116,7 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
+
         <receiver android:name=".medtronic.service.MedtronicCnlShutdownReceiver">
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
@@ -118,6 +124,7 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWEROFF" />
             </intent-filter>
         </receiver>
+
     </application>
 
 </manifest>

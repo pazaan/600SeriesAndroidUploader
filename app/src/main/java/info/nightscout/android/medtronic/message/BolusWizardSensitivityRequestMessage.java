@@ -21,7 +21,7 @@ public class BolusWizardSensitivityRequestMessage extends MedtronicSendMessageRe
     }
 
     public BolusWizardSensitivityResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        sendToPump(mDevice, mPumpSession, TAG);
+        sendToPump(mDevice, TAG);
         return getResponse(readFromPump(mDevice, mPumpSession, TAG));
     }
 

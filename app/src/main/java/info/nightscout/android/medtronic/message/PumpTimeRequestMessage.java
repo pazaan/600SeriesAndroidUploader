@@ -21,7 +21,7 @@ public class PumpTimeRequestMessage extends MedtronicSendMessageRequestMessage<P
 
     @Override
     public PumpTimeResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        sendToPump(mDevice, mPumpSession, TAG);
+        sendToPump(mDevice, TAG);
         return getResponse(readFromPump(mDevice, mPumpSession, TAG));
     }
 
@@ -30,39 +30,3 @@ public class PumpTimeRequestMessage extends MedtronicSendMessageRequestMessage<P
         return new PumpTimeResponseMessage(mPumpSession, payload);
     }
 }
-
-
-
-/*
-    @Override
-    public PumpTimeResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        byte[] payload;
-        /*
-        sendMessage(mDevice);
-        if (millis > 0) {
-            try {
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-            }
-        }
-
-        // Read the 0x80
-        payload = readMessage(mDevice);
-        if(payload[0x12] != (byte) 0x80 || payload.length == 0x26) {
-            Log.e(TAG, "invalid message (getPumpTime 0x80 response)");
-            throw new UnexpectedMessageException("invalid message (getPumpTime 0x80 response)");
-        }
-        // Check for unexpected response and get the next response as it may resend or send out of sequence and this avoids comms errors
-        if (payload.length < 0x49) {
-            payload = readMessage(mDevice);
-            if(payload[0x12] != (byte) 0x80 || payload.length == 0x26) {
-                Log.e(TAG, "invalid message (getPumpTime 0x80 response 2nd message)");
-                throw new UnexpectedMessageException("invalid message (getPumpTime 0x80 response 2nd message)");
-            }
-        }
-
-        // Additional 0x80 message can be sent when not using EHSM, lets clear this and any unexpected incoming messages
-//        clearMessage(mDevice);
-        return this.getResponse(payload);
-    }
-*/
