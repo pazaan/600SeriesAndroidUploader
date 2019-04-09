@@ -150,7 +150,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
 
-    // AppUpdater v1.7 uses com.squareup.okhttp3:okhttp:3.10.0
+    // AppUpdater v2.7 uses com.squareup.okhttp3:okhttp:3.10.0
     implementation 'com.github.javiersantos:AppUpdater:2.7'
 
     // The version of okhttp3 *must* be the same as the version in AppUpdater
