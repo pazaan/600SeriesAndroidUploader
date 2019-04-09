@@ -281,38 +281,37 @@
             <PreferenceCategory
                 android:title="@string/pref_ns_uploader_status_category">
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_uploader_title"
+                    android:title="@string/pref_ns_uploader_status_enable_title"
                     android:dependency="@string/key_nsEnableTreatments"
                     android:key="@string/key_nsEnableSystemStatus"
                     android:defaultValue="@bool/default_nsEnableSystemStatus"
-                    android:summary="@string/pref_ns_status_uploader_summary"/>
+                    android:summary="@string/pref_ns_uploader_status_enable_summary"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_uploader_usb_error_title"
+                    android:title="@string/pref_ns_uploader_status_usb_error_title"
                     android:dependency="@string/key_nsEnableSystemStatus"
                     android:key="@string/key_nsSystemStatusUsbErrors"
                     android:defaultValue="@bool/default_nsSystemStatusUsbErrors"
-                    android:summary="@string/pref_ns_status_uploader_usb_error_summary"/>
+                    android:summary="@string/pref_ns_uploader_status_usb_error_summary"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_uploader_connection_states"
+                    android:title="@string/pref_ns_uploader_status_connection_states"
                     android:dependency="@string/key_nsEnableSystemStatus"
                     android:key="@string/key_nsSystemStatusConnection"
                     android:defaultValue="@bool/default_nsSystemStatusConnection"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_uploader_low_battery_state"
+                    android:title="@string/pref_ns_uploader_status_low_battery_state"
                     android:dependency="@string/key_nsEnableSystemStatus"
                     android:key="@string/key_nsSystemStatusBatteryLow"
                     android:defaultValue="@bool/default_nsSystemStatusBatteryLow"/>
                 <CheckBoxPreference
-                    android:title="@string/pref_ns_status_uploader_fully_charged_state"
+                    android:title="@string/pref_ns_uploader_status_fully_charged_state"
                     android:dependency="@string/key_nsEnableSystemStatus"
                     android:key="@string/key_nsSystemStatusBatteryCharged"
                     android:defaultValue="@bool/default_nsSystemStatusBatteryCharged"/>
                 <Preference
-                    android:title="@string/pref_ns_status_uploader_time_to_clear_title"
                     android:dependency="@string/key_nsEnableSystemStatus"
                     android:key="pref_static_field_key"
                     android:selectable="false"
-                    android:summary="@string/pref_ns_status_uploader_time_to_clear_summary"/>
+                    android:summary="@string/pref_ns_uploader_status_automatic_remove_from_nightscout_summary"/>
             </PreferenceCategory>
             <PreferenceCategory
                 android:title="@string/pref_ns_pattern_and_preset_naming_category">

@@ -158,4 +158,12 @@ public class HistoryUtils {
             }
         }
     }
+
+    // keep pump RTC value within bounds 0x80000000 to 0xFFFFFFFF
+    public static int offsetRTC(int rtc, int offset) {
+        long i = (long) rtc + (long) offset;
+        if (i > 0) i = -1;
+        if (i < -0x7FFFFFFFL) i = -0x7FFFFFFFL;
+        return (int) i;
+    }
 }

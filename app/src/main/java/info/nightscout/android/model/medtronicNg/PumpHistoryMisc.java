@@ -415,15 +415,15 @@ public class PumpHistoryMisc extends RealmObject implements PumpHistoryInterface
 
         PumpHistoryMisc record = realm.where(PumpHistoryMisc.class)
                 .equalTo("pumpMAC", pumpMAC)
-                .equalTo("recordtype", recordtype.value())
+                .equalTo("recordtype", RECORDTYPE.CHANGE_SENSOR.value())
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
 
         if (record == null && (realm.where(PumpHistoryMisc.class)
                 .equalTo("pumpMAC", pumpMAC)
-                .equalTo("recordtype", recordtype.value())
-                .greaterThan("eventRTC", eventRTC - 60 * 60)
-                .lessThan("eventRTC", eventRTC + 60 * 60)
+                .equalTo("recordtype", RECORDTYPE.CHANGE_SENSOR.value())
+                .greaterThan("eventDate", new Date(eventDate.getTime() - 60 * 60000L))
+                .lessThan("eventDate", new Date(eventDate.getTime() + 60 * 60000L))
                 .findAll()).size() == 0)
         {
             Log.d(TAG, "*new* recordtype: " + recordtype.name());
