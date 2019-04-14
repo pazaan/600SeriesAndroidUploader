@@ -218,7 +218,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
                                 FormatKit.getInstance().formatAsInsulin(rate),
                         FormatKit.getInstance().getString(R.string.text__duration),
                         FormatKit.getInstance().formatMinutesAsHM(programmedDuration),
-                        completed ? String.format("(%s)",
+                        completed & !canceled ? String.format(" (%s)",
                                 FormatKit.getInstance().getString(R.string.text__completed)) : "");
                 break;
 

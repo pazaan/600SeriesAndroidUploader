@@ -803,6 +803,14 @@
     <string name="text__active">active</string>
     <string name="text__stopped">stopped</string>
 
+    <!-- Pump Event Marker -->
+
+    <string name="event_marker__heading">Event Marker</string>
+    <string name="event_marker__food">Food</string>
+    <string name="event_marker__exercise">Exercise</string>
+    <string name="event_marker__injection">Injection</string>
+    <string name="event_marker__other">Other</string>
+
     <!-- Pump Daily Totals -->
 
     <string name="daily_totals_heading__daily_totals">Daily Totals</string>

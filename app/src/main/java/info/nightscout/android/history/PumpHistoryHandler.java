@@ -1391,16 +1391,19 @@ public class PumpHistoryHandler {
                     .findAll();
             if (cgmResults.size() > 0) {
                 eventDate = cgmResults.first().getEventDate();
-                int cgmRTC = cgmResults.first().getCgmRTC();
+                int cgmRTC = cgmResults.first().getCgmRTC() - 60;
                 int pos = 0;
                 while (pos < max && pos < cgmResults.size()) {
-                    if (cgmResults.get(pos).getCgmRTC() >= cgmRTC - (pos * 300)) {
+                    if (cgmResults.get(pos).getCgmRTC() > cgmRTC - (pos * 300)) {
                         isig.add(cgmResults.get(pos).getIsig());
                         delta.add(0.0);
                         if (pos > 0) delta.set(pos - 1, isig.get(pos - 1) - isig.get(pos));
                     }
                     pos++;
                 }
+            } else {
+                // no current cgm event, set the event date to now
+                eventDate = new Date(System.currentTimeMillis());
             }
         }
 
@@ -1590,12 +1593,12 @@ public class PumpHistoryHandler {
 
             extraInfo.eventDate = isigReport.getEventDate();
             extraInfo.info = isigReport.formatStabilityAsSymbol();
-            extraInfo.info_short = extraInfo.info;
+            extraInfo.infoShort = extraInfo.info;
 
             int include = dataStore.getSysReportISIGinclude();
             for (int pos = 0; pos < include; pos++) {
                 extraInfo.info = isigReport.formatIsig(pos,  extraInfo.info);
-                if (pos < 3) extraInfo.info_short =  extraInfo.info;
+                if (pos < 3) extraInfo.infoShort =  extraInfo.info;
             }
 
         } else if (dataStore.isSysEnableEstimateSGV()) {
@@ -1608,7 +1611,7 @@ public class PumpHistoryHandler {
                 extraInfo = new ExtraInfo();
                 extraInfo.eventDate = cgmResults.last().getEventDate();
                 extraInfo.info = FormatKit.getInstance().getString(R.string.nightscout_pump_pill__estimate);
-                extraInfo.info_short = FormatKit.getInstance().getString(R.string.nightscout_pump_pill__estimate_abreviation);
+                extraInfo.infoShort = FormatKit.getInstance().getString(R.string.nightscout_pump_pill__estimate_abreviation);
             }
         }
 
@@ -1618,7 +1621,7 @@ public class PumpHistoryHandler {
     public class ExtraInfo {
         private Date eventDate;
         private String info;
-        private String info_short;
+        private String infoShort;
 
         public Date getEventDate() {
             return eventDate;
@@ -1628,8 +1631,8 @@ public class PumpHistoryHandler {
             return info;
         }
 
-        public String getInfo_short() {
-            return info_short;
+        public String getInfoShort() {
+            return infoShort;
         }
     }
 

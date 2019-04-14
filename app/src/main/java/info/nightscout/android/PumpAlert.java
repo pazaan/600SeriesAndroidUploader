@@ -128,8 +128,17 @@ public class PumpAlert {
             case 61:
                 alert(TYPE.PUMP, PRIORITY.LOWEST).id(R.string.alert_61).format();
                 break;
+            case 66:
+                alert(TYPE.PUMP, PRIORITY.LOWEST).id(R.string.alert_66).format();
+                break;
             case 70:
                 alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_70).format();
+                break;
+            case 71:
+                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_71).insulin(0).format();
+                break;
+            case 72:
+                alert(TYPE.PUMP, PRIORITY.LOW).id(R.string.alert_72).insulin(0).format();
                 break;
             case 73:
                 alert(TYPE.PUMP, PRIORITY.HIGH).id(R.string.alert_73).format();

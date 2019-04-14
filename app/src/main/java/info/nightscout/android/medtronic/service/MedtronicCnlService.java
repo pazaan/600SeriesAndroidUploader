@@ -419,7 +419,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                         final byte radioChannel = cnlReader.negotiateChannel(activePump.getLastRadioChannel());
                         if (radioChannel == 0) {
-                            //if (true || radioChannel == 0) {
                             Log.i(TAG, "Could not communicate with the pump. Is it nearby?");
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_poll__could_not_communicate_with_the_pump);
                             statPoll.incPollNoConnect();
@@ -431,9 +430,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                         } else if (cnlReader.getPumpSession().getRadioRSSIpercentage() < dataStore.getSysRssiAllowConnect()) {
                             Log.i(TAG, "Warning: pump signal too weak. Is it nearby?");
-                            UserLogMessage.send(mContext, String.format("{id;%s} %s  RSSI: %s%%",
+                            UserLogMessage.send(mContext, String.format("{id;%s} %s  {id;%s}: %s%%",
                                     R.string.ul_poll__connected_on_channel,
                                     radioChannel,
+                                    R.string.ul_poll__rssi,
                                     cnlReader.getPumpSession().getRadioRSSIpercentage()));
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_poll__pump_signal_too_weak);
                             commsConnectError++;
@@ -453,9 +453,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             statPoll.setPollRSSI(statPoll.getPollRSSI() + cnlReader.getPumpSession().getRadioRSSIpercentage());
 
                             Log.d(TAG, String.format("Connected on channel %d  RSSI: %d%%", radioChannel, cnlReader.getPumpSession().getRadioRSSIpercentage()));
-                            UserLogMessage.send(mContext, String.format("{id;%s} %s  RSSI: %s%%",
+                            UserLogMessage.send(mContext, String.format("{id;%s} %s  {id;%s}: %s%%",
                                     R.string.ul_poll__connected_on_channel,
                                     radioChannel,
+                                    R.string.ul_poll__rssi,
                                     cnlReader.getPumpSession().getRadioRSSIpercentage()));
 
                             // read pump status
@@ -539,7 +540,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         reset();
 
                     } catch (UnexpectedMessageException e) {
-                        //commsError++;
                         pollInterval = dataStore.isSysEnablePollOverride() ? dataStore.getSysPollErrorRetry() : POLL_ERROR_RETRY_MS;
                         Log.e(TAG, "Unexpected Message", e);
 
@@ -632,8 +632,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     if (cnlReader.resetCNL()) UserLogMessage.send(mContext, UserLogMessage.TYPE.INFO, R.string.ul_error__cnl_reset_success);
                 } finally {
                     shutdownProtect = false;
-
-                    //pumpHistoryHandler.updateEstimate();
 
                     nextpoll = requestPollTime(timePollStarted, pollInterval);
                     long timer = System.currentTimeMillis() - timePollStarted;
@@ -847,7 +845,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM, R.string.ul_poll__sensor_is_calibrating);
             else if (pumpRecord.getSgv() == 0)
                 UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM,
-                        String.format("{id;%s} ({id:%s})", R.string.ul_poll__sensor_error,
+                        String.format("{id;%s} ({id;%s})", R.string.ul_poll__sensor_error,
                                 PumpHistoryParser.CGM_EXCEPTION.convert(pumpRecord.getCgmExceptionType()).stringId()));
             else {
                 UserLogMessage.sendN(mContext, UserLogMessage.TYPE.SGV,
@@ -1146,7 +1144,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         || results.first().getTempBasalPercentage() != results.get(1).getTempBasalPercentage()
                         || results.first().getTempBasalRate() != results.get(1).getTempBasalRate()
                         || Math.abs(tempMinsDiff - ageMinutes) > 4)
-                        ) {
+                ) {
                     Log.d(TAG, logTAG + "temp changed");
                     UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                             String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__temp_extended));

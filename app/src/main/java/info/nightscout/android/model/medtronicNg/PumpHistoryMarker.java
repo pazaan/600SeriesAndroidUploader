@@ -103,8 +103,8 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 treatment.setCarbs((float) carbInputAsGrams);
 
                 treatment.setNotes(String.format("%s: %s %s %s%s",
-                        "Event Marker",
-                        "Food",
+                        FormatKit.getInstance().getString(R.string.event_marker__heading),
+                        FormatKit.getInstance().getString(R.string.event_marker__food),
                         FormatKit.getInstance().getString(R.string.text__carb),
                         FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                         exchanges));
@@ -114,6 +114,9 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Exercise");
                 treatment.setDuration((float) duration);
+                treatment.setNotes(String.format("%s: %s",
+                        FormatKit.getInstance().getString(R.string.event_marker__heading),
+                        FormatKit.getInstance().getString(R.string.event_marker__exercise)));
                 break;
 
             case INJECTION:
@@ -121,8 +124,8 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 treatment.setEventType("Correction Bolus");
                 treatment.setInsulin((float) insulin);
                 treatment.setNotes(String.format("%s: %s %s %s",
-                        "Event Marker",
-                        "Injection",
+                        FormatKit.getInstance().getString(R.string.event_marker__heading),
+                        FormatKit.getInstance().getString(R.string.event_marker__injection),
                         FormatKit.getInstance().getString(R.string.text__bolus),
                         FormatKit.getInstance().formatAsInsulin(insulin)));
                 break;
@@ -131,8 +134,8 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                 treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
                 treatment.setEventType("Question");
                 treatment.setNotes(String.format("%s: %s",
-                        "Event Marker",
-                        "Other"));
+                        FormatKit.getInstance().getString(R.string.event_marker__heading),
+                        FormatKit.getInstance().getString(R.string.event_marker__other)));
                 break;
 
             default:
@@ -145,7 +148,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
     public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {
         List<MessageItem> messageItems = new ArrayList<>();
 
-        String title = "Event Marker";
+        String title = FormatKit.getInstance().getString(R.string.event_marker__heading);
         String message = "";
 
         switch (RECORDTYPE.convert(recordtype)) {
@@ -164,7 +167,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
                     exchanges = "";
                 }
                 message = String.format("%s %s %s%s",
-                        "Food",
+                        FormatKit.getInstance().getString(R.string.event_marker__food),
                         FormatKit.getInstance().getString(R.string.text__carb),
                         FormatKit.getInstance().formatAsGrams(carbInputAsGrams),
                         exchanges);
@@ -172,21 +175,21 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
 
             case EXERCISE:
                 message = String.format("%s %s %s",
-                        "Exercise",
+                        FormatKit.getInstance().getString(R.string.event_marker__exercise),
                         FormatKit.getInstance().getString(R.string.text__duration),
                         FormatKit.getInstance().formatMinutesAsHM(duration));
                 break;
 
             case INJECTION:
                 message = String.format("%s %s %s",
-                        "Injection",
+                        FormatKit.getInstance().getString(R.string.event_marker__injection),
                         FormatKit.getInstance().getString(R.string.text__bolus),
                         FormatKit.getInstance().formatAsInsulin(insulin));
                 break;
 
             case OTHER:
                 message = String.format("%s",
-                        "Other");
+                        FormatKit.getInstance().getString(R.string.event_marker__other));
                 break;
 
             default:

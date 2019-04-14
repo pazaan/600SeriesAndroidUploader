@@ -102,6 +102,8 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
                     break;
                 case SENSOR_CAL_PENDING:
                 case SENSOR_INIT:
+                case SENSOR_TIME_UNKNOWN:
+                case SENSOR_NOT_READY:
                 case SENSOR_ERROR:
                     trend = NS_TREND.NOT_COMPUTABLE;
                     sgv = NS_ERROR.NO_ANTENNA.value;

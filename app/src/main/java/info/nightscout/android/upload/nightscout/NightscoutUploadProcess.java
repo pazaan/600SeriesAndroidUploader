@@ -166,7 +166,7 @@ public class NightscoutUploadProcess {
 
     private void processEntry(NightscoutItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
 
-        String from = Long.toString(new SimpleDateFormat("yyyy").parse("2017").getTime());
+        String from = Long.toString(new SimpleDateFormat("yyyy", Locale.ENGLISH).parse("2017").getTime());
 
         String key = entry.getKey600();
         String mac = entry.getPumpMAC600();
@@ -405,7 +405,7 @@ public class NightscoutUploadProcess {
         if (!record.isCgmLostSensor()
                 && extraInfo != null
                 && record.getEventDate().getTime() >= extraInfo.getEventDate().getTime()) {
-            info = shorten ? extraInfo.getInfo_short() : extraInfo.getInfo();
+            info = shorten ? extraInfo.getInfoShort() : extraInfo.getInfo();
             shorten = true;
         }
 

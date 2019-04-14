@@ -46,7 +46,6 @@ import android.widget.Toast;
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
 import com.jjoe64.graphview.DefaultLabelFormatter;
-import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.OnDataPointTapListener;
 import com.jjoe64.graphview.series.PointsGraphSeries;
@@ -183,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 mPrefs.edit().putString(getString(R.string.key_sysCgmHistoryDays), "7").apply();
             if (mPrefs.getString(getString(R.string.key_sysPumpHistoryDays), "").equals("1"))
                 mPrefs.edit().putString(getString(R.string.key_sysPumpHistoryDays), "7").apply();
-            }
+        }
 
         storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
@@ -825,7 +824,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             setScreenSleepMode();
         }
 
-        else if (key != "EnableCgmService") {
+        else if (!key.equals("EnableCgmService")) {
             updatePrefs();
             if (mEnableCgmService) {
                 if (key.contains("urchin") && mEnableCgmService) {

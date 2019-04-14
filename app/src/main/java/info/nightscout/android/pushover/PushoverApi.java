@@ -12,6 +12,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * Created by Pogman on 14.4.18.
  */
 
+@SuppressWarnings("PointlessBooleanExpression")
 public class PushoverApi {
     private Retrofit retrofit;
 

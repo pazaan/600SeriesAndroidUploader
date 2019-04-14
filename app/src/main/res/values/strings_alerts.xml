@@ -53,7 +53,10 @@
     <string name="alert_53">Pump error 53|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
     <string name="alert_58">Battery Failed|Insert a new AA battery.</string>
     <string name="alert_61">Stuck button|Button pressed for more than 3 minutes</string>
+    <string name="alert_66">No reservoir detected|Rewind before loading reservoir.</string>
     <string name="alert_70">Fill Cannula?|Select Fill to fill cannula or select Done if not needed.</string>
+    <string name="alert_71">Max Fill reached|%1$s. Did you see drops at the end of tubing?</string>
+    <string name="alert_72">Max Fill reached|%1$s. Remove reservoir and select Rewind to restart New Reservoir procedure.</string>
     <string name="alert_73">Replace battery|Battery life less than 30 minutes. To ensure insulin delivery, replace battery now.</string>
     <string name="alert_84">Insert Battery|Delivery stopped. Insert a new battery now.</string>
 
@@ -134,23 +137,16 @@
     <string name="alert_99005">Check settings|Startup Wizard settings complete. Check and set up your other settings.</string>
     <string name="alert_99006">Critical pump error|Delivery stopped. Pump not working properly. Stop using pump. Remove infusion set from body. Consider other insulin treatment. See User Guide.</string>
     <string name="alert_99007">Delivery limit exceeded|Delivery stopped. Check BG. See User Guide for more information.</string>
-    <string name="alert_99008">Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.</string>
-    <string name="alert_99009">Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.</string>
-    <string name="alert_99010">Loading incomplete|Remove reservoir and select Rewind to restart loading.</string>
-    <string name="alert_99011">Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.</string>
-    <string name="alert_99012">Max Fill reached|%1$s. Did you see drops at the end of tubing?</string>
-    <string name="alert_99013">Max Fill reached|%1$s. Remove reservoir and select Rewind to restart New Reservoir procedure.</string>
-    <string name="alert_99014">No reservoir detected|Rewind before loading reservoir.</string>
-    <string name="alert_99015">Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.</string>
-    <string name="alert_99016">Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then reenter your settings. See User Guide.</string>
-    <string name="alert_99017">Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.</string>
-    <string name="alert_99018">Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
-    <string name="alert_99019">Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
-    <string name="alert_99020">Resume bolus?|%1$s of %2$s delivered. Resume delivery of %3$s?</string>
-    <string name="alert_99021">Resume Dual bolus?|%1$s of %2$s delivered. Resume delivery of %3$s for %4$s hr?</string>
-    <string name="alert_99022">Resume Dual bolus?|%1$s of %2$s delivered. Resume delivery of %3$s now, and %4$s Square for %5$s hr?</string>
-    <string name="alert_99023">Resume Square bolus? %1$s of %2$s delivered for %3$s hr. Resume delivery of %4$s for %5$s hr?</string>
-    <string name="alert_99024">Wrong key pressed|Try again</string>
+    <string name="alert_99011">Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.</string>
+    <string name="alert_99012">Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then reenter your settings. See User Guide.</string>
+    <string name="alert_99013">Pump error|Delivery stopped. Settings unchanged. Pump restart needed. Select OK to restart. See User Guide.</string>
+    <string name="alert_99014">Pump error|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name="alert_99015">Pump restarted|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name="alert_99021">Resume bolus?|%1$s of %2$s delivered. Resume delivery of %3$s?</string>
+    <string name="alert_99022">Resume Dual bolus?|%1$s of %2$s delivered. Resume delivery of %3$s for %4$s hr?</string>
+    <string name="alert_99023">Resume Dual bolus?|%1$s of %2$s delivered. Resume delivery of %3$s now, and %4$s Square for %5$s hr?</string>
+    <string name="alert_99024">Resume Square bolus? %1$s of %2$s delivered for %3$s hr. Resume delivery of %4$s for %5$s hr?</string>
+    <string name="alert_99031">Wrong key pressed|Try again</string>
 
     <string name="alert_99101">Change sensor|Second calibration not accepted. Insert new sensor.</string>
     <string name="alert_99102">Transmitter battery depleted|Recharge transmitter now.</string>
@@ -181,16 +177,16 @@
         084|Insert battery|Delivery stopped. Insert a new battery now.
         007|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
         008|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
-        xxx|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
-        xxx|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
+        007|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
+        007|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
         xxx|Loading incomplete|Remove reservoir and select Rewind to restart loading.
         104|Low battery Pump|Replace battery soon.
         105|Low reservoir|XX hours remaining. Change reservoir.
         106|Low reservoir|XX units remaining. Change reservoir.
         xxx|Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.
-        xxx|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
-        xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
-        xxx|No reservoir detected|Rewind before loading reservoir.
+        071|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
+        072|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
+        066|No reservoir detected|Rewind before loading reservoir.
         xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
         006|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
         xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then reenter your settings. See User Guide.
@@ -262,16 +258,16 @@
         084|Insert battery|Delivery stopped. Insert a new battery now.
         007|Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.
         008|Insulin flow blocked|Check BG. Consider injection and testing ketones. Estimated 0 U insulin in reservoir. Change reservoir and infusion set.
-        xxx|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
-        xxx|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
+        007|Insulin flow blocked|Fill Cannula stopped. Remove infusion set from body. Change reservoir and infusion set.
+        007|Insulin flow blocked|Fill Tubing stopped. Remove reservoir and select Rewind to restart.
         xxx|Loading incomplete|Remove reservoir and select Rewind to restart loading.
         104|Low battery Pump| Replace battery soon.
         xxx|Low BG XX mg/dL| Treat Low BG. Do not bolus until BG is normal. Monitor BG.
         106|Low reservoir|XX units remaining. Change reservoir.
         xxx|Manage settings error|Delivery stopped. Backup settings cleared from Manage Settings. Current settings are working properly. Select OK to restart. See User Guide.
-        xxx|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
-        xxx|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
-        xxx|No reservoir detected|Rewind before loading reservoir.
+        071|Max Fill reached|3X.X U. Did you see drops at the end of tubing?
+        072|Max Fill reached|4X.X U. Remove reservoir and select Rewind to restart New Reservoir procedure.
+        066|No reservoir detected|Rewind before loading reservoir.
         xxx|Power error detected|Delivery stopped. Record your settings by uploading to CareLink or write your settings on paper. See User Guide.
         006|Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.
         xxx|Pump error|Delivery stopped. Current settings cleared. Pump restart needed. Select OK to restart and then re-enter your settings. See User Guide.
