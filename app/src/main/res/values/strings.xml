@@ -220,7 +220,7 @@
     <string name="ul_poll__help_rssi_signal">Keep pump nearby to uploader phone/device. The body can block radio signals between pump and uploader.</string>
 
     <string name="ul_error__communication">Communication Error:</string>
-    <string name="ul_error__communication_busy_noisy">Communication: pump busy or radio signal noisy</string>
+    <string name="ul_error__communication_busy_noisy">Pump busy / Radio signal noisy</string>
     <string name="ul_error__timeout">Timeout Error:</string>
     <string name="ul_error__timeout_pump">Timeout communicating with the pump.</string>
     <string name="ul_error__timeout_cnl">Timeout communicating with the Contour Next Link.</string>
@@ -427,15 +427,14 @@
     <string name="pref_ns_pump_alerts_remove_from_nightscout_title">Remove from Nightscout</string>
 
     <string name="pref_ns_uploader_status_category">Uploader Status</string>
-    <string name="pref_ns_status_uploader_title">Enable Uploader Status</string>
-    <string name="pref_ns_status_uploader_summary">Send uploader status alerts and info to Nightscout</string>
-    <string name="pref_ns_status_uploader_usb_error_title">Uploader USB Error</string>
-    <string name="pref_ns_status_uploader_usb_error_summary">Send uploader USB error (disconnected) alerts to Nightscout</string>
-    <string name="pref_ns_status_uploader_connection_states">Uploader-Pump connection states</string>
-    <string name="pref_ns_status_uploader_low_battery_state">Low battery state</string>
-    <string name="pref_ns_status_uploader_fully_charged_state">Fully charged state</string>
-    <string name="pref_ns_status_uploader_time_to_clear_title">Remove from Nightscout</string>
-    <string name="pref_ns_status_uploader_time_to_clear_summary">Automatically removed after 24 hours</string>
+    <string name="pref_ns_uploader_status_enable_title">Enable Uploader Status</string>
+    <string name="pref_ns_uploader_status_enable_summary">Send uploader status alerts and info to Nightscout</string>
+    <string name="pref_ns_uploader_status_usb_error_title">Uploader USB Error</string>
+    <string name="pref_ns_uploader_status_usb_error_summary">Send uploader USB error (disconnected) alerts to Nightscout</string>
+    <string name="pref_ns_uploader_status_connection_states">Uploader-Pump connection states</string>
+    <string name="pref_ns_uploader_status_low_battery_state">Low battery state</string>
+    <string name="pref_ns_uploader_status_fully_charged_state">Fully charged state</string>
+    <string name="pref_ns_uploader_status_automatic_remove_from_nightscout_summary">Uploader status messages are automatically removed from Nightscout after 24 hours</string>
 
     <string name="pref_ns_misc_category">Misc</string>
     <string name="pref_ns_grams_per_exchange_title">Grams Per Exchange</string>
@@ -784,6 +783,8 @@
     <string name="text__Factor">Factor</string>
     <string name="text__Target">Target</string>
     <string name="text__Pattern">Pattern</string>
+    <string name="text__basal_pattern">Basal pattern</string>
+    <string name="text__previous_basal_pattern">Previous pattern</string>
 
     <string name="text__microbolus">microbolus</string>
     <string name="text__bolus">bolus</string>

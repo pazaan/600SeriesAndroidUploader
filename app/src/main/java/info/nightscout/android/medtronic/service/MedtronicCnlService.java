@@ -568,7 +568,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_error__pump_device_error);
                         } else {
                             UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.ul_error__communication_busy_noisy);
-                            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s}: %s", R.string.ul_error__communication, e.getMessage()));
+                            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_error__communication, e.getMessage()));
                         }
 
                     } catch (TimeoutException e) {

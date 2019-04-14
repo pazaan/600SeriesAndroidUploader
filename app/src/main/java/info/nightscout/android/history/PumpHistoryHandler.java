@@ -990,45 +990,44 @@ public class PumpHistoryHandler {
                         .sort("cgmRTC", Sort.ASCENDING)
                         .findAll();
 
-                // unprocessed cgm records
-                RealmResults<PumpHistoryCGM> unprocessedCgmRecords = cgmRecords.where()
-                        .equalTo("estimate", false)
-                        .equalTo("sgv", 0)
-                        .findAll();
+                processRTC = calStartRTC;
 
                 int n = 0;
-                boolean complete = false;
-                while (unprocessedCgmRecords.size() > 0 && !complete) {
-                    Log.d(TAG, "processing #" + n++);
-
-                    processRTC = unprocessedCgmRecords.first().getCgmRTC();
-
-                    complete = process(unprocessedCgmRecords, cgmRecords, sensorRecords, calRecords);
-
-                    unprocessedCgmRecords = cgmRecords.where()
+                boolean complete;
+                do {
+                    // unprocessed cgm records
+                    RealmResults<PumpHistoryCGM> unprocessedCgmRecords = cgmRecords.where()
                             .equalTo("estimate", false)
                             .equalTo("sgv", 0)
                             .greaterThan("cgmRTC", processRTC)
                             .findAll();
-                }
 
+                    if (unprocessedCgmRecords.size() > 0) {
+                        Log.d(TAG, "processing #" + n++);
+                        processRTC = unprocessedCgmRecords.first().getCgmRTC();
+                        complete = process(unprocessedCgmRecords, cgmRecords, sensorRecords, calRecords);
+                    } else complete = true;
 
-                historyRealm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(@NonNull Realm realm) {
+                } while (!complete);
 
-                        for (int i = 0; i < updateRecords.size(); i++) {
-                            PumpHistoryCGM record = updateRecords.get(i);
-                            record.setSgv(updateSgv.get(i));
-                            record.setEstimate(true);
-                            pumpHistorySender.setSenderREQ(record);
+                // update records
+                if (updateRecords.size() > 0) {
+                    historyRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(@NonNull Realm realm) {
+
+                            for (int i = 0; i < updateRecords.size(); i++) {
+                                PumpHistoryCGM record = updateRecords.get(i);
+                                record.setSgv(updateSgv.get(i));
+                                record.setEstimate(true);
+                                pumpHistorySender.setSenderREQ(record);
+                            }
+
                         }
-
-                    }
-                });
-
-                updateRecords.clear();
-                updateSgv.clear();
+                    });
+                    updateRecords.clear();
+                    updateSgv.clear();
+                }
             }
         }
 
@@ -1102,7 +1101,7 @@ public class PumpHistoryHandler {
 
             // sensor start/end
             RealmResults<PumpHistoryMisc> sensorResults = sensorRecords.where()
-                    .greaterThan("eventRTC",cgmStart - 10 * 24 * 60 * 60)
+                    .greaterThan("eventRTC", HistoryUtils.offsetRTC(cgmStart, - 10 * 24 * 60 * 60))
                     .lessThanOrEqualTo("eventRTC", cgmStart)
                     .sort("eventRTC", Sort.DESCENDING)
                     .findAll();
@@ -1111,7 +1110,7 @@ public class PumpHistoryHandler {
             Date sensorStartDate = sensorResults.first().getEventDate();
             int sensorStart = sensorResults.first().getEventRTC();
             Date sensorEndDate = new Date(cgmStartDate.getTime() + 10 * 24 * 60 * 60000L);
-            int sensorEnd = cgmStart + 10 * 24 * 60 * 60;
+            int sensorEnd = HistoryUtils.offsetRTC(cgmStart,  10 * 24 * 60 * 60);
 
             sensorResults = sensorRecords.where()
                     .greaterThan("eventRTC", sensorStart)
@@ -1392,7 +1391,7 @@ public class PumpHistoryHandler {
                     .findAll();
             if (cgmResults.size() > 0) {
                 eventDate = cgmResults.first().getEventDate();
-                long cgmRTC = cgmResults.first().getCgmRTC();
+                int cgmRTC = cgmResults.first().getCgmRTC();
                 int pos = 0;
                 while (pos < max && pos < cgmResults.size()) {
                     if (cgmResults.get(pos).getCgmRTC() >= cgmRTC - (pos * 300)) {

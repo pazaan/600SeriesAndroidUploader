@@ -219,6 +219,8 @@ public class PumpHistoryParser {
                                     closedLoopDailyTotals();
                                     break;
 
+                                // currently 670G temp targets are not implemented
+                                /*
                                 case CLOSED_LOOP_ALARM_AUTO_CLEARED:
                                     debugParser();
                                     break;
@@ -228,6 +230,7 @@ public class PumpHistoryParser {
                                 case CLOSED_LOOP_TEMP_TARGET_ENDED:
                                     debugParser();
                                     break;
+                                */
                             }
 
                         }

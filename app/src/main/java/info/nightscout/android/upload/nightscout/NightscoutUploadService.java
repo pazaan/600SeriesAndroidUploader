@@ -41,7 +41,7 @@ public class NightscoutUploadService extends Service {
     private PumpHistoryHandler pumpHistoryHandler;
     private StatNightscout statNightscout;
 
-    private NightscoutUpload nightscoutUpload;
+    private NightscoutUploadProcess nightscoutUploadProcess;
 
     private boolean rerun;
 
@@ -77,7 +77,7 @@ public class NightscoutUploadService extends Service {
             } else {
                 rerun = true;
                 // cancel upload in progress as settings may have changed or recent poll results need priority
-                if (nightscoutUpload != null) nightscoutUpload.cancel();
+                if (nightscoutUploadProcess != null) nightscoutUploadProcess.cancel();
                 Log.i(TAG, "Uploading service already in progress with previous task, another pass scheduled.");
             }
         }
@@ -114,7 +114,7 @@ public class NightscoutUploadService extends Service {
 
                             acquireWakelock(wl, 60000);
 
-                            if (nightscoutUpload != null && !nightscoutUpload.isCancel()) {
+                            if (nightscoutUploadProcess != null && !nightscoutUploadProcess.isCancel()) {
                                 // cooldown period
                                 try {
                                     Thread.sleep(5000);
@@ -208,10 +208,10 @@ public class NightscoutUploadService extends Service {
 
                 int uploaderBatteryLevel = MasterService.getUploaderBatteryLevel();
 
-                if (nightscoutUpload == null)
-                    nightscoutUpload = new NightscoutUpload(urlSetting, secretSetting);
+                if (nightscoutUploadProcess == null)
+                    nightscoutUploadProcess = new NightscoutUploadProcess(urlSetting, secretSetting);
 
-                nightscoutUpload.doRESTUpload(
+                nightscoutUploadProcess.doRESTUpload(
                         pumpHistoryHandler.getPumpHistorySender(),
                         storeRealm,
                         dataStore,
@@ -221,7 +221,7 @@ public class NightscoutUploadService extends Service {
                         statusRecords,
                         records);
 
-                if (!nightscoutUpload.isCancel()) {
+                if (!nightscoutUploadProcess.isCancel()) {
                     pumpHistoryHandler.setSenderRecordsACK(records, SENDER_ID_NIGHTSCOUT);
 
                     final List<PumpStatusEvent> finalStatusRecords = statusRecords;

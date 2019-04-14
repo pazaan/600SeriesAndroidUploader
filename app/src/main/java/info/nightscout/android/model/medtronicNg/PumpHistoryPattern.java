@@ -62,7 +62,11 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
         String newName = pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1);
 
         treatment.setProfile(newName);
-        treatment.setNotes("Changed profile from " + oldName + " to " + newName);
+        treatment.setNotes(String.format("%s: %s. %s: %s.",
+                FormatKit.getInstance().getString(R.string.text__basal_pattern),
+                newName,
+                FormatKit.getInstance().getString(R.string.text__previous_basal_pattern),
+                oldName));
 
         return nightscoutItems;
     }
@@ -72,9 +76,11 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
         List<MessageItem> messageItems = new ArrayList<>();
 
         String title = FormatKit.getInstance().getString(R.string.text__Basal);
-        String message = String.format("%s %s <- %s",
-                FormatKit.getInstance().getString(R.string.text__Pattern),
+
+        String message = String.format("%s: %s. %s: %s.",
+                FormatKit.getInstance().getString(R.string.text__basal_pattern),
                 pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1),
+                FormatKit.getInstance().getString(R.string.text__previous_basal_pattern),
                 pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, oldPatternNumber - 1));
 
         messageItems.add(new MessageItem()

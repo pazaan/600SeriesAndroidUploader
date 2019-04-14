@@ -112,7 +112,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
         } else {
             // limit range for NS as it uses some values as flags
             if (sgv < 40) sgv = 40;
-            else if (sgv > 400) sgv = 400;
+            else if (sgv > 500) sgv = 500;
             trend = NS_TREND.NONE; // setting the trend to NONE in NS shows symbol: <">
         }
 
