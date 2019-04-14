@@ -210,7 +210,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
                 || PumpHistoryParser.BG_CONTEXT.ENTERED_IN_BOLUS_WIZRD.equals(bgContext)
                 || PumpHistoryParser.BG_CONTEXT.ENTERED_IN_SENSOR_CALIB.equals(bgContext)
                 || PumpHistoryParser.BG_CONTEXT.ENTERED_AS_BG_MARKER.equals(bgContext)
-                )
+        )
         {
             entered = true;
             record = realm.where(PumpHistoryBG.class)

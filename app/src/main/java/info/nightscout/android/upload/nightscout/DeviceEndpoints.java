@@ -71,17 +71,7 @@ public interface DeviceEndpoints {
         String device;
         String created_at;
         PumpInfo pump;
-/*
-        public DeviceStatus(Integer uploaderBattery,
-                            String device,
-                            String created_at,
-                            PumpInfo pump) {
-            this.uploaderBattery = uploaderBattery;
-            this.device = device;
-            this.created_at = created_at;
-            this.pump = pump;
-        }
-*/
+
         public void setUploaderBattery(Integer uploaderBattery) {
             this.uploaderBattery = uploaderBattery;
         }
