@@ -636,7 +636,6 @@ public class PumpHistoryHandler {
 
         if (!pumpRecord.isCgmActive()) return;
 
-        boolean status = true;
         boolean backfill = false;
         boolean estimate = false;
         boolean isig = false;
@@ -655,9 +654,10 @@ public class PumpHistoryHandler {
                 .findAll();
 
         // already processed?
-        if (cgmResults.size() > 0 && cgmResults.first().getCgmRTC() == rtc) {
-            status = false;
-        }
+        boolean processed = cgmResults.size() > 0 && cgmResults.first().getCgmRTC() == rtc;
+
+        // cgm gap?
+        boolean gap = cgmResults.size() > 0 && date.getTime() - cgmResults.first().getEventDate().getTime() > 9 * 60 * 1000L;
 
         // cgm is available do we need the backfill?
         if (dataStore.isSysEnableCgmHistory()) {
@@ -667,8 +667,9 @@ public class PumpHistoryHandler {
                 backfill = true;
             }
 
-            else if (status) {
+            else if (!processed) {
 
+                // estimate needed?
                 if (dataStore.isSysEnableEstimateSGV() && (
                         PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_NEEDED.equals(exception)
                                 || (sgv == 0 && PumpHistoryParser.CGM_EXCEPTION.SENSOR_CAL_PENDING.equals(exception))
@@ -701,30 +702,12 @@ public class PumpHistoryHandler {
                                     .sort("eventDate", Sort.DESCENDING)
                                     .findAll();
                             if (bgResults.size() > 0) {
-                                status = false;
+                                processed = true;
                                 backfill = true;
                                 estimate = true;
                                 ((StatPoll) Stats.getInstance().readRecord(StatPoll.class)).incHistoryReqEstimate();
                                 UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                                         String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__estimate_sgv));
-
-                                // system status active estimate start date
-                                RealmResults<PumpHistoryCGM> estResults = historyRealm
-                                        .where(PumpHistoryCGM.class)
-                                        .greaterThan("eventDate", bgResults.first().getCalibrationDate())
-                                        .equalTo("estimate", false)
-                                        .sort("eventDate", Sort.DESCENDING)
-                                        .findAll();
-                                if (estResults.size() > 0) {
-                                    Date estStartDate = new Date(estResults.first().getEventDate().getTime() + POLL_PERIOD_MS);
-                                    int estStartRTC = estResults.first().getCgmRTC() + (int) (POLL_PERIOD_MS / 1000L);
-                                    Log.d(TAG, String.format("Estimate Request: active start date %s", estStartDate));
-                                    systemEvent(PumpHistorySystem.STATUS.ESTIMATE_ACTIVE)
-                                            .key(estStartRTC)
-                                            .start(estStartDate)
-                                            .process();
-                                }
-
                             }
 
                         } else {
@@ -737,6 +720,7 @@ public class PumpHistoryHandler {
 
                 }
 
+                // isig report needed?
                 if (dataStore.isSysEnableReportISIG()) {
                     final long now = System.currentTimeMillis();
                     long min = dataStore.getReportIsigTimestamp() + dataStore.getSysReportISIGminimum() * 60000L;
@@ -771,8 +755,7 @@ public class PumpHistoryHandler {
                 }
 
                 // missed readings?
-                if (!estimate & !isig & !dataStore.isRequestCgmHistory()
-                        && date.getTime() - cgmResults.first().getEventDate().getTime() > 9 * 60 * 1000L) {
+                if (gap && !estimate && !isig) {
 
                     // ignore missed readings during the warm-up phase
                     if (!PumpHistoryParser.CGM_EXCEPTION.SENSOR_INIT.equals(exception) &&
@@ -787,7 +770,7 @@ public class PumpHistoryHandler {
             }
         }
 
-        if (status) {
+        if (!processed) {
             // push the current sgv from status (always have latest sgv available even if there are comms errors after this)
             historyRealm.executeTransaction(new Realm.Transaction() {
                 @Override
@@ -823,7 +806,7 @@ public class PumpHistoryHandler {
         }
 
         // if isig report was previously available and isig is still required then keep it available until next successful cgm history update
-        if (dataStore.isReportIsigAvailable() && (!dataStore.isSysEnableReportISIG() || (status && !isig))) {
+        if (dataStore.isReportIsigAvailable() && (!dataStore.isSysEnableReportISIG() || (!processed && !isig))) {
             storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(@NonNull Realm realm) {
@@ -853,10 +836,11 @@ public class PumpHistoryHandler {
         private long SENSOR_PERIOD_MS = 10 * 24 * 60 * 60000L;
 
         private double OFFSET = 3.0;
-        private double CLIP = 10;//2.5;
-        private double DROP = 20;//15.0;
+        private double CLIP = 10;
+        private double DROP = 20;
         private double K = 0.7;
-        private double K_ERR = 0.1;
+        private double K_ERR = 0.2;
+        private double K_EOL = 0.5;
 
         private Date limitDate = new Date(System.currentTimeMillis() - RECORD_LIMIT_MS);
 
@@ -1234,11 +1218,13 @@ public class PumpHistoryHandler {
                     else if (x - isig > CLIP) z = x - CLIP;
                     else z = isig;
 
-                    // use lower Kalman gain when sensor is in error
+                    // use lower Kalman gain when sensor is in error/eol
                     if (PumpHistoryParser.CGM_EXCEPTION.SENSOR_ERROR == ex
                             || PumpHistoryParser.CGM_EXCEPTION.SENSOR_CHANGE_SENSOR_ERROR == ex
                             || PumpHistoryParser.CGM_EXCEPTION.SENSOR_CHANGE_CAL_ERROR == ex)
                         x = K_ERR * z + (1 - K_ERR) * x;
+                    else if (PumpHistoryParser.CGM_EXCEPTION.SENSOR_END_OF_LIFE == ex)
+                        x = K_EOL * z + (1 - K_EOL) * x;
                     else
                         x = K * z + (1 - K) * x;
 
@@ -1539,6 +1525,7 @@ public class PumpHistoryHandler {
             });
 
             new Estimate().setLimit(10 * 24 * 60 * 60000L).setUserlog(true).updateEstimate();
+            systemEventEstimateIsActive();
         }
 
         if (dataStore.isRequestIsig()) {
@@ -1550,6 +1537,24 @@ public class PumpHistoryHandler {
                 }
             });
             isigUserlog();
+        }
+    }
+
+    private void systemEventEstimateIsActive() {
+        // get the last non-estimated cgm reading
+        RealmResults<PumpHistoryCGM> results = historyRealm
+                .where(PumpHistoryCGM.class)
+                .equalTo("estimate", false)
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+        if (results.size() > 0) {
+            Date date = new Date(results.first().getEventDate().getTime() + POLL_PERIOD_MS);
+            int rtc = results.first().getCgmRTC() + (int) (POLL_PERIOD_MS / 1000L);
+            Log.d(TAG, String.format("Estimate: active start date %s", date));
+            systemEvent(PumpHistorySystem.STATUS.ESTIMATE_ACTIVE)
+                    .key(rtc)
+                    .start(date)
+                    .process();
         }
     }
 
@@ -1679,7 +1684,7 @@ public class PumpHistoryHandler {
             isigAvailable();
 
             // first run has a tendency for the pump to be busy and cause a comms error
-            // skip the first pump history read when
+            // only do a single pass when no recent history
             if (recent) {
                 // clear the request flag now as segment marker will get added
                 storeRealm.executeTransaction(new Realm.Transaction() {
@@ -1706,7 +1711,7 @@ public class PumpHistoryHandler {
                 limited |= updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", mContext.getString(R.string.ul_history__pump_history));
 
             // first run has a tendency for the pump to be busy and cause a comms error
-            // skip the first pump history read when
+            // only do a single pass when no recent history
             if (recent) {
                 // clear the request flag now as segment marker will get added
                 storeRealm.executeTransaction(new Realm.Transaction() {
