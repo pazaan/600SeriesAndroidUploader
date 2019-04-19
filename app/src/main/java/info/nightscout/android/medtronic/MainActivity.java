@@ -667,10 +667,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     synchronized private void openRealmDatastore() {
-        if (storeRealm == null) {
+        if (storeRealm == null)
             storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+        if (dataStore == null)
             dataStore = storeRealm.where(DataStore.class).findFirst();
-        }
     }
 
     synchronized private void closeRealm() {
@@ -781,6 +781,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (mEnableCgmService) {
             if (!mPrefs.getBoolean("EnableCgmService", false)) {
                 mPrefs.edit().putBoolean("EnableCgmService", true).commit();
+                openRealmDatastore();
                 storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(@NonNull Realm realm) {

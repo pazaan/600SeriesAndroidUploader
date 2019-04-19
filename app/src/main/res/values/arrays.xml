@@ -698,7 +698,9 @@
         <item>480</item>
         <item>540</item>
         <item>600</item>
-        <item>1200</item>
+        <item>660</item>
+        <item>720</item>
+        <item>1440</item>
     </string-array>
 
     <string-array name="ReportISIGinclude">
