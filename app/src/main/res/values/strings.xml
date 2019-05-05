@@ -5,7 +5,6 @@
     <!ENTITY dash "&#8211;">
     <!ENTITY percent "&#65130;">
     <!ENTITY newline "\n">
-    <!ENTITY squote "\'">
     <!ENTITY alert "⚠">
     <!ENTITY delta "Δ">
     ]>
@@ -17,14 +16,6 @@
 
     <string name="dash" translatable="false">-</string>
     <string name="dots" translatable="false">&dots;</string>
-
-    <!-- Nightscout -->
-
-    <string name="Events_Only">Events Only</string>
-
-    <string name="Use_Active">Use Active</string>
-
-    <string name="Keep_All">Keep All</string>
 
     <!-- select -->
 
@@ -42,13 +33,13 @@
 
     <!-- units -->
 
-    <string name="insulin_U">U</string>
+    <string name="insulin_U" maxLength="1">U</string>
 
     <string name="glucose_mmol">mmol/L</string>
     <string name="glucose_mgdl">mg/dL</string>
 
-    <string name="gram_g">g</string>
-    <string name="gram_exchange_ex">ex</string>
+    <string name="gram_g" maxLength="2">g</string>
+    <string name="gram_exchange_ex" maxLength="2">ex</string>
 
     <plurals name="grams">
         <item quantity="one">%d gram</item>
@@ -60,10 +51,10 @@
     <string name="hour">hour</string>
     <string name="minute">minute</string>
 
-    <string name="day_d">d</string>
-    <string name="hour_h">h</string>
-    <string name="minute_m">m</string>
-    <string name="second_s">s</string>
+    <string name="day_d" maxLength="1">d</string>
+    <string name="hour_h" maxLength="1">h</string>
+    <string name="minute_m" maxLength="1">m</string>
+    <string name="second_s" maxLength="1">s</string>
 
     <plurals name="days">
         <item quantity="one">%d day</item>
@@ -94,8 +85,8 @@
     <string name="main_screen__icon_nightscout_status">Nightscout</string>
     <string name="main_screen__icon_battery_status">Pump Battery</string>
 
-    <string name="main_screen__active_insulin">Active Insulin</string>
-    <string name="main_screen__value_hour_chart">%1d hour chart</string>
+    <string name="main_screen__active_insulin" maxLength="20">Active Insulin</string>
+    <string name="main_screen__value_hour_chart" maxLength="20">%1d hour chart</string>
 
     <!-- Manage Devices Menu -->
 
@@ -144,11 +135,11 @@
     <string name="notification__DUALBOLUS_delivered_duration_time">Dual: %1$s:%2$s/%3$s at %4$s</string>
     <string name="notification__SQUAREBOLUS_delivered_duration_time">Square: %1$s/%2$s at %3$s</string>
     <string name="notification__BOLUSING_delivered_remainingtime">Bolusing&dots; %1$s %2$s remain</string>
-    <string name="notification__CAL_remainingtime">Cal %1$s</string>
-    <string name="notification__WARMUP_remainingtime">Warmup %1$s</string>
+    <string name="notification__CAL_remainingtime" maxLength="15">Cal %1$s</string>
+    <string name="notification__WARMUP_remainingtime" maxLength="15">Warmup %1$s</string>
     <string name="notification__CGM_EXCEPTION" translatable="false">%1$s</string>
-    <string name="notification__BUSY">Polling</string>
-    <string name="notification__ERROR">Connection error</string>
+    <string name="notification__BUSY" maxLength="20">Polling</string>
+    <string name="notification__ERROR" maxLength="20">Connection error</string>
 
     <!-- Userlog -->
 
@@ -164,7 +155,6 @@
     <string name="ul_main__poll_interval">Poll interval</string>
     <string name="ul_main__low_battery_poll_interval">Low battery poll interval</string>
     <string name="ul_main__auto_mode_update">Auto Mode update</string>
-    <string name="ul_main__events_only">events only</string>
 
     <string name="ul_share__nightscout">Nightscout</string>
     <string name="ul_share__nightscout_status">Nightscout status</string>
@@ -174,7 +164,7 @@
     <string name="ul_share__xdrip">xDrip</string>
     <string name="ul_share__is_available">is available</string>
     <string name="ul_share__is_not_available">is not available</string>
-    <string name="ul_share__offline">"Offline / No internet service</string>
+    <string name="ul_share__offline">Offline / No internet service</string>
     <string name="ul_share__processed">processed</string>
     <string name="ul_share__version">version</string>
     <string name="ul_share__pushover_validation_failed">Pushover validation failed. Check that your Pushover account is active and your account settings are correct.</string>
@@ -297,27 +287,27 @@
     <string name="ul_usb__no_support">It appears that this device does not support USB OTG.</string>
     <string name="ul_usb__no_connection">USB connection error. Is the Contour Next Link plugged in?</string>
     <string name="ul_usb__no_open">Unable to open USB device</string>
-    <string name="ul_usb__help_permission">Unplug/plug the Contour Next Link. Select &squote;use by default for this device&squote;.</string>
+    <string name="ul_usb__help_permission">Unplug/plug the Contour Next Link. Select \'use by default for this device\'.</string>
 
     <string name="ul_ns__warn_careportal">Careportal is not enabled in Nightscout, treatment data can not be uploaded.</string>
-    <string name="ul_ns__help_careportal">Add &squote;careportal&squote; to your ENABLE string in Azure or Heroku. Treatments can be disabled in the &squote;Advanced Nightscout Settings&squote; menu.</string>
+    <string name="ul_ns__help_careportal">Add \'careportal\' to your ENABLE string in Azure or Heroku. Treatments can be disabled in the \'Advanced Nightscout Settings\' menu.</string>
     <string name="ul_ns__warn_servertime">Time difference between uploader device and Nightscout server is greater then 10 minutes.</string>
     <string name="ul_ns__help_servertime">Check the time on your uploader device. Set device to use network provided time.</string>
     <string name="ul_ns__help_version">Your version of the Nightscout server is out of date. It is recommended to use the latest release version of the Nightscout server with the 600 Series Uploader.</string>
-    <string name="ul_ns__help_config_pump">Pump status information can be shown in Nightscout. Add &squote;pump&squote; to your ENABLE string in Azure or Heroku.</string>
-    <string name="ul_ns__help_config_sage">Sensor changes are detected and sent to Nightscout. Add &squote;sage&squote; to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the &squote;Advanced Nightscout Settings&squote; menu.</string>
-    <string name="ul_ns__help_config_cage">Cannula changes are detected and sent to Nightscout. Add &squote;cage&squote; to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the &squote;Advanced Nightscout Settings&squote; menu.</string>
-    <string name="ul_ns__help_config_iage">Insulin changes are detected and sent to Nightscout. Add &squote;iage&squote; to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the &squote;Advanced Nightscout Settings&squote; menu.</string>
-    <string name="ul_ns__help_config_bage">Pump Battery changes are detected and sent to Nightscout. Add &squote;bage&squote; to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the &squote;Advanced Nightscout Settings&squote; menu.</string>
-    <string name="ul_ns__help_config_profile">Basal Profiles are sent to Nightscout. Add &squote;profile&squote; to your ENABLE string in Azure or Heroku. This can be disabled in the &squote;Advanced Nightscout Settings&squote; menu.</string>
-    <string name="ul_ns__help_config_basal">Basal rates profiles and pattern changes can be shown in Nightscout. Add &squote;basal&squote; to your ENABLE string in Azure or Heroku.</string>
-    <string name="ul_ns__help_config_iob">IOB active insulin can be shown in Nightscout. Add &squote;iob&squote; to your ENABLE string in Azure or Heroku.</string>
-    <string name="ul_ns__help_config_devicestatus">Pump status details can be shown in Nightscout. Add &squote;DEVICESTATUS_ADVANCED&squote; with value &squote;true&squote; to your strings in Azure or Heroku.</string>
-    <string name="ul_ns__help_config_pumpfields">Pump battery, insulin, delivery modes, calibration and active error alert can be shown in Nightscout. Add &squote;PUMP_FIELDS&squote; with value &squote;clock reservoir battery status&squote; to your strings in Azure or Heroku.</string>
-    <string name="ul_ns__help_config_pumpfields_status">Bolus delivery modes, error alerts and calibration time can be shown in Nightscout. Add &squote;status&squote; to your &squote;PUMP_FIELDS&squote; string in Azure or Heroku.</string>
-    <string name="ul_ns__help_config_pumpfields_reservoir">Units of insulin remaining in the pump can be shown in Nightscout. Add &squote;reservoir&squote; to your &squote;PUMP_FIELDS&squote; string in Azure or Heroku.</string>
-    <string name="ul_ns__help_config_pumpfields_battery">Pump battery percentage remaining can be shown in Nightscout. Add &squote;battery&squote; to your &squote;PUMP_FIELDS&squote; string in Azure or Heroku.</string>
-    <string name="ul_ns__help_config_pumpfields_clock">Time since last pump reading can shown on Nightscout. Add &squote;clock&squote; to your &squote;PUMP_FIELDS&squote; string in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_pump">Pump status information can be shown in Nightscout. Add \'pump\' to your ENABLE string in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_sage">Sensor changes are detected and sent to Nightscout. Add \'sage\' to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the \'Advanced Nightscout Settings\' menu.</string>
+    <string name="ul_ns__help_config_cage">Cannula changes are detected and sent to Nightscout. Add \'cage\' to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the \'Advanced Nightscout Settings\' menu.</string>
+    <string name="ul_ns__help_config_iage">Insulin changes are detected and sent to Nightscout. Add \'iage\' to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the \'Advanced Nightscout Settings\' menu.</string>
+    <string name="ul_ns__help_config_bage">Pump Battery changes are detected and sent to Nightscout. Add \'bage\' to your ENABLE string in Azure or Heroku to see time of last change. This can be disabled in the \'Advanced Nightscout Settings\' menu.</string>
+    <string name="ul_ns__help_config_profile">Basal Profiles are sent to Nightscout. Add \'profile\' to your ENABLE string in Azure or Heroku. This can be disabled in the \'Advanced Nightscout Settings\' menu.</string>
+    <string name="ul_ns__help_config_basal">Basal rates profiles and pattern changes can be shown in Nightscout. Add \'basal\' to your ENABLE string in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_iob">IOB active insulin can be shown in Nightscout. Add \'iob\' to your ENABLE string in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_devicestatus">Pump status details can be shown in Nightscout. Add \'DEVICESTATUS_ADVANCED\' with value \'true\' to your strings in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_pumpfields">Pump battery, insulin, delivery modes, calibration and active error alert can be shown in Nightscout. Add \'PUMP_FIELDS\' with value \'clock reservoir battery status\' to your strings in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_pumpfields_status">Bolus delivery modes, error alerts and calibration time can be shown in Nightscout. Add \'status\' to your \'PUMP_FIELDS\' string in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_pumpfields_reservoir">Units of insulin remaining in the pump can be shown in Nightscout. Add \'reservoir\' to your \'PUMP_FIELDS\' string in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_pumpfields_battery">Pump battery percentage remaining can be shown in Nightscout. Add \'battery\' to your \'PUMP_FIELDS\' string in Azure or Heroku.</string>
+    <string name="ul_ns__help_config_pumpfields_clock">Time since last pump reading can shown on Nightscout. Add \'clock\' to your \'PUMP_FIELDS\' string in Azure or Heroku.</string>
 
     <!-- Preference Settings -->
 
@@ -413,6 +403,7 @@
     <string name="pref_ns_profile_offset_title">Offset start date</string>
     <string name="pref_ns_profile_offset_summary">Uploaded profile will be valid from 12 months ago</string>
     <string name="pref_ns_profile_default_pattern_title">Default Pattern</string>
+    <string name="pref_ns_profile_default_pattern_use_active">Use Active</string>
     <string name="pref_ns_profile_active_insulin_time_title">Active Insulin Time</string>
     <string name="pref_ns_profile_send_pattern_change_title">Basal Pattern Change</string>
     <string name="pref_ns_profile_send_pattern_change_summary">Send basal pattern changes to Nightscout</string>
@@ -425,6 +416,7 @@
     <string name="pref_ns_pump_alerts_time_to_clear_title">Time to Clear</string>
     <string name="pref_ns_pump_alerts_time_to_clear_summary">Time taken to react to alarm on the pump</string>
     <string name="pref_ns_pump_alerts_remove_from_nightscout_title">Remove from Nightscout</string>
+    <string name="pref_ns_pump_alerts_remove_from_nightscout_keep_all">Keep All</string>
 
     <string name="pref_ns_uploader_status_category">Uploader Status</string>
     <string name="pref_ns_uploader_status_enable_title">Enable Uploader Status</string>
@@ -531,34 +523,34 @@
 
     <!-- Urchin -->
 
-    <string name="urchin_watchface_Battery_Hi">Hi</string>
-    <string name="urchin_watchface_Battery_Lo">Lo</string>
-    <string name="urchin_watchface_Battery_Full">F</string>
-    <string name="urchin_watchface_Battery_High">H</string>
-    <string name="urchin_watchface_Battery_Medium">M</string>
-    <string name="urchin_watchface_Battery_Low">L</string>
-    <string name="urchin_watchface_Battery_Empty">E</string>
+    <string name="urchin_watchface_Battery_Hi" maxLength="2">Hi</string>
+    <string name="urchin_watchface_Battery_Lo" maxLength="2">Lo</string>
+    <string name="urchin_watchface_Battery_Full" maxLength="1">F</string>
+    <string name="urchin_watchface_Battery_High" maxLength="1">H</string>
+    <string name="urchin_watchface_Battery_Medium" maxLength="1">M</string>
+    <string name="urchin_watchface_Battery_Low" maxLength="1">L</string>
+    <string name="urchin_watchface_Battery_Empty" maxLength="1">E</string>
 
-    <string name="urchin_watchface_BG">BG</string>
-    <string name="urchin_watchface_Factor">CF</string>
-    <string name="urchin_watchface_ISIG">IS</string>
-    <string name="urchin_watchface_Estimate">EST</string>
-    <string name="urchin_watchface_Alert">A!</string>
-    <string name="urchin_watchface_Suspend">S</string>
-    <string name="urchin_watchface_Temp">T</string>
+    <string name="urchin_watchface_BG" maxLength="2">BG</string>
+    <string name="urchin_watchface_Factor" maxLength="2">CF</string>
+    <string name="urchin_watchface_ISIG" maxLength="2">IS</string>
+    <string name="urchin_watchface_Estimate" maxLength="3">EST</string>
+    <string name="urchin_watchface_Alert" maxLength="2">A!</string>
+    <string name="urchin_watchface_Suspend" maxLength="1">S</string>
+    <string name="urchin_watchface_Temp" maxLength="1">T</string>
     <string name="urchin_watchface_Bolusing" translatable="false">\></string>
-    <string name="urchin_watchface_Dual">d</string>
-    <string name="urchin_watchface_Square">s</string>
-    <string name="urchin_watchface_CalibrateNow">C!</string>
-    <string name="urchin_watchface_Calibrating">C</string>
-    <string name="urchin_watchface_WarmUp">W</string>
-    <string name="urchin_watchface_SensorEndOfLife">X!</string>
-    <string name="urchin_watchface_SensorError">E!</string>
+    <string name="urchin_watchface_Dual" maxLength="1">d</string>
+    <string name="urchin_watchface_Square" maxLength="1">s</string>
+    <string name="urchin_watchface_CalibrateNow" maxLength="2">C!</string>
+    <string name="urchin_watchface_Calibrating" maxLength="2">C</string>
+    <string name="urchin_watchface_WarmUp" maxLength="2">W</string>
+    <string name="urchin_watchface_SensorEndOfLife" maxLength="2">X!</string>
+    <string name="urchin_watchface_SensorError" maxLength="2">E!</string>
     <string name="urchin_watchface_NoCGM" translatable="false">\?\?</string>
     <string name="urchin_watchface_NoData" translatable="false">\?</string>
 
-    <string name="urchin_text_unit_u">u</string>
-    <string name="urchin_text_unit_U">U</string>
+    <string name="urchin_text_unit_u" maxLength="1">u</string>
+    <string name="urchin_text_unit_U" maxLength="1">U</string>
     <string name="urchin_text_none">none</string>
     <string name="urchin_text_space">space</string>
     <string name="urchin_text_double_space">double space</string>
@@ -678,15 +670,15 @@
     <string name="pref_pushover_alert_before_low_category">Alert Before Low</string>
 
     <string name="pref_pushover_pump_alerts_category">Pump Alerts</string>
-    <string name="pref_pushover_emergency_alert_note_summary">Note: Some pump emergency alerts can block all communication until they are cleared by the pump user. Alert for this state can be set in &squote;Uploader Events&squote;</string>
+    <string name="pref_pushover_emergency_alert_note_summary">Note: Some pump emergency alerts can block all communication until they are cleared by the pump user. Alert for this state can be set in \'Uploader Events\'</string>
     <string name="pref_pushover_emergency_alert_category">Emergency Alert</string>
-    <string name="pref_pushover_emergency_alert_summary">Alerts that require immediate action. Example: &squote;Insulin flow blocked&squote; &squote;Replace battery now&squote;</string>
+    <string name="pref_pushover_emergency_alert_summary">Alerts that require immediate action. Example: \'Insulin flow blocked\' \'Replace battery now\'</string>
     <string name="pref_pushover_actionable_alert_category">Actionable Alert</string>
-    <string name="pref_pushover_actionable_alert_summary">Alerts that may require action. Example: &squote;Calibrate Now&squote; &squote;Bolus Not Delivered&squote;</string>
+    <string name="pref_pushover_actionable_alert_summary">Alerts that may require action. Example: \'Calibrate Now\' \'Bolus Not Delivered\'</string>
     <string name="pref_pushover_informational_alert_category">Informational Alert</string>
-    <string name="pref_pushover_informational_alert_summary">Example: &squote;Low Reservoir 10U remain&squote; &squote;Low battery Pump&squote;</string>
+    <string name="pref_pushover_informational_alert_summary">Example: \'Low Reservoir 10U remain\' \'Low battery Pump\'</string>
     <string name="pref_pushover_reminders_category">Reminders</string>
-    <string name="pref_pushover_reminders_summary">Example: &squote;Calibrate by 10:30&squote; &squote;Missed Meal Bolus&squote;</string>
+    <string name="pref_pushover_reminders_summary">Example: \'Calibrate by 10:30\' \'Missed Meal Bolus\'</string>
 
     <string name="pref_pushover_pump_events_category">Pump Events</string>
     <string name="pref_pushover_pump_events_summary">Treatments and events can have a notification sent to followers.</string>
@@ -813,57 +805,57 @@
 
     <!-- Pump Daily Totals -->
 
-    <string name="daily_totals_heading__daily_totals">Daily Totals</string>
-    <string name="daily_totals_heading__bolus">Bolus</string>
-    <string name="daily_totals_heading__basal">Basal</string>
-    <string name="daily_totals_heading__sensor">Sensor</string>
-    <string name="daily_totals_heading__bg">BG</string>
-    <string name="daily_totals_heading__auto">Auto</string>
-    <string name="daily_totals_heading__insulin">Insulin</string>
-    <string name="daily_totals_heading__total_daily_dose">TDD</string>
-    <string name="daily_totals_heading__sgv">Sgv</string>
-    <string name="daily_totals_heading__average">Avg</string>
-    <string name="daily_totals_heading__standard_deviation">StdDev</string>
-    <string name="daily_totals_heading__total_alerts">Alerts</string>
-    <string name="daily_totals_heading__total_values">Total</string>
-    <string name="daily_totals_heading__high_values">High</string>
-    <string name="daily_totals_heading__low_values">Low</string>
-    <string name="daily_totals_heading__bolus_manual_entry">Manual</string>
-    <string name="daily_totals_heading__bolus_wizard_entry">Wizard</string>
-    <string name="daily_totals_heading__carb">Carb</string>
-    <string name="daily_totals_heading__food">Food</string>
-    <string name="daily_totals_heading__correction_bolus">Correct</string>
-    <string name="daily_totals_heading__food_and_correction_bolus">Food+Corr</string>
-    <string name="daily_totals_heading__alert_on_rise">Rise</string>
-    <string name="daily_totals_heading__alert_on_high">High</string>
-    <string name="daily_totals_heading__alert_on_low">Low</string>
-    <string name="daily_totals_heading__alert_on_suspend">Suspend</string>
-    <string name="daily_totals_heading__alert_before_high">PreHigh</string>
-    <string name="daily_totals_heading__alert_before_low">PreLow</string>
-    <string name="daily_totals_heading__alert_before_suspend">PreSuspd</string>
-    <string name="daily_totals_heading__within_range">Within</string>
-    <string name="daily_totals_heading__automode_active_time">Active</string>
-    <string name="daily_totals_heading__microbolus">Micro</string>
-    <string name="daily_totals_heading__therapy">Therapy</string>
-    <string name="daily_totals_heading__therapy_in_range">Range</string>
-    <string name="daily_totals_heading__therapy_above_range">Above</string>
-    <string name="daily_totals_heading__therapy_below_range">Below</string>
+    <string name="daily_totals_heading__daily_totals" maxLength="15">Daily Totals</string>
+    <string name="daily_totals_heading__bolus" maxLength="10">Bolus</string>
+    <string name="daily_totals_heading__basal" maxLength="10">Basal</string>
+    <string name="daily_totals_heading__sensor" maxLength="10">Sensor</string>
+    <string name="daily_totals_heading__bg" maxLength="10">BG</string>
+    <string name="daily_totals_heading__auto" maxLength="10">Auto</string>
+    <string name="daily_totals_heading__insulin" maxLength="10">Insulin</string>
+    <string name="daily_totals_heading__total_daily_dose" maxLength="10">TDD</string>
+    <string name="daily_totals_heading__sgv" maxLength="10">Sgv</string>
+    <string name="daily_totals_heading__average" maxLength="10">Avg</string>
+    <string name="daily_totals_heading__standard_deviation" maxLength="10">StdDev</string>
+    <string name="daily_totals_heading__total_alerts" maxLength="10">Alerts</string>
+    <string name="daily_totals_heading__total_values" maxLength="10">Total</string>
+    <string name="daily_totals_heading__high_values" maxLength="10">High</string>
+    <string name="daily_totals_heading__low_values" maxLength="10">Low</string>
+    <string name="daily_totals_heading__bolus_manual_entry" maxLength="10">Manual</string>
+    <string name="daily_totals_heading__bolus_wizard_entry" maxLength="10">Wizard</string>
+    <string name="daily_totals_heading__carb" maxLength="10">Carb</string>
+    <string name="daily_totals_heading__food" maxLength="10">Food</string>
+    <string name="daily_totals_heading__correction_bolus" maxLength="10">Correct</string>
+    <string name="daily_totals_heading__food_and_correction_bolus" maxLength="10">Food+Corr</string>
+    <string name="daily_totals_heading__alert_on_rise" maxLength="10">Rise</string>
+    <string name="daily_totals_heading__alert_on_high" maxLength="10">High</string>
+    <string name="daily_totals_heading__alert_on_low" maxLength="10">Low</string>
+    <string name="daily_totals_heading__alert_on_suspend" maxLength="10">Suspend</string>
+    <string name="daily_totals_heading__alert_before_high" maxLength="10">PreHigh</string>
+    <string name="daily_totals_heading__alert_before_low" maxLength="10">PreLow</string>
+    <string name="daily_totals_heading__alert_before_suspend" maxLength="10">PreSuspd</string>
+    <string name="daily_totals_heading__within_range" maxLength="10">Within</string>
+    <string name="daily_totals_heading__automode_active_time" maxLength="10">Active</string>
+    <string name="daily_totals_heading__microbolus" maxLength="10">Micro</string>
+    <string name="daily_totals_heading__therapy" maxLength="10">Therapy</string>
+    <string name="daily_totals_heading__therapy_in_range" maxLength="10">Range</string>
+    <string name="daily_totals_heading__therapy_above_range" maxLength="10">Above</string>
+    <string name="daily_totals_heading__therapy_below_range" maxLength="10">Below</string>
 
     <!-- Nightscout PUMP pill -->
 
-    <string name="nightscout_pump_pill__active_alert">&alert;</string>
-    <string name="nightscout_pump_pill__temp">T</string>
-    <string name="nightscout_pump_pill__square">S</string>
-    <string name="nightscout_pump_pill__dual">D</string>
-    <string name="nightscout_pump_pill__no_cgm">no cgm</string>
-    <string name="nightscout_pump_pill__bolusing">bolusing</string>
-    <string name="nightscout_pump_pill__bolusing_abreviation">bol</string>
-    <string name="nightscout_pump_pill__suspended">suspended</string>
-    <string name="nightscout_pump_pill__suspended_abreviation">sus</string>
-    <string name="nightscout_pump_pill__lost_sensor">lost sensor</string>
-    <string name="nightscout_pump_pill__lost_sensor_abreviation">lost</string>
-    <string name="nightscout_pump_pill__estimate">*estimate</string>
-    <string name="nightscout_pump_pill__estimate_abreviation">*est</string>
+    <string name="nightscout_pump_pill__active_alert" translatable="false" maxLength="1">&alert;</string>
+    <string name="nightscout_pump_pill__temp" maxLength="1">T</string>
+    <string name="nightscout_pump_pill__square" maxLength="1">S</string>
+    <string name="nightscout_pump_pill__dual" maxLength="1">D</string>
+    <string name="nightscout_pump_pill__no_cgm" maxLength="12">no cgm</string>
+    <string name="nightscout_pump_pill__bolusing" maxLength="12">bolusing</string>
+    <string name="nightscout_pump_pill__bolusing_abreviation" maxLength="4">bol</string>
+    <string name="nightscout_pump_pill__suspended" maxLength="12">suspended</string>
+    <string name="nightscout_pump_pill__suspended_abreviation" maxLength="4">sus</string>
+    <string name="nightscout_pump_pill__lost_sensor" maxLength="12">lost sensor</string>
+    <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="4">lost</string>
+    <string name="nightscout_pump_pill__estimate" maxLength="12">*estimate</string>
+    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="4">*est</string>
 
     <!-- pump/sensor/automode states -->
 
@@ -889,64 +881,64 @@
     <string name="automode_transition__out_of_active_due_to_timeout_from_safe_basal">Out of active due to timeout from safe basal</string>
     <string name="automode_transition__out_of_active_due_to_prolonged_high_sg">Out of active due to prolonged high SG</string>
 
-    <string name="sensor_state__ok">OK</string>
-    <string name="sensor_state__warm_up">warm up</string>
-    <string name="sensor_state__warm_up_abbreviation">WU</string>
-    <string name="sensor_state__calibrate_now">calibrate now</string>
-    <string name="sensor_state__calibrate_now_abbreviation">CalNow</string>
-    <string name="sensor_state__sg_not_available">sg not available</string>
-    <string name="sensor_state__sg_not_available_abbreviation">NoSG</string>
-    <string name="sensor_state__cal_error">cal error</string>
-    <string name="sensor_state__cal_error_abbreviation">CalErr</string>
-    <string name="sensor_state__change_sensor">change sensor</string>
-    <string name="sensor_state__change_sensor_abbreviation">ChgSen</string>
-    <string name="sensor_state__sensor_expired">sensor expired</string>
-    <string name="sensor_state__sensor_expired_abbreviation">EOL</string>
-    <string name="sensor_state__not_ready">not ready</string>
-    <string name="sensor_state__not_ready_abbreviation">NotRdy</string>
-    <string name="sensor_state__reading_high">sg reading high</string>
-    <string name="sensor_state__reading_high_abbreviation">HiSG</string>
-    <string name="sensor_state__reading_low">sg reading low</string>
-    <string name="sensor_state__reading_low_abbreviation">LoSG</string>
-    <string name="sensor_state__calibrating">calibrating</string>
-    <string name="sensor_state__calibrating_abbreviation">InCal</string>
-    <string name="sensor_state__cal_error_change_sensor">cal error change sensor</string>
-    <string name="sensor_state__cal_error_change_sensor_abbreviation">ChgSen</string>
-    <string name="sensor_state__time_unknown">time unknown</string>
-    <string name="sensor_state__time_unknown_abbreviation">NoTime</string>
-    <string name="sensor_state__sensor_error">sensor error</string>
-    <string name="sensor_state__sensor_error_abbreviation">SenErr</string>
+    <string name="sensor_state__ok" maxLength="6">OK</string>
+    <string name="sensor_state__warm_up" maxLength="30">warm up</string>
+    <string name="sensor_state__warm_up_abbreviation" maxLength="6">WU</string>
+    <string name="sensor_state__calibrate_now" maxLength="30">calibrate now</string>
+    <string name="sensor_state__calibrate_now_abbreviation" maxLength="6">CalNow</string>
+    <string name="sensor_state__sg_not_available" maxLength="30">sg not available</string>
+    <string name="sensor_state__sg_not_available_abbreviation" maxLength="6">NoSG</string>
+    <string name="sensor_state__cal_error" maxLength="30">cal error</string>
+    <string name="sensor_state__cal_error_abbreviation" maxLength="6">CalErr</string>
+    <string name="sensor_state__change_sensor" maxLength="30">change sensor</string>
+    <string name="sensor_state__change_sensor_abbreviation" maxLength="6">ChgSen</string>
+    <string name="sensor_state__sensor_expired" maxLength="30">sensor expired</string>
+    <string name="sensor_state__sensor_expired_abbreviation" maxLength="6">EOL</string>
+    <string name="sensor_state__not_ready" maxLength="30">not ready</string>
+    <string name="sensor_state__not_ready_abbreviation" maxLength="6">NotRdy</string>
+    <string name="sensor_state__reading_high" maxLength="30">sg reading high</string>
+    <string name="sensor_state__reading_high_abbreviation" maxLength="6">HiSG</string>
+    <string name="sensor_state__reading_low" maxLength="30">sg reading low</string>
+    <string name="sensor_state__reading_low_abbreviation" maxLength="6">LoSG</string>
+    <string name="sensor_state__calibrating" maxLength="30">calibrating</string>
+    <string name="sensor_state__calibrating_abbreviation" maxLength="6">InCal</string>
+    <string name="sensor_state__cal_error_change_sensor" maxLength="30">cal error change sensor</string>
+    <string name="sensor_state__cal_error_change_sensor_abbreviation" maxLength="6">ChgSen</string>
+    <string name="sensor_state__time_unknown" maxLength="30">time unknown</string>
+    <string name="sensor_state__time_unknown_abbreviation" maxLength="6">NoTime</string>
+    <string name="sensor_state__sensor_error" maxLength="30">sensor error</string>
+    <string name="sensor_state__sensor_error_abbreviation" maxLength="6">SenErr</string>
 
     <!-- pump default pattern and preset names -->
 
-    <string name="pump_default__basal_pattern_1">Basal 1</string>
-    <string name="pump_default__basal_pattern_2">Basal 2</string>
-    <string name="pump_default__basal_pattern_3">Basal 3</string>
-    <string name="pump_default__basal_pattern_4">Basal 4</string>
-    <string name="pump_default__basal_pattern_5">Basal 5</string>
-    <string name="pump_default__basal_pattern_6">Workday</string>
-    <string name="pump_default__basal_pattern_7">Day Off</string>
-    <string name="pump_default__basal_pattern_8">Sick Day</string>
+    <string name="pump_default__basal_pattern_1" comment="local name as shown on the pump for basal patterns">Basal 1</string>
+    <string name="pump_default__basal_pattern_2" comment="local name as shown on the pump for basal patterns">Basal 2</string>
+    <string name="pump_default__basal_pattern_3" comment="local name as shown on the pump for basal patterns">Basal 3</string>
+    <string name="pump_default__basal_pattern_4" comment="local name as shown on the pump for basal patterns">Basal 4</string>
+    <string name="pump_default__basal_pattern_5" comment="local name as shown on the pump for basal patterns">Basal 5</string>
+    <string name="pump_default__basal_pattern_6" comment="local name as shown on the pump for basal patterns">Workday</string>
+    <string name="pump_default__basal_pattern_7" comment="local name as shown on the pump for basal patterns">Day Off</string>
+    <string name="pump_default__basal_pattern_8" comment="local name as shown on the pump for basal patterns">Sick Day</string>
 
     <string name="pump_default__temp_basal_preset_0">Not Preset</string>
-    <string name="pump_default__temp_basal_preset_1">Temp 1</string>
-    <string name="pump_default__temp_basal_preset_2">Temp 2</string>
-    <string name="pump_default__temp_basal_preset_3">Temp 3</string>
-    <string name="pump_default__temp_basal_preset_4">Temp 4</string>
-    <string name="pump_default__temp_basal_preset_5">High Activity</string>
-    <string name="pump_default__temp_basal_preset_6">Moderate Activity</string>
-    <string name="pump_default__temp_basal_preset_7">Low Activity</string>
-    <string name="pump_default__temp_basal_preset_8">Sick</string>
+    <string name="pump_default__temp_basal_preset_1" comment="local name as shown on the pump for basal presets">Temp 1</string>
+    <string name="pump_default__temp_basal_preset_2" comment="local name as shown on the pump for basal presets">Temp 2</string>
+    <string name="pump_default__temp_basal_preset_3" comment="local name as shown on the pump for basal presets">Temp 3</string>
+    <string name="pump_default__temp_basal_preset_4" comment="local name as shown on the pump for basal presets">Temp 4</string>
+    <string name="pump_default__temp_basal_preset_5" comment="local name as shown on the pump for basal presets">High Activity</string>
+    <string name="pump_default__temp_basal_preset_6" comment="local name as shown on the pump for basal presets">Moderate Activity</string>
+    <string name="pump_default__temp_basal_preset_7" comment="local name as shown on the pump for basal presets">Low Activity</string>
+    <string name="pump_default__temp_basal_preset_8" comment="local name as shown on the pump for basal presets">Sick</string>
 
     <string name="pump_default__bolus_preset_0">Not Preset</string>
-    <string name="pump_default__bolus_preset_1">Bolus 1</string>
-    <string name="pump_default__bolus_preset_2">Bolus 2</string>
-    <string name="pump_default__bolus_preset_3">Bolus 3</string>
-    <string name="pump_default__bolus_preset_4">Bolus 4</string>
-    <string name="pump_default__bolus_preset_5">Breakfast</string>
-    <string name="pump_default__bolus_preset_6">Lunch</string>
-    <string name="pump_default__bolus_preset_7">Dinner</string>
-    <string name="pump_default__bolus_preset_8">Snack</string>
+    <string name="pump_default__bolus_preset_1" comment="local name as shown on the pump for bolus presets">Bolus 1</string>
+    <string name="pump_default__bolus_preset_2" comment="local name as shown on the pump for bolus presets">Bolus 2</string>
+    <string name="pump_default__bolus_preset_3" comment="local name as shown on the pump for bolus presets">Bolus 3</string>
+    <string name="pump_default__bolus_preset_4" comment="local name as shown on the pump for bolus presets">Bolus 4</string>
+    <string name="pump_default__bolus_preset_5" comment="local name as shown on the pump for bolus presets">Breakfast</string>
+    <string name="pump_default__bolus_preset_6" comment="local name as shown on the pump for bolus presets">Lunch</string>
+    <string name="pump_default__bolus_preset_7" comment="local name as shown on the pump for bolus presets">Dinner</string>
+    <string name="pump_default__bolus_preset_8" comment="local name as shown on the pump for bolus presets">Snack</string>
 
     <!-- system status messages -->
 

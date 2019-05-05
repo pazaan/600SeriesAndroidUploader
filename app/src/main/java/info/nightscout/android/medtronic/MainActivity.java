@@ -179,9 +179,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
             // v0.7.0 changed minimum backfill period to 7 days
             if (mPrefs.getString(getString(R.string.key_sysCgmHistoryDays), "").equals("1"))
-                mPrefs.edit().putString(getString(R.string.key_sysCgmHistoryDays), "7").apply();
+                mPrefs.edit().putString(getString(R.string.key_sysCgmHistoryDays), getString(R.string.default_sysCgmHistoryDays)).apply();
             if (mPrefs.getString(getString(R.string.key_sysPumpHistoryDays), "").equals("1"))
-                mPrefs.edit().putString(getString(R.string.key_sysPumpHistoryDays), "7").apply();
+                mPrefs.edit().putString(getString(R.string.key_sysPumpHistoryDays), getString(R.string.default_sysPumpHistoryDays)).apply();
+            // v0.7.0 removed "Events Only" option, changed default from "90" to "60"
+            if (mPrefs.getString(getString(R.string.key_sysPumpHistoryFrequency), "").equals("0"))
+                mPrefs.edit().putString(getString(R.string.key_sysPumpHistoryFrequency), getString(R.string.default_sysPumpHistoryFrequency)).apply();
         }
 
         storeRealm.executeTransaction(new Realm.Transaction() {
@@ -738,12 +741,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                                 R.string.ul_main__auto_mode_update,
                                 R.plurals.minutes,
                                 historyFrequency
-                        ));
-            } else {
-                UserLogMessage.getInstance().add(UserLogMessage.TYPE.OPTION,
-                        String.format("{id;%s}: {id;%s}",
-                                R.string.ul_main__auto_mode_update,
-                                R.string.ul_main__events_only
                         ));
             }
 
