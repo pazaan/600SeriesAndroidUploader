@@ -6,6 +6,13 @@
     <!ENTITY percent "&#65130;">
     ]>
 
+<!-- alert strings
+
+ name: "alert_NNN" where NNN is the pump alert fault code
+ string: main message (always shown to user) | extended message (optional user setting)
+
+ -->
+
 <resources>
 
     <!-- alert title -->
@@ -34,13 +41,6 @@
 
     <string name="alert_unknown_in_history">Unknown|Please check your PUMP Alarm History and report the FULL alert message as shown on the pump. Include the #code and data in brackets as shown here and send to the dev team.</string>
     <string name="alert_unknown_not_in_history">Unknown|Alert does not show in the pumps alarm history and is only displayed as an on-screen notification. Please take a photo of the alert as displayed on the pump when available. Include the #code and data in brackets as shown here and send to the dev team.</string>
-
-    <!-- alert strings
-
-     name: "alert_NNN" where NNN is the pump alert fault code
-     string: main message (always shown to user) | extended message (optional user setting)
-
-     -->
 
     <!-- taken from pump alarm history -->
 
