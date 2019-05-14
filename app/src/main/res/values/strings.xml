@@ -19,27 +19,24 @@
 
     <!-- select -->
 
-    <string name="enabled">enabled</string>
-    <string name="disabled">disabled</string>
+    <string name="enabled" comment="user selects item as enabled">enabled</string>
+    <string name="disabled" comment="user selects item as disabled">disabled</string>
 
-    <string name="on">on</string>
-    <string name="off">off</string>
+    <string name="on" comment="on/off toggle switch, user switches item to ON">on</string>
+    <string name="off" comment="on/off toggle switch, user switches item to OFF">off</string>
 
-    <string name="yes">yes</string>
-    <string name="no">no</string>
-
-    <string name="YES">YES</string>
-    <string name="NO">NO</string>
+    <string name="YES" comment="yes/no toggle switch, user switches item to YES">YES</string>
+    <string name="NO" comment="yes/no toggle switch, user switches item to NO">NO</string>
 
     <!-- units -->
 
-    <string name="insulin_U" maxLength="1">U</string>
+    <string name="insulin_U">U</string>
 
     <string name="glucose_mmol">mmol/L</string>
     <string name="glucose_mgdl">mg/dL</string>
 
-    <string name="gram_g" maxLength="2">g</string>
-    <string name="gram_exchange_ex" maxLength="2">ex</string>
+    <string name="gram_g">g</string>
+    <string name="gram_exchange_ex">ex</string>
 
     <plurals name="grams">
         <item quantity="one">%d gram</item>
@@ -51,10 +48,10 @@
     <string name="hour">hour</string>
     <string name="minute">minute</string>
 
-    <string name="day_d" maxLength="1">d</string>
-    <string name="hour_h" maxLength="1">h</string>
-    <string name="minute_m" maxLength="1">m</string>
-    <string name="second_s" maxLength="1">s</string>
+    <string name="day_d">d</string>
+    <string name="hour_h">h</string>
+    <string name="minute_m">m</string>
+    <string name="second_s">s</string>
 
     <plurals name="days">
         <item quantity="one">%d day</item>
@@ -76,7 +73,7 @@
     <!-- EULA -->
 
     <string name="eula__title">Disclaimer</string>
-    <string name="eula__message">Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers. This means that you accept that using this application is at your own risk. Nigthscout developers accept no liability for the consequences of any actions taken on the basis of the information provided. If you are not sure of how to use this application you must not use it.</string>
+    <string name="eula__message">Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers. This means that you accept that using this application is at your own risk. Nightscout developers accept no liability for the consequences of any actions taken on the basis of the information provided. If you are not sure of how to use this application you must not use it.</string>
     <string name="eula__accept">Accept</string>
     <string name="eula__refuse">Refuse</string>
 
@@ -114,32 +111,32 @@
 
     <!-- Status Notification (pull down / lock screen)  -->
 
-    <string name="notification__SGV_value">SGV %1$s</string>
-    <string name="notification__SGV_value_estimated">SGV %1$s*</string>
-    <string name="notification__SGV_not_available">No SGV available</string>
+    <string name="notification__SGV_value" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen, example: SGV 100">SGV %1$s</string>
+    <string name="notification__SGV_value_estimated" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen when sensor glucose estimator is in use, example: SGV 100*">SGV %1$s*</string>
+    <string name="notification__SGV_not_available" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen">No SGV available</string>
     <string name="notification__DELTA_value" translatable="false">&delta; %1$s</string>
-    <string name="notification__ESTIMATE">*estimated sgv</string>
+    <string name="notification__ESTIMATE" comment="visible on pull down / lock screen when sensor glucose estimator is in use">*estimated sgv</string>
     <string name="notification__ALERT" translatable="false">&alert;</string>
     <string name="notification__ALERT_message" translatable="false">&alert; %1$s</string>
-    <string name="notification__NEXTPOLL_time">Next %1$s</string>
-    <string name="notification__IOB_value">IOB %1$s</string>
-    <string name="notification__BASAL_rate">Basal: %1$s</string>
+    <string name="notification__NEXTPOLL_time" comment="visible on pull down / lock screen, example: Next 12:15 pm">Next %1$s</string>
+    <string name="notification__IOB_value" comment="IOB = Insulin On Board, visible on pull down / lock screen, example: IOB 3.5U">IOB %1$s</string>
+    <string name="notification__BASAL_rate" comment="visible on pull down / lock screen, example:  Basal: 0.85U">Basal: %1$s</string>
     <string name="notification__BASAL_rate_pattern" translatable="false">%2$s: %1$s</string>
-    <string name="notification__SUSPEND">Suspended</string>
-    <string name="notification__SUSPEND_time">Suspended at %1$s</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime">Temp Basal: %1$s %2$s remain</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime_preset">Temp Basal: %1$s %2$s remain (%3$s)</string>
-    <string name="notification__BG_value_time">BG: %1$s at %2$s</string>
-    <string name="notification__BG_value_time_factor">BG: %1$s at %2$s • Factor: %3$s</string>
-    <string name="notification__BOLUS_delivered_time">Bolus: %1$s at %2$s</string>
-    <string name="notification__DUALBOLUS_delivered_duration_time">Dual: %1$s:%2$s/%3$s at %4$s</string>
-    <string name="notification__SQUAREBOLUS_delivered_duration_time">Square: %1$s/%2$s at %3$s</string>
-    <string name="notification__BOLUSING_delivered_remainingtime">Bolusing&dots; %1$s %2$s remain</string>
-    <string name="notification__CAL_remainingtime" maxLength="15">Cal %1$s</string>
-    <string name="notification__WARMUP_remainingtime" maxLength="15">Warmup %1$s</string>
+    <string name="notification__SUSPEND" comment="visible on pull down / lock screen, example">Suspended</string>
+    <string name="notification__SUSPEND_time" comment="visible on pull down / lock screen, example:  Suspended at 3.30 pm">Suspended at %1$s</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain">Temp Basal: %1$s %2$s remain</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime_preset" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Temp Basal: %1$s %2$s remain (%3$s)</string>
+    <string name="notification__BG_value_time" comment="BG = Blood Glucose, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm">BG: %1$s at %2$s</string>
+    <string name="notification__BG_value_time_factor" comment="BG = Blood Glucose, Factor = Calibration Factor, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm • Factor: 4.5">BG: %1$s at %2$s • Factor: %3$s</string>
+    <string name="notification__BOLUS_delivered_time" comment="visible on pull down / lock screen, example:  Bolus: 3.5U at 3.15 pm">Bolus: %1$s at %2$s</string>
+    <string name="notification__DUALBOLUS_delivered_duration_time" comment="visible on pull down / lock screen, example:  Dual: 3U:5U/1h30m at 3.15 pm">Dual: %1$s:%2$s/%3$s at %4$s</string>
+    <string name="notification__SQUAREBOLUS_delivered_duration_time" comment="visible on pull down / lock screen, example:  Square: 5U/1h30m at 3.15 pm">Square: %1$s/%2$s at %3$s</string>
+    <string name="notification__BOLUSING_delivered_remainingtime" comment="visible on pull down / lock screen, example:  Bolusing&dots; 0.5U 1h30m remain">Bolusing&dots; %1$s %2$s remain</string>
+    <string name="notification__CAL_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Cal 10h30m">Cal %1$s</string>
+    <string name="notification__WARMUP_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Warmup 1h30m">Warmup %1$s</string>
     <string name="notification__CGM_EXCEPTION" translatable="false">%1$s</string>
-    <string name="notification__BUSY" maxLength="20">Polling</string>
-    <string name="notification__ERROR" maxLength="20">Connection error</string>
+    <string name="notification__BUSY" maxLength="20" comment="pump polling is in progress, visible on pull down / lock screen">Polling</string>
+    <string name="notification__ERROR" maxLength="20" comment="error state, visible on pull down / lock screen">Connection error</string>
 
     <!-- Userlog -->
 
@@ -171,7 +168,7 @@
 
     <string name="ul_poll__connecting_to_contour_next_link">Connecting to Contour Next Link</string>
     <string name="ul_poll__connected_on_channel">Connected on channel</string>
-    <string name="ul_poll__rssi">RSSI</string>
+    <string name="ul_poll__rssi" comment="RSSI = Received Signal Strength Indicator (CNL-PUMP radio signal)">RSSI</string>
 
     <string name="ul_poll__please_wait">Please wait</string>
     <string name="ul_poll__pump_is_expecting_sensor_communication">Pump is expecting sensor communication. Poll due in</string>
@@ -187,11 +184,11 @@
     <string name="ul_poll__sensor_is_calibrating">sensor is calibrating</string>
     <string name="ul_poll__sensor_error">sensor error</string>
     <string name="ul_poll__old_cgm_event_received">old cgm event received</string>
-    <string name="ul_poll__cgm_na_pump_lost_sensor">cgm n/a (pump lost sensor)</string>
-    <string name="ul_poll__cgm_na">cgm n/a</string>
-    <string name="ul_poll__reading_sgv__SGV">SGV</string>
-    <string name="ul_poll__reading_time__at">at</string>
-    <string name="ul_poll__reading_pump_clock_difference__Pump">Pump</string>
+    <string name="ul_poll__no_cgm_pump_lost_sensor">no cgm (pump lost sensor)</string>
+    <string name="ul_poll__no_cgm">no cgm</string>
+    <string name="ul_poll__reading_sgv__SGV" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">SGV</string>
+    <string name="ul_poll__reading_time__at" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">at</string>
+    <string name="ul_poll__reading_pump_clock_difference__Pump" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">Pump</string>
 
     <string name="ul_poll__warn_pump_battery_low">Warning: pump battery low</string>
     <string name="ul_poll__info_pump_low_battery_mode_change">Poll interval increased, history and backfill processing reduced.</string>
@@ -434,6 +431,8 @@
     <string name="pref_ns_daily_totals_summary">Send pump daily totals to Nightscout</string>
     <string name="pref_ns_formatting_title">Formatting</string>
     <string name="pref_ns_formatting_summary">Use HTML formatting for notes</string>
+    <string name="pref_ns_trend_style_title">Trend Style</string>
+    <string name="pref_ns_trend_style_summary">Use Medtronic style trend arrows (may be incompatible with some follower apps)</string>
 
     <string name="pref_ns_pattern_and_preset_naming_category">Pattern and Preset Naming</string>
     <string name="pref_ns_basal_patterns_category">Basal Patterns</string>
@@ -911,34 +910,34 @@
 
     <!-- pump default pattern and preset names -->
 
-    <string name="pump_default__basal_pattern_1" comment="local name as shown on the pump for basal patterns">Basal 1</string>
-    <string name="pump_default__basal_pattern_2" comment="local name as shown on the pump for basal patterns">Basal 2</string>
-    <string name="pump_default__basal_pattern_3" comment="local name as shown on the pump for basal patterns">Basal 3</string>
-    <string name="pump_default__basal_pattern_4" comment="local name as shown on the pump for basal patterns">Basal 4</string>
-    <string name="pump_default__basal_pattern_5" comment="local name as shown on the pump for basal patterns">Basal 5</string>
-    <string name="pump_default__basal_pattern_6" comment="local name as shown on the pump for basal patterns">Workday</string>
-    <string name="pump_default__basal_pattern_7" comment="local name as shown on the pump for basal patterns">Day Off</string>
-    <string name="pump_default__basal_pattern_8" comment="local name as shown on the pump for basal patterns">Sick Day</string>
+    <string name="pump_default__basal_pattern_1" comment="local name as shown on the pump for basal pattern 1">Basal 1</string>
+    <string name="pump_default__basal_pattern_2" comment="local name as shown on the pump for basal pattern 2">Basal 2</string>
+    <string name="pump_default__basal_pattern_3" comment="local name as shown on the pump for basal pattern 3">Basal 3</string>
+    <string name="pump_default__basal_pattern_4" comment="local name as shown on the pump for basal pattern 4">Basal 4</string>
+    <string name="pump_default__basal_pattern_5" comment="local name as shown on the pump for basal pattern 5">Basal 5</string>
+    <string name="pump_default__basal_pattern_6" comment="local name as shown on the pump for basal pattern 6">Workday</string>
+    <string name="pump_default__basal_pattern_7" comment="local name as shown on the pump for basal pattern 7">Day Off</string>
+    <string name="pump_default__basal_pattern_8" comment="local name as shown on the pump for basal pattern 8">Sick Day</string>
 
     <string name="pump_default__temp_basal_preset_0">Not Preset</string>
-    <string name="pump_default__temp_basal_preset_1" comment="local name as shown on the pump for basal presets">Temp 1</string>
-    <string name="pump_default__temp_basal_preset_2" comment="local name as shown on the pump for basal presets">Temp 2</string>
-    <string name="pump_default__temp_basal_preset_3" comment="local name as shown on the pump for basal presets">Temp 3</string>
-    <string name="pump_default__temp_basal_preset_4" comment="local name as shown on the pump for basal presets">Temp 4</string>
-    <string name="pump_default__temp_basal_preset_5" comment="local name as shown on the pump for basal presets">High Activity</string>
-    <string name="pump_default__temp_basal_preset_6" comment="local name as shown on the pump for basal presets">Moderate Activity</string>
-    <string name="pump_default__temp_basal_preset_7" comment="local name as shown on the pump for basal presets">Low Activity</string>
-    <string name="pump_default__temp_basal_preset_8" comment="local name as shown on the pump for basal presets">Sick</string>
+    <string name="pump_default__temp_basal_preset_1" comment="local name as shown on the pump for temp basal preset 1">Temp 1</string>
+    <string name="pump_default__temp_basal_preset_2" comment="local name as shown on the pump for temp basal preset 2">Temp 2</string>
+    <string name="pump_default__temp_basal_preset_3" comment="local name as shown on the pump for temp basal preset 3">Temp 3</string>
+    <string name="pump_default__temp_basal_preset_4" comment="local name as shown on the pump for temp basal preset 4">Temp 4</string>
+    <string name="pump_default__temp_basal_preset_5" comment="local name as shown on the pump for temp basal preset 5">High Activity</string>
+    <string name="pump_default__temp_basal_preset_6" comment="local name as shown on the pump for temp basal preset 6">Moderate Activity</string>
+    <string name="pump_default__temp_basal_preset_7" comment="local name as shown on the pump for temp basal preset 7">Low Activity</string>
+    <string name="pump_default__temp_basal_preset_8" comment="local name as shown on the pump for temp basal preset 8">Sick</string>
 
     <string name="pump_default__bolus_preset_0">Not Preset</string>
-    <string name="pump_default__bolus_preset_1" comment="local name as shown on the pump for bolus presets">Bolus 1</string>
-    <string name="pump_default__bolus_preset_2" comment="local name as shown on the pump for bolus presets">Bolus 2</string>
-    <string name="pump_default__bolus_preset_3" comment="local name as shown on the pump for bolus presets">Bolus 3</string>
-    <string name="pump_default__bolus_preset_4" comment="local name as shown on the pump for bolus presets">Bolus 4</string>
-    <string name="pump_default__bolus_preset_5" comment="local name as shown on the pump for bolus presets">Breakfast</string>
-    <string name="pump_default__bolus_preset_6" comment="local name as shown on the pump for bolus presets">Lunch</string>
-    <string name="pump_default__bolus_preset_7" comment="local name as shown on the pump for bolus presets">Dinner</string>
-    <string name="pump_default__bolus_preset_8" comment="local name as shown on the pump for bolus presets">Snack</string>
+    <string name="pump_default__bolus_preset_1" comment="local name as shown on the pump for bolus preset 1">Bolus 1</string>
+    <string name="pump_default__bolus_preset_2" comment="local name as shown on the pump for bolus preset 2">Bolus 2</string>
+    <string name="pump_default__bolus_preset_3" comment="local name as shown on the pump for bolus preset 3">Bolus 3</string>
+    <string name="pump_default__bolus_preset_4" comment="local name as shown on the pump for bolus preset 4">Bolus 4</string>
+    <string name="pump_default__bolus_preset_5" comment="local name as shown on the pump for bolus preset 5">Breakfast</string>
+    <string name="pump_default__bolus_preset_6" comment="local name as shown on the pump for bolus preset 6">Lunch</string>
+    <string name="pump_default__bolus_preset_7" comment="local name as shown on the pump for bolus preset 7">Dinner</string>
+    <string name="pump_default__bolus_preset_8" comment="local name as shown on the pump for bolus preset 8">Snack</string>
 
     <!-- system status messages -->
 

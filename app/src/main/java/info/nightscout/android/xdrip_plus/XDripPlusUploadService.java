@@ -164,7 +164,7 @@ public class XDripPlusUploadService extends Service {
         json.put("dateString", record.getEventDate());
         json.put("sgv", record.getSgv());
         String trend = record.getCgmTrend();
-        if (trend != null) json.put("direction", PumpHistoryCGM.NS_TREND.valueOf(trend).string());
+        if (trend != null) json.put("direction", PumpHistoryCGM.NS_TREND.valueOf(trend).dexcom().string());
 
         entriesBody.put(json);
         sendBundle(mContext, "add", "entries", entriesBody);
@@ -197,24 +197,6 @@ public class XDripPlusUploadService extends Service {
         sendBundle(mContext, "add", "devicestatus", devicestatusBody);
     }
 
-    private void doXDripUpload(List<PumpStatusEvent> records) throws Exception {
-        final JSONArray devicestatusBody = new JSONArray();
-        final JSONArray entriesBody = new JSONArray();
-
-        for (PumpStatusEvent record : records) {
-            addDeviceStatus(devicestatusBody, record);
-            addSgvEntry(entriesBody, record);
-            addMbgEntry(entriesBody, record);
-        }
-
-        if (entriesBody.length() > 0) {
-            sendBundle(mContext, "add", "entries", entriesBody);
-        }
-        if (devicestatusBody.length() > 0) {
-            sendBundle(mContext, "add", "devicestatus", devicestatusBody);
-        }
-    }
-
     private void sendBundle(Context context, String action, String collection, JSONArray json) throws Exception {
         final Bundle bundle = new Bundle();
         bundle.putString("action", action);
@@ -232,63 +214,6 @@ public class XDripPlusUploadService extends Service {
         } else {
             Log.d(TAG, receivers.size() + " xDrip receivers");
         }
-    }
-
-    private void addDeviceStatus(JSONArray devicestatusArray, PumpStatusEvent record) throws Exception {
-        JSONObject json = new JSONObject();
-        json.put("uploaderBattery", MasterService.getUploaderBatteryLevel());
-        json.put("device", record.getDeviceName());
-        json.put("created_at", ISO8601_DATE_FORMAT.format(record.getEventDate()));
-
-        JSONObject pumpInfo = new JSONObject();
-        pumpInfo.put("clock", ISO8601_DATE_FORMAT.format(record.getEventDate()));
-        pumpInfo.put("reservoir", new BigDecimal(record.getReservoirAmount()).setScale(3, BigDecimal.ROUND_HALF_UP));
-
-        JSONObject iob = new JSONObject();
-        iob.put("timestamp", record.getEventDate());
-        iob.put("bolusiob", record.getActiveInsulin());
-
-        JSONObject battery = new JSONObject();
-        battery.put("percent", record.getBatteryPercentage());
-
-        pumpInfo.put("iob", iob);
-        pumpInfo.put("battery", battery);
-        json.put("pump", pumpInfo);
-        //String jsonString = json.toString();
-
-        devicestatusArray.put(json);
-    }
-
-    private void addSgvEntry(JSONArray entriesArray, PumpStatusEvent pumpRecord) throws Exception {
-        if (pumpRecord.isValidSGV()) {
-            JSONObject json = new JSONObject();
-            // TODO replace with Retrofit/EntriesSerializer
-            json.put("sgv", pumpRecord.getSgv());
-            json.put("direction", EntriesSerializer.getDirectionString(pumpRecord.getCgmTrend()));
-            json.put("device", pumpRecord.getDeviceName());
-            json.put("type", "sgv");
-            json.put("date", pumpRecord.getCgmDate().getTime());
-            json.put("dateString", pumpRecord.getCgmDate());
-
-            entriesArray.put(json);
-        }
-    }
-
-    private void addMbgEntry(JSONArray entriesArray, PumpStatusEvent pumpRecord) throws Exception {
-        /*
-        if (pumpRecord.isValidBGL()) {
-            JSONObject json = new JSONObject();
-
-            // TODO replace with Retrofit/EntriesSerializer
-            json.put("type", "mbg");
-            json.put("mbg", pumpRecord.getRecentBGL());
-            json.put("device", pumpRecord.getDeviceName());
-            json.put("date", pumpRecord.getEventDate().getTime());
-            json.put("dateString", pumpRecord.getEventDate());
-
-            entriesArray.put(json);
-        }
-        */
     }
 
     public final class Constants {

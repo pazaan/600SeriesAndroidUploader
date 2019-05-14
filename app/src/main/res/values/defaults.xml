@@ -133,6 +133,7 @@
     <string name="key_nsGramsPerExchange">nsGramsPerExchange</string>
     <string name="key_nsEnableDailyTotals">nsEnableDailyTotals</string>
     <string name="key_nsEnableFormatHTML">nsEnableFormatHTML</string>
+    <string name="key_nsEnableMedtronicTrendStyle">nsEnableMedtronicTrendStyle</string>
 
     // urchin
     <string name="key_urchinEnable">urchinEnable</string>
@@ -386,6 +387,7 @@
     <string name="default_nsGramsPerExchange">15</string>
     <bool name="default_nsEnableDailyTotals">true</bool>
     <bool name="default_nsEnableFormatHTML">true</bool>
+    <bool name="default_nsEnableMedtronicTrendStyle">false</bool>
 
     // urchin
     <bool name="default_urchinEnable">false</bool>

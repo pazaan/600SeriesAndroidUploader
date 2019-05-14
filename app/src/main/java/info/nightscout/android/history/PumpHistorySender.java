@@ -63,6 +63,7 @@ public class PumpHistorySender {
                 .opt(SENDEROPT.BASAL_PATTERN_CHANGE, dataStore.isNsEnablePatternChange())
 
                 .opt(SENDEROPT.FORMAT_HTML, dataStore.isNsEnableFormatHTML())
+                .opt(SENDEROPT.MEDTRONIC_TREND_STYLE, dataStore.isNsEnableMedtronicTrendStyle())
                 .opt(SENDEROPT.GLUCOSE_UNITS, true)
 
                 .opt(SENDEROPT.ALARM_FAULTCODE, false)
@@ -197,6 +198,7 @@ public class PumpHistorySender {
         BASAL_PATTERN_CHANGE,
         BOLUS,
         FORMAT_HTML,
+        MEDTRONIC_TREND_STYLE,
         GLUCOSE_UNITS,
 
         ALARM_CLEARED,

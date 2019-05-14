@@ -997,32 +997,39 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         if (displayCgmResults.size() > 0) {
             timeLastSGV = displayCgmResults.last().getEventDate().getTime();
             sgvString = FormatKit.getInstance().formatAsGlucose(displayCgmResults.last().getSgv(), false, true);
-
             String trend = displayCgmResults.last().getCgmTrend();
-            if (trend != null) {
-                switch (trend) {
-                    case "DOUBLE_UP":
+            if (displayCgmResults.last().isEstimate()) {
+                trendString = "{ion-ios-medical}";
+            } else if (trend != null) {
+                switch (PumpHistoryCGM.NS_TREND.valueOf(trend)) {
+                    case TRIPLE_UP:
+                        trendString = "{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}";
+                        break;
+                    case DOUBLE_UP:
                         trendString = "{ion_ios_arrow_thin_up}{ion_ios_arrow_thin_up}";
                         break;
-                    case "SINGLE_UP":
+                    case SINGLE_UP:
                         trendString = "{ion_ios_arrow_thin_up}";
                         break;
-                    case "FOURTY_FIVE_UP":
+                    case FOURTY_FIVE_UP:
                         trendRotation = -45;
                         trendString = "{ion_ios_arrow_thin_right}";
                         break;
-                    case "FLAT":
+                    case FLAT:
                         trendString = "{ion_ios_arrow_thin_right}";
                         break;
-                    case "FOURTY_FIVE_DOWN":
+                    case FOURTY_FIVE_DOWN:
                         trendRotation = 45;
                         trendString = "{ion_ios_arrow_thin_right}";
                         break;
-                    case "SINGLE_DOWN":
+                    case SINGLE_DOWN:
                         trendString = "{ion_ios_arrow_thin_down}";
                         break;
-                    case "DOUBLE_DOWN":
+                    case DOUBLE_DOWN:
                         trendString = "{ion_ios_arrow_thin_down}{ion_ios_arrow_thin_down}";
+                        break;
+                    case TRIPLE_DOWN:
+                        trendString = "{ion_ios_arrow_thin_down}{ion_ios_arrow_thin_down}{ion_ios_arrow_thin_down}";
                         break;
                     default:
                         trendString = "{ion_ios_minus_empty}";

@@ -75,7 +75,10 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
     public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
         List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        NS_TREND trend = cgmTrend == null ? null : NS_TREND.valueOf(cgmTrend);
+        NS_TREND trend = cgmTrend == null ? null
+                : pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.MEDTRONIC_TREND_STYLE)
+                ? NS_TREND.valueOf(cgmTrend)
+                : NS_TREND.valueOf(cgmTrend).dexcom();
 
         int sgv = this.sgv;
 
@@ -246,6 +249,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
     public enum NS_TREND {
         NONE("NONE"),
+        TRIPLE_UP("TripleUp"),
         DOUBLE_UP("DoubleUp"),
         SINGLE_UP("SingleUp"),
         FOURTY_FIVE_UP("FortyFiveUp"),
@@ -253,6 +257,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
         FOURTY_FIVE_DOWN("FortyFiveDown"),
         SINGLE_DOWN("SingleDown"),
         DOUBLE_DOWN("DoubleDown"),
+        TRIPLE_DOWN("TripleDown"),
         NOT_COMPUTABLE("NOT COMPUTABLE"),
         RATE_OUT_OF_RANGE("RATE OUT OF RANGE"),
         NOT_SET("NONE");
@@ -265,6 +270,25 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
         public String string() {
             return this.string;
+        }
+
+        public NS_TREND dexcom() {
+            switch (this) {
+                case TRIPLE_DOWN:
+                    return DOUBLE_DOWN;
+                case DOUBLE_DOWN:
+                    return SINGLE_DOWN;
+                case SINGLE_DOWN:
+                    return FOURTY_FIVE_DOWN;
+                case SINGLE_UP:
+                    return FOURTY_FIVE_UP;
+                case DOUBLE_UP:
+                    return SINGLE_UP;
+                case TRIPLE_UP:
+                    return DOUBLE_UP;
+                default:
+                    return this;
+            }
         }
     }
 
