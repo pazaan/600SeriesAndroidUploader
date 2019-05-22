@@ -138,6 +138,7 @@ public class DataStore extends RealmObject {
     private int nsAlarmTTL;
     private boolean nsEnableDailyTotals;
     private boolean nsEnableFormatHTML;
+    private boolean nsEnableMedtronicTrendStyle;
 
     private boolean urchinEnable;
     private int urchinBasalPeriod;
@@ -478,6 +479,7 @@ public class DataStore extends RealmObject {
         nsAlarmTTL = getInt(c, p, R.string.key_nsAlarmTTL, R.string.default_nsAlarmTTL);
         nsEnableDailyTotals = getBoolean(c, p, R.string.key_nsEnableDailyTotals, R.bool.default_nsEnableDailyTotals);
         nsEnableFormatHTML = getBoolean(c, p, R.string.key_nsEnableFormatHTML, R.bool.default_nsEnableFormatHTML);
+        nsEnableMedtronicTrendStyle = getBoolean(c, p, R.string.key_nsEnableMedtronicTrendStyle, R.bool.default_nsEnableMedtronicTrendStyle);
         nsGramsPerExchange = getInt(c, p, R.string.key_nsGramsPerExchange, R.string.default_nsGramsPerExchange);
 
         nameBasalPattern1 = getString(c, p, R.string.key_nameBasalPattern1, R.string.default_nameBasalPattern1);
@@ -1241,6 +1243,10 @@ public class DataStore extends RealmObject {
 
     public boolean isNsEnableFormatHTML() {
         return nsEnableFormatHTML;
+    }
+
+    public boolean isNsEnableMedtronicTrendStyle() {
+        return nsEnableMedtronicTrendStyle;
     }
 
     public boolean isUrchinEnable() {

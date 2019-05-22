@@ -31,8 +31,6 @@ public class FormatKit {
     private static FormatKit sInstance;
     private final Application mApplication;
 
-    private DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
-
     private FormatKit(Application application) {
         Log.d(TAG, "initialise instance");
         mApplication = application;
@@ -53,12 +51,14 @@ public class FormatKit {
     }
 
     public String formatAsGrams(Double value) {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(0);
         df.setMaximumFractionDigits(1);
         return df.format(value) + mApplication.getApplicationContext().getString(R.string.gram_g);
     }
 
     public String formatAsExchanges(Double value) {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(0);
         df.setMaximumFractionDigits(1);
         return df.format(value) + mApplication.getApplicationContext().getString(R.string.gram_exchange_ex);
@@ -69,6 +69,7 @@ public class FormatKit {
     }
 
     public String formatAsInsulin(Double value, int precision) {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(0);
         df.setMaximumFractionDigits(precision);
         return df.format(value) + mApplication.getApplicationContext().getString(R.string.insulin_U);
@@ -102,12 +103,14 @@ public class FormatKit {
     }
 
     public String formatAsGlucoseMMOL(int value, boolean tag, int precision) {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(1);
         df.setMaximumFractionDigits(precision);
         return df.format(value / MMOLXLFACTOR) + (tag ? " " + mApplication.getApplicationContext().getString(R.string.glucose_mmol) : "");
     }
 
     public String formatAsDecimal(double value, int precision) {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(precision);
         df.setMaximumFractionDigits(precision);
         return df.format(value);
@@ -122,6 +125,7 @@ public class FormatKit {
     }
 
     public String formatAsDecimalDiff(double value, int precision) {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.getDefault()));
         df.setMinimumFractionDigits(precision);
         df.setMaximumFractionDigits(precision);
         return (value < 0 ? "-" : "+") + df.format(Math.abs(value));

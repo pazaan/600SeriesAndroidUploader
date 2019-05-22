@@ -107,10 +107,10 @@ public class ListPreference extends android.preference.ListPreference{
                                     sb.append(pm.toUpperCase());
                                     break;
                                 case "p":
-                                    sb.append(am.length() > 1 ? pm.substring(0,1) : pm);
+                                    sb.append(pm.length() > 1 ? pm.substring(0,1) : pm);
                                     break;
                                 case "P":
-                                    sb.append(am.length() > 1 ? pm.substring(0,1).toUpperCase() : pm.toUpperCase());
+                                    sb.append(pm.length() > 1 ? pm.substring(0,1).toUpperCase() : pm.toUpperCase());
                                     break;
                                 default:
                                     sb.append("[am_pm error]");

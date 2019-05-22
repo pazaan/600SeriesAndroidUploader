@@ -312,7 +312,7 @@ public class UrchinService extends Service {
                     // don't show trend/delta if older then 10mins
                     if (age < 11 * 60) {
                         if (sgvresults.first().getCgmTrend() != null)
-                            trend = TREND.valueOf(sgvresults.first().getCgmTrend()).value();
+                            trend = TREND.valueOf(PumpHistoryCGM.NS_TREND.valueOf(sgvresults.first().getCgmTrend()).dexcom().name()).value();
 
                         // don't show delta if sgv period older then 5 mins
                         if (sgvresults.size() > 1

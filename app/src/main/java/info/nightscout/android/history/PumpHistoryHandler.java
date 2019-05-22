@@ -876,6 +876,15 @@ public class PumpHistoryHandler {
 
             if (optEst) {
 
+                RealmResults<HistorySegment> results = historyRealm
+                        .where(HistorySegment.class)
+                        .sort("toDate", Sort.DESCENDING)
+                        .findAll();
+                if (results.size() == 0) return;
+
+                // only consider cgm results up to this date as pump history may be stale
+                Date sessionEndDate = new Date (results.first().getToDate().getTime() + 6 * 60000L);
+
                 Date sensorStartDate = new Date(System.currentTimeMillis());
 
                 // viable sensor records
@@ -971,6 +980,7 @@ public class PumpHistoryHandler {
                         .equalTo("noisyData", false)
                         .in("sensorException", exceptions)
                         .greaterThan("cgmRTC", calStartRTC)
+                        .lessThan("eventDate", sessionEndDate)
                         .sort("cgmRTC", Sort.ASCENDING)
                         .findAll();
 
@@ -1678,7 +1688,7 @@ public class PumpHistoryHandler {
                 }
             });
             if (dataStore.isSysEnableCgmHistory())
-                limited |= updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, true, "CGM history:", mContext.getString(R.string.ul_history__cgm_history));
+                limited |= updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, true, "CGM history:", R.string.ul_history__cgm_history);
 
             // process sgv estimate / isig now as cgm data is available, avoids any comms errors after this
             isigAvailable();
@@ -1694,7 +1704,7 @@ public class PumpHistoryHandler {
                     }
                 });
                 if (dataStore.isSysEnablePumpHistory())
-                    limited |= updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", mContext.getString(R.string.ul_history__pump_history));
+                    limited |= updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", R.string.ul_history__pump_history);
             }
             else limited = dataStore.isSysEnablePumpHistory();
 
@@ -1708,7 +1718,7 @@ public class PumpHistoryHandler {
                 }
             });
             if (dataStore.isSysEnablePumpHistory())
-                limited |= updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", mContext.getString(R.string.ul_history__pump_history));
+                limited |= updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", R.string.ul_history__pump_history);
 
             // first run has a tendency for the pump to be busy and cause a comms error
             // only do a single pass when no recent history
@@ -1721,7 +1731,7 @@ public class PumpHistoryHandler {
                     }
                 });
                 if (dataStore.isSysEnableCgmHistory())
-                    limited |= updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, false, "CGM history:", mContext.getString(R.string.ul_history__cgm_history));
+                    limited |= updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, false, "CGM history:", R.string.ul_history__cgm_history);
             }
             else limited = dataStore.isSysEnableCgmHistory();
 
@@ -1731,7 +1741,7 @@ public class PumpHistoryHandler {
         return limited;
     }
 
-    private boolean updateHistorySegments(MedtronicCnlReader cnlReader, int days, final long oldest, final long newest, final byte historyType, boolean pullHistory, String logTAG, String userlogTAG)
+    private boolean updateHistorySegments(MedtronicCnlReader cnlReader, int days, final long oldest, final long newest, final byte historyType, boolean pullHistory, String logTAG, int userlogTAG)
             throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException, IntegrityException {
 
         boolean limited = false;
@@ -1856,9 +1866,9 @@ public class PumpHistoryHandler {
             ));
 
             UserLogMessage.sendN(mContext, UserLogMessage.TYPE.REQUESTED,
-                    String.format("%s {id;%s}", userlogTAG, R.string.ul_history__requested));
+                    String.format("{id;%s} {id;%s}", userlogTAG, R.string.ul_history__requested));
             UserLogMessage.sendE(mContext, UserLogMessage.TYPE.REQUESTED,
-                    String.format("%s {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
+                    String.format("{id;%s} {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
                             userlogTAG, R.string.ul_history__requested, start, end));
 
             Date[] range;
@@ -1896,7 +1906,7 @@ public class PumpHistoryHandler {
                     range[1] == null ? "null" : dateFormatter.format(range[1])));
 
             UserLogMessage.sendE(mContext, UserLogMessage.TYPE.RECEIVED,
-                    String.format("%s {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
+                    String.format("{id;%s} {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
                             userlogTAG, R.string.ul_history__received,
                             range[0] == null ? 0 : range[0].getTime(),
                             range[1] == null ? 0 : range[1].getTime()));

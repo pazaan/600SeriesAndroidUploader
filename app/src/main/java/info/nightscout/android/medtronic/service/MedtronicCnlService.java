@@ -883,9 +883,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             pumpCgmNA++; // poll clash detection
             if (pumpRecord.isCgmLostSensor()) {
                 pumpLostSensorError++; // only count errors if cgm is being used
-                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM, R.string.ul_poll__cgm_na_pump_lost_sensor);
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM, R.string.ul_poll__no_cgm_pump_lost_sensor);
             } else {
-                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM, R.string.ul_poll__cgm_na);
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.CGM, R.string.ul_poll__no_cgm);
             }
         }
     }
