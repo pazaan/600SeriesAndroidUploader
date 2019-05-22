@@ -1884,7 +1884,7 @@
                     android:switchTextOff="@string/off"
                     android:switchTextOn="@string/on" />
                 <info.nightscout.android.utils.ListPreference
-                    android:title="RSSI allow connection"
+                    android:title="@string/pref_system_rssi_allow_connection_title"
                     android:key="@string/key_sysRssiAllowConnect"
                     android:defaultValue="@string/default_sysRssiAllowConnect"
                     android:summary="%s"

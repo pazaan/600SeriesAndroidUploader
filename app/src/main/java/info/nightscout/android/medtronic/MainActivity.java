@@ -109,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private Toast toast;
 
+    private Handler mUiRealmHandler = new Handler();
     private Handler mUiRefreshHandler = new Handler();
     private Runnable mUiRefreshRunnable = new RefreshDisplayRunnable();
 
@@ -461,7 +462,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private Toast serveToast(SpannableStringBuilder ssb, Toast toast, View v) {
         if (toast != null) toast.cancel();
 
-        toast = Toast.makeText(mContext, ssb, Toast.LENGTH_SHORT);
+        toast = Toast.makeText(mContext, ssb, Toast.LENGTH_LONG);
 
         View parent = (View) v.getParent();
         int parentHeight = parent.getHeight();
@@ -1100,12 +1101,24 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void refreshDisplayChart() {
         Log.d(TAG, "refreshDisplayChart");
-        stopDisplayChart();
-        startDisplayChart();
+        if (historyRealm.isInTransaction()) {
+            mUiRealmHandler.post(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            stopDisplayChart();
+                            startDisplayChart();
+                        }
+                    });
+        } else {
+            stopDisplayChart();
+            startDisplayChart();
+        }
     }
 
     private void stopDisplayChart() {
         Log.d(TAG, "stopDisplayChart");
+        mUiRealmHandler.removeCallbacks(mUiRefreshRunnable);
         if (displayChartResults != null) {
             displayChartResults.removeAllChangeListeners();
             displayChartResults = null;

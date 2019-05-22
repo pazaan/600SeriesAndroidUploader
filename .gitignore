@@ -6,3 +6,4 @@ local.properties
 /app/app.iml
 bugfender.properties
 /app/release/
+/crowdin.properties
