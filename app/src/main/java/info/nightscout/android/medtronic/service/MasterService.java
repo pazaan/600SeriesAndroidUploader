@@ -139,12 +139,16 @@ public class MasterService extends Service {
             intentFilter.addAction(Intent.ACTION_BATTERY_LOW);
             intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
             intentFilter.addAction(Intent.ACTION_BATTERY_OKAY);
+            intentFilter.addAction(Intent.ACTION_POWER_CONNECTED);
+            intentFilter.addAction(Intent.ACTION_POWER_DISCONNECTED);
 
             intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
             intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
             intentFilter.addAction(Constants.ACTION_USB_ACTIVITY);
             intentFilter.addAction(Constants.ACTION_USB_PERMISSION);
             intentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
+
+            intentFilter.addAction(Intent.ACTION_LOCALE_CHANGED);
 
             registerReceiver(masterServiceReceiver, intentFilter);
 
@@ -341,6 +345,7 @@ public class MasterService extends Service {
                     startService(new Intent(mContext, UrchinService.class).setAction("update"));
                     break;
 
+                case Intent.ACTION_LOCALE_CHANGED:
                 case Constants.ACTION_STATUS_UPDATE:
                     statusNotification.updateNotification();
                     break;
@@ -357,6 +362,17 @@ public class MasterService extends Service {
                 case Intent.ACTION_BATTERY_CHANGED:
                 case Intent.ACTION_BATTERY_OKAY:
                     updateUploaderBattery(intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1));
+                    break;
+                case Intent.ACTION_POWER_CONNECTED:
+                    new PumpHistoryHandler(mContext).systemEvent()
+                            .dismiss(PumpHistorySystem.STATUS.UPLOADER_BATTERY_VERYLOW)
+                            .dismiss(PumpHistorySystem.STATUS.UPLOADER_BATTERY_LOW)
+                            .closeHandler();
+                    break;
+                case Intent.ACTION_POWER_DISCONNECTED:
+                    new PumpHistoryHandler(mContext).systemEvent()
+                            .dismiss(PumpHistorySystem.STATUS.UPLOADER_BATTERY_FULL)
+                            .closeHandler();
                     break;
 
                 // received from UsbActivity
@@ -552,6 +568,8 @@ public class MasterService extends Service {
                         > (100 - batteryUpdateLastLevel) / (100 - uploaderBatteryVeryLow)) {
 
                     new PumpHistoryHandler(this).systemEvent(PumpHistorySystem.STATUS.UPLOADER_BATTERY_VERYLOW)
+                            .dismiss(PumpHistorySystem.STATUS.UPLOADER_BATTERY_VERYLOW)
+                            .dismiss(PumpHistorySystem.STATUS.UPLOADER_BATTERY_LOW)
                             .data(level)
                             .process()
                             .closeHandler();
@@ -561,6 +579,8 @@ public class MasterService extends Service {
                         > (100 - batteryUpdateLastLevel) / (100 - uploaderBatteryLow)) {
 
                     new PumpHistoryHandler(this).systemEvent(PumpHistorySystem.STATUS.UPLOADER_BATTERY_LOW)
+                            .dismiss(PumpHistorySystem.STATUS.UPLOADER_BATTERY_VERYLOW)
+                            .dismiss(PumpHistorySystem.STATUS.UPLOADER_BATTERY_LOW)
                             .data(level)
                             .process()
                             .closeHandler();
@@ -569,6 +589,7 @@ public class MasterService extends Service {
                 } else if (level == 100 && level > batteryUpdateLastLevel) {
 
                     new PumpHistoryHandler(this).systemEvent(PumpHistorySystem.STATUS.UPLOADER_BATTERY_FULL)
+                            .dismiss(PumpHistorySystem.STATUS.UPLOADER_BATTERY_FULL)
                             .data(level)
                             .process()
                             .closeHandler();

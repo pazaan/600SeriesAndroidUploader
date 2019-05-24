@@ -501,6 +501,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             //debugActiveAlert();
 
                             pumpHistoryHandler.systemEvent(PumpHistorySystem.STATUS.COMMS_PUMP_CONNECTED)
+                                    .dismiss(PumpHistorySystem.STATUS.CNL_UNPLUGGED)
                                     .lastConnect()
                                     .process();
 

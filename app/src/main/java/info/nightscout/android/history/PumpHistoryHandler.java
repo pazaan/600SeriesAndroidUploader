@@ -380,12 +380,18 @@ public class PumpHistoryHandler {
         return new SystemEvent(status);
     }
 
+    public SystemEvent systemEvent() {
+        return new SystemEvent();
+    }
+
     public class SystemEvent {
         PumpHistorySystem.STATUS status;
         Date eventDate;
         Date startDate;
         String key;
         RealmList<String> data;
+
+        public SystemEvent () {}
 
         public SystemEvent (PumpHistorySystem.STATUS status) {
             this.status = status;
@@ -459,13 +465,59 @@ public class PumpHistoryHandler {
                     }
                 });
             }
-
             return this;
         }
 
         public void closeHandler() {
             close();
         }
+
+        public SystemEvent dismiss(PumpHistorySystem.STATUS status, final String senderID) {
+            // dismiss pending unsent status events for selected sender
+            RealmResults<PumpHistorySystem> results = historyRealm
+                    .where(PumpHistorySystem.class)
+                    .equalTo("status", status.value())
+                    .contains("senderREQ", senderID)
+                    .findAll();
+            if (results.size() > 0) {
+                Log.d(TAG, String.format("SystemEvent dismiss: %s senderID = %s count = %s",
+                        status.name(), senderID, results.size()));
+                for (PumpHistorySystem record : results) {
+                    final PumpHistorySystem r = record;
+                    historyRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(@NonNull Realm realm) {
+                            r.setSenderREQ(r.getSenderREQ().replace(senderID, ""));
+                        }
+                    });
+                }
+            }
+            return this;
+        }
+
+        public SystemEvent dismiss(PumpHistorySystem.STATUS status) {
+            // dismiss pending unsent status events for all associated senders
+            RealmResults<PumpHistorySystem> results = historyRealm
+                    .where(PumpHistorySystem.class)
+                    .equalTo("status", status.value())
+                    .notEqualTo("senderREQ", "")
+                    .findAll();
+            if (results.size() > 0) {
+                Log.d(TAG, String.format("SystemEvent dismiss: %s count = %s",
+                        status.name(), results.size()));
+                for (PumpHistorySystem record : results) {
+                    final PumpHistorySystem r = record;
+                    historyRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(@NonNull Realm realm) {
+                            r.setSenderREQ("");
+                        }
+                    });
+                }
+            }
+            return this;
+        }
+
     }
 
     public void debugNote(final String note) {
@@ -883,7 +935,7 @@ public class PumpHistoryHandler {
                 if (results.size() == 0) return;
 
                 // only consider cgm results up to this date as pump history may be stale
-                Date sessionEndDate = new Date (results.first().getToDate().getTime() + 6 * 60000L);
+                Date sessionEndDate = new Date (results.first().getToDate().getTime() + 6 * 60 * 60000L);
 
                 Date sensorStartDate = new Date(System.currentTimeMillis());
 
@@ -1866,9 +1918,9 @@ public class PumpHistoryHandler {
             ));
 
             UserLogMessage.sendN(mContext, UserLogMessage.TYPE.REQUESTED,
-                    String.format("{id;%s} {id;%s}", userlogTAG, R.string.ul_history__requested));
+                    String.format("{id;%s}: {id;%s}", userlogTAG, R.string.ul_history__requested));
             UserLogMessage.sendE(mContext, UserLogMessage.TYPE.REQUESTED,
-                    String.format("{id;%s} {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
+                    String.format("{id;%s}: {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
                             userlogTAG, R.string.ul_history__requested, start, end));
 
             Date[] range;
@@ -1906,7 +1958,7 @@ public class PumpHistoryHandler {
                     range[1] == null ? "null" : dateFormatter.format(range[1])));
 
             UserLogMessage.sendE(mContext, UserLogMessage.TYPE.RECEIVED,
-                    String.format("{id;%s} {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
+                    String.format("{id;%s}: {id;%s}\n   {time.hist.e;%s} - {time.hist.e;%s}",
                             userlogTAG, R.string.ul_history__received,
                             range[0] == null ? 0 : range[0].getTime(),
                             range[1] == null ? 0 : range[1].getTime()));
