@@ -1354,13 +1354,17 @@ public class PumpHistoryHandler {
                             && System.currentTimeMillis() - calCgmRecords.get(i).getEventDate().getTime() < 20 * 60000L) {
 
                         UserLogMessage.sendN(mContext, UserLogMessage.TYPE.ESTIMATE,
-                                String.format("estimated SGV {sgv;%s} at {time.sgv;%s}",
+                                String.format("{id;%s} {sgv;%s} {id;%s} {time.sgv;%s}",
+                                        R.string.ul_poll__estimated_sgv,
                                         finalEstimate,
+                                        R.string.ul_poll__reading_time__at,
                                         calCgmRecords.get(i).getEventDate().getTime()
                                 ));
                         UserLogMessage.sendE(mContext, UserLogMessage.TYPE.ESTIMATE,
-                                String.format("estimated SGV {sgv;%s} at {time.sgv.e;%s}",
+                                String.format("{id;%s} {sgv;%s} {id;%s} {time.sgv.e;%s}",
+                                        R.string.ul_poll__estimated_sgv,
                                         finalEstimate,
+                                        R.string.ul_poll__reading_time__at,
                                         calCgmRecords.get(i).getEventDate().getTime()
                                 ));
 

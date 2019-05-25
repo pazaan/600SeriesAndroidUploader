@@ -188,6 +188,7 @@
     <string name="ul_poll__old_cgm_event_received">old cgm event received</string>
     <string name="ul_poll__no_cgm_pump_lost_sensor">no cgm (pump lost sensor)</string>
     <string name="ul_poll__no_cgm">no cgm</string>
+    <string name="ul_poll__estimated_sgv" comment="SGV = Sensor Glucose Value, example: estimated SGV 120 at 3:15">estimated SGV</string>
     <string name="ul_poll__reading_sgv__SGV" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">SGV</string>
     <string name="ul_poll__reading_time__at" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">at</string>
     <string name="ul_poll__reading_pump_clock_difference__Pump" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">Pump</string>
@@ -480,6 +481,9 @@
     <string name="pref_system_estimate_sgv_error">Sensor error/updating</string>
     <string name="pref_system_report_isig_title" maxLength="40">Report ISIG</string>
     <string name="pref_system_report_isig_summary">Report ISIG when SGV is not available from the pump and CGM is in use.</string>
+    <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG\'s to include</string>
+    <string name="pref_system_report_isig_minimum_runtime_title" maxLength="40">Minimum runtime</string>
+    <string name="pref_system_report_isig_minimum_runtime_new_sensor_title" maxLength="40">Minimum runtime on new sensor</string>
     <string name="pref_system_category_radio" maxLength="30">Radio</string>
     <string name="pref_system_radio_clash_protection_title" maxLength="40">Radio clash protection</string>
     <string name="pref_system_radio_clash_protection_summary_off">No protection, always run a poll request</string>
@@ -631,6 +635,9 @@
     <string name="pref_pushover_priority_normal" maxLength="30">normal</string>
     <string name="pref_pushover_priority_high" maxLength="30">high</string>
     <string name="pref_pushover_priority_emergency" maxLength="30">emergency</string>
+
+    <string name="pref_pushover_sound__none" maxLength="20">none</string>
+    <string name="pref_pushover_sound__default" maxLength="20">default</string>
 
     <string name="pref_pushover_category" translatable="false">Pushover</string>
     <string name="pref_pushover_summary">Alerts and Events to any device</string>
