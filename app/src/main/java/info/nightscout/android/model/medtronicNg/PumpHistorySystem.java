@@ -186,7 +186,7 @@ public class PumpHistorySystem extends RealmObject implements PumpHistoryInterfa
                 .date(updateDate)
                 .type(type)
                 .priority(priority)
-                .clock(FormatKit.getInstance().formatAsClock(updateDate.getTime()).replace(" ", ""))
+                .clock(FormatKit.getInstance().formatAsClock(updateDate.getTime()))
                 .title(title)
                 .message(message));
 

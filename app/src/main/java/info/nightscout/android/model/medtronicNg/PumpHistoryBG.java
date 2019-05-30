@@ -184,7 +184,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
         messageItems.add(new MessageItem()
                 .type(type)
                 .date(date)
-                .clock(FormatKit.getInstance().formatAsClock(date.getTime()).replace(" ", ""))
+                .clock(FormatKit.getInstance().formatAsClock(date.getTime()))
                 .title(title)
                 .message(message));
 

@@ -113,27 +113,27 @@
 
     <!-- Status Notification (pull down / lock screen)  -->
 
-    <string name="notification__SGV_value" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen, example: SGV 100">SGV %1$s</string>
-    <string name="notification__SGV_value_estimated" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen when sensor glucose estimator is in use, example: SGV 100*">SGV %1$s*</string>
-    <string name="notification__SGV_not_available" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen">No SGV available</string>
+    <string name="notification__SGV_value" maxLength="15" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen, example: SGV 100">SGV %1$s</string>
+    <string name="notification__SGV_value_estimated" maxLength="15" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen when sensor glucose estimator is in use, example: SGV 100*">SGV %1$s*</string>
+    <string name="notification__SGV_not_available" maxLength="20" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen">No SGV available</string>
     <string name="notification__DELTA_value" translatable="false">&delta; %1$s</string>
-    <string name="notification__ESTIMATE" comment="visible on pull down / lock screen when sensor glucose estimator is in use">*estimated sgv</string>
+    <string name="notification__ESTIMATE" maxLength="30" comment="visible on pull down / lock screen when sensor glucose estimator is in use">*estimated sgv</string>
     <string name="notification__ALERT" translatable="false">&alert;</string>
     <string name="notification__ALERT_message" translatable="false">&alert; %1$s</string>
-    <string name="notification__NEXTPOLL_time" comment="visible on pull down / lock screen, example: Next 12:15 pm">Next %1$s</string>
-    <string name="notification__IOB_value" comment="IOB = Insulin On Board, visible on pull down / lock screen, example: IOB 3.5U">IOB %1$s</string>
-    <string name="notification__BASAL_rate" comment="visible on pull down / lock screen, example:  Basal: 0.85U">Basal: %1$s</string>
+    <string name="notification__NEXTPOLL_time" maxLength="20" comment="visible on pull down / lock screen, example: Next 12:15 pm">Next %1$s</string>
+    <string name="notification__IOB_value" maxLength="30" comment="IOB = Insulin On Board, visible on pull down / lock screen, example: IOB 3.5U">IOB %1$s</string>
+    <string name="notification__BASAL_rate" maxLength="30" comment="visible on pull down / lock screen, example:  Basal: 0.85U">Basal: %1$s</string>
     <string name="notification__BASAL_rate_pattern" translatable="false">%2$s: %1$s</string>
-    <string name="notification__SUSPEND" comment="visible on pull down / lock screen, example">Suspended</string>
-    <string name="notification__SUSPEND_time" comment="visible on pull down / lock screen, example:  Suspended at 3.30 pm">Suspended at %1$s</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain">Temp Basal: %1$s %2$s remain</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime_preset" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Temp Basal: %1$s %2$s remain (%3$s)</string>
-    <string name="notification__BG_value_time" comment="BG = Blood Glucose, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm">BG: %1$s at %2$s</string>
-    <string name="notification__BG_value_time_factor" comment="BG = Blood Glucose, Factor = Calibration Factor, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm • Factor: 4.5">BG: %1$s at %2$s • Factor: %3$s</string>
-    <string name="notification__BOLUS_delivered_time" comment="visible on pull down / lock screen, example:  Bolus: 3.5U at 3.15 pm">Bolus: %1$s at %2$s</string>
-    <string name="notification__DUALBOLUS_delivered_duration_time" comment="visible on pull down / lock screen, example:  Dual: 3U:5U/1h30m at 3.15 pm">Dual: %1$s:%2$s/%3$s at %4$s</string>
-    <string name="notification__SQUAREBOLUS_delivered_duration_time" comment="visible on pull down / lock screen, example:  Square: 5U/1h30m at 3.15 pm">Square: %1$s/%2$s at %3$s</string>
-    <string name="notification__BOLUSING_delivered_remainingtime" comment="visible on pull down / lock screen, example:  Bolusing 0.5U 1h30m remain">Bolusing&dots; %1$s %2$s remain</string>
+    <string name="notification__SUSPEND" maxLength="30" comment="visible on pull down / lock screen, example">Suspended</string>
+    <string name="notification__SUSPEND_time" maxLength="30" comment="visible on pull down / lock screen, example:  Suspended at 3.30 pm">Suspended at %1$s</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain">Temp Basal: %1$s %2$s remain</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime_preset" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Temp Basal: %1$s %2$s remain (%3$s)</string>
+    <string name="notification__BG_value_time" maxLength="40" comment="BG = Blood Glucose, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm">BG: %1$s at %2$s</string>
+    <string name="notification__BG_value_time_factor" maxLength="40" comment="BG = Blood Glucose, Factor = Calibration Factor, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm • Factor: 4.5">BG: %1$s at %2$s • Factor: %3$s</string>
+    <string name="notification__BOLUS_delivered_time" maxLength="40" comment="visible on pull down / lock screen, example:  Bolus: 3.5U at 3.15 pm">Bolus: %1$s at %2$s</string>
+    <string name="notification__DUALBOLUS_delivered_duration_time" maxLength="40" comment="visible on pull down / lock screen, example:  Dual: 3U:5U/1h30m at 3.15 pm">Dual: %1$s:%2$s/%3$s at %4$s</string>
+    <string name="notification__SQUAREBOLUS_delivered_duration_time" maxLength="40" comment="visible on pull down / lock screen, example:  Square: 5U/1h30m at 3.15 pm">Square: %1$s/%2$s at %3$s</string>
+    <string name="notification__BOLUSING_delivered_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Bolusing 0.5U 1h30m remain">Bolusing&dots; %1$s %2$s remain</string>
     <string name="notification__CAL_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Cal 10h30m">Cal %1$s</string>
     <string name="notification__WARMUP_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Warmup 1h30m">Warmup %1$s</string>
     <string name="notification__CGM_EXCEPTION" translatable="false">%1$s</string>
@@ -856,15 +856,15 @@
     <string name="nightscout_pump_pill__temp" maxLength="1">T</string>
     <string name="nightscout_pump_pill__square" maxLength="1">S</string>
     <string name="nightscout_pump_pill__dual" maxLength="1">D</string>
-    <string name="nightscout_pump_pill__no_cgm" maxLength="12">no cgm</string>
-    <string name="nightscout_pump_pill__bolusing" maxLength="12">bolusing</string>
-    <string name="nightscout_pump_pill__bolusing_abreviation" maxLength="4">bol</string>
-    <string name="nightscout_pump_pill__suspended" maxLength="12">suspended</string>
-    <string name="nightscout_pump_pill__suspended_abreviation" maxLength="4">sus</string>
-    <string name="nightscout_pump_pill__lost_sensor" maxLength="12">lost sensor</string>
-    <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="4">lost</string>
-    <string name="nightscout_pump_pill__estimate" maxLength="12">*estimate</string>
-    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="4">*est</string>
+    <string name="nightscout_pump_pill__no_cgm" maxLength="20">no cgm</string>
+    <string name="nightscout_pump_pill__bolusing" maxLength="20">bolusing</string>
+    <string name="nightscout_pump_pill__bolusing_abreviation" maxLength="6">bol</string>
+    <string name="nightscout_pump_pill__suspended" maxLength="20">suspended</string>
+    <string name="nightscout_pump_pill__suspended_abreviation" maxLength="6">sus</string>
+    <string name="nightscout_pump_pill__lost_sensor" maxLength="20">lost sensor</string>
+    <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="6">lost</string>
+    <string name="nightscout_pump_pill__estimate" maxLength="20">*estimate</string>
+    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="6">*est</string>
 
     <!-- pump/sensor/automode states -->
 
@@ -890,33 +890,33 @@
     <string name="automode_transition__out_of_active_due_to_timeout_from_safe_basal">Out of active due to timeout from safe basal</string>
     <string name="automode_transition__out_of_active_due_to_prolonged_high_sg">Out of active due to prolonged high SG</string>
 
-    <string name="sensor_state__ok" maxLength="6">OK</string>
+    <string name="sensor_state__ok" maxLength="10">OK</string>
     <string name="sensor_state__warm_up" maxLength="30">warm up</string>
-    <string name="sensor_state__warm_up_abbreviation" maxLength="6">WU</string>
+    <string name="sensor_state__warm_up_abbreviation" maxLength="10">WU</string>
     <string name="sensor_state__calibrate_now" maxLength="30">calibrate now</string>
-    <string name="sensor_state__calibrate_now_abbreviation" maxLength="6">CalNow</string>
+    <string name="sensor_state__calibrate_now_abbreviation" maxLength="10">CalNow</string>
     <string name="sensor_state__sg_not_available" maxLength="30">sg not available</string>
-    <string name="sensor_state__sg_not_available_abbreviation" maxLength="6">NoSG</string>
+    <string name="sensor_state__sg_not_available_abbreviation" maxLength="10">NoSG</string>
     <string name="sensor_state__cal_error" maxLength="30">cal error</string>
-    <string name="sensor_state__cal_error_abbreviation" maxLength="6">CalErr</string>
+    <string name="sensor_state__cal_error_abbreviation" maxLength="10">CalErr</string>
     <string name="sensor_state__change_sensor" maxLength="30">change sensor</string>
-    <string name="sensor_state__change_sensor_abbreviation" maxLength="6">ChgSen</string>
+    <string name="sensor_state__change_sensor_abbreviation" maxLength="10">ChgSen</string>
     <string name="sensor_state__sensor_expired" maxLength="30">sensor expired</string>
-    <string name="sensor_state__sensor_expired_abbreviation" maxLength="6">EOL</string>
+    <string name="sensor_state__sensor_expired_abbreviation" maxLength="10">EOL</string>
     <string name="sensor_state__not_ready" maxLength="30">not ready</string>
-    <string name="sensor_state__not_ready_abbreviation" maxLength="6">NotRdy</string>
+    <string name="sensor_state__not_ready_abbreviation" maxLength="10">NotRdy</string>
     <string name="sensor_state__reading_high" maxLength="30">sg reading high</string>
-    <string name="sensor_state__reading_high_abbreviation" maxLength="6">HiSG</string>
+    <string name="sensor_state__reading_high_abbreviation" maxLength="10">HiSG</string>
     <string name="sensor_state__reading_low" maxLength="30">sg reading low</string>
-    <string name="sensor_state__reading_low_abbreviation" maxLength="6">LoSG</string>
+    <string name="sensor_state__reading_low_abbreviation" maxLength="10">LoSG</string>
     <string name="sensor_state__calibrating" maxLength="30">calibrating</string>
-    <string name="sensor_state__calibrating_abbreviation" maxLength="6">InCal</string>
+    <string name="sensor_state__calibrating_abbreviation" maxLength="10">InCal</string>
     <string name="sensor_state__cal_error_change_sensor" maxLength="30">cal error change sensor</string>
     <string name="sensor_state__cal_error_change_sensor_abbreviation" maxLength="6">ChgSen</string>
     <string name="sensor_state__time_unknown" maxLength="30">time unknown</string>
-    <string name="sensor_state__time_unknown_abbreviation" maxLength="6">NoTime</string>
+    <string name="sensor_state__time_unknown_abbreviation" maxLength="10">NoTime</string>
     <string name="sensor_state__sensor_error" maxLength="30">sensor error</string>
-    <string name="sensor_state__sensor_error_abbreviation" maxLength="6">SenErr</string>
+    <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SenErr</string>
 
     <!-- pump default pattern and preset names -->
 

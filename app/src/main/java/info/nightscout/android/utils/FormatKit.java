@@ -191,8 +191,7 @@ public class FormatKit {
         if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
             return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(time);
         else
-            return new SimpleDateFormat("h:mm a", Locale.getDefault()).format(time)
-                    .toLowerCase().replace(".", "").replace(",", "");
+            return new SimpleDateFormat("h:mm a", Locale.getDefault()).format(time);
     }
 
     public String formatAsClockNoAmPm(long time) {
@@ -206,8 +205,7 @@ public class FormatKit {
         if (DateFormat.is24HourFormat(mApplication.getApplicationContext()))
             return new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(time);
         else
-            return new SimpleDateFormat("h:mm:ss a", Locale.getDefault()).format(time)
-                    .toLowerCase().replace(".", "").replace(",", "");
+            return new SimpleDateFormat("h:mm:ss a", Locale.getDefault()).format(time);
     }
 
     public String formatAsClockSecondsNoAmPm(long time) {
@@ -231,8 +229,7 @@ public class FormatKit {
             return df.format(hours) + ":" + df.format(minutes);
         } else {
             return (hours > 12 ? hours - 12 : hours) + ":" + df.format(minutes)
-                    + DateFormatSymbols.getInstance().getAmPmStrings()[hours < 12 ? 0 : 1]
-                    .toLowerCase().replace(".", "").replace(",", "");
+                    + DateFormatSymbols.getInstance().getAmPmStrings()[hours < 12 ? 0 : 1];
         }
     }
 

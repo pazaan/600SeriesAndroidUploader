@@ -134,7 +134,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
             messageItems.add(new MessageItem()
                     .type(MessageItem.TYPE.AUTOMODE_ACTIVE)
                     .date(eventDate)
-                    .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
+                    .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()))
                     .title(FormatKit.getInstance().getString(R.string.text__Auto_Mode))
                     .message(PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string()));
         }
@@ -143,7 +143,7 @@ public class PumpHistoryLoop extends RealmObject implements PumpHistoryInterface
             messageItems.add(new MessageItem()
                     .type(MessageItem.TYPE.AUTOMODE_STOP)
                     .date(eventDate)
-                    .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
+                    .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()))
                     .title(FormatKit.getInstance().getString(R.string.text__Auto_Mode))
                     .message(PumpHistoryParser.CL_TRANSITION_REASON.convert(transitionReason).string()));
         }

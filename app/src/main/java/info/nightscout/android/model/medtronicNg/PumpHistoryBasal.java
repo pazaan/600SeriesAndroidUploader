@@ -243,7 +243,7 @@ public class PumpHistoryBasal extends RealmObject implements PumpHistoryInterfac
         messageItems.add(new MessageItem()
                 .type(type)
                 .date(eventDate)
-                .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
+                .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()))
                 .title(title)
                 .message(message));
 

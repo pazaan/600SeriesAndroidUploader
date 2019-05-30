@@ -1415,7 +1415,7 @@ public class UrchinService extends Service {
                 fk.getString(R.string.urchin_watchface_Temp),
                 fk.formatMinutesAsM(45),
                 fk.getString(R.string.urchin_watchface_Suspend),
-                fk.formatAsClock(11, 30),
+                "11:30",
                 fk.getString(R.string.urchin_status_layout_when_active)
         ));
         items.add("15");
@@ -1425,7 +1425,7 @@ public class UrchinService extends Service {
                 fk.formatAsInsulin(0.0),
                 fk.formatMinutesAsM(45),
                 fk.getString(R.string.urchin_watchface_Suspend),
-                fk.formatAsClock(11, 30),
+                "11:30",
                 fk.getString(R.string.urchin_status_layout_dynamic)
         ));
 
@@ -1433,7 +1433,7 @@ public class UrchinService extends Service {
         items.add(String.format("%s: '%s·%s'",
                 fk.getString(R.string.urchin_status_layout_Last_Bolus),
                 fk.formatAsInsulin(3.5),
-                fk.formatAsClock(11, 30)
+                "11:30"
         ));
         items.add("17");
         items.add(String.format("%s: '%s%s·%s' (%s)",
@@ -1540,7 +1540,7 @@ public class UrchinService extends Service {
         items.add(String.format("%s: '%s·%s'",
                 fk.getString(R.string.urchin_status_layout_BG),
                 fk.formatAsGlucose(100),
-                fk.formatAsClock(11, 30)
+                "11:30"
         ));
         items.add("112");
         items.add(String.format("%s: '%s·%s'",
@@ -1621,7 +1621,7 @@ public class UrchinService extends Service {
         items.add(String.format("%s: '%s·%s' (%s)",
                 fk.getString(R.string.urchin_status_layout_Pump_Alert),
                 fk.getString(R.string.urchin_watchface_Alert),
-                fk.formatAsClock(11, 30),
+                "11:30",
                 fk.getString(R.string.urchin_status_layout_when_active)
         ));
         items.add("152");
