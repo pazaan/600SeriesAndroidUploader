@@ -86,21 +86,6 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
             return nightscoutItems;
         }
 
-        // debug for 670 to check if cal is sent without a bg
-        if (calibration && bgRTC == 0 && bgOffset == 0) {
-            TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID, calibrationDate);
-            treatment.setEventType("Note");
-            treatment.setNotes(String.format("%s<br><br> %s: %s %s: %s",
-                    "DEBUG: CAL Event noted due to no BG event in history. BG event may have occurred past this date.",
-                    FormatKit.getInstance().getString(R.string.text__Factor),
-                    calibrationFactor,
-                    FormatKit.getInstance().getString(R.string.text__Target),
-                    FormatKit.getInstance().formatAsGlucose(calibrationTarget, true)
-            ));
-            nightscoutItems.get(0).update();
-            return nightscoutItems;
-        }
-
         TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID, bgDate);
         treatment.setEventType("BG Check");
         treatment.setGlucoseType("Finger");
@@ -184,7 +169,7 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
         messageItems.add(new MessageItem()
                 .type(type)
                 .date(date)
-                .clock(FormatKit.getInstance().formatAsClock(date.getTime()).replace(" ", ""))
+                .clock(FormatKit.getInstance().formatAsClock(date.getTime()))
                 .title(title)
                 .message(message));
 

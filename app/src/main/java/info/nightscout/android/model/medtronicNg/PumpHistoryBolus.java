@@ -388,7 +388,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
         messageItems.add(new MessageItem()
                 .type(MessageItem.TYPE.BOLUS)
                 .date(date)
-                .clock(FormatKit.getInstance().formatAsClock(date.getTime()).replace(" ", ""))
+                .clock(FormatKit.getInstance().formatAsClock(date.getTime()))
                 .title(title)
                 .message(message));
 

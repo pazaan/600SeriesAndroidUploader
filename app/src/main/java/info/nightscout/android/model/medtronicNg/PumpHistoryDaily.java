@@ -131,7 +131,7 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
         }
 
         TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
-        treatment.setEventType("Pump Daily Totals");
+        treatment.setEventType("Note");
 
         String notes = "";
 
@@ -140,26 +140,25 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
         long midday = startDate.getTime() + ((endDate.getTime() - startDate.getTime()) / 2);
 
         if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.FORMAT_HTML)) {
-            String css = ".dt{background-color:#ddd;text-align:center;line-height:1.4;font-size:90%}" +
+
+            String css = ".dt{background-color:#ddd;margin:auto;text-align:center;font-size:80%}" +
                     ".dt caption{background-color:#444;color:#fff}" +
-                    ".dt tr{font-size:85%}" +
-                    ".dt td{background-color:#fff;min-width:50px}";
+                    ".dt td{background-color:#fff;min-width:55px}";
 
             if (TYPE.DAILY_TOTALS.equals(type)) {
 
-                notes += String.format("<style>%s</style><table class='dt'><caption>%s • %s</caption>" +
+                notes += String.format("<style>%s</style><table class='dt'><caption>%s</caption>" +
                                 "<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr><tr>" +
                                 "<td>%s<br>%s<br><br>%s<br>%s<br>%s<br><br>%s<br>%s<br>%s</td>" +
                                 "<td>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
                                 "<td>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
-                                "<td>%s<br>x%s<br>%s<br>%s<br>%s<br>x%s<br>%s<br>%s<br>x%s<br>%s<br>%s<br>x%s<br>%s<br>%s<br>x%s<br>%s</td>" +
+                                "<td>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
                                 "<td>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
                                 "</tr></table>",
 
                         css,
 
-                        FormatKit.getInstance().getString(R.string.daily_totals_heading__daily_totals),
-                        sdfDay.format(midday),
+                        sdfDay.format(midday).toUpperCase(),
 
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__insulin),
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__sensor),
@@ -246,19 +245,18 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
             } else {
 
-                notes += String.format("<style>%s</style><table class='dt'><caption>%s • %s</caption>" +
+                notes += String.format("<style>%s</style><table class='dt'><caption>%s</caption>" +
                                 "<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr><tr>" +
                                 "<td>%s<br>%s<br><br>%s<br>%s<br>%s<br><br>%s<br>%s<br>%s</td>" +
                                 "<td>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
                                 "<td>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
-                                "<td>%s<br>x%s<br>%s<br>%s<br>%s<br>x%s<br>%s<br>%s<br>x%s<br>%s<br>%s<br>x%s<br>%s<br>%s<br>x%s<br>%s</td>" +
-                                "<td>%s<br>%s<br>%s<br>x%s<br>%s<br><br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
+                                "<td>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
+                                "<td>%s<br>%s<br>%s<br>%s<br>%s<br><br>%s<br>%s<br>%s<br>%s<br>%s<br>%s<br>%s</td>" +
                                 "</tr></table>",
 
                         css,
 
-                        FormatKit.getInstance().getString(R.string.daily_totals_heading__daily_totals),
-                        sdfDay.format(midday),
+                        sdfDay.format(midday).toUpperCase(),
 
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__insulin),
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__sensor),
@@ -341,9 +339,9 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
                 notes += String.format("%s %s" +
                                 " | %s %s %s %s %s %s %s %s" +
-                                " | %s x%s %s %s %s %s %s %s %s %s %s %s %s %s %s" +
-                                " | %s x%s %s %s %s %s %s %s %s x%s %s %s %s %s" +
-                                " | %s x%s %s %s %s x%s %s %s x%s %s %s x%s %s %s x%s %s" +
+                                " | %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" +
+                                " | %s %s %s %s %s %s %s %s %s %s %s %s %s %s" +
+                                " | %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" +
                                 " | %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
 
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__daily_totals),
@@ -430,10 +428,10 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
                 notes += String.format("%s %s" +
                                 " | %s %s %s %s %s %s %s %s" +
-                                " | %s x%s %s %s %s %s %s %s %s %s %s %s %s %s %s" +
-                                " | %s x%s %s %s %s %s %s %s %s %s" +
-                                " | %s x%s %s %s %s x%s %s %s x%s %s %s x%s %s %s x%s %s" +
-                                " | %s %s %s x%s %s %s %s %s %s %s %s %s",
+                                " | %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" +
+                                " | %s %s %s %s %s %s %s %s %s %s" +
+                                " | %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" +
+                                " | %s %s %s %s %s %s %s %s %s %s %s %s",
 
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__daily_totals),
                         sdfDay.format(midday),

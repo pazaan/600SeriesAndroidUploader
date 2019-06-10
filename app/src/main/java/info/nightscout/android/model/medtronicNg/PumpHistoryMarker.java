@@ -198,7 +198,7 @@ public class PumpHistoryMarker extends RealmObject implements PumpHistoryInterfa
 
         messageItems.add(new MessageItem()
                 .date(eventDate)
-                .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()).replace(" ", ""))
+                .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()))
                 .title(title)
                 .message(message));
 

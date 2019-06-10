@@ -24,6 +24,8 @@ import java.util.List;
 
 import info.nightscout.android.R;
 import info.nightscout.android.urchin.UrchinService;
+import info.nightscout.android.utils.EditTextPreferencePresetName;
+import info.nightscout.android.utils.FormatKit;
 
 public class SettingsFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
     private static final String TAG = SettingsFragment.class.getSimpleName();
@@ -138,18 +140,25 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
     private void updatePrefSummary(Preference p) {
         if (p instanceof ListPreference) {
             ListPreference listPref = (ListPreference) p;
-
-            if (p.getKey().contains("urchinStatusLayout")) {
+            if (p.getKey().contains("urchinStatusLayout"))
                 urchinStatusLayout(listPref);
-            }
-
             p.setSummary(listPref.getEntry());
         }
-        if (p instanceof EditTextPreference) {
+
+        else if (p instanceof EditTextPreferencePresetName) {
+            EditTextPreference editTextPref = (EditTextPreference) p;
+            String t = editTextPref.getText();
+            if (t.isEmpty())
+                t = FormatKit.getInstance().getString( "default_" + editTextPref.getKey());
+            p.setSummary(t);
+        }
+
+        else if (p instanceof EditTextPreference) {
             EditTextPreference editTextPref = (EditTextPreference) p;
             p.setSummary(editTextPref.getText());
         }
-        if (p instanceof MultiSelectListPreference) {
+
+        else if (p instanceof MultiSelectListPreference) {
             EditTextPreference editTextPref = (EditTextPreference) p;
             p.setSummary(editTextPref.getText());
         }

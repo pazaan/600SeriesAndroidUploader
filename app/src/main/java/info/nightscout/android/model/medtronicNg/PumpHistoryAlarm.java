@@ -190,7 +190,7 @@ public class PumpHistoryAlarm extends RealmObject implements PumpHistoryInterfac
                 .type(type)
                 .date(alarmedDate)
                 .priority(MessageItem.PRIORITY.convert(pumpAlert.getPriority()))
-                .clock(FormatKit.getInstance().formatAsClock(alarmedDate.getTime()).replace(" ", ""))
+                .clock(FormatKit.getInstance().formatAsClock(alarmedDate.getTime()))
                 .title(pumpAlert.getTitleAlt())
                 .message(pumpAlert.getMessage())
                 .extended(String.format("%s%s%s",

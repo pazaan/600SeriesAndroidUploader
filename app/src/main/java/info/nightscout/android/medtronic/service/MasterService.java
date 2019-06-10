@@ -149,6 +149,8 @@ public class MasterService extends Service {
             intentFilter.addAction(Constants.ACTION_NO_USB_PERMISSION);
 
             intentFilter.addAction(Intent.ACTION_LOCALE_CHANGED);
+            intentFilter.addAction(Intent.ACTION_TIME_CHANGED);
+            intentFilter.addAction(Intent.ACTION_DATE_CHANGED);
 
             registerReceiver(masterServiceReceiver, intentFilter);
 
@@ -346,6 +348,8 @@ public class MasterService extends Service {
                     break;
 
                 case Intent.ACTION_LOCALE_CHANGED:
+                case Intent.ACTION_TIME_CHANGED:
+                case Intent.ACTION_DATE_CHANGED:
                 case Constants.ACTION_STATUS_UPDATE:
                     statusNotification.updateNotification();
                     break;

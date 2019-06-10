@@ -320,53 +320,45 @@
                     android:persistent="false">
                     <PreferenceCategory
                         android:title="@string/pref_ns_basal_patterns_category">
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_pattern_1_title"
-                            android:key="@string/key_nameBasalPattern1"
-                            android:defaultValue="@string/default_nameBasalPattern1"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBasalPatternP1"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_pattern_2_title"
-                            android:key="@string/key_nameBasalPattern2"
-                            android:defaultValue="@string/default_nameBasalPattern2"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBasalPatternP2"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_pattern_3_title"
-                            android:key="@string/key_nameBasalPattern3"
-                            android:defaultValue="@string/default_nameBasalPattern3"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBasalPatternP3"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_pattern_4_title"
-                            android:key="@string/key_nameBasalPattern4"
-                            android:defaultValue="@string/default_nameBasalPattern4"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBasalPatternP4"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_pattern_5_title"
-                            android:key="@string/key_nameBasalPattern5"
-                            android:defaultValue="@string/default_nameBasalPattern5"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBasalPatternP5"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_pattern_6_title"
-                            android:key="@string/key_nameBasalPattern6"
-                            android:defaultValue="@string/default_nameBasalPattern6"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBasalPatternP6"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_pattern_7_title"
-                            android:key="@string/key_nameBasalPattern7"
-                            android:defaultValue="@string/default_nameBasalPattern7"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBasalPatternP7"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_pattern_8_title"
-                            android:key="@string/key_nameBasalPattern8"
-                            android:defaultValue="@string/default_nameBasalPattern8"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBasalPatternP8"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
                     </PreferenceCategory>
                 </PreferenceScreen>
@@ -376,53 +368,45 @@
                     android:persistent="false">
                     <PreferenceCategory
                         android:title="@string/pref_ns_temp_basal_presets_category">
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_1_title"
-                            android:key="@string/key_nameTempBasalPreset1"
-                            android:defaultValue="@string/default_nameTempBasalPreset1"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameTempBasalPresetP1"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_2_title"
-                            android:key="@string/key_nameTempBasalPreset2"
-                            android:defaultValue="@string/default_nameTempBasalPreset2"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameTempBasalPresetP2"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_3_title"
-                            android:key="@string/key_nameTempBasalPreset3"
-                            android:defaultValue="@string/default_nameTempBasalPreset3"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameTempBasalPresetP3"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_4_title"
-                            android:key="@string/key_nameTempBasalPreset4"
-                            android:defaultValue="@string/default_nameTempBasalPreset4"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameTempBasalPresetP4"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_5_title"
-                            android:key="@string/key_nameTempBasalPreset5"
-                            android:defaultValue="@string/default_nameTempBasalPreset5"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameTempBasalPresetP5"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_6_title"
-                            android:key="@string/key_nameTempBasalPreset6"
-                            android:defaultValue="@string/default_nameTempBasalPreset6"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameTempBasalPresetP6"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_7_title"
-                            android:key="@string/key_nameTempBasalPreset7"
-                            android:defaultValue="@string/default_nameTempBasalPreset7"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameTempBasalPresetP7"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_8_title"
-                            android:key="@string/key_nameTempBasalPreset8"
-                            android:defaultValue="@string/default_nameTempBasalPreset8"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameTempBasalPresetP8"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
                     </PreferenceCategory>
                 </PreferenceScreen>
@@ -432,61 +416,53 @@
                     android:persistent="false">
                     <PreferenceCategory
                         android:title="@string/pref_ns_bolus_presets_category">
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_1_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
-                            android:key="@string/key_nameBolusPreset1"
-                            android:defaultValue="@string/default_nameBolusPreset1"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBolusPresetP1"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_2_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
-                            android:key="@string/key_nameBolusPreset2"
-                            android:defaultValue="@string/default_nameBolusPreset2"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBolusPresetP2"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_3_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
-                            android:key="@string/key_nameBolusPreset3"
-                            android:defaultValue="@string/default_nameBolusPreset3"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBolusPresetP3"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_4_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
-                            android:key="@string/key_nameBolusPreset4"
-                            android:defaultValue="@string/default_nameBolusPreset4"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBolusPresetP4"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_5_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
-                            android:key="@string/key_nameBolusPreset5"
-                            android:defaultValue="@string/default_nameBolusPreset5"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBolusPresetP5"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_6_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
-                            android:key="@string/key_nameBolusPreset6"
-                            android:defaultValue="@string/default_nameBolusPreset6"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBolusPresetP6"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_7_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
-                            android:key="@string/key_nameBolusPreset7"
-                            android:defaultValue="@string/default_nameBolusPreset7"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBolusPresetP7"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
-                        <info.nightscout.android.utils.EditTextPreferenceNAME
+                        <info.nightscout.android.utils.EditTextPreferencePresetName
                             android:title="@string/pref_ns_preset_8_title"
                             android:dependency="@string/key_nsEnableProfileUpload"
-                            android:key="@string/key_nameBolusPreset8"
-                            android:defaultValue="@string/default_nameBolusPreset8"
-                            android:dialogMessage=""
+                            android:key="@string/key_nameBolusPresetP8"
+                            android:defaultValue="@string/default_empty"
                             android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
                     </PreferenceCategory>
                 </PreferenceScreen>
@@ -887,7 +863,7 @@
                     android:defaultValue="@string/default_pushoverSoundOverride"
                     android:summary="%s"
                     android:entries="@array/pushover_sound"
-                    android:entryValues="@array/pushover_sound"/>
+                    android:entryValues="@array/pushover_sound_values"/>
             </PreferenceCategory>
 
             <PreferenceCategory
@@ -935,7 +911,7 @@
                             android:defaultValue="@string/default_pushoverSoundOnHigh"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_alert_on_low_category">
@@ -958,7 +934,7 @@
                             android:defaultValue="@string/default_pushoverSoundOnLow"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_alert_before_high_category">
@@ -981,7 +957,7 @@
                             android:defaultValue="@string/default_pushoverSoundBeforeHigh"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_alert_before_low_category">
@@ -1004,7 +980,7 @@
                             android:defaultValue="@string/default_pushoverSoundBeforeLow"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                 </PreferenceScreen>
 
@@ -1059,7 +1035,7 @@
                             android:defaultValue="@string/default_pushoverSoundPumpEmergency"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_actionable_alert_category">
@@ -1086,7 +1062,7 @@
                             android:defaultValue="@string/default_pushoverSoundPumpActionable"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_informational_alert_category">
@@ -1113,7 +1089,7 @@
                             android:defaultValue="@string/default_pushoverSoundPumpInformational"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_reminders_category">
@@ -1140,7 +1116,7 @@
                             android:defaultValue="@string/default_pushoverSoundPumpReminder"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                 </PreferenceScreen>
 
@@ -1187,7 +1163,7 @@
                             android:defaultValue="@string/default_pushoverSoundBolus"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_basal_category">
@@ -1210,7 +1186,7 @@
                             android:defaultValue="@string/default_pushoverSoundBasal"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_suspend_resume_category">
@@ -1233,7 +1209,7 @@
                             android:defaultValue="@string/default_pushoverSoundSuspendResume"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_bg_category">
@@ -1256,7 +1232,7 @@
                             android:defaultValue="@string/default_pushoverSoundBG"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_bg_calibration_title">
@@ -1279,7 +1255,7 @@
                             android:defaultValue="@string/default_pushoverSoundCalibration"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_consumables_category">
@@ -1302,7 +1278,7 @@
                             android:defaultValue="@string/default_pushoverSoundConsumables"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                         <CheckBoxPreference
                             android:title="@string/pref_pushover_lifetime_info_title"
                             android:dependency="@string/key_pushoverEnableConsumables"
@@ -1330,7 +1306,7 @@
                             android:defaultValue="@string/default_pushoverSoundDailyTotals"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                 </PreferenceScreen>
 
@@ -1377,7 +1353,7 @@
                             android:defaultValue="@string/default_pushoverSoundAutoModeActive"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_auto_mode_stop_category">
@@ -1400,7 +1376,7 @@
                             android:defaultValue="@string/default_pushoverSoundAutoModeStop"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_auto_mode_exit_category">
@@ -1423,7 +1399,7 @@
                             android:defaultValue="@string/default_pushoverSoundAutoModeExit"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_auto_mode_min_max_category">
@@ -1446,7 +1422,7 @@
                             android:defaultValue="@string/default_pushoverSoundAutoModeMinMax"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                 </PreferenceScreen>
 
@@ -1494,7 +1470,7 @@
                             android:defaultValue="@string/default_pushoverSoundUploaderPumpErrors"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
 
                     <PreferenceCategory
@@ -1519,7 +1495,7 @@
                             android:defaultValue="@string/default_pushoverSoundUploaderUsbErrors"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
 
                     <PreferenceCategory
@@ -1544,7 +1520,7 @@
                             android:defaultValue="@string/default_pushoverSoundUploaderStatus"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                         <CheckBoxPreference
                             android:title="@string/pref_pushover_connection_states_title"
                             android:dependency="@string/key_pushoverEnableUploaderStatus"
@@ -1578,7 +1554,7 @@
                             android:defaultValue="@string/default_pushoverSoundUploaderBattery"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                         <CheckBoxPreference
                             android:title="@string/pref_pushover_low_battery_state_title"
                             android:dependency="@string/key_pushoverEnableUploaderBattery"
@@ -1669,7 +1645,7 @@
                             android:defaultValue="@string/default_pushoverSoundCleared"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_silenced_alerts_category">
@@ -1699,7 +1675,7 @@
                             android:defaultValue="@string/default_pushoverSoundSilenced"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_backfill_category">
@@ -1754,7 +1730,7 @@
                             android:defaultValue="@string/default_pushoverSoundBackfill"
                             android:summary="%s"
                             android:entries="@array/pushover_sound"
-                            android:entryValues="@array/pushover_sound"/>
+                            android:entryValues="@array/pushover_sound_values"/>
                     </PreferenceCategory>
                     <PreferenceCategory
                         android:title="@string/pref_pushover_api_category">
@@ -1847,7 +1823,7 @@
                     android:defaultValue="@bool/default_sysEnableReportISIG"
                     android:summary="@string/pref_system_report_isig_summary"/>
                 <info.nightscout.android.utils.ListPreference
-                    android:title="ISIG's to include"
+                    android:title="@string/pref_system_report_isig_to_include_title"
                     android:dependency="@string/key_sysEnableReportISIG"
                     android:key="@string/key_sysReportISIGinclude"
                     android:defaultValue="@string/default_sysReportISIGinclude"
@@ -1855,7 +1831,7 @@
                     android:entries="@array/ReportISIGinclude"
                     android:entryValues="@array/ReportISIGinclude"/>
                 <info.nightscout.android.utils.ListPreference
-                    android:title="Minimum runtime"
+                    android:title="@string/pref_system_report_isig_minimum_runtime_title"
                     android:dependency="@string/key_sysEnableReportISIG"
                     android:key="@string/key_sysReportISIGminimum"
                     android:defaultValue="@string/default_sysReportISIGminimum"
@@ -1863,7 +1839,7 @@
                     android:entries="@array/ReportISIGminimum"
                     android:entryValues="@array/ReportISIGminimum_values"/>
                 <info.nightscout.android.utils.ListPreference
-                    android:title="Minimum runtime on new sensor"
+                    android:title="@string/pref_system_report_isig_minimum_runtime_new_sensor_title"
                     android:dependency="@string/key_sysEnableReportISIG"
                     android:key="@string/key_sysReportISIGnewsensor"
                     android:defaultValue="@string/default_sysReportISIGnewsensor"

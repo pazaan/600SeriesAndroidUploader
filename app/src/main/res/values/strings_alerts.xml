@@ -145,7 +145,7 @@
     <string name="alert_99021" comment="pump alert (see your pump manual) format: heading message|extended message">Resume bolus?|%1$s of %2$s delivered. Resume delivery of %3$s?</string>
     <string name="alert_99022" comment="pump alert (see your pump manual) format: heading message|extended message">Resume Dual bolus?|%1$s of %2$s delivered. Resume delivery of %3$s for %4$s hr?</string>
     <string name="alert_99023" comment="pump alert (see your pump manual) format: heading message|extended message">Resume Dual bolus?|%1$s of %2$s delivered. Resume delivery of %3$s now, and %4$s Square for %5$s hr?</string>
-    <string name="alert_99024" comment="pump alert (see your pump manual) format: heading message|extended message">Resume Square bolus? %1$s of %2$s delivered for %3$s hr. Resume delivery of %4$s for %5$s hr?</string>
+    <string name="alert_99024" comment="pump alert (see your pump manual) format: heading message|extended message">Resume Square bolus?|%1$s of %2$s delivered for %3$s hr. Resume delivery of %4$s for %5$s hr?</string>
     <string name="alert_99031" comment="pump alert (see your pump manual) format: heading message|extended message">Wrong key pressed|Try again</string>
 
     <string name="alert_99101" comment="pump alert (see your pump manual) format: heading message|extended message">Change sensor|Second calibration not accepted. Insert new sensor.</string>
