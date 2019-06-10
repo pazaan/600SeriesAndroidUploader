@@ -228,8 +228,10 @@ public class FormatKit {
         if (DateFormat.is24HourFormat(mApplication.getApplicationContext())) {
             return df.format(hours) + ":" + df.format(minutes);
         } else {
-            return (hours > 12 ? hours - 12 : hours) + ":" + df.format(minutes)
-                    + DateFormatSymbols.getInstance().getAmPmStrings()[hours < 12 ? 0 : 1];
+            return (String.format("%s:%s %s",
+                    hours > 12 ? hours - 12 : hours,
+                    df.format(minutes),
+                    DateFormatSymbols.getInstance().getAmPmStrings()[hours < 12 ? 0 : 1]));
         }
     }
 
@@ -363,20 +365,43 @@ public class FormatKit {
     // The total size of an index entry, which can include structural overhead depending on the BSON type,
     // must be less than 1024 bytes.
     public String asMongoDBIndexKeySafe(String string) {
-        int size = string.length();
+        int length = string.length();
 
         // json will escape "</div>" to "<\/div"
 
-        int jsonsize = size + (size - string
-                .replace("/", "")
-                .replace("\"", "")
-                .replace("\\", "")
-                .length());
+        String json = string
+                .replace("\\", "\\\\")
+                .replace("/", "\\/")
+                .replace("\"", "\\\"");
 
-        Log.d(TAG, String.format("MongoDBIndexKeySafe: size: %d used: %d", size, jsonsize));
+        int jsonLength = json.length();
 
-        if (jsonsize < 1024) return string;
-        return "";
+        int utf8Length = utf8Length(json);
+
+        if (utf8Length < 1024) {
+            Log.d(TAG, String.format("MongoDBIndexKeySafe: length: %d json: %d utf-8: %s", length, jsonLength, utf8Length));
+            return string;
+        } else {
+            Log.e(TAG, String.format("MongoDBIndexKeySafe: length: %d json: %d utf-8: %s (max bytes >= 1024)", length, jsonLength, utf8Length));
+            return "";
+        }
     }
 
+    public static int utf8Length(CharSequence sequence) {
+        int count = 0;
+        for (int i = 0, len = sequence.length(); i < len; i++) {
+            char ch = sequence.charAt(i);
+            if (ch <= 0x7F) {
+                count++;
+            } else if (ch <= 0x7FF) {
+                count += 2;
+            } else if (Character.isHighSurrogate(ch)) {
+                count += 4;
+                ++i;
+            } else {
+                count += 3;
+            }
+        }
+        return count;
+    }
 }

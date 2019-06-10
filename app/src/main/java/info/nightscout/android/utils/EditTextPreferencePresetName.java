@@ -16,21 +16,21 @@ import info.nightscout.android.R;
  * Created by Pogman on 3.1.18.
  */
 
-public class EditTextPreferenceNAME extends EditTextPreference {
+public class EditTextPreferencePresetName extends EditTextPreference {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public EditTextPreferenceNAME(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public EditTextPreferencePresetName(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    public EditTextPreferenceNAME(Context context, AttributeSet attrs, int defStyleAttr) {
+    public EditTextPreferencePresetName(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
-    public EditTextPreferenceNAME(Context context, AttributeSet attrs) {
+    public EditTextPreferencePresetName(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public EditTextPreferenceNAME(Context context) {
+    public EditTextPreferencePresetName(Context context) {
         super(context);
     }
 
@@ -76,9 +76,6 @@ public class EditTextPreferenceNAME extends EditTextPreference {
             if (illegalCharacters.contains(text.substring(i, i+1)))
                 return getContext().getString(R.string.pref_error_text_illegal_characters);
         }
-
-        if (text.length() == 0)
-            return getContext().getString(R.string.pref_error_text_empty);
 
         if (text.length() > 20)
             return getContext().getString(R.string.pref_error_text_exceeds_length);

@@ -103,7 +103,7 @@ public class NightscoutUploadProcess {
         if (dataStore.getNsDeviceName().length() == 0) this.device = device;
         else this.device = DEVICE_HEADER + dataStore.getNsDeviceName();
 
-        if (dataStore.getNsEnteredBy().length() == 0) this.enteredBy = "";
+        if (dataStore.getNsEnteredBy().length() == 0) this.enteredBy = this.device;
         else enteredBy = DEVICE_HEADER + dataStore.getNsEnteredBy();
 
         if (dataStore.isNsEnableDeviceStatus())
