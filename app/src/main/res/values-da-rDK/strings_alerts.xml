@@ -25,12 +25,12 @@
     <string name="alert_cleared_reminder">Nulstil påmindelse</string>
     <string name="alert_cleared_tag">nulstillet</string>
     <string name="alert_silenced">Alarm slået fra</string>
-    <string name="alert_silenced_tag">silenced</string>
+    <string name="alert_silenced_tag">lydløs</string>
     <string name="alert_repeated">Gentag alarm</string>
     <string name="alert_repeated_tag">gentag</string>
     <!-- default when no alert definition found -->
     <string name="alert_unknown_in_history">Ukendt|Vær venlig at kontrolere din PUMPE alarm historik og raporter HELE alarm beskeden som den står i pumpen. Inkluder #code og data i citationstegn som det kan ses her og send det til Dev holdet.</string>
-    <string name="alert_unknown_not_in_history">Unknown|Alert does not show in the pumps alarm history and is only displayed as an on-screen notification. Please take a photo of the alert as displayed on the pump when available. Include the #code and data in brackets as shown here and send to the dev team.</string>
+    <string name="alert_unknown_not_in_history">Ukendt! Alarm vises ikke i pumpens alarmhistorik og vises kun som skærm notifikation. Tag venligst et billede af den viste alarm på pumpen når det er muligt. Inkluder #koden og send i parentes som vist her og send det til udviklerne.</string>
     <!-- taken from pump alarm history -->
     <string name="alert_4" comment="pump alert (see your pump manual) format: heading message|extended message">Pumpefejl 4|Afgivelse stoppet. Indst. uændrede. Vælg OK for at fortsætte. Se brugsanvisningen.</string>
     <string name="alert_6" comment="pump alert (see your pump manual) format: heading message|extended message">Strømsvigt|AA batteri var fjernet i mere end 10 min. eller strømsvigt. Vælg OK for at indtaste tid og dato igen.</string>
@@ -86,18 +86,18 @@
     <string name="alert_815" comment="pump alert (see your pump manual) format: heading message|extended message">Basalafgivelse genoptaget|Ændring i lav-indstillinger forårsagede, at basal blev genoptaget. Kontrollér BG.</string>
     <string name="alert_816" comment="pump alert (see your pump manual) format: heading message|extended message">Advarsel ved høj %1$s|Høj sensorglukose. Kontrollér BG.</string>
     <string name="alert_817" comment="pump alert (see your pump manual) format: heading message|extended message">Advarsel før høj %1$s|Sensorglukose nærmer sig øvre grænse. Kontrollér BG.</string>
-    <string name="alert_869" comment="pump alert (see your pump manual) format: heading message|extended message">Calibrate by %1$s|Check BG and calibrate sensor to continue receiving sensor information.</string>
+    <string name="alert_869" comment="pump alert (see your pump manual) format: heading message|extended message">Kalibrer inden %1$s|Kontrollere BG og kalibrer sensor for fortsat at modtage information fra sensoren.</string>
     <string name="alert_870" comment="pump alert (see your pump manual) format: heading message|extended message">Lavt batteri sender|Genoplad sender inden 24 timer.</string>
     <!-- not shown in the pump alarm history, only as an active alert -->
     <string name="alert_103" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">BS Check %1$s timer siden sidste bolus|Check BS</string>
-    <string name="alert_107" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Missed Meal Bolus|No bolus delivered during the time set in the reminder.</string>
+    <string name="alert_107" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Manglende måltidsbolus|Ingen bolus afgivet ved angivet påmindelse.</string>
     <string name="alert_108" comment="pump reminder alert (dynamic: ITEM at TIME) text for ITEM comes from alert_108_list">%1$s ved %2$s</string>
     <string name="alert_108_list" comment="pump reminder alert (dynamic: ITEM text list) see alert_108">Personlig 1|Personlig 2|Personlig 3|Personlig 4|Personlig 5|Personlig 6| BG-kontro|Medicin</string>
-    <string name="alert_109" comment="pump reminder alert (dynamic: ITEM text) text for ITEM comes from alert_109_list, format: heading message|extended message">Set Change Reminder: %1$s since the last set change|Time to change reservoir and infusion set.</string>
+    <string name="alert_109" comment="pump reminder alert (dynamic: ITEM text) text for ITEM comes from alert_109_list, format: heading message|extended message">Udskift indstik påmindelse: %1$s siden sidste skift af indstik|Tid til at skifte reservoir og infusion sæt.</string>
     <string name="alert_109_list" comment="pump reminder alert (dynamic: ITEM text list) see alert_109">En dag|To dage|Tre dage</string>
     <string name="alert_110" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Sensoradvarsel forekom|Kontrollér alarmhistorik for lydløse advarsler.</string>
     <!--  670G auto mode alerts -->
-    <string name="alert_819" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode off|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
+    <string name="alert_819" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto mode fra|%1$s startet. Vil du gennemse Auto mode klarhed skærm?</string>
     <string name="alert_820" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
     <string name="alert_821" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode</string>
     <string name="alert_822" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.</string>

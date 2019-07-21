@@ -1809,25 +1809,26 @@ public class PumpHistoryParser {
 
     public enum SUSPEND_REASON {
         ALARM_SUSPEND(1,
-                FormatKit.getInstance().getString(R.string.pump_suspend__alarm_suspend)),
+                R.string.pump_suspend__alarm_suspend),
         USER_SUSPEND(2,
-                FormatKit.getInstance().getString(R.string.pump_suspend__user_suspend)),
+                R.string.pump_suspend__user_suspend),
         AUTO_SUSPEND(3,
-                FormatKit.getInstance().getString(R.string.pump_suspend__auto_suspend)),
-        LOWSG_SUSPEND(4
-                , FormatKit.getInstance().getString(R.string.pump_suspend__low_glucose_suspend)),
+                R.string.pump_suspend__auto_suspend),
+        LOWSG_SUSPEND(4,
+                R.string.pump_suspend__low_glucose_suspend),
         SET_CHANGE_SUSPEND(5,
-                FormatKit.getInstance().getString(R.string.pump_suspend__set_change_suspend)),
+                R.string.pump_suspend__set_change_suspend),
         PLGM_PREDICTED_LOW_SG(10,
-                FormatKit.getInstance().getString(R.string.pump_suspend__predicted_low_glucose_suspend)),
-        NA(-1, "");
+                R.string.pump_suspend__predicted_low_glucose_suspend),
+        NA(-1,
+                R.string.default_empty);
 
         private int value;
-        private String string;
+        private int stringId;
 
-        SUSPEND_REASON(int value, String string) {
+        SUSPEND_REASON(int value, int stringId) {
             this.value = value;
-            this.string = string;
+            this.stringId = stringId;
         }
 
         public byte value() {
@@ -1835,7 +1836,7 @@ public class PumpHistoryParser {
         }
 
         public String string() {
-            return this.string;
+            return FormatKit.getInstance().getString(this.stringId);
         }
 
         public boolean equals(int value) {
@@ -1851,25 +1852,26 @@ public class PumpHistoryParser {
 
     public enum RESUME_REASON {
         USER_SELECTS_RESUME(1,
-                FormatKit.getInstance().getString(R.string.pump_resume__user_resumed)),
+                R.string.pump_resume__user_resumed),
         USER_CLEARS_ALARM(2,
-                FormatKit.getInstance().getString(R.string.pump_resume__user_clears_alarm)),
+                R.string.pump_resume__user_clears_alarm),
         LGM_MANUAL_RESUME(3,
-                FormatKit.getInstance().getString(R.string.pump_resume__low_glucose_manual_resume)),
+                R.string.pump_resume__low_glucose_manual_resume),
         LGM_AUTO_RESUME_MAX_SUSP(4,
-                FormatKit.getInstance().getString(R.string.pump_resume__low_glucose_auto_resume_max_suspend_period)), // After an auto suspend, but no CGM data afterwards.
+                R.string.pump_resume__low_glucose_auto_resume_max_suspend_period), // After an auto suspend, but no CGM data afterwards.
         LGM_AUTO_RESUME_PSG_SG(5,
-                FormatKit.getInstance().getString(R.string.pump_resume__low_glucose_auto_resume_preset_glucose_reached)), // When SG reaches the Preset SG level
+                R.string.pump_resume__low_glucose_auto_resume_preset_glucose_reached), // When SG reaches the Preset SG level
         LGM_MANUAL_RESUME_VIA_DISABLE(6,
-                FormatKit.getInstance().getString(R.string.pump_resume__low_glucose_manual_resume_via_disable)),
-        NA(-1, "");
+                R.string.pump_resume__low_glucose_manual_resume_via_disable),
+        NA(-1,
+                R.string.default_empty);
 
         private int value;
-        private String string;
+        private int stringId;
 
-        RESUME_REASON(int value, String string) {
+        RESUME_REASON(int value, int stringId) {
             this.value = value;
-            this.string = string;
+            this.stringId = stringId;
         }
 
         public byte value() {
@@ -1877,8 +1879,9 @@ public class PumpHistoryParser {
         }
 
         public String string() {
-            return this.string;
+            return FormatKit.getInstance().getString(this.stringId);
         }
+
         public boolean equals(int value) {
             return this.value == value;
         }
@@ -2146,23 +2149,24 @@ public class PumpHistoryParser {
 
     public enum CL_TRANSITION_REASON {
         INTO_ACTIVE_DUE_TO_GLUCOSE_SENSOR_CALIBRATION(0,
-                FormatKit.getInstance().getString(R.string.automode_transition__into_active_due_to_sensor_calibration)),
+                R.string.automode_transition__into_active_due_to_sensor_calibration),
         OUT_OF_ACTIVE_DUE_TO_USER_OVERRIDE(1,
-                FormatKit.getInstance().getString(R.string.automode_transition__out_of_active_due_to_user_override)),
+                R.string.automode_transition__out_of_active_due_to_user_override),
         OUT_OF_ACTIVE_DUE_TO_ALARM(2,
-                FormatKit.getInstance().getString(R.string.automode_transition__out_of_active_due_to_alarm)),
+                R.string.automode_transition__out_of_active_due_to_alarm),
         OUT_OF_ACTIVE_DUE_TO_TIMEOUT_FROM_SAFE_BASAL(3,
-                FormatKit.getInstance().getString(R.string.automode_transition__out_of_active_due_to_timeout_from_safe_basal)),
+                R.string.automode_transition__out_of_active_due_to_timeout_from_safe_basal),
         OUT_OF_ACTIVE_DUE_TO_PROLONGED_HIGH_SG(4,
-                FormatKit.getInstance().getString(R.string.automode_transition__out_of_active_due_to_prolonged_high_sg)),
-        NA(-1, "");
+                R.string.automode_transition__out_of_active_due_to_prolonged_high_sg),
+        NA(-1,
+                R.string.default_empty);
 
         private int value;
-        private String string;
+        private int stringId;
 
-        CL_TRANSITION_REASON(int value, String string) {
+        CL_TRANSITION_REASON(int value, int stringId) {
             this.value = value;
-            this.string = string;
+            this.stringId = stringId;
         }
 
         public byte value() {
@@ -2170,7 +2174,7 @@ public class PumpHistoryParser {
         }
 
         public String string() {
-            return this.string;
+            return FormatKit.getInstance().getString(this.stringId);
         }
 
         public boolean equals(int value) {

@@ -1101,6 +1101,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void refreshDisplayChart() {
         Log.d(TAG, "refreshDisplayChart");
+        if (historyRealm == null) return;
         if (historyRealm.isInTransaction()) {
             mUiRealmHandler.post(
                     new Runnable() {
@@ -1127,6 +1128,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void startDisplayChart() {
         Log.d(TAG, "startDisplayChart");
+        if (historyRealm == null) return;
 
         // reset if last chart interaction was over 5 mins
         if (System.currentTimeMillis() - chartChangeTimestamp > 5 * 60000L)

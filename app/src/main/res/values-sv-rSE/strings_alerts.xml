@@ -14,20 +14,20 @@
 <resources>
     <!-- alert title -->
     <string name="alert_na">Varning</string>
-    <string name="alert_system">Systemlarm</string>
+    <string name="alert_system">Systemvarning</string>
     <string name="alert_pump">Pumpvarning</string>
     <string name="alert_smartguard">SmartGuard</string>
     <string name="alert_sensor">Sensorvarning</string>
     <string name="alert_reminder">Påminnelse</string>
-    <string name="alert_automode">Auto Mode Alert</string>
+    <string name="alert_automode">Auto Mode varning</string>
     <!-- alert additional -->
-    <string name="alert_cleared">Cleared Alert</string>
-    <string name="alert_cleared_reminder">Cleared Reminder</string>
+    <string name="alert_cleared">Kvitterad Varning</string>
+    <string name="alert_cleared_reminder">Rensat påminnelse</string>
     <string name="alert_cleared_tag">rensat</string>
-    <string name="alert_silenced">Silenced Alert</string>
-    <string name="alert_silenced_tag">silenced</string>
-    <string name="alert_repeated">Repeated Alert</string>
-    <string name="alert_repeated_tag">repeated</string>
+    <string name="alert_silenced">Tystat varningen</string>
+    <string name="alert_silenced_tag">tystat</string>
+    <string name="alert_repeated">Upprepad varning</string>
+    <string name="alert_repeated_tag">upprepat</string>
     <!-- default when no alert definition found -->
     <string name="alert_unknown_in_history">Unknown|Please check your PUMP Alarm History and report the FULL alert message as shown on the pump. Include the #code and data in brackets as shown here and send to the dev team.</string>
     <string name="alert_unknown_not_in_history">Unknown|Alert does not show in the pumps alarm history and is only displayed as an on-screen notification. Please take a photo of the alert as displayed on the pump when available. Include the #code and data in brackets as shown here and send to the dev team.</string>

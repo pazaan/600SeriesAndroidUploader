@@ -120,7 +120,7 @@
     <string name="ul_share__offline">Offline / Inget internet</string>
     <string name="ul_share__processed">bearbetad</string>
     <string name="ul_share__version">version</string>
-    <string name="ul_share__pushover_validation_failed">Pushover verifiering falerade. Kontrollera att ditt Pushover konto är aktivt och att dina inställningar är rätt.</string>
+    <string name="ul_share__pushover_validation_failed">Pushover verifiering misslyckades. Kontrollera att ditt Pushover konto är aktivt och att dina inställningar är rätt.</string>
     <string name="ul_poll__connecting_to_contour_next_link">Ansluter till Contour Next Link</string>
     <string name="ul_poll__connected_on_channel">Ansluten på kanal</string>
     <string name="ul_poll__rssi" comment="RSSI = Received Signal Strength Indicator (CNL-PUMP radio signal)">RSSI</string>
@@ -333,8 +333,8 @@
     <string name="pref_ns_profile_upload_summary">Ladda upp inställningar för basal, kh, insulinkänslighet och mål till Nightscout</string>
     <string name="pref_ns_profile_single_title" maxLength="40">Enkel Profilgrupp</string>
     <string name="pref_ns_profile_single_summary">Only use a single profile group in nightscout (note: obsolete groups will be removed)</string>
-    <string name="pref_ns_profile_offset_title" maxLength="40">Offset start date</string>
-    <string name="pref_ns_profile_offset_summary">Uploaded profile will be valid from 12 months ago</string>
+    <string name="pref_ns_profile_offset_title" maxLength="40">Offset startdatum</string>
+    <string name="pref_ns_profile_offset_summary">Uppladdad profil är giltig från 12 månader sedan</string>
     <string name="pref_ns_profile_default_pattern_title" maxLength="40">Standard dosering</string>
     <string name="pref_ns_profile_default_pattern_use_active">Aktiv användning</string>
     <string name="pref_ns_profile_active_insulin_time_title" maxLength="40">Aktivt insulin tid</string>
@@ -364,7 +364,7 @@
     <string name="pref_ns_daily_totals_summary">Skicka total daglig dos till Nightscout</string>
     <string name="pref_ns_formatting_title" maxLength="40">Formatering</string>
     <string name="pref_ns_formatting_summary">Använd HTML formatering för anteckningar</string>
-    <string name="pref_ns_trend_style_title" maxLength="40">Trend Style</string>
+    <string name="pref_ns_trend_style_title" maxLength="40">Trend Stil</string>
     <string name="pref_ns_trend_style_summary">Använd Medtronic-stil på trend-pilar (kan vara inkompatibla med vissa följar-appar)</string>
     <string name="pref_ns_pattern_and_preset_naming_category" maxLength="30">Pattern and Preset Naming</string>
     <string name="pref_ns_basal_patterns_category" maxLength="30">Basal Program</string>
@@ -408,7 +408,7 @@
     <string name="pref_system_estimate_sgv_error">Sensor fel/uppdaterar sig</string>
     <string name="pref_system_report_isig_title" maxLength="40">Rapportera ISIG</string>
     <string name="pref_system_report_isig_summary">Rapportera ISIG när SGV inte är tillgängligt från pumpen och CGM används.</string>
-    <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG\'s to include</string>
+    <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG att inkludera</string>
     <string name="pref_system_report_isig_minimum_runtime_title" maxLength="40">Minsta användningstid</string>
     <string name="pref_system_report_isig_minimum_runtime_new_sensor_title" maxLength="40">Minsta användningstid med ny sensor</string>
     <string name="pref_system_category_radio" maxLength="30">Radio</string>
@@ -423,7 +423,7 @@
     <string name="pref_system_poll_grace_period_title" maxLength="40">Anståndsperiod</string>
     <string name="pref_system_poll_recovery_period_title" maxLength="40">Återhämtningstid</string>
     <string name="pref_system_poll_warmup_period_title" maxLength="40">Uppvärmningsperiod</string>
-    <string name="pref_system_poll_error_retry_title" maxLength="40">Error Retry</string>
+    <string name="pref_system_poll_error_retry_title" maxLength="40">Fel, försök igen</string>
     <string name="pref_system_poll_old_sgv_retry_title" maxLength="40">Old SGV Retry</string>
     <string name="pref_system_timing_category" maxLength="30">Timing</string>
     <string name="pref_system_control_passthrough_title" maxLength="40">Control / Passthrough</string>
@@ -436,10 +436,10 @@
     <string name="pref_debug_settings_category" maxLength="30">Felsökningsinställningar</string>
     <string name="pref_debug_crash_reporting_title" maxLength="40">Kraschrapportering</string>
     <string name="pref_debug_crash_reporting_summary">Skicka krascher och fel till utvecklare</string>
-    <string name="pref_debug_share_usage_data_title" maxLength="40">Share usage data</string>
+    <string name="pref_debug_share_usage_data_title" maxLength="40">Dela användningsdata</string>
     <string name="pref_debug_share_usage_data_summary">Skicka data om hur appen används till utvecklaren för att förbättra appen.</string>
-    <string name="pref_debug_remote_debugging_title" maxLength="40">Remote Debugging</string>
-    <string name="pref_debug_remote_debugging_summary">Allow the developer to debug your app. Only enable if asked to by the support team.</string>
+    <string name="pref_debug_remote_debugging_title" maxLength="40">Fjärr-debuggning</string>
+    <string name="pref_debug_remote_debugging_summary">Tillåt att utvecklaren felsöker din app. Aktivera endast på uppmaning av support teamet.</string>
     <string name="pref_debug_logging_level_title" maxLength="40">Loggningsnivå</string>
     <string name="pref_debug_userlog_category" maxLength="30">Användarlogg</string>
     <string name="pref_debug_extended_errors_title" maxLength="40">Utökade fel</string>
@@ -561,7 +561,7 @@
     <string name="pref_pushover_user_group_key_summary">Ange din user / group key</string>
     <string name="pref_pushover_override_category" maxLength="30">Åsidosätt</string>
     <string name="pref_pushover_override_priority_title" maxLength="40">Priority Override</string>
-    <string name="pref_pushover_override_all_priorities_title" maxLength="40">All Priorities</string>
+    <string name="pref_pushover_override_all_priorities_title" maxLength="40">Prioriteringar</string>
     <string name="pref_pushover_override_sound_title" maxLength="40">Sound Override</string>
     <string name="pref_pushover_override_all_sounds_title" maxLength="40">Alla ljud</string>
     <string name="pref_pushover_send_message_title" maxLength="40">Skicka meddelande</string>
@@ -570,9 +570,9 @@
     <string name="pref_pushover_override_title" maxLength="40">Åsidosätt</string>
     <string name="pref_pushover_message_alarms_alerts_summary">Larm och varningar som inte kvitterats och rensats på pumpen kan ha en notifiering skickad till följare.</string>
     <string name="pref_pushover_message_priority_selection_title" maxLength="40">Message priority selection:</string>
-    <string name="pref_pushover_message_priority_summary">EMERGENCY: red notification &amp; sound (persistent alarm that must be aknowledged by follower)&newline;HIGH: red notification &amp; sound&newline;NORMAL: notification &amp; sound&newline;LOW: notification &amp; no sound&newline;LOWEST: no notification &amp; no sound (message can be viewed in the Pushover app/widget)</string>
+    <string name="pref_pushover_message_priority_summary">NÖDLÄGE: röd notifiering &amp; ljud (persistent larm som måste ackas av följare)&newline;HÖG: röd notifiering &amp; ljud&newline;NORMAL: notifiering &amp; ljud&newline;LÅG: notifiering &amp; inget ljud&newline;LÄGST: Ingen notifiering &amp; inget ljud (meddelande kan ses i Pushover app/widget)</string>
     <string name="pref_pushover_preview_sounds_title" maxLength="40">Preview sounds</string>
-    <string name="pref_pushover_preview_sounds_summary">Listen to the available notification sounds.</string>
+    <string name="pref_pushover_preview_sounds_summary">Lyssna till tillgängliga notifierings-ljud.</string>
     <string name="pref_pushover_settings_category" maxLength="30">Inställningar</string>
     <string name="pref_pushover_high_low_alerts_category" maxLength="30">Hög/Låg Varningar</string>
     <string name="pref_pushover_alert_on_high_category" maxLength="30">Varning Vig Högt</string>
@@ -632,9 +632,9 @@
     <string name="pref_pushover_cleared_alert_category" maxLength="30">Kvitterad Varning</string>
     <string name="pref_pushover_cleared_alert_summary">Varningar som inte var aktiva vid en pollning och har blivit kvitterade på pumpen finns tillgängliga efter att historik blivit hämtad för andra händelser.</string>
     <string name="pref_pushover_acknowledged_title" maxLength="40">Bekräftad</string>
-    <string name="pref_pushover_acknowledged_summary">When a active alert notification has been sent to a follower, always send another message to show when this alert has been acknowledged and cleared on the pump.</string>
-    <string name="pref_pushover_silenced_alerts_category" maxLength="30">Silenced Alerts</string>
-    <string name="pref_pushover_silenced_alerts_summary">Silenced unacknowledged sensor alerts can be sent to followers. Pump will stay quiet and follower will be alerted.</string>
+    <string name="pref_pushover_acknowledged_summary">När en aktivt larm notifiering har skickats till en följare skicka alltid ett meddelande till när larmet kvitterats på pumpen.</string>
+    <string name="pref_pushover_silenced_alerts_category" maxLength="30">Kvitterade Larm</string>
+    <string name="pref_pushover_silenced_alerts_summary">Tystade okvitterade sensor-larm kan skickas till följare. Pumpen förblir tyst och följaren blir larmad.</string>
     <string name="pref_pushover_silenced_alerts_override_summary">Change message priority and sound when pump issues a silent alert.</string>
     <string name="pref_pushover_backfill_category" maxLength="30">Backfill</string>
     <string name="pref_pushover_backfill_period_title" maxLength="40">Backfill Period</string>
@@ -651,7 +651,7 @@
     <string name="text__Pump">Pump</string>
     <string name="text__Bolus">Bolus</string>
     <string name="text__Basal">Basal</string>
-    <string name="text__Lifetimes">Lifetimes</string>
+    <string name="text__Lifetimes">Sedan start</string>
     <string name="text__Prime">Prima</string>
     <string name="text__new_reservoir">ny reservoar</string>
     <string name="text__fill_cannula">fyll kanyl</string>
@@ -745,12 +745,12 @@
     <string name="nightscout_pump_pill__bolusing_abreviation" maxLength="6">bol</string>
     <string name="nightscout_pump_pill__suspended" maxLength="20">avstängd</string>
     <string name="nightscout_pump_pill__suspended_abreviation" maxLength="6">avst</string>
-    <string name="nightscout_pump_pill__lost_sensor" maxLength="20">lost sensor</string>
+    <string name="nightscout_pump_pill__lost_sensor" maxLength="20">tappat sensorn</string>
     <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="6">förl</string>
     <string name="nightscout_pump_pill__estimate" maxLength="20">*uppskattn</string>
     <string name="nightscout_pump_pill__estimate_abreviation" maxLength="6">*est</string>
     <!-- pump/sensor/automode states -->
-    <string name="pump_suspend__pump_suspended_insulin_delivery">Pump suspended insulin delivery</string>
+    <string name="pump_suspend__pump_suspended_insulin_delivery">Insulintillförsel avstäng av pump</string>
     <string name="pump_suspend__alarm_suspend">Alarm suspend</string>
     <string name="pump_suspend__user_suspend">User suspend</string>
     <string name="pump_suspend__auto_suspend">Auto suspend</string>

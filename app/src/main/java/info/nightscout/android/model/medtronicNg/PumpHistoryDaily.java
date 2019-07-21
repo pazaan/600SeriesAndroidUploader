@@ -158,7 +158,7 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
                         css,
 
-                        sdfDay.format(midday).toUpperCase(),
+                        sdfDay.format(midday),
 
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__insulin),
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__sensor),
@@ -256,7 +256,7 @@ public class PumpHistoryDaily extends RealmObject implements PumpHistoryInterfac
 
                         css,
 
-                        sdfDay.format(midday).toUpperCase(),
+                        sdfDay.format(midday),
 
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__insulin),
                         FormatKit.getInstance().getString(R.string.daily_totals_heading__sensor),

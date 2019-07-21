@@ -12,22 +12,22 @@
     <!-- plurals -->
     <plurals name="grams">
         <item quantity="one">%d gram</item>
-        <item quantity="other">%d grams</item>
+        <item quantity="other">%d gram</item>
     </plurals>
     <plurals name="days">
         <item quantity="one">%d dag</item>
-        <item quantity="other">%d days</item>
+        <item quantity="other">%d dagen</item>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d uur</item>
-        <item quantity="other">%d hours</item>
+        <item quantity="other">%d uren</item>
     </plurals>
     <plurals name="minutes">
-        <item quantity="one">%d minute</item>
+        <item quantity="one">%d minuut</item>
         <item quantity="other">%d minuten</item>
     </plurals>
     <plurals name="seconds">
-        <item quantity="one">%d second</item>
+        <item quantity="one">%d seconde</item>
         <item quantity="other">%d seconden</item>
     </plurals>
     <!-- select -->
@@ -182,29 +182,29 @@
     <string name="ul_history__history">geschiedenis</string>
     <string name="ul_history__pump_history">POMP geschiedenis</string>
     <string name="ul_history__cgm_history">CGM geschiedenis</string>
-    <string name="ul_history__reading_pump_basal_basal_patterns">Reading pump basal patterns</string>
-    <string name="ul_history__reading_pump_carb_ratios">Reading pump carb ratios</string>
-    <string name="ul_history__reading_pump_sensitivity_factors">Reading pump sensitivity factors</string>
-    <string name="ul_history__reading_pump_hi_lo_targets">Reading pump hi-lo targets</string>
-    <string name="ul_history__cgm_backfill">cgm backfill</string>
-    <string name="ul_history__requested">requested</string>
-    <string name="ul_history__received">received</string>
-    <string name="ul_history__stale_status">stale status</string>
-    <string name="ul_history__recency">recency</string>
+    <string name="ul_history__reading_pump_basal_basal_patterns">Lezen basale patronen</string>
+    <string name="ul_history__reading_pump_carb_ratios">Lezen pomp koolhydraat ratio\'s</string>
+    <string name="ul_history__reading_pump_sensitivity_factors">Leezen van pompgevoeligheid instellingen</string>
+    <string name="ul_history__reading_pump_hi_lo_targets">Lees pomp hoog-laag doelstellingen</string>
+    <string name="ul_history__cgm_backfill">cgm historiek opvullen</string>
+    <string name="ul_history__requested">aangevraagd</string>
+    <string name="ul_history__received">ontvangen</string>
+    <string name="ul_history__stale_status">verouderde status</string>
+    <string name="ul_history__recency">recentheid</string>
     <string name="ul_history__no_recent_data">geen recente data</string>
     <string name="ul_history__auto_mode">auto-modus</string>
     <string name="ul_history__basal_pattern_changed">basaal patroon gewijzigd</string>
-    <string name="ul_history__basal_suspend">basal suspend</string>
-    <string name="ul_history__basal_resume">basal resume</string>
+    <string name="ul_history__basal_suspend">basaal gestopt</string>
+    <string name="ul_history__basal_resume">basaal hervatten</string>
     <string name="ul_history__temp_basal">tijdelijk basaal</string>
-    <string name="ul_history__temp_ended">temp ended</string>
-    <string name="ul_history__temp_extended">temp changed</string>
-    <string name="ul_history__normal_bolus">normal bolus</string>
+    <string name="ul_history__temp_ended">tijdelijk beëindigd</string>
+    <string name="ul_history__temp_extended">tijdelijk gewijzigd</string>
+    <string name="ul_history__normal_bolus">normale bolus</string>
     <string name="ul_history__square_bolus">square bolus</string>
-    <string name="ul_history__square_ended">square ended</string>
+    <string name="ul_history__square_ended">square beëindigd</string>
     <string name="ul_history__dual_bolus">dual bolus</string>
-    <string name="ul_history__dual_ended">dual ended</string>
-    <string name="ul_history__bolus_ended">bolus ended</string>
+    <string name="ul_history__dual_ended">dual beëindigd</string>
+    <string name="ul_history__bolus_ended">bolus beëindigd</string>
     <string name="ul_history__recent_finger_bg">recente vingerprik bg</string>
     <string name="ul_history__calibration_info">kalibratie info</string>
     <string name="ul_history__reservoir_changed">reservoir veranderd</string>
@@ -217,10 +217,10 @@
     <string name="ul_history__cleared_alert">waarschuwing gewist</string>
     <string name="ul_history__alert_recheck">herhaling waarschuwing</string>
     <string name="ul_history__report_isig">rapport isig</string>
-    <string name="ul_history__estimate_sgv">estimate sgv</string>
+    <string name="ul_history__estimate_sgv">geschatte sgv</string>
     <string name="ul_integrity__check_failed_time_mismatch">Integriteitscontrole mislukt. Tijd komt niet overeen in de database.</string>
     <string name="ul_integrity__check_failed_future_records">Integriteitscontrole mislukt. Databank bevat records uit de toekomst.</string>
-    <string name="ul_integrity__removed_future_records">Removed future records.</string>
+    <string name="ul_integrity__removed_future_records">Toekomstige records verwijderd.</string>
     <string name="ul_integrity__uploader_database_reset">Uploader database reset.</string>
     <string name="ul_usb__usb_error">USB-fout</string>
     <string name="ul_usb__contour_next_link_unplugged">Contour Next Link losgekoppeld.</string>
@@ -260,15 +260,15 @@
     <string name="pref_monitor_category" maxLength="30">Monitor</string>
     <string name="pref_monitor_bg_unit_title" maxLength="30">BG eenheid</string>
     <string name="pref_monitor_bg_unit_summary_off" maxLength="40">Waarden worden getoond in mg/dL</string>
-    <string name="pref_monitor_bg_unit_summary_on" maxLength="40">Values are shown and set in mmol/L</string>
+    <string name="pref_monitor_bg_unit_summary_on" maxLength="40">Waarden worden getoond in mmol/L</string>
     <string name="pref_monitor_decimals_title" maxLength="30">Decimalen</string>
-    <string name="pref_monitor_decimals_summary_off" maxLength="40">1 decimal value will be shown</string>
-    <string name="pref_monitor_decimals_summary_on" maxLength="40">2 decimal values will be shown</string>
+    <string name="pref_monitor_decimals_summary_off" maxLength="40">toon 1 decimaal</string>
+    <string name="pref_monitor_decimals_summary_on" maxLength="40">toon 2 decimalen</string>
     <string name="pref_monitor_poll_interval_title" maxLength="30">Poll interval</string>
-    <string name="pref_monitor_poll_overdue_title" maxLength="30">Polling interval when overdue</string>
+    <string name="pref_monitor_poll_overdue_title" maxLength="30">Poll interval bij achterstal</string>
     <string name="pref_monitor_poll_overdue_summary_off" maxLength="40">Normale polling snelheid</string>
     <string name="pref_monitor_poll_overdue_summary_on" maxLength="40">Dubbele polling snelheid</string>
-    <string name="pref_monitor_low_battery_poll_interval_title" maxLength="40">Polling interval on low pump battery</string>
+    <string name="pref_monitor_low_battery_poll_interval_title" maxLength="40">Polling interval bij lage pomp batterij</string>
     <string name="pref_display_category" maxLength="30">Scherm</string>
     <string name="pref_chart_zoom_title" maxLength="40">Grafiekzoom</string>
     <string name="pref_screen_sleep_title" maxLength="40">Scherm slaapstand</string>
@@ -288,23 +288,23 @@
     <string name="pref_scan_qr_code_title" maxLength="40">scan NS-Autoconfiguratie QR-Code</string>
     <string name="pref_scan_qr_code_summary">Klik hier http://nightscout.github.io/pages/configure/ om uw QR-Code te scannen met behulp van ZXing barcode scanner.</string>
     <string name="pref_send_to_xdrip_title" maxLength="40">Stuur naar xDrip+</string>
-    <string name="pref_send_to_xdrip_summary">Enable local broadcast of data to xDrip+</string>
+    <string name="pref_send_to_xdrip_summary">Versturen van gegevens naar xDrip+ Aan</string>
     <string name="pref_urchin_title" maxLength="40">Urchin</string>
-    <string name="pref_urchin_summary">Urchin watchface for Pebble</string>
-    <string name="pref_ns_advanced_nightscout_settings_category" maxLength="30">Advanced Nightscout Settings</string>
+    <string name="pref_urchin_summary">Urchin watchface voor Pebble</string>
+    <string name="pref_ns_advanced_nightscout_settings_category" maxLength="30">Geavanceerde Ns instellingen</string>
     <string name="pref_ns_treatments_title" maxLength="40">Behandelingen</string>
-    <string name="pref_ns_treatments_summary">Enable upload of treatments to Nightscout</string>
+    <string name="pref_ns_treatments_summary">Schakel upload van behandelingen naar Nightscout in</string>
     <string name="pref_ns_bolus_title" maxLength="40">Bolus</string>
-    <string name="pref_ns_bolus_summary">Send Bolus treatments to Nightscout</string>
+    <string name="pref_ns_bolus_summary">Stuur Bolus behandelingen naar Nightscout</string>
     <string name="pref_ns_basal_title" maxLength="40">Basaal</string>
-    <string name="pref_ns_basal_summary">Send Basal treatments to Nightscout</string>
+    <string name="pref_ns_basal_summary">Stuur Basaal behandelingen naar Nightscout</string>
     <string name="pref_ns_entered_by_title">Ingevoerd door</string>
     <string name="pref_ns_device_status_category" maxLength="30">Apparaat status</string>
     <string name="pref_ns_device_title" maxLength="40">Apparaat</string>
-    <string name="pref_ns_device_summary">Send Device Status updates to Nightscout</string>
+    <string name="pref_ns_device_summary">Stuur apparaatstatus updates naar Nightscout</string>
     <string name="pref_ns_pump_title" maxLength="40">POMP</string>
-    <string name="pref_ns_pump_summary">Send pump status and iob to Nightscout</string>
-    <string name="pref_ns_device_name_title" maxLength="40">Device Name</string>
+    <string name="pref_ns_pump_summary">Stuur pompstatus en iob naar Nightscout</string>
+    <string name="pref_ns_device_name_title" maxLength="40">Apparaatnaam</string>
     <string name="pref_ns_bg_readings_category" maxLength="30">Bloedgas metingen</string>
     <string name="pref_ns_finger_bg_title" maxLength="40">Vingerprik BG</string>
     <string name="pref_ns_finger_bg_summary">Stuur vinger BG meting naar Nightscout</string>
@@ -315,149 +315,149 @@
     <string name="pref_ns_sensor_change_summary">Stuur sensor wijzigingen naar Nightscout (SAGE)</string>
     <string name="pref_ns_cannula_change_title" maxLength="40">Canule vervangen</string>
     <string name="pref_ns_cannula_change_summary">Stuur canule vervanging naar Nightscout (CAGE)</string>
-    <string name="pref_ns_cannula_change_threshold_title" maxLength="40">Threshold for cannula change</string>
+    <string name="pref_ns_cannula_change_threshold_title" maxLength="40">Drempeltijd voor canule verandering</string>
     <string name="pref_ns_cannula_change_Fill_Cannula">Canule vullen</string>
-    <string name="pref_ns_cannula_change_Prime_Cannula">Prime Cannula</string>
-    <string name="pref_ns_insulin_change_title" maxLength="40">Insulin Change</string>
-    <string name="pref_ns_insulin_change_summary">Send insulin changes to Nightscout (IAGE)</string>
-    <string name="pref_ns_insulin_change_threshold_title" maxLength="40">Threshold for insulin change</string>
-    <string name="pref_ns_insulin_change_New_Reservoir">New Reservoir</string>
+    <string name="pref_ns_cannula_change_Prime_Cannula">Canule vullen</string>
+    <string name="pref_ns_insulin_change_title" maxLength="40">Insuline verversen</string>
+    <string name="pref_ns_insulin_change_summary">Stuur insuline wijzigingen naar Nightscout (IAGE)</string>
+    <string name="pref_ns_insulin_change_threshold_title" maxLength="40">Drempeltijd voor insuline verversing</string>
+    <string name="pref_ns_insulin_change_New_Reservoir">Nieuwe reservoir</string>
     <string name="pref_ns_insulin_change_Reservoir_1_8ml">1,8ml reservoir</string>
     <string name="pref_ns_insulin_change_Reservoir_3_0ml">3,0ml reservoir</string>
-    <string name="pref_ns_battery_change_title" maxLength="40">Pump Battery Change</string>
-    <string name="pref_ns_battery_change_summary">Send pump battery changes to Nightscout (BAGE)</string>
-    <string name="pref_ns_lifetimes_title" maxLength="40">Estimate Lifetimes</string>
-    <string name="pref_ns_lifetimes_summary">Add lifetime estimate to pump consumables</string>
+    <string name="pref_ns_battery_change_title" maxLength="40">Pomp Batterij Wissel</string>
+    <string name="pref_ns_battery_change_summary">Stuur pompbatterij wissels naar Nightscout (BAGE)</string>
+    <string name="pref_ns_lifetimes_title" maxLength="40">Geschatte levensduur</string>
+    <string name="pref_ns_lifetimes_summary">Voeg levensduur schatting toe aan verbruiksgoederen</string>
     <string name="pref_ns_profiles_category" maxLength="30">Profielen</string>
-    <string name="pref_ns_profile_upload_title" maxLength="40">Enable Profile Upload</string>
-    <string name="pref_ns_profile_upload_summary">Upload profiles to Nightscout with basal patterns, carb ratios, sensitivity and targets</string>
-    <string name="pref_ns_profile_single_title" maxLength="40">Single Profile Group</string>
-    <string name="pref_ns_profile_single_summary">Only use a single profile group in nightscout (note: obsolete groups will be removed)</string>
-    <string name="pref_ns_profile_offset_title" maxLength="40">Offset start date</string>
-    <string name="pref_ns_profile_offset_summary">Uploaded profile will be valid from 12 months ago</string>
-    <string name="pref_ns_profile_default_pattern_title" maxLength="40">Default Pattern</string>
-    <string name="pref_ns_profile_default_pattern_use_active">Use Active</string>
+    <string name="pref_ns_profile_upload_title" maxLength="40">Profiel Upload inschakelen</string>
+    <string name="pref_ns_profile_upload_summary">Upload profielen met basaal patronen, koolhydraat ratios, gevoeligheid en doelen naar Nightscout</string>
+    <string name="pref_ns_profile_single_title" maxLength="40">Enkelvoudige profielgroep</string>
+    <string name="pref_ns_profile_single_summary">Gebruik alleen een enkele profielgroep in nightscout (let op: verouderde groepen zullen verwijderd worden)</string>
+    <string name="pref_ns_profile_offset_title" maxLength="40">Offset startdatum</string>
+    <string name="pref_ns_profile_offset_summary">Geüpload profiel zal geldig zijn vanaf 12 maanden geleden</string>
+    <string name="pref_ns_profile_default_pattern_title" maxLength="40">Standaard patroon</string>
+    <string name="pref_ns_profile_default_pattern_use_active">Gebruik actief</string>
     <string name="pref_ns_profile_active_insulin_time_title" maxLength="40">Actieve Insuline Tijd</string>
     <string name="pref_ns_profile_send_pattern_change_title" maxLength="40">Basaal patroon wijziging</string>
-    <string name="pref_ns_profile_send_pattern_change_summary">Send basal pattern changes to Nightscout</string>
+    <string name="pref_ns_profile_send_pattern_change_summary">Stuur basaal patroon wijzigingen naar Nightscout</string>
     <string name="pref_ns_pump_alerts_category" maxLength="30">Pomp waarschuwingen</string>
     <string name="pref_ns_pump_alerts_title" maxLength="40">Alarmen, waarschuwingen, herinneringen</string>
     <string name="pref_ns_pump_alerts_summary">Stuur pompalarmen, waarschuwingen, herinneringen en statusinformatie naar Nightscout</string>
     <string name="pref_ns_pump_alerts_extended_message_info_title" maxLength="40">Uitgebreide berichtinfo</string>
     <string name="pref_ns_pump_alerts_extended_message_info_summary" maxLength="40">Volledig uitgebreid bericht zoals getoond op de pomp</string>
-    <string name="pref_ns_pump_alerts_time_to_clear_title" maxLength="40">Time to Clear</string>
+    <string name="pref_ns_pump_alerts_time_to_clear_title" maxLength="40">Tijd om te wissen</string>
     <string name="pref_ns_pump_alerts_time_to_clear_summary">Reactietijd op pompalarm</string>
     <string name="pref_ns_pump_alerts_remove_from_nightscout_title" maxLength="40">Verwijder uit Nightscout</string>
     <string name="pref_ns_pump_alerts_remove_from_nightscout_keep_all">Alles behouden</string>
     <string name="pref_ns_uploader_status_category" maxLength="30">Uploader status</string>
     <string name="pref_ns_uploader_status_enable_title" maxLength="40">Schakel upload status in</string>
     <string name="pref_ns_uploader_status_enable_summary">Stuur uploader statusmeldingen en info naar Nightscout</string>
-    <string name="pref_ns_uploader_status_usb_error_title" maxLength="40">Uploader USB Error</string>
-    <string name="pref_ns_uploader_status_usb_error_summary">Send uploader USB error (disconnected) alerts to Nightscout</string>
-    <string name="pref_ns_uploader_status_connection_states">Uploader-Pump connection states</string>
+    <string name="pref_ns_uploader_status_usb_error_title" maxLength="40">Uploader USB-fout</string>
+    <string name="pref_ns_uploader_status_usb_error_summary">Stuur uploader USB-fout (losgekoppeld) meldingen naar Nightscout</string>
+    <string name="pref_ns_uploader_status_connection_states">Uploader-Pomp verbindingsstatussen</string>
     <string name="pref_ns_uploader_status_low_battery_state">Lage batterij status</string>
     <string name="pref_ns_uploader_status_fully_charged_state">Volledig opgeladen status</string>
-    <string name="pref_ns_uploader_status_automatic_remove_from_nightscout_summary">Uploader status messages are automatically removed from Nightscout after 24 hours</string>
-    <string name="pref_ns_misc_category" maxLength="30">Misc</string>
-    <string name="pref_ns_grams_per_exchange_title" maxLength="40">Grams Per Exchange</string>
+    <string name="pref_ns_uploader_status_automatic_remove_from_nightscout_summary">Uploader statusberichten worden automatisch verwijderd uit Nightscout na 24 uur</string>
+    <string name="pref_ns_misc_category" maxLength="30">Overige</string>
+    <string name="pref_ns_grams_per_exchange_title" maxLength="40">Gramen per Exchange</string>
     <string name="pref_ns_daily_totals_title" maxLength="40">Dagelijkse totalen</string>
-    <string name="pref_ns_daily_totals_summary">Send pump daily totals to Nightscout</string>
-    <string name="pref_ns_formatting_title" maxLength="40">Formatting</string>
-    <string name="pref_ns_formatting_summary">Use HTML formatting for notes</string>
-    <string name="pref_ns_trend_style_title" maxLength="40">Trend Style</string>
-    <string name="pref_ns_trend_style_summary">Use Medtronic style trend arrows (may be incompatible with some follower apps)</string>
-    <string name="pref_ns_pattern_and_preset_naming_category" maxLength="30">Pattern and Preset Naming</string>
-    <string name="pref_ns_basal_patterns_category" maxLength="30">Basal Patterns</string>
-    <string name="pref_ns_temp_basal_presets_category" maxLength="30">Temp Basal Presets</string>
-    <string name="pref_ns_bolus_presets_category" maxLength="30">Bolus Presets</string>
-    <string name="pref_ns_enter_preset_name_dialog_title" maxLength="30">Enter Preset Name</string>
-    <string name="pref_ns_enter_pattern_name_dialog_title" maxLength="30">Enter Pattern Name</string>
-    <string name="pref_ns_pattern_1_title" maxLength="30">Pattern 1</string>
-    <string name="pref_ns_pattern_2_title" maxLength="30">Pattern 2</string>
-    <string name="pref_ns_pattern_3_title" maxLength="30">Pattern 3</string>
-    <string name="pref_ns_pattern_4_title" maxLength="30">Pattern 4</string>
-    <string name="pref_ns_pattern_5_title" maxLength="30">Pattern 5</string>
-    <string name="pref_ns_pattern_6_title" maxLength="30">Pattern 6</string>
-    <string name="pref_ns_pattern_7_title" maxLength="30">Pattern 7</string>
-    <string name="pref_ns_pattern_8_title" maxLength="30">Pattern 8</string>
-    <string name="pref_ns_preset_1_title" maxLength="30">Preset 1</string>
-    <string name="pref_ns_preset_2_title" maxLength="30">Preset 2</string>
-    <string name="pref_ns_preset_3_title" maxLength="30">Preset 3</string>
-    <string name="pref_ns_preset_4_title" maxLength="30">Preset 4</string>
-    <string name="pref_ns_preset_5_title" maxLength="30">Preset 5</string>
-    <string name="pref_ns_preset_6_title" maxLength="30">Preset 6</string>
-    <string name="pref_ns_preset_7_title" maxLength="30">Preset 7</string>
-    <string name="pref_ns_preset_8_title" maxLength="30">Preset 8</string>
+    <string name="pref_ns_daily_totals_summary">Stuur dagelijkse totalen van de Pomp naar Nightscout</string>
+    <string name="pref_ns_formatting_title" maxLength="40">Formattering</string>
+    <string name="pref_ns_formatting_summary">Gebruik HTML opmaak voor notities</string>
+    <string name="pref_ns_trend_style_title" maxLength="40">Trend stijl</string>
+    <string name="pref_ns_trend_style_summary">Gebruik Medtronic stijl trend pijlen (is mogelijk incompatibel met sommige follower apps)</string>
+    <string name="pref_ns_pattern_and_preset_naming_category" maxLength="30">Patroon en naamgeving</string>
+    <string name="pref_ns_basal_patterns_category" maxLength="30">Basaal patronen</string>
+    <string name="pref_ns_temp_basal_presets_category" maxLength="30">Tijdelijk Basaal Instellingen</string>
+    <string name="pref_ns_bolus_presets_category" maxLength="30">Bolus voorinstellingen</string>
+    <string name="pref_ns_enter_preset_name_dialog_title" maxLength="30">Voer voorinstelling naam in</string>
+    <string name="pref_ns_enter_pattern_name_dialog_title" maxLength="30">Voer Patroon naam in</string>
+    <string name="pref_ns_pattern_1_title" maxLength="30">Patroon 1</string>
+    <string name="pref_ns_pattern_2_title" maxLength="30">Patroon 2</string>
+    <string name="pref_ns_pattern_3_title" maxLength="30">Patroon 3</string>
+    <string name="pref_ns_pattern_4_title" maxLength="30">Patroon 4</string>
+    <string name="pref_ns_pattern_5_title" maxLength="30">Patroon 5</string>
+    <string name="pref_ns_pattern_6_title" maxLength="30">Patroon 6</string>
+    <string name="pref_ns_pattern_7_title" maxLength="30">Patroon 7</string>
+    <string name="pref_ns_pattern_8_title" maxLength="30">Patroon 8</string>
+    <string name="pref_ns_preset_1_title" maxLength="30">Voorinstelling 1</string>
+    <string name="pref_ns_preset_2_title" maxLength="30">Voorinstelling 2</string>
+    <string name="pref_ns_preset_3_title" maxLength="30">Voorinstelling 3</string>
+    <string name="pref_ns_preset_4_title" maxLength="30">Voorinstelling 4</string>
+    <string name="pref_ns_preset_5_title" maxLength="30">Voorinstelling 5</string>
+    <string name="pref_ns_preset_6_title" maxLength="30">Voorinstelling 6</string>
+    <string name="pref_ns_preset_7_title" maxLength="30">Voorinstelling 7</string>
+    <string name="pref_ns_preset_8_title" maxLength="30">Voorinstelling 8</string>
     <string name="pref_ns_cgm_category" maxLength="30">CGM</string>
-    <string name="pref_ns_insert_bg_as_cgm_title" maxLength="40">Insert BG as CGM</string>
-    <string name="pref_ns_insert_bg_as_cgm_summary">Insert BG readings into CGM chart (helps Nightscout to show treatments when no CGM is in use)</string>
-    <string name="pref_system_category" maxLength="30">System</string>
-    <string name="pref_advanced_system_settings_category" maxLength="30">Advanced System Settings</string>
-    <string name="pref_system_history_sync_category" maxLength="30">History Sync</string>
-    <string name="pref_system_cgm_history_title" maxLength="40">Enable CGM History</string>
-    <string name="pref_system_cgm_history_summary">Backfill missed CGM data</string>
-    <string name="pref_system_cgm_backfill_title" maxLength="40">CGM history backfill period</string>
-    <string name="pref_system_pump_history_title" maxLength="40">Enable PUMP History</string>
-    <string name="pref_system_pump_history_summary">Used for nightscout treatments</string>
-    <string name="pref_system_pump_backfill_title" maxLength="40">PUMP history backfill period</string>
-    <string name="pref_system_auto_mode_update_frequency_title" maxLength="40">Auto Mode update frequency</string>
-    <string name="pref_system_experimental_category" maxLength="30">Experimental</string>
-    <string name="pref_system_estimate_sgv_title" maxLength="40">Estimate SGV</string>
-    <string name="pref_system_estimate_sgv_summary">Calculate an estimated SGV when a calibration is missed (warning: calculation is based on the last pump calibration point and may be unreliable)</string>
-    <string name="pref_system_estimate_sgv_eol">Sensor expired</string>
-    <string name="pref_system_estimate_sgv_error">Sensor error/updating</string>
-    <string name="pref_system_report_isig_title" maxLength="40">Report ISIG</string>
-    <string name="pref_system_report_isig_summary">Report ISIG when SGV is not available from the pump and CGM is in use.</string>
-    <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG\'s to include</string>
-    <string name="pref_system_report_isig_minimum_runtime_title" maxLength="40">Minimum runtime</string>
-    <string name="pref_system_report_isig_minimum_runtime_new_sensor_title" maxLength="40">Minimum runtime on new sensor</string>
+    <string name="pref_ns_insert_bg_as_cgm_title" maxLength="40">BG als CGM toevoegen</string>
+    <string name="pref_ns_insert_bg_as_cgm_summary">Plaats BG-waardes in CGM grafiek (helpt Nightscout om behandelingen te tonen wanneer er geen CGM in gebruik is)</string>
+    <string name="pref_system_category" maxLength="30">Systeem</string>
+    <string name="pref_advanced_system_settings_category" maxLength="30">Geavanceerde sys. instellingen</string>
+    <string name="pref_system_history_sync_category" maxLength="30">Historische Sync</string>
+    <string name="pref_system_cgm_history_title" maxLength="40">CGM geschiedenis inschakelen</string>
+    <string name="pref_system_cgm_history_summary">Vul gemiste CGM-gegevens op</string>
+    <string name="pref_system_cgm_backfill_title" maxLength="40">CGM geschiedenis opvul periode</string>
+    <string name="pref_system_pump_history_title" maxLength="40">POMP Geschiedenis inschakelen</string>
+    <string name="pref_system_pump_history_summary">Gebruikt voor Nightscout behandelingen</string>
+    <string name="pref_system_pump_backfill_title" maxLength="40">POMP geschiedenis opvul periode</string>
+    <string name="pref_system_auto_mode_update_frequency_title" maxLength="40">Auto-modus update frequentie</string>
+    <string name="pref_system_experimental_category" maxLength="30">Experimenteel</string>
+    <string name="pref_system_estimate_sgv_title" maxLength="40">Geschatte SGV</string>
+    <string name="pref_system_estimate_sgv_summary">Bereken een geschatte SGV wanneer een kalibratie wordt gemist (waarschuwing: berekening is gebaseerd op het laatste pompkalibratiepunt en kan onbetrouwbaar zijn)</string>
+    <string name="pref_system_estimate_sgv_eol">Sensor uitgewerkt</string>
+    <string name="pref_system_estimate_sgv_error">Sensor fout/bijwerken</string>
+    <string name="pref_system_report_isig_title" maxLength="40">Rapporteer ISIG</string>
+    <string name="pref_system_report_isig_summary">Rapporteer ISIG wanneer SGV niet beschikbaar is uit de pomp en er gebruik gemaakt wordt van CGM.</string>
+    <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG\'s om op te nemen</string>
+    <string name="pref_system_report_isig_minimum_runtime_title" maxLength="40">Minimale duur</string>
+    <string name="pref_system_report_isig_minimum_runtime_new_sensor_title" maxLength="40">Minimale duur nieuwe sensor</string>
     <string name="pref_system_category_radio" maxLength="30">Radio</string>
-    <string name="pref_system_radio_clash_protection_title" maxLength="40">Radio clash protection</string>
-    <string name="pref_system_radio_clash_protection_summary_off">No protection, always run a poll request</string>
-    <string name="pref_system_radio_clash_protection_summary_on">Delay a poll request when pump is expecting sensor communication</string>
-    <string name="pref_system_rssi_allow_connection_title" maxLength="40" comment="do not allow a pump connection when RSSI signal is less then this minimum">RSSI allow connection</string>
+    <string name="pref_system_radio_clash_protection_title" maxLength="40">Radio botsing bescherming</string>
+    <string name="pref_system_radio_clash_protection_summary_off">Geen bescherming, voer altijd een poll aanvraag uit</string>
+    <string name="pref_system_radio_clash_protection_summary_on">Vertraag een poll aanvraag wanneer pomp sensor communicatie verwacht</string>
+    <string name="pref_system_rssi_allow_connection_title" maxLength="40" comment="do not allow a pump connection when RSSI signal is less then this minimum">RSSI-verbinding toestaan</string>
     <string name="pref_system_polling_category" maxLength="30">Polling</string>
     <string name="pref_system_poll_timing_title" maxLength="40">Poll timing</string>
-    <string name="pref_system_poll_timing_summary_on">A poll will trigger based on the expected sensor event time plus a conditional state period (warning: changing these settings can lead to radio clashes and extended lost sensor periods)</string>
-    <string name="pref_system_poll_timing_summary_off">Use system defaults for all poll timing</string>
-    <string name="pref_system_poll_grace_period_title" maxLength="40">Grace Period</string>
-    <string name="pref_system_poll_recovery_period_title" maxLength="40">Recovery Period</string>
-    <string name="pref_system_poll_warmup_period_title" maxLength="40">Warmup Period</string>
-    <string name="pref_system_poll_error_retry_title" maxLength="40">Error Retry</string>
-    <string name="pref_system_poll_old_sgv_retry_title" maxLength="40">Old SGV Retry</string>
+    <string name="pref_system_poll_timing_summary_on">Een poll zal starten op basis van de verwachte sensor gebeurtenistijd plus een voorwaardelijke status periode (waarschuwing: het wijzigen van deze instellingen kan leiden tot radiobotsingen en langere perioden waarbij de sensor niet gevonden kan worden)</string>
+    <string name="pref_system_poll_timing_summary_off">Systeemstandaarden gebruiken voor alle poll timings</string>
+    <string name="pref_system_poll_grace_period_title" maxLength="40">Respijtperiode</string>
+    <string name="pref_system_poll_recovery_period_title" maxLength="40">Herstelperiode</string>
+    <string name="pref_system_poll_warmup_period_title" maxLength="40">Opwarm Periode</string>
+    <string name="pref_system_poll_error_retry_title" maxLength="40">Fout bij opnieuw proberen</string>
+    <string name="pref_system_poll_old_sgv_retry_title" maxLength="40">Oude SGV probeer opnieuw</string>
     <string name="pref_system_timing_category" maxLength="30">Timing</string>
-    <string name="pref_system_control_passthrough_title" maxLength="40">Control / Passthrough</string>
-    <string name="pref_system_control_passthrough_summary_on">Wait 500ms per send request</string>
-    <string name="pref_system_control_passthrough_summary_off">No wait time</string>
+    <string name="pref_system_control_passthrough_title" maxLength="40">Controle / Passthrough</string>
+    <string name="pref_system_control_passthrough_summary_on">Wacht 500ms per verzoek</string>
+    <string name="pref_system_control_passthrough_summary_off">Geen wachttijd</string>
     <string name="pref_system_usb_category" maxLength="30">USB</string>
-    <string name="pref_system_usb_permission_title" maxLength="40">Permission Request</string>
-    <string name="pref_system_usb_permission_summary_off">Request permission via OS dialog</string>
-    <string name="pref_system_usb_permission_summary_on">Request permission via APP dialog</string>
-    <string name="pref_debug_settings_category" maxLength="30">Debug Settings</string>
-    <string name="pref_debug_crash_reporting_title" maxLength="40">Crash Reporting</string>
-    <string name="pref_debug_crash_reporting_summary">Send crash errors to developer</string>
-    <string name="pref_debug_share_usage_data_title" maxLength="40">Share usage data</string>
-    <string name="pref_debug_share_usage_data_summary">Sends usage data to the developer to help develop a better app.</string>
-    <string name="pref_debug_remote_debugging_title" maxLength="40">Remote Debugging</string>
-    <string name="pref_debug_remote_debugging_summary">Allow the developer to debug your app. Only enable if asked to by the support team.</string>
-    <string name="pref_debug_logging_level_title" maxLength="40">Logging Level</string>
-    <string name="pref_debug_userlog_category" maxLength="30">Userlog</string>
-    <string name="pref_debug_extended_errors_title" maxLength="40">Extended Errors</string>
-    <string name="pref_debug_extended_errors_summary">Detailed errors and polling data shown in the userlog</string>
-    <string name="pref_debug_upload_errors_title" maxLength="40">Upload Errors</string>
-    <string name="pref_debug_upload_errors_summary">Report Nightscout uploading errors in the userlog</string>
-    <string name="pref_disclaimer_category" maxLength="30">Disclaimer</string>
-    <string name="pref_disclaimer_title" maxLength="30">I UNDERSTAND</string>
-    <string name="pref_disclaimer_summary">Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers</string>
-    <string name="pref_app_version_category" maxLength="30">App Version</string>
+    <string name="pref_system_usb_permission_title" maxLength="40">Machtigingsverzoek</string>
+    <string name="pref_system_usb_permission_summary_off">Verzoek toestemming via OS-dialoog</string>
+    <string name="pref_system_usb_permission_summary_on">Verzoek toestemming via APP-dialoog</string>
+    <string name="pref_debug_settings_category" maxLength="30">Debug-instellingen</string>
+    <string name="pref_debug_crash_reporting_title" maxLength="40">Foutenrapportering</string>
+    <string name="pref_debug_crash_reporting_summary">Crash fouten verzenden naar ontwikkelaar</string>
+    <string name="pref_debug_share_usage_data_title" maxLength="40">Gebruiksgegevens delen</string>
+    <string name="pref_debug_share_usage_data_summary">Verstuurt gebruiksgegevens naar de ontwikkelaar om een betere app te ontwikkelen.</string>
+    <string name="pref_debug_remote_debugging_title" maxLength="40">Externe debugging</string>
+    <string name="pref_debug_remote_debugging_summary">Sta de ontwikkelaar toe om je app te debuggen. Schakel alleen in als dit gevraagd wordt door het supportteam.</string>
+    <string name="pref_debug_logging_level_title" maxLength="40">Logging niveau</string>
+    <string name="pref_debug_userlog_category" maxLength="30">Gebruikerslog</string>
+    <string name="pref_debug_extended_errors_title" maxLength="40">Uitgebreide fouten</string>
+    <string name="pref_debug_extended_errors_summary">Gedetailleerde fouten en gegevens weergegeven in het gebruikerslog</string>
+    <string name="pref_debug_upload_errors_title" maxLength="40">Upload fouten</string>
+    <string name="pref_debug_upload_errors_summary">Rapporteer Nightscout uploadfouten in gebruikerslog</string>
+    <string name="pref_disclaimer_category" maxLength="30">Privacyverklaring</string>
+    <string name="pref_disclaimer_title" maxLength="30">IK BEGRIJP HET</string>
+    <string name="pref_disclaimer_summary">Nachtscout mag niet worden gebruikt om medische beslissingen te nemen. Er is geen ondersteuning of enige garantie van welke aard dan ook. De kwaliteit en de prestaties van het project liggen bij u. Dit is een project dat is aangemaakt en volledig wordt ondersteund door vrijwilligers</string>
+    <string name="pref_app_version_category" maxLength="30">App Versie</string>
     <!-- Urchin -->
-    <string name="urchin_watchface_Battery_Hi" maxLength="2">Hi</string>
-    <string name="urchin_watchface_Battery_Lo" maxLength="2">Lo</string>
-    <string name="urchin_watchface_Battery_Full" maxLength="1">F</string>
+    <string name="urchin_watchface_Battery_Hi" maxLength="2">Ho</string>
+    <string name="urchin_watchface_Battery_Lo" maxLength="2">La</string>
+    <string name="urchin_watchface_Battery_Full" maxLength="1">V</string>
     <string name="urchin_watchface_Battery_High" maxLength="1">H</string>
     <string name="urchin_watchface_Battery_Medium" maxLength="1">M</string>
     <string name="urchin_watchface_Battery_Low" maxLength="1">L</string>
-    <string name="urchin_watchface_Battery_Empty" maxLength="1">E</string>
+    <string name="urchin_watchface_Battery_Empty" maxLength="1">0</string>
     <string name="urchin_watchface_BG" maxLength="2">BG</string>
     <string name="urchin_watchface_Factor" maxLength="2">CF</string>
     <string name="urchin_watchface_ISIG" maxLength="2">IS</string>
@@ -472,367 +472,367 @@
     <string name="urchin_watchface_WarmUp" maxLength="2">W</string>
     <string name="urchin_watchface_SensorEndOfLife" maxLength="2">X!</string>
     <string name="urchin_watchface_SensorError" maxLength="2">E!</string>
-    <string name="urchin_text_unit_u" maxLength="1">u</string>
-    <string name="urchin_text_unit_U" maxLength="1">U</string>
-    <string name="urchin_text_none" maxLength="20">none</string>
-    <string name="urchin_text_space" maxLength="20">space</string>
-    <string name="urchin_text_double_space" maxLength="20">double space</string>
-    <string name="urchin_text_dot" maxLength="20">dot</string>
-    <string name="urchin_text_bullet" maxLength="20">bullet</string>
-    <string name="urchin_text_dash" maxLength="20">dash</string>
-    <string name="urchin_text_line" maxLength="20">line</string>
-    <string name="urchin_text_forward_slash" maxLength="20">forward slash</string>
+    <string name="urchin_text_unit_u" maxLength="1">e</string>
+    <string name="urchin_text_unit_U" maxLength="1">E</string>
+    <string name="urchin_text_none" maxLength="20">geen</string>
+    <string name="urchin_text_space" maxLength="20">spatie</string>
+    <string name="urchin_text_double_space" maxLength="20">dubbele spatie</string>
+    <string name="urchin_text_dot" maxLength="20">punt</string>
+    <string name="urchin_text_bullet" maxLength="20">opsommingsteken</string>
+    <string name="urchin_text_dash" maxLength="20">streepje</string>
+    <string name="urchin_text_line" maxLength="20">lijn</string>
+    <string name="urchin_text_forward_slash" maxLength="20">slash</string>
     <string name="urchin_text_backslash" maxLength="20">backslash</string>
-    <string name="urchin_text_colon" maxLength="20">colon</string>
-    <string name="urchin_status_layout_Empty" maxLength="20">Empty</string>
-    <string name="urchin_status_layout_Nextline" maxLength="20">Nextline</string>
-    <string name="urchin_status_layout_Text" maxLength="20">Text</string>
-    <string name="urchin_status_layout_Custom_Text" maxLength="20">Custom Text</string>
-    <string name="urchin_status_layout_Active_Insulin" maxLength="20">Active Insulin</string>
-    <string name="urchin_status_layout_Basal" maxLength="20">Basal</string>
-    <string name="urchin_status_layout_Basal_State" maxLength="20">Basal State</string>
-    <string name="urchin_status_layout_Last_Bolus" maxLength="20">Last Bolus</string>
-    <string name="urchin_status_layout_Bolusing" maxLength="20">Bolusing</string>
-    <string name="urchin_status_layout_Calibration" maxLength="20">Calibration</string>
-    <string name="urchin_status_layout_Uploader_Battery" maxLength="20">Uploader Battery</string>
-    <string name="urchin_status_layout_Pump_Battery" maxLength="20">Pump Battery</string>
-    <string name="urchin_status_layout_Transmitter_Battery" maxLength="20">Transmitter Battery</string>
-    <string name="urchin_status_layout_Sensor_Life" maxLength="20">Sensor Life</string>
-    <string name="urchin_status_layout_Sensor_Age" maxLength="20">Sensor Age</string>
-    <string name="urchin_status_layout_Reservoir_Age" maxLength="20">Reservoir Age</string>
-    <string name="urchin_status_layout_Pump_Battery_Age" maxLength="20">Pump Battery Age</string>
-    <string name="urchin_status_layout_Reservoir_Units" maxLength="20">Reservoir Units</string>
-    <string name="urchin_status_layout_Day" maxLength="20">Day</string>
-    <string name="urchin_status_layout_Month" maxLength="20">Month</string>
+    <string name="urchin_text_colon" maxLength="20">dubbele punt</string>
+    <string name="urchin_status_layout_Empty" maxLength="20">Leeg</string>
+    <string name="urchin_status_layout_Nextline" maxLength="20">Volgende lijn</string>
+    <string name="urchin_status_layout_Text" maxLength="20">Tekst</string>
+    <string name="urchin_status_layout_Custom_Text" maxLength="20">Aangepaste Tekst</string>
+    <string name="urchin_status_layout_Active_Insulin" maxLength="20">Actieve Insuline</string>
+    <string name="urchin_status_layout_Basal" maxLength="20">Basaal</string>
+    <string name="urchin_status_layout_Basal_State" maxLength="20">Basaal status</string>
+    <string name="urchin_status_layout_Last_Bolus" maxLength="20">Laatste bolus</string>
+    <string name="urchin_status_layout_Bolusing" maxLength="20">Aan het bolussen</string>
+    <string name="urchin_status_layout_Calibration" maxLength="20">Kalibreren</string>
+    <string name="urchin_status_layout_Uploader_Battery" maxLength="20">Uploader Batterij</string>
+    <string name="urchin_status_layout_Pump_Battery" maxLength="20">Pomp batterij</string>
+    <string name="urchin_status_layout_Transmitter_Battery" maxLength="20">Zender batterij</string>
+    <string name="urchin_status_layout_Sensor_Life" maxLength="20">Sensor levensduur</string>
+    <string name="urchin_status_layout_Sensor_Age" maxLength="20">Sensor Leeftijd</string>
+    <string name="urchin_status_layout_Reservoir_Age" maxLength="20">Reservoir Leeftijd</string>
+    <string name="urchin_status_layout_Pump_Battery_Age" maxLength="20">Pomp Batt. Leeftijd</string>
+    <string name="urchin_status_layout_Reservoir_Units" maxLength="20">Reservoir eenheden</string>
+    <string name="urchin_status_layout_Day" maxLength="20">Dag</string>
+    <string name="urchin_status_layout_Month" maxLength="20">Maand</string>
     <string name="urchin_status_layout_BG" maxLength="20">BG</string>
     <string name="urchin_status_layout_Factor" maxLength="20">Factor</string>
     <string name="urchin_status_layout_ISIG" maxLength="20">ISIG</string>
-    <string name="urchin_status_layout_Estimate" maxLength="20">Estimate</string>
-    <string name="urchin_status_layout_Pump_Alert" maxLength="20">Pump Alert</string>
-    <string name="urchin_status_layout_GROUP_START" maxLength="20">GROUP</string>
-    <string name="urchin_status_layout_GROUP_END" maxLength="20">GROUP END</string>
-    <string name="urchin_status_layout_dynamic" maxLength="20">dynamic</string>
-    <string name="urchin_status_layout_when_recent" maxLength="20">when recent</string>
-    <string name="urchin_status_layout_when_active" maxLength="20">when active</string>
-    <string name="urchin_status_layout_when_available" maxLength="20">when available</string>
-    <string name="urchin_status_layout_first_active_only" maxLength="20">first active only</string>
+    <string name="urchin_status_layout_Estimate" maxLength="20">Schatting</string>
+    <string name="urchin_status_layout_Pump_Alert" maxLength="20">Pomp alarm</string>
+    <string name="urchin_status_layout_GROUP_START" maxLength="20">GROEP</string>
+    <string name="urchin_status_layout_GROUP_END" maxLength="20">GROEP EINDE</string>
+    <string name="urchin_status_layout_dynamic" maxLength="20">dynamisch</string>
+    <string name="urchin_status_layout_when_recent" maxLength="20">wanneer recent</string>
+    <string name="urchin_status_layout_when_active" maxLength="20">wanneer actief</string>
+    <string name="urchin_status_layout_when_available" maxLength="20">wanneer beschikbaar</string>
+    <string name="urchin_status_layout_first_active_only" maxLength="20">alleen eerste actief</string>
     <string name="pref_category_urchin_pebble_watchface" maxLength="30">Urchin Pebble Watchface</string>
-    <string name="pref_urchin_enable_title" maxLength="40">Enable Urchin support</string>
-    <string name="pref_urchin_enable_summary">Local broadcast of data to Urchin allowing full offline viewing of SGV and extended Pump status information</string>
-    <string name="pref_urchin_basal_graph_title" maxLength="40">Basal Graph</string>
-    <string name="pref_urchin_basal_graph_summary">Basal can be graphed with heights relative to the period selected and scaled to the value selected.</string>
-    <string name="pref_urchin_basal_graph_period_title" maxLength="40">Period</string>
-    <string name="pref_urchin_basal_graph_yscale_title" maxLength="40">Y-Scale</string>
-    <string name="pref_urchin_bolus_graph_title" maxLength="40">Bolus Graph</string>
-    <string name="pref_urchin_bolus_graph_markers_title" maxLength="40">Enable bolus markers</string>
-    <string name="pref_urchin_bolus_graph_markers_summary">Mark a bolus event on graph.</string>
-    <string name="pref_urchin_bolus_graph_tags_title" maxLength="40">Enable bolus tags</string>
-    <string name="pref_urchin_bolus_graph_tags_summary">Square/Dual bolus tags in status text.</string>
+    <string name="pref_urchin_enable_title" maxLength="40">Urchin ondersteuning inschakelen</string>
+    <string name="pref_urchin_enable_summary">Lokale verzending van gegevens naar Urchin, waardoor de volledig offline weergave van SGV en uitgebreide Pomp status informatie wordt toegestaan</string>
+    <string name="pref_urchin_basal_graph_title" maxLength="40">Basaal grafiek</string>
+    <string name="pref_urchin_basal_graph_summary">Basaal grafiek kan getekend worden met de hoogtes relatief aan de geselecteerde periode en geschaald naar de geselecteerde waarde.</string>
+    <string name="pref_urchin_basal_graph_period_title" maxLength="40">Periode</string>
+    <string name="pref_urchin_basal_graph_yscale_title" maxLength="40">Y-schaal</string>
+    <string name="pref_urchin_bolus_graph_title" maxLength="40">Bolus Grafiek</string>
+    <string name="pref_urchin_bolus_graph_markers_title" maxLength="40">Schakel bolus markers in</string>
+    <string name="pref_urchin_bolus_graph_markers_summary">Markeer een bolus gebeurtenis op de grafiek.</string>
+    <string name="pref_urchin_bolus_graph_tags_title" maxLength="40">Bolus tags inschakelen</string>
+    <string name="pref_urchin_bolus_graph_tags_summary">Square/Dual bolus tags in statustekst.</string>
     <string name="pref_urchin_bolus_graph_ypop_title" maxLength="40">Square/Dual Y-Pop</string>
-    <string name="pref_urchin_bolus_graph_ypop_summary">A Square or Dual bolus can be popped to the height selected and shown on the basal graph during delivery period.</string>
-    <string name="pref_urchin_status_styles_title" maxLength="40">Status Styles</string>
-    <string name="pref_urchin_time_style_title" maxLength="40">Time Style</string>
-    <string name="pref_urchin_duration_style_title" maxLength="40">Duration Style</string>
-    <string name="pref_urchin_units_style_title" maxLength="40">Units Style</string>
-    <string name="pref_urchin_battery_style_title" maxLength="40">Battery Style</string>
-    <string name="pref_urchin_concatenate_style_title" maxLength="40">Concatenate Style</string>
-    <string name="pref_urchin_custom_text_title" maxLength="40">Custom Text</string>
-    <string name="pref_urchin_custom_text_1_title" maxLength="40">Custom Text 1</string>
-    <string name="pref_urchin_custom_text_2_title" maxLength="40">Custom Text 2</string>
-    <string name="pref_urchin_custom_text_dialog_title" maxLength="40">Enter Custom Text</string>
-    <string name="pref_urchin_status_layout_title" maxLength="40">Status Layout</string>
+    <string name="pref_urchin_bolus_graph_ypop_summary">Een Square of Dual bolus kan worden geschaald naar de geselecteerde hoogte en getoond op de basale grafiek tijdens de toedieningsperiode.</string>
+    <string name="pref_urchin_status_styles_title" maxLength="40">Status Stijlen</string>
+    <string name="pref_urchin_time_style_title" maxLength="40">Tijdstijl</string>
+    <string name="pref_urchin_duration_style_title" maxLength="40">Duurtijd stijl</string>
+    <string name="pref_urchin_units_style_title" maxLength="40">Eenheden stijl</string>
+    <string name="pref_urchin_battery_style_title" maxLength="40">Batterij stijl</string>
+    <string name="pref_urchin_concatenate_style_title" maxLength="40">Samengevoegde Stijl</string>
+    <string name="pref_urchin_custom_text_title" maxLength="40">Aangepaste Tekst</string>
+    <string name="pref_urchin_custom_text_1_title" maxLength="40">Aangepaste tekst 1</string>
+    <string name="pref_urchin_custom_text_2_title" maxLength="40">Aangepaste tekst 2</string>
+    <string name="pref_urchin_custom_text_dialog_title" maxLength="40">Voer aangepaste tekst in</string>
+    <string name="pref_urchin_status_layout_title" maxLength="40">Status lay-out</string>
     <!-- Pushover -->
-    <string name="pref_pushover_priority_lowest" maxLength="30">lowest</string>
-    <string name="pref_pushover_priority_low" maxLength="30">low</string>
-    <string name="pref_pushover_priority_normal" maxLength="30">normal</string>
-    <string name="pref_pushover_priority_high" maxLength="30">high</string>
-    <string name="pref_pushover_priority_emergency" maxLength="30">emergency</string>
-    <string name="pref_pushover_sound__none" maxLength="20">none</string>
-    <string name="pref_pushover_sound__default" maxLength="20">default</string>
-    <string name="pref_pushover_summary">Alerts and Events to any device</string>
-    <string name="pref_pushover_enable_title" maxLength="40">Enable Pushover support</string>
-    <string name="pref_pushover_enable_summary">Send push notifications for pump alerts and events to any device using Pushover. Download the Pushover app on your follower device from the App Store.</string>
+    <string name="pref_pushover_priority_lowest" maxLength="30">laagste</string>
+    <string name="pref_pushover_priority_low" maxLength="30">laag</string>
+    <string name="pref_pushover_priority_normal" maxLength="30">normaal</string>
+    <string name="pref_pushover_priority_high" maxLength="30">hoog</string>
+    <string name="pref_pushover_priority_emergency" maxLength="30">noodgeval</string>
+    <string name="pref_pushover_sound__none" maxLength="20">geen</string>
+    <string name="pref_pushover_sound__default" maxLength="20">standaard</string>
+    <string name="pref_pushover_summary">Meldingen en gebeurtenissen op elk apparaat</string>
+    <string name="pref_pushover_enable_title" maxLength="40">Pushover ondersteuning inschakelen</string>
+    <string name="pref_pushover_enable_summary">Stuur push-meldingen voor pomp meldingen en gebeurtenissen naar elk apparaat met Pushover. Download de Pushover app op uw volger apparaat vanuit de App Store.</string>
     <string name="pref_pushover_website_title" maxLength="40">Website</string>
-    <string name="pref_pushover_website_api_token_title" maxLength="40">Create a Pushover API Token</string>
+    <string name="pref_pushover_website_api_token_title" maxLength="40">Pushover API Token maken</string>
     <string name="pref_pushover_account_category" maxLength="30">Account</string>
     <string name="pref_pushover_api_token_title" maxLength="40">API Token</string>
-    <string name="pref_pushover_api_token_summary">Enter your api token</string>
-    <string name="pref_pushover_user_group_key_title" maxLength="40">USER / GROUP Key</string>
-    <string name="pref_pushover_user_group_key_summary">Enter your user / group key</string>
-    <string name="pref_pushover_override_category" maxLength="30">Override</string>
-    <string name="pref_pushover_override_priority_title" maxLength="40">Priority Override</string>
-    <string name="pref_pushover_override_all_priorities_title" maxLength="40">All Priorities</string>
-    <string name="pref_pushover_override_sound_title" maxLength="40">Sound Override</string>
-    <string name="pref_pushover_override_all_sounds_title" maxLength="40">All Sounds</string>
-    <string name="pref_pushover_send_message_title" maxLength="40">Send message</string>
-    <string name="pref_pushover_priority_title" maxLength="40">Priority</string>
-    <string name="pref_pushover_sound_title" maxLength="40">Sound</string>
-    <string name="pref_pushover_override_title" maxLength="40">Override</string>
-    <string name="pref_pushover_message_alarms_alerts_summary">Alarms and alerts that have not been acknowledged and cleared by the pump user can have a notification sent to followers.</string>
-    <string name="pref_pushover_message_priority_selection_title" maxLength="40">Message priority selection:</string>
-    <string name="pref_pushover_message_priority_summary">EMERGENCY: red notification &amp; sound (persistent alarm that must be aknowledged by follower)&newline;HIGH: red notification &amp; sound&newline;NORMAL: notification &amp; sound&newline;LOW: notification &amp; no sound&newline;LOWEST: no notification &amp; no sound (message can be viewed in the Pushover app/widget)</string>
-    <string name="pref_pushover_preview_sounds_title" maxLength="40">Preview sounds</string>
-    <string name="pref_pushover_preview_sounds_summary">Listen to the available notification sounds.</string>
-    <string name="pref_pushover_settings_category" maxLength="30">Settings</string>
-    <string name="pref_pushover_high_low_alerts_category" maxLength="30">High/Low Alerts</string>
-    <string name="pref_pushover_alert_on_high_category" maxLength="30">Alert On High</string>
-    <string name="pref_pushover_alert_on_low_category" maxLength="30">Alert On Low</string>
-    <string name="pref_pushover_alert_before_high_category" maxLength="30">Alert Before High</string>
-    <string name="pref_pushover_alert_before_low_category" maxLength="30">Alert Before Low</string>
-    <string name="pref_pushover_pump_alerts_category" maxLength="30">Pump Alerts</string>
-    <string name="pref_pushover_emergency_alert_note_summary">Note: Some pump emergency alerts can block all communication until they are cleared by the pump user. Alert for this state can be set in \'Uploader Events\'</string>
-    <string name="pref_pushover_emergency_alert_category" maxLength="30">Emergency Alert</string>
-    <string name="pref_pushover_emergency_alert_summary">Alerts that require immediate action. Example: \'Insulin flow blocked\' \'Replace battery now\'</string>
-    <string name="pref_pushover_actionable_alert_category" maxLength="30">Actionable Alert</string>
-    <string name="pref_pushover_actionable_alert_summary">Alerts that may require action. Example: \'Calibrate Now\' \'Bolus Not Delivered\'</string>
-    <string name="pref_pushover_informational_alert_category" maxLength="30">Informational Alert</string>
-    <string name="pref_pushover_informational_alert_summary">Example: \'Low Reservoir 10U remain\' \'Low battery Pump\'</string>
-    <string name="pref_pushover_reminders_category" maxLength="30">Reminders</string>
-    <string name="pref_pushover_reminders_summary">Example: \'Calibrate by 10:30\' \'Missed Meal Bolus\'</string>
-    <string name="pref_pushover_pump_events_category" maxLength="30">Pump Events</string>
-    <string name="pref_pushover_pump_events_summary">Treatments and events can have a notification sent to followers.</string>
+    <string name="pref_pushover_api_token_summary">Voer je api token in</string>
+    <string name="pref_pushover_user_group_key_title" maxLength="40">USER / GROEP sleutel</string>
+    <string name="pref_pushover_user_group_key_summary">Voer uw gebruiker / groepssleutel in</string>
+    <string name="pref_pushover_override_category" maxLength="30">Overrulen</string>
+    <string name="pref_pushover_override_priority_title" maxLength="40">Prioriteit overrulen</string>
+    <string name="pref_pushover_override_all_priorities_title" maxLength="40">Alle prioriteiten</string>
+    <string name="pref_pushover_override_sound_title" maxLength="40">Geluid Overrulen</string>
+    <string name="pref_pushover_override_all_sounds_title" maxLength="40">Alle Geluiden</string>
+    <string name="pref_pushover_send_message_title" maxLength="40">Verstuur bericht</string>
+    <string name="pref_pushover_priority_title" maxLength="40">Prioriteit</string>
+    <string name="pref_pushover_sound_title" maxLength="40">Geluid</string>
+    <string name="pref_pushover_override_title" maxLength="40">Overrulen</string>
+    <string name="pref_pushover_message_alarms_alerts_summary">Alarmen en waarschuwingen die niet zijn erkend en gewist door de pomp gebruiker kunnen een notificatie naar volgers sturen.</string>
+    <string name="pref_pushover_message_priority_selection_title" maxLength="40">Berichtprioriteit selectie:</string>
+    <string name="pref_pushover_message_priority_summary">NOODGEVAL: rode melding &amp; geluid (aanhoudend alarm dat opgevolgd moet worden)&newline;HOOG: rode melding&amp; geluid &newline;NORMAAL: melding&amp; geluid&newline;LAAG: melding &amp; geen geluid&newline;LAAGSTE: geen melding &amp; geen geluid (bericht kan worden bekeken in de Pushover app/widget)</string>
+    <string name="pref_pushover_preview_sounds_title" maxLength="40">Voorbeeld geluiden</string>
+    <string name="pref_pushover_preview_sounds_summary">Luister naar de beschikbare meldingsgeluiden.</string>
+    <string name="pref_pushover_settings_category" maxLength="30">Instellingen</string>
+    <string name="pref_pushover_high_low_alerts_category" maxLength="30">Hoge/lage meldingen</string>
+    <string name="pref_pushover_alert_on_high_category" maxLength="30">Melding Bij Hoog</string>
+    <string name="pref_pushover_alert_on_low_category" maxLength="30">Melding Bij Laag</string>
+    <string name="pref_pushover_alert_before_high_category" maxLength="30">Melding Vooraleer Hoog</string>
+    <string name="pref_pushover_alert_before_low_category" maxLength="30">Melding Vooraleer Laag</string>
+    <string name="pref_pushover_pump_alerts_category" maxLength="30">Pomp alarmen</string>
+    <string name="pref_pushover_emergency_alert_note_summary">Opmerking: Sommige pomp noodwaarschuwingen kunnen alle communicatie blokkeren totdat ze zijn gewist door de pomp gebruiker. Meldingen in deze status kunnen worden ingesteld in \'Uploader Gebeurtenissen\'</string>
+    <string name="pref_pushover_emergency_alert_category" maxLength="30">Noodwaarschuwing</string>
+    <string name="pref_pushover_emergency_alert_summary">Alarmen die onmiddellijke actie vereisen. Voorbeeld: \'Verstopping\' \'Vervang batterij nu\'</string>
+    <string name="pref_pushover_actionable_alert_category" maxLength="30">Onderneem actie bij Alarm</string>
+    <string name="pref_pushover_actionable_alert_summary">Meldingen die actie kunnen vereisen. Voorbeeld: \"Nu kalibreren\' \'Bolus niet afgeleverd\'</string>
+    <string name="pref_pushover_informational_alert_category" maxLength="30">Informatieve melding</string>
+    <string name="pref_pushover_informational_alert_summary">Voorbeeld: \'Laag reservoir 10U resterend\' \'Pompbatterij laag\'</string>
+    <string name="pref_pushover_reminders_category" maxLength="30">Herinneringen</string>
+    <string name="pref_pushover_reminders_summary">Voorbeeld: \'Kalibreer om 10:30\' \'Gemiste maaltijd Bolus\'</string>
+    <string name="pref_pushover_pump_events_category" maxLength="30">Pomp gebeurtenissen</string>
+    <string name="pref_pushover_pump_events_summary">Behandelingen en gebeurtenissen kunnen een melding naar volgers sturen.</string>
     <string name="pref_pushover_bolus_category" maxLength="30">Bolus</string>
-    <string name="pref_pushover_basal_category" maxLength="30">Basal</string>
-    <string name="pref_pushover_suspend_resume_category" maxLength="30">Suspend / Resume</string>
+    <string name="pref_pushover_basal_category" maxLength="30">Basaal</string>
+    <string name="pref_pushover_suspend_resume_category" maxLength="30">Pauzeren / Hervatten</string>
     <string name="pref_pushover_bg_category" maxLength="30">BG</string>
-    <string name="pref_pushover_bg_calibration_title" maxLength="40">Calibration Result</string>
-    <string name="pref_pushover_consumables_category" maxLength="30">Consumables</string>
-    <string name="pref_pushover_lifetime_info_title" maxLength="40">Lifetime info</string>
-    <string name="pref_pushover_daily_totals_category" maxLength="30">Daily Totals</string>
-    <string name="pref_pushover_auto_mode_events_category" maxLength="30">Auto Mode Events</string>
-    <string name="pref_pushover_auto_mode_active_category" maxLength="30">Auto Mode Active</string>
-    <string name="pref_pushover_auto_mode_stop_category" maxLength="30">Auto Mode Stop</string>
-    <string name="pref_pushover_auto_mode_exit_category" maxLength="30">Auto Mode Exit</string>
-    <string name="pref_pushover_auto_mode_min_max_category" maxLength="30">Auto Mode Min/Max Delivery</string>
-    <string name="pref_pushover_uploader_events_category" maxLength="30">Uploader Events</string>
-    <string name="pref_pushover_uploader_events_summary">Send Uploader status events to followers.</string>
-    <string name="pref_pushover_pump_errors_category" maxLength="30">Pump errors</string>
-    <string name="pref_pushover_pump_errors_summary">Some pump errors can block all communication until they are cleared by the pump user. Notify follower when pump is in this state.</string>
-    <string name="pref_pushover_usb_errors_category" maxLength="30">USB errors</string>
-    <string name="pref_pushover_usb_errors_summary">When the Contour Next Link is unplugged.</string>
+    <string name="pref_pushover_bg_calibration_title" maxLength="40">Kalibratie resultaat</string>
+    <string name="pref_pushover_consumables_category" maxLength="30">Verbruiksartikelen</string>
+    <string name="pref_pushover_lifetime_info_title" maxLength="40">Levensduur info</string>
+    <string name="pref_pushover_daily_totals_category" maxLength="30">Dagelijkse totalen</string>
+    <string name="pref_pushover_auto_mode_events_category" maxLength="30">Auto Modus Gebeurtenissen</string>
+    <string name="pref_pushover_auto_mode_active_category" maxLength="30">Auto-modus actief</string>
+    <string name="pref_pushover_auto_mode_stop_category" maxLength="30">Auto Modus stoppen</string>
+    <string name="pref_pushover_auto_mode_exit_category" maxLength="30">Auto-modus afsluiten</string>
+    <string name="pref_pushover_auto_mode_min_max_category" maxLength="30">Auto-modus Min/Max levering</string>
+    <string name="pref_pushover_uploader_events_category" maxLength="30">Uploader Gebeurtenissen</string>
+    <string name="pref_pushover_uploader_events_summary">Stuur upload status gebeurtenissen naar volgers.</string>
+    <string name="pref_pushover_pump_errors_category" maxLength="30">Pomp fouten</string>
+    <string name="pref_pushover_pump_errors_summary">Sommige pompfouten kunnen alle communicatie blokkeren totdat ze zijn gewist door de pump gebruiker. Houd de volger op de hoogte wanneer de pomp in deze staat is.</string>
+    <string name="pref_pushover_usb_errors_category" maxLength="30">USB-fouten</string>
+    <string name="pref_pushover_usb_errors_summary">Wanneer de Contour Next Link link is losgekoppeld.</string>
     <string name="pref_pushover_status_category" maxLength="30">Status</string>
-    <string name="pref_pushover_status_summary">Send follower uploader status messages.</string>
-    <string name="pref_pushover_connection_states_title" maxLength="40">Uploader-Pump connection states</string>
-    <string name="pref_pushover_sgv_estimation_active_title" maxLength="40">SGV Estimation active</string>
-    <string name="pref_pushover_battery_category" maxLength="30">Battery</string>
-    <string name="pref_pushover_low_battery_state_title" maxLength="40">Low battery state</string>
-    <string name="pref_pushover_fully_charged_state_title" maxLength="40">Fully charged state</string>
-    <string name="pref_pushover_advanced_category" maxLength="30">Advanced</string>
-    <string name="pref_pushover_extended_info_category" maxLength="30">Extended Info</string>
-    <string name="pref_pushover_extended_message_info_title" maxLength="40">Extended message info</string>
-    <string name="pref_pushover_extended_message_info_summary">Full extended message as shown on the pump</string>
-    <string name="pref_pushover_time_in_notification_title" maxLength="40">Time in Notification Title</string>
-    <string name="pref_pushover_time_in_notification_summary">Include the time in the title part of a notification</string>
-    <string name="pref_pushover_text_in_notification_title" maxLength="40">Text in Notification Title</string>
-    <string name="pref_pushover_text_in_notification_summary">Include custom text in the title part of a notification</string>
-    <string name="pref_pushover_custom_text_title" maxLength="40">Custom Text</string>
-    <string name="pref_pushover_emergency_alerts_category" maxLength="30">Emergency Alerts</string>
-    <string name="pref_pushover_retry_every_title" maxLength="40">Retry every</string>
-    <string name="pref_pushover_expire_after_title" maxLength="40">Expire after</string>
-    <string name="pref_pushover_cleared_alert_category" maxLength="30">Cleared Alert</string>
-    <string name="pref_pushover_cleared_alert_summary">Alerts that were not active at time of polling and have already been cleared by the pump user are available after history has been retrieved for other live events.</string>
-    <string name="pref_pushover_acknowledged_title" maxLength="40">Acknowledged</string>
-    <string name="pref_pushover_acknowledged_summary">When a active alert notification has been sent to a follower, always send another message to show when this alert has been acknowledged and cleared on the pump.</string>
-    <string name="pref_pushover_silenced_alerts_category" maxLength="30">Silenced Alerts</string>
-    <string name="pref_pushover_silenced_alerts_summary">Silenced unacknowledged sensor alerts can be sent to followers. Pump will stay quiet and follower will be alerted.</string>
-    <string name="pref_pushover_silenced_alerts_override_summary">Change message priority and sound when pump issues a silent alert.</string>
-    <string name="pref_pushover_backfill_category" maxLength="30">Backfill</string>
-    <string name="pref_pushover_backfill_period_title" maxLength="40">Backfill Period</string>
-    <string name="pref_pushover_start_restart_title" maxLength="40">Start/Restart</string>
-    <string name="pref_pushover_start_restart_summary">Only backfill from the time the uploader or device has been started/restarted.</string>
-    <string name="pref_pushover_unpluged_limiter_title" maxLength="40">Unpluged Limiter</string>
-    <string name="pref_pushover_unpluged_limiter_summary">Do not backfill messages when a CNL meter has been unplugged for longer then this amount of time.</string>
-    <string name="pref_pushover_age_title" maxLength="40">Age</string>
-    <string name="pref_pushover_age_summary">Messages older then this age can have their priority and sound changed.</string>
+    <string name="pref_pushover_status_summary">Stuur volger uploader statusberichten.</string>
+    <string name="pref_pushover_connection_states_title" maxLength="40">Uploader-Pomp verbindingsstatussen</string>
+    <string name="pref_pushover_sgv_estimation_active_title" maxLength="40">SGV schatting is actief</string>
+    <string name="pref_pushover_battery_category" maxLength="30">Batterij</string>
+    <string name="pref_pushover_low_battery_state_title" maxLength="40">Lage batterij status</string>
+    <string name="pref_pushover_fully_charged_state_title" maxLength="40">Volledig opgeladen status</string>
+    <string name="pref_pushover_advanced_category" maxLength="30">Geavanceerd</string>
+    <string name="pref_pushover_extended_info_category" maxLength="30">Uitgebreide informatie</string>
+    <string name="pref_pushover_extended_message_info_title" maxLength="40">Uitgebreide berichtinfo</string>
+    <string name="pref_pushover_extended_message_info_summary">Volledig uitgebreid bericht zoals getoond op de pomp</string>
+    <string name="pref_pushover_time_in_notification_title" maxLength="40">Tijd in notificatie titel</string>
+    <string name="pref_pushover_time_in_notification_summary">Voeg de tijd toe in het titel gedeelte van een melding</string>
+    <string name="pref_pushover_text_in_notification_title" maxLength="40">Tekst in notificatie titel</string>
+    <string name="pref_pushover_text_in_notification_summary">Voeg aangepaste tekst toe in het titel gedeelte van een melding</string>
+    <string name="pref_pushover_custom_text_title" maxLength="40">Aangepaste Tekst</string>
+    <string name="pref_pushover_emergency_alerts_category" maxLength="30">Noodwaarschuwing</string>
+    <string name="pref_pushover_retry_every_title" maxLength="40">Opnieuw proberen</string>
+    <string name="pref_pushover_expire_after_title" maxLength="40">Vervalt na</string>
+    <string name="pref_pushover_cleared_alert_category" maxLength="30">Waarschuwing gewist</string>
+    <string name="pref_pushover_cleared_alert_summary">Meldingen die niet actief waren bij het pollen en al zijn gewist door de pompgebruiker zijn beschikbaar nadat de geschiedenis is opgehaald voor andere live gebeurtenissen.</string>
+    <string name="pref_pushover_acknowledged_title" maxLength="40">Bevestigen</string>
+    <string name="pref_pushover_acknowledged_summary">Wanneer een actieve melding naar een volger is verzonden, stuur altijd een ander bericht om te laten zien wanneer dit alarm is erkend en gewist op de pomp.</string>
+    <string name="pref_pushover_silenced_alerts_category" maxLength="30">Stil gezette alarmen</string>
+    <string name="pref_pushover_silenced_alerts_summary">Stil gezette sensor meldingen kunnen worden verzonden naar volgers. Pomp blijft stil en volger wordt gewaarschuwd.</string>
+    <string name="pref_pushover_silenced_alerts_override_summary">Verander de prioriteit en geluid van het bericht wanneer de pomp een stil alarm uitlokt.</string>
+    <string name="pref_pushover_backfill_category" maxLength="30">Geschiedenis opvullen</string>
+    <string name="pref_pushover_backfill_period_title" maxLength="40">Geschiedenis opvul periode</string>
+    <string name="pref_pushover_start_restart_title" maxLength="40">Start/Herstart</string>
+    <string name="pref_pushover_start_restart_summary">Alleen geschiedenis opvullen vanaf de tijd dat de uploader of apparaat is gestart/herstart.</string>
+    <string name="pref_pushover_unpluged_limiter_title" maxLength="40">Niet aangesloten Limiet</string>
+    <string name="pref_pushover_unpluged_limiter_summary">Geen geschiedenis opvullen wanneer een CNL meter langer is losgekoppeld dan deze hoeveelheid tijd.</string>
+    <string name="pref_pushover_age_title" maxLength="40">Leeftijd</string>
+    <string name="pref_pushover_age_summary">Berichten ouder dan deze leeftijd kunnen hun prioriteit en geluid veranderen.</string>
     <string name="pref_pushover_api_category" maxLength="30">Pushover API</string>
-    <string name="pref_pushover_device_name_title" maxLength="40">Device Name</string>
-    <string name="pref_pushover_device_name_summary">Use a Pushover device name to send the message directly to that device, rather than all of the users devices (multiple devices may be separated by a comma)</string>
+    <string name="pref_pushover_device_name_title" maxLength="40">Apparaatnaam</string>
+    <string name="pref_pushover_device_name_summary">Gebruik een Pushover-apparaatnaam om het bericht direct naar dat apparaat te sturen, in plaats van alle apparaten (meerdere apparaten kunnen worden gescheiden door een komma)</string>
     <!-- Text used to generated info strings for Nightscout and Messages (Pushover etc) -->
-    <string name="text__Pump">Pump</string>
+    <string name="text__Pump">Pomp</string>
     <string name="text__Bolus">Bolus</string>
-    <string name="text__Basal">Basal</string>
-    <string name="text__Lifetimes">Lifetimes</string>
-    <string name="text__Prime">Prime</string>
-    <string name="text__new_reservoir">new reservoir</string>
-    <string name="text__fill_cannula">fill cannula</string>
-    <string name="text__new_sensor_started">new sensor started</string>
-    <string name="text__battery_inserted">battery inserted</string>
-    <string name="text__Sensor_Change">Sensor Change</string>
-    <string name="text__Battery_Change">Battery Change</string>
-    <string name="text__Cannula_Change">Cannula Change</string>
-    <string name="text__Insulin_Change">Insulin Change</string>
-    <string name="text__Normal">Normal</string>
+    <string name="text__Basal">Basaal</string>
+    <string name="text__Lifetimes">Levensduur</string>
+    <string name="text__Prime">Vullen</string>
+    <string name="text__new_reservoir">nieuw reservoir</string>
+    <string name="text__fill_cannula">canule vullen</string>
+    <string name="text__new_sensor_started">nieuwe sensor gestart</string>
+    <string name="text__battery_inserted">batterij ingevoegd</string>
+    <string name="text__Sensor_Change">Sensor wisselen</string>
+    <string name="text__Battery_Change">Batterij Wissel</string>
+    <string name="text__Cannula_Change">Canule vervangen</string>
+    <string name="text__Insulin_Change">Insuline verversen</string>
+    <string name="text__Normal">Normaal</string>
     <string name="text__Square">Square</string>
     <string name="text__Dual">Dual</string>
     <string name="text__Temp">Temp</string>
-    <string name="text__Normal_Bolus">Normal Bolus</string>
-    <string name="text__Square_Bolus">Square Bolus</string>
-    <string name="text__Dual_Bolus">Dual Bolus</string>
-    <string name="text__Temp_Basal">Temp Basal</string>
-    <string name="text__Auto_Mode">Auto Mode</string>
-    <string name="text__Pump_Suspend">Pump Suspend</string>
-    <string name="text__Pump_Resume">Pump Resume</string>
-    <string name="text__Finger_BG">Finger BG</string>
+    <string name="text__Normal_Bolus">Normale bolus</string>
+    <string name="text__Square_Bolus">Square bolus</string>
+    <string name="text__Dual_Bolus">Dual bolus</string>
+    <string name="text__Temp_Basal">Tijdelijk basaal</string>
+    <string name="text__Auto_Mode">Auto-modus</string>
+    <string name="text__Pump_Suspend">Pomp onderbroken</string>
+    <string name="text__Pump_Resume">Pomp Hervatten</string>
+    <string name="text__Finger_BG">Vingerprik BG</string>
     <string name="text__Factor">Factor</string>
-    <string name="text__Target">Target</string>
-    <string name="text__Pattern">Pattern</string>
-    <string name="text__basal_pattern">Basal pattern</string>
-    <string name="text__previous_basal_pattern">Previous pattern</string>
+    <string name="text__Target">Doel</string>
+    <string name="text__Pattern">Patroon</string>
+    <string name="text__basal_pattern">Basaal patroon</string>
+    <string name="text__previous_basal_pattern">Vorig patroon</string>
     <string name="text__microbolus">microbolus</string>
     <string name="text__bolus">bolus</string>
-    <string name="text__basal">basal</string>
+    <string name="text__basal">basaal</string>
     <string name="text__bg">bg</string>
     <string name="text__iob">iob</string>
-    <string name="text__carb">carb</string>
-    <string name="text__correction">correction</string>
-    <string name="text__duration">duration</string>
-    <string name="text__normal">normal</string>
+    <string name="text__carb">koolhydraat</string>
+    <string name="text__correction">correctie</string>
+    <string name="text__duration">duur</string>
+    <string name="text__normal">normaal</string>
     <string name="text__square">square</string>
-    <string name="text__cancelled">cancelled</string>
-    <string name="text__completed">completed</string>
-    <string name="text__ended">ended</string>
-    <string name="text__delivered">delivered</string>
-    <string name="text__active">active</string>
-    <string name="text__stopped">stopped</string>
+    <string name="text__cancelled">geannuleerd</string>
+    <string name="text__completed">voltooid</string>
+    <string name="text__ended">afgelopen</string>
+    <string name="text__delivered">afgeleverd</string>
+    <string name="text__active">actief</string>
+    <string name="text__stopped">gestopt</string>
     <!-- Pump Event Marker -->
-    <string name="event_marker__heading">Event Marker</string>
-    <string name="event_marker__food">Food</string>
-    <string name="event_marker__exercise">Exercise</string>
-    <string name="event_marker__injection">Injection</string>
-    <string name="event_marker__other">Other</string>
+    <string name="event_marker__heading">Gebeurtenis Marker</string>
+    <string name="event_marker__food">Voedsel</string>
+    <string name="event_marker__exercise">Sport</string>
+    <string name="event_marker__injection">Injectie</string>
+    <string name="event_marker__other">Andere</string>
     <!-- Pump Daily Totals -->
-    <string name="daily_totals_heading__daily_totals" maxLength="15">Daily Totals</string>
+    <string name="daily_totals_heading__daily_totals" maxLength="15">Dagelijkse tot.</string>
     <string name="daily_totals_heading__bolus" maxLength="10">Bolus</string>
-    <string name="daily_totals_heading__basal" maxLength="10">Basal</string>
+    <string name="daily_totals_heading__basal" maxLength="10">Basaal</string>
     <string name="daily_totals_heading__sensor" maxLength="10">Sensor</string>
     <string name="daily_totals_heading__bg" maxLength="10">BG</string>
     <string name="daily_totals_heading__auto" maxLength="10">Auto</string>
-    <string name="daily_totals_heading__insulin" maxLength="10">Insulin</string>
+    <string name="daily_totals_heading__insulin" maxLength="10">Insuline</string>
     <string name="daily_totals_heading__total_daily_dose" maxLength="10">TDD</string>
     <string name="daily_totals_heading__sgv" maxLength="10">Sgv</string>
-    <string name="daily_totals_heading__average" maxLength="10">Avg</string>
-    <string name="daily_totals_heading__standard_deviation" maxLength="10">StdDev</string>
-    <string name="daily_totals_heading__total_alerts" maxLength="10">Alerts</string>
-    <string name="daily_totals_heading__total_values" maxLength="10">Total</string>
-    <string name="daily_totals_heading__high_values" maxLength="10">High</string>
-    <string name="daily_totals_heading__low_values" maxLength="10">Low</string>
-    <string name="daily_totals_heading__bolus_manual_entry" maxLength="10">Manual</string>
+    <string name="daily_totals_heading__average" maxLength="10">Gem</string>
+    <string name="daily_totals_heading__standard_deviation" maxLength="10">StdAfw</string>
+    <string name="daily_totals_heading__total_alerts" maxLength="10">Meldingen</string>
+    <string name="daily_totals_heading__total_values" maxLength="10">Totaal</string>
+    <string name="daily_totals_heading__high_values" maxLength="10">Hoog</string>
+    <string name="daily_totals_heading__low_values" maxLength="10">Laag</string>
+    <string name="daily_totals_heading__bolus_manual_entry" maxLength="10">Manueel</string>
     <string name="daily_totals_heading__bolus_wizard_entry" maxLength="10">Wizard</string>
-    <string name="daily_totals_heading__carb" maxLength="10">Carb</string>
-    <string name="daily_totals_heading__food" maxLength="10">Food</string>
-    <string name="daily_totals_heading__correction_bolus" maxLength="10">Correct</string>
-    <string name="daily_totals_heading__food_and_correction_bolus" maxLength="10">Food+Corr</string>
-    <string name="daily_totals_heading__alert_on_rise" maxLength="10">Rise</string>
-    <string name="daily_totals_heading__alert_on_high" maxLength="10">High</string>
-    <string name="daily_totals_heading__alert_on_low" maxLength="10">Low</string>
-    <string name="daily_totals_heading__alert_on_suspend" maxLength="10">Suspend</string>
-    <string name="daily_totals_heading__alert_before_high" maxLength="10">PreHigh</string>
-    <string name="daily_totals_heading__alert_before_low" maxLength="10">PreLow</string>
-    <string name="daily_totals_heading__alert_before_suspend" maxLength="10">PreSuspd</string>
-    <string name="daily_totals_heading__within_range" maxLength="10">Within</string>
-    <string name="daily_totals_heading__automode_active_time" maxLength="10">Active</string>
+    <string name="daily_totals_heading__carb" maxLength="10">Koolh.</string>
+    <string name="daily_totals_heading__food" maxLength="10">Voedsel</string>
+    <string name="daily_totals_heading__correction_bolus" maxLength="10">Pas aan</string>
+    <string name="daily_totals_heading__food_and_correction_bolus" maxLength="10">Eten+Corr</string>
+    <string name="daily_totals_heading__alert_on_rise" maxLength="10">Stijgend</string>
+    <string name="daily_totals_heading__alert_on_high" maxLength="10">Hoog</string>
+    <string name="daily_totals_heading__alert_on_low" maxLength="10">Laag</string>
+    <string name="daily_totals_heading__alert_on_suspend" maxLength="10">Gestopt</string>
+    <string name="daily_totals_heading__alert_before_high" maxLength="10">Voor hoog</string>
+    <string name="daily_totals_heading__alert_before_low" maxLength="10">Voor laag</string>
+    <string name="daily_totals_heading__alert_before_suspend" maxLength="10">Voor stop</string>
+    <string name="daily_totals_heading__within_range" maxLength="10">Binnen</string>
+    <string name="daily_totals_heading__automode_active_time" maxLength="10">Actief</string>
     <string name="daily_totals_heading__microbolus" maxLength="10">Micro</string>
-    <string name="daily_totals_heading__therapy" maxLength="10">Therapy</string>
-    <string name="daily_totals_heading__therapy_in_range" maxLength="10">Range</string>
-    <string name="daily_totals_heading__therapy_above_range" maxLength="10">Above</string>
-    <string name="daily_totals_heading__therapy_below_range" maxLength="10">Below</string>
+    <string name="daily_totals_heading__therapy" maxLength="10">Therapie</string>
+    <string name="daily_totals_heading__therapy_in_range" maxLength="10">Bereik</string>
+    <string name="daily_totals_heading__therapy_above_range" maxLength="10">Boven</string>
+    <string name="daily_totals_heading__therapy_below_range" maxLength="10">Onder</string>
     <!-- Nightscout PUMP pill -->
     <string name="nightscout_pump_pill__temp" maxLength="1">T</string>
     <string name="nightscout_pump_pill__square" maxLength="1">S</string>
     <string name="nightscout_pump_pill__dual" maxLength="1">D</string>
-    <string name="nightscout_pump_pill__no_cgm" maxLength="20">no cgm</string>
-    <string name="nightscout_pump_pill__bolusing" maxLength="20">bolusing</string>
+    <string name="nightscout_pump_pill__no_cgm" maxLength="20">geen cgm</string>
+    <string name="nightscout_pump_pill__bolusing" maxLength="20">aan het bolussen</string>
     <string name="nightscout_pump_pill__bolusing_abreviation" maxLength="6">bol</string>
-    <string name="nightscout_pump_pill__suspended" maxLength="20">suspended</string>
-    <string name="nightscout_pump_pill__suspended_abreviation" maxLength="6">sus</string>
-    <string name="nightscout_pump_pill__lost_sensor" maxLength="20">lost sensor</string>
-    <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="6">lost</string>
-    <string name="nightscout_pump_pill__estimate" maxLength="20">*estimate</string>
-    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="6">*est</string>
+    <string name="nightscout_pump_pill__suspended" maxLength="20">gestopt</string>
+    <string name="nightscout_pump_pill__suspended_abreviation" maxLength="6">stop</string>
+    <string name="nightscout_pump_pill__lost_sensor" maxLength="20">sensor verloren</string>
+    <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="6">kwijt</string>
+    <string name="nightscout_pump_pill__estimate" maxLength="20">*geschat</string>
+    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="6">*schat</string>
     <!-- pump/sensor/automode states -->
-    <string name="pump_suspend__pump_suspended_insulin_delivery">Pump suspended insulin delivery</string>
-    <string name="pump_suspend__alarm_suspend">Alarm suspend</string>
-    <string name="pump_suspend__user_suspend">User suspend</string>
-    <string name="pump_suspend__auto_suspend">Auto suspend</string>
-    <string name="pump_suspend__low_glucose_suspend">Low glucose suspend</string>
-    <string name="pump_suspend__set_change_suspend">Set change suspend</string>
-    <string name="pump_suspend__predicted_low_glucose_suspend">Predicted low glucose suspend</string>
-    <string name="pump_resume__pump_resumed_insulin_delivery">Pump resumed insulin delivery</string>
-    <string name="pump_resume__user_resumed">User resumed</string>
-    <string name="pump_resume__user_clears_alarm">User cleared alarm</string>
-    <string name="pump_resume__low_glucose_manual_resume">Low glucose manual resume</string>
-    <string name="pump_resume__low_glucose_auto_resume_max_suspend_period">Low glucose auto resume - max suspend period</string>
-    <string name="pump_resume__low_glucose_auto_resume_preset_glucose_reached">Low glucose auto resume - preset glucose reached</string>
-    <string name="pump_resume__low_glucose_manual_resume_via_disable">Low glucose manual resume via disable</string>
-    <string name="automode_transition__into_active_due_to_sensor_calibration">Into active due to sensor calibration</string>
-    <string name="automode_transition__out_of_active_due_to_user_override">Out of active due to user override</string>
-    <string name="automode_transition__out_of_active_due_to_alarm">Out of active due to alarm</string>
-    <string name="automode_transition__out_of_active_due_to_timeout_from_safe_basal">Out of active due to timeout from safe basal</string>
-    <string name="automode_transition__out_of_active_due_to_prolonged_high_sg">Out of active due to prolonged high SG</string>
-    <string name="sensor_state__ok" maxLength="10">OK</string>
-    <string name="sensor_state__warm_up" maxLength="30">warm up</string>
-    <string name="sensor_state__warm_up_abbreviation" maxLength="10">WU</string>
-    <string name="sensor_state__calibrate_now" maxLength="30">calibrate now</string>
-    <string name="sensor_state__calibrate_now_abbreviation" maxLength="10">CalNow</string>
-    <string name="sensor_state__sg_not_available" maxLength="30">sg not available</string>
-    <string name="sensor_state__sg_not_available_abbreviation" maxLength="10">NoSG</string>
-    <string name="sensor_state__cal_error" maxLength="30">cal error</string>
-    <string name="sensor_state__cal_error_abbreviation" maxLength="10">CalErr</string>
-    <string name="sensor_state__change_sensor" maxLength="30">change sensor</string>
-    <string name="sensor_state__change_sensor_abbreviation" maxLength="10">ChgSen</string>
-    <string name="sensor_state__sensor_expired" maxLength="30">sensor expired</string>
+    <string name="pump_suspend__pump_suspended_insulin_delivery">Pomp gestopte insuline toediening</string>
+    <string name="pump_suspend__alarm_suspend">Alarm opgeschort</string>
+    <string name="pump_suspend__user_suspend">Door user opgeschort</string>
+    <string name="pump_suspend__auto_suspend">Auto opschorten</string>
+    <string name="pump_suspend__low_glucose_suspend">Gestopt bij laag</string>
+    <string name="pump_suspend__set_change_suspend">Gestopt wegens infusieset</string>
+    <string name="pump_suspend__predicted_low_glucose_suspend">Gestopt voor laag</string>
+    <string name="pump_resume__pump_resumed_insulin_delivery">Toediening hervat</string>
+    <string name="pump_resume__user_resumed">Toediening door gebruiker hervat</string>
+    <string name="pump_resume__user_clears_alarm">Gebruiker gewist alarm</string>
+    <string name="pump_resume__low_glucose_manual_resume">Toediening manueel hervat bij laag</string>
+    <string name="pump_resume__low_glucose_auto_resume_max_suspend_period">Lage glucose automatisch hervatten - max stoptijd</string>
+    <string name="pump_resume__low_glucose_auto_resume_preset_glucose_reached">Lage glucose automatisch hervatten - geconfigureerde BG bereikt</string>
+    <string name="pump_resume__low_glucose_manual_resume_via_disable">Handmatige hervatting bij lage glucose via uitschakelen</string>
+    <string name="automode_transition__into_active_due_to_sensor_calibration">Into actief vanwege sensor kalibratie</string>
+    <string name="automode_transition__out_of_active_due_to_user_override">Niet actief door gebruiker overruled</string>
+    <string name="automode_transition__out_of_active_due_to_alarm">Niet actief vanwege alarm</string>
+    <string name="automode_transition__out_of_active_due_to_timeout_from_safe_basal">Niet actief vanwege timeout van veilige basaal</string>
+    <string name="automode_transition__out_of_active_due_to_prolonged_high_sg">Niet actief vanwege lange hoge SG</string>
+    <string name="sensor_state__ok" maxLength="10">Oké</string>
+    <string name="sensor_state__warm_up" maxLength="30">opwarmen</string>
+    <string name="sensor_state__warm_up_abbreviation" maxLength="10">OW</string>
+    <string name="sensor_state__calibrate_now" maxLength="30">kalibreer nu</string>
+    <string name="sensor_state__calibrate_now_abbreviation" maxLength="10">KalNu</string>
+    <string name="sensor_state__sg_not_available" maxLength="30">sg niet beschikbaar</string>
+    <string name="sensor_state__sg_not_available_abbreviation" maxLength="10">GeenSG</string>
+    <string name="sensor_state__cal_error" maxLength="30">kal fout</string>
+    <string name="sensor_state__cal_error_abbreviation" maxLength="10">Kal fout</string>
+    <string name="sensor_state__change_sensor" maxLength="30">verander sensor</string>
+    <string name="sensor_state__change_sensor_abbreviation" maxLength="10">VerSen</string>
+    <string name="sensor_state__sensor_expired" maxLength="30">sensor uitgewerkt</string>
     <string name="sensor_state__sensor_expired_abbreviation" maxLength="10">EOL</string>
-    <string name="sensor_state__not_ready" maxLength="30">not ready</string>
-    <string name="sensor_state__not_ready_abbreviation" maxLength="10">NotRdy</string>
-    <string name="sensor_state__reading_high" maxLength="30">sg reading high</string>
-    <string name="sensor_state__reading_high_abbreviation" maxLength="10">HiSG</string>
-    <string name="sensor_state__reading_low" maxLength="30">sg reading low</string>
-    <string name="sensor_state__reading_low_abbreviation" maxLength="10">LoSG</string>
-    <string name="sensor_state__calibrating" maxLength="30">calibrating</string>
-    <string name="sensor_state__calibrating_abbreviation" maxLength="10">InCal</string>
-    <string name="sensor_state__cal_error_change_sensor" maxLength="30">cal error change sensor</string>
-    <string name="sensor_state__cal_error_change_sensor_abbreviation" maxLength="6">ChgSen</string>
-    <string name="sensor_state__time_unknown" maxLength="30">time unknown</string>
-    <string name="sensor_state__time_unknown_abbreviation" maxLength="10">NoTime</string>
-    <string name="sensor_state__sensor_error" maxLength="30">sensor error</string>
-    <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SenErr</string>
+    <string name="sensor_state__not_ready" maxLength="30">niet klaar</string>
+    <string name="sensor_state__not_ready_abbreviation" maxLength="10">NietKlaar</string>
+    <string name="sensor_state__reading_high" maxLength="30">sg waarde hoog</string>
+    <string name="sensor_state__reading_high_abbreviation" maxLength="10">HoogSG</string>
+    <string name="sensor_state__reading_low" maxLength="30">sg waarde laag</string>
+    <string name="sensor_state__reading_low_abbreviation" maxLength="10">LaagSG</string>
+    <string name="sensor_state__calibrating" maxLength="30">kalibreren</string>
+    <string name="sensor_state__calibrating_abbreviation" maxLength="10">AanKall</string>
+    <string name="sensor_state__cal_error_change_sensor" maxLength="30">kall. fout verander sensor</string>
+    <string name="sensor_state__cal_error_change_sensor_abbreviation" maxLength="6">VerSen</string>
+    <string name="sensor_state__time_unknown" maxLength="30">tijd onbekend</string>
+    <string name="sensor_state__time_unknown_abbreviation" maxLength="10">GeenTijd</string>
+    <string name="sensor_state__sensor_error" maxLength="30">sensor fout</string>
+    <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SensorErr</string>
     <!-- pump default pattern and preset names -->
-    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1">Basal 1</string>
-    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2">Basal 2</string>
-    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3">Basal 3</string>
-    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4">Basal 4</string>
-    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5">Basal 5</string>
-    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6">Workday</string>
-    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7">Day Off</string>
-    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8">Sick Day</string>
-    <string name="pump_default__temp_basal_preset_0" maxLength="30">Not Preset</string>
-    <string name="pump_default__temp_basal_preset_1" maxLength="30" comment="local name as shown on the pump for temp basal preset 1">Temp 1</string>
-    <string name="pump_default__temp_basal_preset_2" maxLength="30" comment="local name as shown on the pump for temp basal preset 2">Temp 2</string>
-    <string name="pump_default__temp_basal_preset_3" maxLength="30" comment="local name as shown on the pump for temp basal preset 3">Temp 3</string>
-    <string name="pump_default__temp_basal_preset_4" maxLength="30" comment="local name as shown on the pump for temp basal preset 4">Temp 4</string>
-    <string name="pump_default__temp_basal_preset_5" maxLength="30" comment="local name as shown on the pump for temp basal preset 5">High Activity</string>
-    <string name="pump_default__temp_basal_preset_6" maxLength="30" comment="local name as shown on the pump for temp basal preset 6">Moderate Activity</string>
-    <string name="pump_default__temp_basal_preset_7" maxLength="30" comment="local name as shown on the pump for temp basal preset 7">Low Activity</string>
-    <string name="pump_default__temp_basal_preset_8" maxLength="30" comment="local name as shown on the pump for temp basal preset 8">Sick</string>
-    <string name="pump_default__bolus_preset_0">Not Preset</string>
+    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1">Basaal 1</string>
+    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2">Basaal 2</string>
+    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3">Basaal 3</string>
+    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4">Basaal 4</string>
+    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5">Basaal 5</string>
+    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6">Werkdag</string>
+    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7">Vrije dag</string>
+    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8">ZiekteDag</string>
+    <string name="pump_default__temp_basal_preset_0" maxLength="30">Geen voorinstelling</string>
+    <string name="pump_default__temp_basal_preset_1" maxLength="30" comment="local name as shown on the pump for temp basal preset 1">Tijdelijk 1</string>
+    <string name="pump_default__temp_basal_preset_2" maxLength="30" comment="local name as shown on the pump for temp basal preset 2">Tijdelijk 2</string>
+    <string name="pump_default__temp_basal_preset_3" maxLength="30" comment="local name as shown on the pump for temp basal preset 3">Tijdelijk 3</string>
+    <string name="pump_default__temp_basal_preset_4" maxLength="30" comment="local name as shown on the pump for temp basal preset 4">Tijdelijk 4</string>
+    <string name="pump_default__temp_basal_preset_5" maxLength="30" comment="local name as shown on the pump for temp basal preset 5">Hoge activiteit</string>
+    <string name="pump_default__temp_basal_preset_6" maxLength="30" comment="local name as shown on the pump for temp basal preset 6">Gemiddelde activiteit</string>
+    <string name="pump_default__temp_basal_preset_7" maxLength="30" comment="local name as shown on the pump for temp basal preset 7">Weinig activiteit</string>
+    <string name="pump_default__temp_basal_preset_8" maxLength="30" comment="local name as shown on the pump for temp basal preset 8">Ziek</string>
+    <string name="pump_default__bolus_preset_0">Geen voorinstelling</string>
     <string name="pump_default__bolus_preset_1" maxLength="30" comment="local name as shown on the pump for bolus preset 1">Bolus 1</string>
     <string name="pump_default__bolus_preset_2" maxLength="30" comment="local name as shown on the pump for bolus preset 2">Bolus 2</string>
     <string name="pump_default__bolus_preset_3" maxLength="30" comment="local name as shown on the pump for bolus preset 3">Bolus 3</string>
     <string name="pump_default__bolus_preset_4" maxLength="30" comment="local name as shown on the pump for bolus preset 4">Bolus 4</string>
-    <string name="pump_default__bolus_preset_5" maxLength="30" comment="local name as shown on the pump for bolus preset 5">Breakfast</string>
-    <string name="pump_default__bolus_preset_6" maxLength="30" comment="local name as shown on the pump for bolus preset 6">Lunch</string>
-    <string name="pump_default__bolus_preset_7" maxLength="30" comment="local name as shown on the pump for bolus preset 7">Dinner</string>
-    <string name="pump_default__bolus_preset_8" maxLength="30" comment="local name as shown on the pump for bolus preset 8">Snack</string>
+    <string name="pump_default__bolus_preset_5" maxLength="30" comment="local name as shown on the pump for bolus preset 5">Ontbijt</string>
+    <string name="pump_default__bolus_preset_6" maxLength="30" comment="local name as shown on the pump for bolus preset 6">Middagmaal</string>
+    <string name="pump_default__bolus_preset_7" maxLength="30" comment="local name as shown on the pump for bolus preset 7">Avondeten</string>
+    <string name="pump_default__bolus_preset_8" maxLength="30" comment="local name as shown on the pump for bolus preset 8">Tussendoortje</string>
     <!-- system status messages -->
-    <string name="system_status__header">System Status</string>
-    <string name="system_status__could_not_communicate_with_the_pump">Could not communicate with the pump</string>
-    <string name="system_status__pump_now_connected">Pump now connected</string>
-    <string name="system_status__last_seen" comment="example: Pump now connected. Last seen 30m ago">Last seen</string>
-    <string name="system_status__time_ago" comment="example: Pump now connected. Last seen 30m ago">ago</string>
-    <string name="system_status__usb_error">USB Error. Contour Next Link disconnected.</string>
-    <string name="system_status__pump_device_error">Pump has a device error. No data can be read until this error has been cleared on the Pump.</string>
-    <string name="system_status__uploader_battery_level" comment="example: Uploader battery at 15%">Uploader battery at</string>
-    <string name="system_status__uploader_battery_charge_soon">Charge your uploader device soon</string>
-    <string name="system_status__uploader_battery_fully_charged">Uploader battery fully charged</string>
-    <string name="system_status__estimate_active">SGV Estimate is active</string>
+    <string name="system_status__header">Systeemstatus</string>
+    <string name="system_status__could_not_communicate_with_the_pump">Kan niet communiceren met de pomp</string>
+    <string name="system_status__pump_now_connected">Pomp nu verbonden</string>
+    <string name="system_status__last_seen" comment="example: Pump now connected. Last seen 30m ago">Laatst gezien</string>
+    <string name="system_status__time_ago" comment="example: Pump now connected. Last seen 30m ago">geleden</string>
+    <string name="system_status__usb_error">USB-fout. Contour Next Link verbinding is verbroken.</string>
+    <string name="system_status__pump_device_error">Pomp heeft een apparaatfout. Er kunnen geen gegevens worden gelezen totdat deze fout is gewist op de Pomp.</string>
+    <string name="system_status__uploader_battery_level" comment="example: Uploader battery at 15%">Uploader batterij op</string>
+    <string name="system_status__uploader_battery_charge_soon">Laad binnenkort uw uploader apparaat</string>
+    <string name="system_status__uploader_battery_fully_charged">Uploader batterij volledig opgeladen</string>
+    <string name="system_status__estimate_active">SGV schatting is actief</string>
 </resources>

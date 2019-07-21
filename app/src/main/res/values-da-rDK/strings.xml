@@ -69,7 +69,7 @@
     <!-- Main Menu -->
     <string name="main_menu__settings" maxLength="25">Indstillinger</string>
     <string name="main_menu__registered_devices" maxLength="25">Registrerede enheder</string>
-    <string name="main_menu__stop_collecting_data" maxLength="25">Stop collecting data</string>
+    <string name="main_menu__stop_collecting_data" maxLength="25">Stop indsamling af data</string>
     <string name="main_menu__read_data_now" maxLength="25">Read data now</string>
     <string name="main_menu__update_pump_profile" maxLength="25">Update pump profile</string>
     <string name="main_menu__clear_log" maxLength="25">Clear log</string>

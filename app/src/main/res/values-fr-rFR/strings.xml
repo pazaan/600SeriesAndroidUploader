@@ -31,10 +31,10 @@
         <item quantity="other">%d secondes</item>
     </plurals>
     <!-- select -->
-    <string name="enabled" comment="user selects item as enabled">enabled</string>
-    <string name="disabled" comment="user selects item as disabled">disabled</string>
-    <string name="on" comment="on/off toggle switch, user switches item to ON">on</string>
-    <string name="off" comment="on/off toggle switch, user switches item to OFF">off</string>
+    <string name="enabled" comment="user selects item as enabled">activé</string>
+    <string name="disabled" comment="user selects item as disabled">desactivé</string>
+    <string name="on" comment="on/off toggle switch, user switches item to ON">actif</string>
+    <string name="off" comment="on/off toggle switch, user switches item to OFF">inactif</string>
     <string name="YES" comment="yes/no toggle switch, user switches item to YES">OUI</string>
     <string name="NO" comment="yes/no toggle switch, user switches item to NO">NON</string>
     <!-- units -->
@@ -51,29 +51,29 @@
     <string name="minute_m" maxLength="1" comment="example: 10m (10 minutes)">m</string>
     <string name="second_s" maxLength="1" comment="example: 10s (10 seconds)">s</string>
     <!-- EULA -->
-    <string name="eula__title">Disclaimer</string>
-    <string name="eula__message">Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers. This means that you accept that using this application is at your own risk. Nightscout developers accept no liability for the consequences of any actions taken on the basis of the information provided. If you are not sure of how to use this application you must not use it.</string>
-    <string name="eula__accept">Accept</string>
-    <string name="eula__refuse">Refuse</string>
+    <string name="eula__title">Avertissement</string>
+    <string name="eula__message">Nightscout ne devrait pas être utilisé pour prendre des décisions médicales. Il n\'y a aucun type de support ou de garantie. La qualité et rendu du projet est votre seule responsabilité. Ceci est un projet qui aura été crée et maintenu entièrement par des volontaires. Utiliser cette application signifie que vous acceptez les risques. Les développeurs de Nightscout ne sont pas responsables des consequences des actions entreprises suite aux informations données. Si vous n’êtes pas certain de comment utiliser cette application vous ne devriez pas le faire.</string>
+    <string name="eula__accept">Accepter</string>
+    <string name="eula__refuse">Refuser</string>
     <!-- Main Screen -->
     <string name="main_screen__icon_nightscout_status">Nightscout</string>
-    <string name="main_screen__icon_battery_status">Pump Battery</string>
+    <string name="main_screen__icon_battery_status">Pile de la Pompe</string>
     <string name="main_screen__active_insulin" maxLength="20">Insuline Active</string>
-    <string name="main_screen__value_hour_chart" maxLength="20" comment="example: '12 hour chart' '24 hour chart'">%1d hour chart</string>
+    <string name="main_screen__value_hour_chart" maxLength="20" comment="example: '12 hour chart' '24 hour chart'">Tableau de %1d h</string>
     <!-- Manage Devices Menu -->
-    <string name="manage_cnl__title">Manage your devices</string>
-    <string name="manage_cnl__no_registered_devices">No registered Contour Next Link devices</string>
-    <string name="manage_cnl__how_to_register">To register a Contour Next Link you must first plug it in, and get a reading from the pump.</string>
-    <string name="manage_cnl__serial_number">Serial number</string>
-    <string name="manage_cnl__delete">Delete</string>
+    <string name="manage_cnl__title">Gestion d\'appareils</string>
+    <string name="manage_cnl__no_registered_devices">Aucun appareil Contour Next Link enregistré</string>
+    <string name="manage_cnl__how_to_register">Pour enregistrer un Contour Next Link, vous devez d\'abord le connecter et recevoir des lectures de la pompe.</string>
+    <string name="manage_cnl__serial_number">Numéro de série</string>
+    <string name="manage_cnl__delete">Supprimer</string>
     <!-- Main Menu -->
-    <string name="main_menu__settings" maxLength="25">Settings</string>
-    <string name="main_menu__registered_devices" maxLength="25">Registered devices</string>
+    <string name="main_menu__settings" maxLength="25">Réglages</string>
+    <string name="main_menu__registered_devices" maxLength="25">Dispositifs enregistrés</string>
     <string name="main_menu__stop_collecting_data" maxLength="25">Stop collecting data</string>
     <string name="main_menu__read_data_now" maxLength="25">Read data now</string>
-    <string name="main_menu__update_pump_profile" maxLength="25">Update pump profile</string>
-    <string name="main_menu__clear_log" maxLength="25">Clear log</string>
-    <string name="main_menu__check_for_app_update" maxLength="25">Check for App update</string>
+    <string name="main_menu__update_pump_profile" maxLength="25">MaJ perfil pompe</string>
+    <string name="main_menu__clear_log" maxLength="25">Effacer le journal</string>
+    <string name="main_menu__check_for_app_update" maxLength="25">Vérifier mise à jour</string>
     <!-- Debug menu -->
     <string name="debug_log_level__error">Erreur</string>
     <string name="debug_log_level__info">Info</string>
@@ -81,15 +81,15 @@
     <!-- Status Notification (pull down / lock screen)  -->
     <string name="notification__SGV_value" maxLength="15" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen, example: SGV 100">SGV %1$s</string>
     <string name="notification__SGV_value_estimated" maxLength="15" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen when sensor glucose estimator is in use, example: SGV 100*">SGV %1$s*</string>
-    <string name="notification__SGV_not_available" maxLength="20" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen">No SGV available</string>
-    <string name="notification__ESTIMATE" maxLength="30" comment="visible on pull down / lock screen when sensor glucose estimator is in use">*sgv estimation</string>
-    <string name="notification__NEXTPOLL_time" maxLength="20" comment="visible on pull down / lock screen, example: Next 12:15 pm">Next %1$s</string>
+    <string name="notification__SGV_not_available" maxLength="20" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen">SGV indisponible</string>
+    <string name="notification__ESTIMATE" maxLength="30" comment="visible on pull down / lock screen when sensor glucose estimator is in use">*sgv estimé</string>
+    <string name="notification__NEXTPOLL_time" maxLength="20" comment="visible on pull down / lock screen, example: Next 12:15 pm">Prochain %1$s</string>
     <string name="notification__IOB_value" maxLength="30" comment="IOB = Insulin On Board, visible on pull down / lock screen, example: IOB 3.5U">IOB %1$s</string>
     <string name="notification__BASAL_rate" maxLength="30" comment="visible on pull down / lock screen, example:  Basal: 0.85U">Basal: %1$s</string>
-    <string name="notification__SUSPEND" maxLength="30" comment="visible on pull down / lock screen, example">Suspended</string>
-    <string name="notification__SUSPEND_time" maxLength="30" comment="visible on pull down / lock screen, example:  Suspended at 3.30 pm">Suspended at %1$s</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain">Basal Temp: %1$s %2$s reste</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime_preset" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Basal Temp: %1$s %2$s reste (%3$s)</string>
+    <string name="notification__SUSPEND" maxLength="30" comment="visible on pull down / lock screen, example">Arrêt temp.</string>
+    <string name="notification__SUSPEND_time" maxLength="30" comment="visible on pull down / lock screen, example:  Suspended at 3.30 pm">Arrêté à %1$s</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain">Basal Temp: Restent %1$s %2$s</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime_preset" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Basal Temp: Restent %1$s %2$s (%3$s)</string>
     <string name="notification__BG_value_time" maxLength="40" comment="BG = Blood Glucose, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm">Gluc: %1$s à %2$s</string>
     <string name="notification__BG_value_time_factor" maxLength="40" comment="BG = Blood Glucose, Factor = Calibration Factor, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm • Factor: 4.5">Gluc: %1$s à %2$s • Facteur: %3$s</string>
     <string name="notification__BOLUS_delivered_time" maxLength="40" comment="visible on pull down / lock screen, example:  Bolus: 3.5U at 3.15 pm">Bolus: %1$s à %2$s</string>
@@ -133,9 +133,9 @@
     <string name="ul_poll__unexpected_error">Unexpected Error!</string>
     <string name="ul_poll__next_poll_due_at">Next poll due at</string>
     <string name="ul_poll__sensor_is_in_warm_up_phase">sensor is in warm-up phase</string>
-    <string name="ul_poll__sensor_calibration_is_due_now">calibration du capteur est maintenant dû!</string>
+    <string name="ul_poll__sensor_calibration_is_due_now">calibration du capteur est due maintenant !</string>
     <string name="ul_poll__sensor_is_calibrating">capteur calibrant</string>
-    <string name="ul_poll__sensor_error">sensor error</string>
+    <string name="ul_poll__sensor_error">erreur de capteur</string>
     <string name="ul_poll__old_cgm_event_received">old cgm event received</string>
     <string name="ul_poll__no_cgm_pump_lost_sensor">pas de mgc (capteur perdu de la pompe)</string>
     <string name="ul_poll__no_cgm">pas de mgc</string>
@@ -205,7 +205,7 @@
     <string name="ul_history__dual_bolus">bolus duo</string>
     <string name="ul_history__dual_ended">duo terminé</string>
     <string name="ul_history__bolus_ended">bolus terminé</string>
-    <string name="ul_history__recent_finger_bg">recent finger bg</string>
+    <string name="ul_history__recent_finger_bg">glycémie récente</string>
     <string name="ul_history__calibration_info">info calibration</string>
     <string name="ul_history__reservoir_changed">reservoir changed</string>
     <string name="ul_history__battery_changed">battery changed</string>
@@ -222,17 +222,17 @@
     <string name="ul_integrity__check_failed_future_records">Integrity check failed. Database contains records beyond current event time.</string>
     <string name="ul_integrity__removed_future_records">Removed future records.</string>
     <string name="ul_integrity__uploader_database_reset">Uploader database reset.</string>
-    <string name="ul_usb__usb_error">USB Error</string>
-    <string name="ul_usb__contour_next_link_unplugged">Contour Next Link unplugged.</string>
-    <string name="ul_usb__contour_next_link_plugged_in">Contour Next Link plugged in.</string>
-    <string name="ul_usb__waiting_for_usb_permission">Waiting for USB permission.</string>
-    <string name="ul_usb__got_permission_for_usb">Got permission for USB.</string>
-    <string name="ul_usb__user_has_not_granted_permission_for_usb">User has not granted permission for USB.</string>
-    <string name="ul_usb__no_permission_to_read_the_usb_device">No permission to read the USB device.</string>
-    <string name="ul_usb__no_support">It appears that this device does not support USB OTG.</string>
-    <string name="ul_usb__no_connection">USB connection error. Is the Contour Next Link plugged in?</string>
-    <string name="ul_usb__no_open">Unable to open USB device</string>
-    <string name="ul_usb__help_permission">Unplug/plug the Contour Next Link. Select \'use by default for this device\'.</string>
+    <string name="ul_usb__usb_error">Erreur USB</string>
+    <string name="ul_usb__contour_next_link_unplugged">Contour Next Link déconnecté.</string>
+    <string name="ul_usb__contour_next_link_plugged_in">Contour Next Link connecté.</string>
+    <string name="ul_usb__waiting_for_usb_permission">Attendant autorisation USB.</string>
+    <string name="ul_usb__got_permission_for_usb">Autorisation USB reçu.</string>
+    <string name="ul_usb__user_has_not_granted_permission_for_usb">L\'utilisateur n\'a pas donné autorisation USB.</string>
+    <string name="ul_usb__no_permission_to_read_the_usb_device">Aucune autorisation de lire le périphérique USB.</string>
+    <string name="ul_usb__no_support">Il semble que ce périphérique ne supporte pas USB OTG.</string>
+    <string name="ul_usb__no_connection">Erreur connexion USB. Le Contour Next Link est-il connecté?</string>
+    <string name="ul_usb__no_open">Impossible d’accéder à l\'appareil USB</string>
+    <string name="ul_usb__help_permission">Déconnectez/connectez le Contour Next Link. Sélectionnez \'Utiliser par défaut pour cet appareil\'.</string>
     <string name="ul_ns__warn_careportal">Careportal is not enabled in Nightscout, treatment data can not be uploaded.</string>
     <string name="ul_ns__help_careportal">Add \'careportal\' to your ENABLE string in Azure or Heroku. Treatments can be disabled in the \'Advanced Nightscout Settings\' menu.</string>
     <string name="ul_ns__warn_servertime">Time difference between uploader device and Nightscout server is greater then 10 minutes.</string>
@@ -447,7 +447,7 @@
     <string name="pref_debug_upload_errors_title" maxLength="40">Upload Errors</string>
     <string name="pref_debug_upload_errors_summary">Report Nightscout uploading errors in the userlog</string>
     <string name="pref_disclaimer_category" maxLength="30">Disclaimer</string>
-    <string name="pref_disclaimer_title" maxLength="30">I UNDERSTAND</string>
+    <string name="pref_disclaimer_title" maxLength="30">J\'AI COMPRIS</string>
     <string name="pref_disclaimer_summary">Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers</string>
     <string name="pref_app_version_category" maxLength="30">App Version</string>
     <!-- Urchin -->

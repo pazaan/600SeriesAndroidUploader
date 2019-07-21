@@ -25,8 +25,8 @@
     <plurals name="hours">
         <item quantity="one">%d diena</item>
         <item quantity="few">%d valandų</item>
-        <item quantity="many">%d valandų</item>
-        <item quantity="other">%d valandas</item>
+        <item quantity="many">%d valandos</item>
+        <item quantity="other">%d valanda</item>
     </plurals>
     <plurals name="minutes">
         <item quantity="one">%d minutė</item>
@@ -43,8 +43,8 @@
     <!-- select -->
     <string name="enabled" comment="user selects item as enabled">įjungta</string>
     <string name="disabled" comment="user selects item as disabled">išjungta</string>
-    <string name="on" comment="on/off toggle switch, user switches item to ON">įjungta</string>
-    <string name="off" comment="on/off toggle switch, user switches item to OFF">išjungta</string>
+    <string name="on" comment="on/off toggle switch, user switches item to ON">on</string>
+    <string name="off" comment="on/off toggle switch, user switches item to OFF">off</string>
     <string name="YES" comment="yes/no toggle switch, user switches item to YES">TAIP</string>
     <string name="NO" comment="yes/no toggle switch, user switches item to NO">NE</string>
     <!-- units -->
@@ -61,13 +61,13 @@
     <string name="minute_m" maxLength="1" comment="example: 10m (10 minutes)">m</string>
     <string name="second_s" maxLength="1" comment="example: 10s (10 seconds)">s</string>
     <!-- EULA -->
-    <string name="eula__title">Atsakomybės apribojimas</string>
+    <string name="eula__title">Atsakomybės</string>
     <string name="eula__message">Nightscout neturėtų būti naudojamas priimant medicininius sprendimus. Nėra jokios pagalbos ar garantijos. Šio projekto kokybė ir veikimas priklauso nuo jūsų. Tai projektas, kuris buvo sukurtas ir yra palaikomas išskirtinai savanorių. Tai reiškia, kad jūs sutinkate, kad naudojate šią programėlę savo rizika. Nightscout kūrėjai neprsiima jokios atsakomybės už jokius veiksmus, kurių buvo imtasi suteiktos informacijos pagrindu. Jei jūs nesate tikras kaip naudotis šia programėle, jūs neturite jos naudoti.</string>
     <string name="eula__accept">Sutikti</string>
     <string name="eula__refuse">Atsisakyti</string>
     <!-- Main Screen -->
     <string name="main_screen__icon_nightscout_status">Nightscout</string>
-    <string name="main_screen__icon_battery_status">Pompos baterija</string>
+    <string name="main_screen__icon_battery_status">Pompos Baterija</string>
     <string name="main_screen__active_insulin" maxLength="20">Aktyvus insulinas</string>
     <string name="main_screen__value_hour_chart" maxLength="20" comment="example: '12 hour chart' '24 hour chart'">%1d valandų grafikas</string>
     <!-- Manage Devices Menu -->
@@ -147,7 +147,7 @@
     <string name="ul_poll__sensor_is_calibrating">sensorius kalibruojamas</string>
     <string name="ul_poll__sensor_error">sensoriaus klaida</string>
     <string name="ul_poll__old_cgm_event_received">gautas senas cgm įvykis</string>
-    <string name="ul_poll__no_cgm_pump_lost_sensor">nėra cgm (pompa prarado sensorių)</string>
+    <string name="ul_poll__no_cgm_pump_lost_sensor">nėra cgm (pompa pametė sensorių)</string>
     <string name="ul_poll__no_cgm">nėra cgm</string>
     <string name="ul_poll__estimated_sgv" comment="SGV = Sensor Glucose Value, example: estimated SGV 120 at 3:15">numatoma SGV</string>
     <string name="ul_poll__reading_sgv__SGV" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">SGV</string>
@@ -156,7 +156,7 @@
     <string name="ul_poll__warn_pump_battery_low">Įspėjimas: senka pompos baterija</string>
     <string name="ul_poll__info_pump_low_battery_mode_change">Užklausos intervalas padidėjo, istorijos ir atgalinio užpildymo vykdymas sumažintas.</string>
     <string name="ul_poll__info_low_battery_interval">Senkančios baterijos užklausos intervalas:</string>
-    <string name="ul_poll__warn_pump_time_difference">Warning: Pump is over</string>
+    <string name="ul_poll__warn_pump_time_difference">Įspėjimas: Pompa is over</string>
     <string name="ul_poll__warn_pump_time_difference_ahead">į priekį laike naudojamam skaitytuvo.</string>
     <string name="ul_poll__warn_pump_time_difference_behind">atsilieka laike naudojamam skaitytuvo.</string>
     <string name="ul_poll__help_pump_time_difference">Skaitytuvo telefono/prietaiso laikas turėtų būti dabartinis laikas, teikiamas tinklo. Pompos laikrodis paskuba į priekį ir kartais turi būti nustatomas teisingas laikas.</string>
@@ -231,7 +231,7 @@
     <string name="ul_integrity__check_failed_time_mismatch">Vientisumo patikrinimas nepavyko. Laiko neatitikimas duomenų bazėje.</string>
     <string name="ul_integrity__check_failed_future_records">Vientisumo patikrinimas nepavyko. Duomenų bazėje yra įrašų vėliau dabartinio laiko.</string>
     <string name="ul_integrity__removed_future_records">Pašalinti ateities įrašai.</string>
-    <string name="ul_integrity__uploader_database_reset">Siųstuvo duomenų bazė reset.</string>
+    <string name="ul_integrity__uploader_database_reset">Skaitytuvo duomenų bazė reset.</string>
     <string name="ul_usb__usb_error">USB klaida</string>
     <string name="ul_usb__contour_next_link_unplugged">Contour Next Link atjungtas.</string>
     <string name="ul_usb__contour_next_link_plugged_in">Countour Next Link prijungtas.</string>
@@ -245,8 +245,8 @@
     <string name="ul_usb__help_permission">Atjunkit/prijunkit Contour Next Link. Pasirinkite \'naudoti kaip numatytą šiam prietaisui\'.</string>
     <string name="ul_ns__warn_careportal">Careportal neįgalintas Nightscout, veiksmų duomenys negali būti nusiųsti.</string>
     <string name="ul_ns__help_careportal">Pridėkite \'careporta\' prie jūsų ENABLE eilutės Azure ar Heroku. Veiksmai gali būti išjungti \'Advanced Nightscout Settings\' meniu.</string>
-    <string name="ul_ns__warn_servertime">Laiko skirtumas tarp siųstuvo prietaiso ir Nightscout serverio yra didesnis nei 10 minučių.</string>
-    <string name="ul_ns__help_servertime">Patikrinkite laiką siųstuvo prietaise. Nustatytkite, kad būtų naudojamas tinklo teikiamas laikas.</string>
+    <string name="ul_ns__warn_servertime">Laiko skirtumas tarp skaitytuvo prietaiso ir Nightscout serverio yra didesnis nei 10 minučių.</string>
+    <string name="ul_ns__help_servertime">Patikrinkite laiką skaitytuvo prietaise. Nustatytkite, kad būtų naudojamas tinklo teikiamas laikas.</string>
     <string name="ul_ns__help_version">Jūsų Nightscout serverio versija pasenusi. Su 600 serijos skaitytuvu rekmenduojama naudoti naujausią Nighstcout serverio versiją.</string>
     <string name="ul_ns__help_config_pump">Pompos būsenos informacija gali būti rodoma Nightscout. Pridėkite \'pump\' prie jūsų ENABLE eilutės Azure ar Heroku.</string>
     <string name="ul_ns__help_config_sage">Sensoriaus pakeitimai nustatyti ir nusiųsti į NIghtscout. Pridėkite \'sage\' prie jūsų ENABLE eilutės Azure ar Heroku, kad matytumėte paskutinio keitimo laiką. Tai gali būti išjungta \'Advanced Nightscout Settins\' meniu.</string>
@@ -275,17 +275,17 @@
     <string name="pref_monitor_decimals_summary_off" maxLength="40">1 dešimtainė reikšmė bus rodoma</string>
     <string name="pref_monitor_decimals_summary_on" maxLength="40">2 dešimtainė reikšmė bus rodoma</string>
     <string name="pref_monitor_poll_interval_title" maxLength="30">Užklausos intervalas</string>
-    <string name="pref_monitor_poll_overdue_title" maxLength="30">Polling interval when overdue</string>
+    <string name="pref_monitor_poll_overdue_title" maxLength="30">Užkl. intervalas, kai vėluoja</string>
     <string name="pref_monitor_poll_overdue_summary_off" maxLength="40">Normalus užklausos dažnis</string>
     <string name="pref_monitor_poll_overdue_summary_on" maxLength="40">Dvigubas užklausos dažnis</string>
     <string name="pref_monitor_low_battery_poll_interval_title" maxLength="40">Užklausos senkant pompos baterijai</string>
     <string name="pref_display_category" maxLength="30">Ekranas</string>
     <string name="pref_chart_zoom_title" maxLength="40">Grafiko padidinimas</string>
     <string name="pref_screen_sleep_title" maxLength="40">Užmigęs Ekranas</string>
-    <string name="pref_screen_sleep_always_sleep">Always sleep</string>
+    <string name="pref_screen_sleep_always_sleep">Visada miegoti</string>
     <string name="pref_screen_sleep_portrait_mode_only">Tik vertikalaus vaizdo režimas</string>
     <string name="pref_screen_sleep_landscape_mode_only">Tik horizontalaus vaizdo režimas</string>
-    <string name="pref_screen_sleep_never_sleep">Niekda neužmigti</string>
+    <string name="pref_screen_sleep_never_sleep">Niekada neužmigti</string>
     <string name="pref_sharing_category" maxLength="30">Dalinimasis</string>
     <string name="pref_send_to_nightscout_title" maxLength="40">Siųsti į Nightscout</string>
     <string name="pref_send_to_nightscout_summary">Leisti užkrauti duomenis į Nightscout</string>
@@ -319,13 +319,13 @@
     <string name="pref_ns_finger_bg_title" maxLength="40">Piršto BG</string>
     <string name="pref_ns_finger_bg_summary">SIųsti piršto BG reikšmes į Nightscout</string>
     <string name="pref_ns_calibration_info_title" maxLength="40">Kalibracijos info</string>
-    <string name="pref_ns_calibration_info_summary">Add factor to BG readings used for calibration (additional calibration graph will be visible in SAGE)</string>
-    <string name="pref_ns_consumables_category" maxLength="30">Consumables</string>
+    <string name="pref_ns_calibration_info_summary">Pridėti faktorių prie BG rodmenų, naudotų kalibravimui (papildomas kalibravimo grafikas bus matomas SAGE)</string>
+    <string name="pref_ns_consumables_category" maxLength="30">Priemonės</string>
     <string name="pref_ns_sensor_change_title" maxLength="40">Sensoriaus Pakeitimas</string>
     <string name="pref_ns_sensor_change_summary">Siųsti sensoriaus pakeitimus į Nightscout (SAGE)</string>
     <string name="pref_ns_cannula_change_title" maxLength="40">Kateterio Keitimas</string>
     <string name="pref_ns_cannula_change_summary">Siųsti kateterio pakeitimus į Nightscout (CAGE)</string>
-    <string name="pref_ns_cannula_change_threshold_title" maxLength="40">Threshold for cannula change</string>
+    <string name="pref_ns_cannula_change_threshold_title" maxLength="40">Riba kaniulės keitimui</string>
     <string name="pref_ns_cannula_change_Fill_Cannula">Užpildyti Kaniulę</string>
     <string name="pref_ns_cannula_change_Prime_Cannula">Užpildyti Kaniulę</string>
     <string name="pref_ns_insulin_change_title" maxLength="40">Insulino Pakeitimas</string>
@@ -337,7 +337,7 @@
     <string name="pref_ns_battery_change_title" maxLength="40">Pompos baterijos pakeitimas</string>
     <string name="pref_ns_battery_change_summary">Siųsti pompos baterijos pakeitimus į Nightscout (BAGE)</string>
     <string name="pref_ns_lifetimes_title" maxLength="40">Numatomas Galiojimas</string>
-    <string name="pref_ns_lifetimes_summary">Add lifetime estimate to pump consumables</string>
+    <string name="pref_ns_lifetimes_summary">Pridėti numatomą trukmę pompos priemonėms</string>
     <string name="pref_ns_profiles_category" maxLength="30">Profiliai</string>
     <string name="pref_ns_profile_upload_title" maxLength="40">Įjungti Profilio Siuntimą</string>
     <string name="pref_ns_profile_upload_summary">Siųsti profilius į Nightscout su bazės šablonais, angliavandenių santykiais, jautrumu ir tiksliniais skaičiais</string>
@@ -360,12 +360,12 @@
     <string name="pref_ns_pump_alerts_remove_from_nightscout_title" maxLength="40">Pašalinti iš Nightscout</string>
     <string name="pref_ns_pump_alerts_remove_from_nightscout_keep_all">Palikti Viską</string>
     <string name="pref_ns_uploader_status_category" maxLength="30">Skaitytuvo Būsena</string>
-    <string name="pref_ns_uploader_status_enable_title" maxLength="40">Įjungti Siųstuvo Būseną</string>
+    <string name="pref_ns_uploader_status_enable_title" maxLength="40">Įjungti Skaitytuvo Būseną</string>
     <string name="pref_ns_uploader_status_enable_summary">Siųsti skaitytuvo būsenos pranešimus ir info į Nightscout</string>
     <string name="pref_ns_uploader_status_usb_error_title" maxLength="40">Skaitytuvo USB Klaida</string>
     <string name="pref_ns_uploader_status_usb_error_summary">Siųsti skaitytuvo USB klaidos (atsijungęs) pranešimus į Nightscout</string>
     <string name="pref_ns_uploader_status_connection_states">Skaitytuvo-Pompos jungties būsenos</string>
-    <string name="pref_ns_uploader_status_low_battery_state">Senakančios baterijos būsena</string>
+    <string name="pref_ns_uploader_status_low_battery_state">Senkančios baterijos būsena</string>
     <string name="pref_ns_uploader_status_fully_charged_state">Pilnai pakrauta būsena</string>
     <string name="pref_ns_uploader_status_automatic_remove_from_nightscout_summary">Skaitytuvo būsenos žinutės yra automatiškai pašalinamos iš Nightscout po 24 valandų</string>
     <string name="pref_ns_misc_category" maxLength="30">Įvairūs</string>
@@ -374,9 +374,9 @@
     <string name="pref_ns_daily_totals_summary">Siųsti pompos dienos viso į Nightscout</string>
     <string name="pref_ns_formatting_title" maxLength="40">Formatuojama</string>
     <string name="pref_ns_formatting_summary">Naudoti HTML formatavimą užrašams</string>
-    <string name="pref_ns_trend_style_title" maxLength="40">Trend Style</string>
+    <string name="pref_ns_trend_style_title" maxLength="40">Krypties Stilius</string>
     <string name="pref_ns_trend_style_summary">Naudoti Medtronic stiliaus krypties rodykles (gali būti nesuderinama su kai kuriomis sekimo programėlėmis)</string>
-    <string name="pref_ns_pattern_and_preset_naming_category" maxLength="30">Pattern and Preset Naming</string>
+    <string name="pref_ns_pattern_and_preset_naming_category" maxLength="30">Šablonų ir Nust. Pavadinimai</string>
     <string name="pref_ns_basal_patterns_category" maxLength="30">Bazės Ruošiniai</string>
     <string name="pref_ns_temp_basal_presets_category" maxLength="30">Laik Bazės Ruošiniai</string>
     <string name="pref_ns_bolus_presets_category" maxLength="30">Boluso Ruošiniai</string>
@@ -412,23 +412,23 @@
     <string name="pref_system_pump_backfill_title" maxLength="40">POMPOS istorijos užpildymo periodas</string>
     <string name="pref_system_auto_mode_update_frequency_title" maxLength="40">Auto Mode atnaujinimo dažnis</string>
     <string name="pref_system_experimental_category" maxLength="30">Eksperimentinis</string>
-    <string name="pref_system_estimate_sgv_title" maxLength="40">Apskaičiuoti SGV</string>
-    <string name="pref_system_estimate_sgv_summary">Calculate an estimated SGV when a calibration is missed (warning: calculation is based on the last pump calibration point and may be unreliable)</string>
-    <string name="pref_system_estimate_sgv_eol">Sensor expired</string>
+    <string name="pref_system_estimate_sgv_title" maxLength="40">Numatyti SGV</string>
+    <string name="pref_system_estimate_sgv_summary">Apskaičiuoti numatomą SGV, kai praleista kalibracija (įspėjimas: skaičiavimas paremtas paskutine pompos kalibracija ir gali būti nepatikimas)</string>
+    <string name="pref_system_estimate_sgv_eol">Sensorius pasibaigė</string>
     <string name="pref_system_estimate_sgv_error">Sensoriaus klaida/atnaujinama</string>
     <string name="pref_system_report_isig_title" maxLength="40">Report ISIG</string>
-    <string name="pref_system_report_isig_summary">Report ISIG when SGV is not available from the pump and CGM is in use.</string>
-    <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG\'s to include</string>
-    <string name="pref_system_report_isig_minimum_runtime_title" maxLength="40">Minimum runtime</string>
-    <string name="pref_system_report_isig_minimum_runtime_new_sensor_title" maxLength="40">Minimum runtime on new sensor</string>
+    <string name="pref_system_report_isig_summary">Pranešti ISIG, kai SGV negalimas iš pompos ir naudojamas CGM.</string>
+    <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG\'ai įtraukti</string>
+    <string name="pref_system_report_isig_minimum_runtime_title" maxLength="40">Minimalus. vykd. laikas</string>
+    <string name="pref_system_report_isig_minimum_runtime_new_sensor_title" maxLength="40">Minimalus. vykd. laikas naujo sensoriaus</string>
     <string name="pref_system_category_radio" maxLength="30">Radio</string>
-    <string name="pref_system_radio_clash_protection_title" maxLength="40">Radio clash protection</string>
-    <string name="pref_system_radio_clash_protection_summary_off">No protection, always run a poll request</string>
-    <string name="pref_system_radio_clash_protection_summary_on">Delay a poll request when pump is expecting sensor communication</string>
-    <string name="pref_system_rssi_allow_connection_title" maxLength="40" comment="do not allow a pump connection when RSSI signal is less then this minimum">RSSI allow connection</string>
-    <string name="pref_system_polling_category" maxLength="30">Polling</string>
-    <string name="pref_system_poll_timing_title" maxLength="40">Poll timing</string>
-    <string name="pref_system_poll_timing_summary_on">A poll will trigger based on the expected sensor event time plus a conditional state period (warning: changing these settings can lead to radio clashes and extended lost sensor periods)</string>
+    <string name="pref_system_radio_clash_protection_title" maxLength="40">Radio trukdžių apsauga</string>
+    <string name="pref_system_radio_clash_protection_summary_off">Nėra apsaugos, visada siųsti užklausą</string>
+    <string name="pref_system_radio_clash_protection_summary_on">Užlaikyti užklausą, kai pompa laukia duomenų iš sensoriaus</string>
+    <string name="pref_system_rssi_allow_connection_title" maxLength="40" comment="do not allow a pump connection when RSSI signal is less then this minimum">RSSI leidžia jungtis</string>
+    <string name="pref_system_polling_category" maxLength="30">Užklausa</string>
+    <string name="pref_system_poll_timing_title" maxLength="40">Užklausos laikas</string>
+    <string name="pref_system_poll_timing_summary_on">Užklausa bus iššaukta pagal numatomą sensoriaus įvykio laiką plius sąlyginį periodą (įspėjimas: šių nustatymų pakeotimas gali sukelti radio trukdžius ir ištęstus pamesto sensoriaus periodus)</string>
     <string name="pref_system_poll_timing_summary_off">Naudoti sistemos numatytus visam užklausų laikui</string>
     <string name="pref_system_poll_grace_period_title" maxLength="40">Grace Period</string>
     <string name="pref_system_poll_recovery_period_title" maxLength="40">Recovery Period</string>
@@ -437,120 +437,120 @@
     <string name="pref_system_poll_old_sgv_retry_title" maxLength="40">Old SGV Retry</string>
     <string name="pref_system_timing_category" maxLength="30">Timing</string>
     <string name="pref_system_control_passthrough_title" maxLength="40">Control / Passthroug</string>
-    <string name="pref_system_control_passthrough_summary_on">Wait 500ms per send request</string>
-    <string name="pref_system_control_passthrough_summary_off">No wait time</string>
+    <string name="pref_system_control_passthrough_summary_on">Laukti 500ms per užklausos siuntimą</string>
+    <string name="pref_system_control_passthrough_summary_off">Nelaukti</string>
     <string name="pref_system_usb_category" maxLength="30">USB</string>
-    <string name="pref_system_usb_permission_title" maxLength="40">Permission Request</string>
-    <string name="pref_system_usb_permission_summary_off">Request permission via OS dialog</string>
-    <string name="pref_system_usb_permission_summary_on">Request permission via APP dialog</string>
-    <string name="pref_debug_settings_category" maxLength="30">Debug Settings</string>
-    <string name="pref_debug_crash_reporting_title" maxLength="40">Crash Reporting</string>
-    <string name="pref_debug_crash_reporting_summary">Send crash errors to developer</string>
+    <string name="pref_system_usb_permission_title" maxLength="40">Leidimo Prašymas</string>
+    <string name="pref_system_usb_permission_summary_off">Prašyti leidimo per OS dialog</string>
+    <string name="pref_system_usb_permission_summary_on">Prašyti leidimo per APP dialog</string>
+    <string name="pref_debug_settings_category" maxLength="30">Debug Nustatymai</string>
+    <string name="pref_debug_crash_reporting_title" maxLength="40">Gedimo ataskaita</string>
+    <string name="pref_debug_crash_reporting_summary">Siųsti gedimo klaidas vystytojui</string>
     <string name="pref_debug_share_usage_data_title" maxLength="40">Pasidalinti naudojimo duomenimis</string>
-    <string name="pref_debug_share_usage_data_summary">Sends usage data to the developer to help develop a better app.</string>
-    <string name="pref_debug_remote_debugging_title" maxLength="40">Remote Debugging</string>
-    <string name="pref_debug_remote_debugging_summary">Allow the developer to debug your app. Only enable if asked to by the support team.</string>
-    <string name="pref_debug_logging_level_title" maxLength="40">Logging Level</string>
-    <string name="pref_debug_userlog_category" maxLength="30">Userlog</string>
-    <string name="pref_debug_extended_errors_title" maxLength="40">Extended Errors</string>
-    <string name="pref_debug_extended_errors_summary">Detailed errors and polling data shown in the userlog</string>
-    <string name="pref_debug_upload_errors_title" maxLength="40">Upload Errors</string>
-    <string name="pref_debug_upload_errors_summary">Report Nightscout uploading errors in the userlog</string>
-    <string name="pref_disclaimer_category" maxLength="30">Disclaimer</string>
+    <string name="pref_debug_share_usage_data_summary">Siųsti naudojimo duomenis vystytojui siekiant padėti sukurti geresnę programėlę.</string>
+    <string name="pref_debug_remote_debugging_title" maxLength="40">Nuotolinis Debugging</string>
+    <string name="pref_debug_remote_debugging_summary">Leisti vystytojui debug\'inti jūsų programėlę. Įjunkite tik jei to prašo palaikymo komanda.</string>
+    <string name="pref_debug_logging_level_title" maxLength="40">Registravimo Lygis</string>
+    <string name="pref_debug_userlog_category" maxLength="30">Vartotojo žurnalas</string>
+    <string name="pref_debug_extended_errors_title" maxLength="40">Išplėstinės klaidos</string>
+    <string name="pref_debug_extended_errors_summary">Detalios klaidos ir užklausų duomenys rodomi vartotojo žurnale</string>
+    <string name="pref_debug_upload_errors_title" maxLength="40">Siųsti Klaidas</string>
+    <string name="pref_debug_upload_errors_summary">Rodyti Nightscout siuntimo klaidas žurnale</string>
+    <string name="pref_disclaimer_category" maxLength="30">Atsakomybės</string>
     <string name="pref_disclaimer_title" maxLength="30">AŠ SUPRANTU</string>
-    <string name="pref_disclaimer_summary">Nightscout should not be used to make medical decisions. There is no support or any warranty of any kind. The quality and performance of the project is with you. This is a project that was created and is supported completely by volunteers</string>
-    <string name="pref_app_version_category" maxLength="30">App Version</string>
+    <string name="pref_disclaimer_summary">Nightscout neturi būti naudojamas priimant medicininius sprendimus. Nėra jokio palaikymo ir jokios garantijos. Projekto kokybė ir veikimas priklauso nuo jūsų. Tai projektas, kuris buvo sukurtas ir yra palaikomas išskirtinai savanorių</string>
+    <string name="pref_app_version_category" maxLength="30">Programėlės Versija</string>
     <!-- Urchin -->
     <string name="urchin_watchface_Battery_Hi" maxLength="2">Hi</string>
     <string name="urchin_watchface_Battery_Lo" maxLength="2">Lo</string>
-    <string name="urchin_watchface_Battery_Full" maxLength="1">F</string>
-    <string name="urchin_watchface_Battery_High" maxLength="1">H</string>
-    <string name="urchin_watchface_Battery_Medium" maxLength="1">M</string>
-    <string name="urchin_watchface_Battery_Low" maxLength="1">L</string>
-    <string name="urchin_watchface_Battery_Empty" maxLength="1">E</string>
+    <string name="urchin_watchface_Battery_Full" maxLength="1">P</string>
+    <string name="urchin_watchface_Battery_High" maxLength="1">D</string>
+    <string name="urchin_watchface_Battery_Medium" maxLength="1">V</string>
+    <string name="urchin_watchface_Battery_Low" maxLength="1">Ž</string>
+    <string name="urchin_watchface_Battery_Empty" maxLength="1">T</string>
     <string name="urchin_watchface_BG" maxLength="2">BG</string>
     <string name="urchin_watchface_Factor" maxLength="2">CF</string>
     <string name="urchin_watchface_ISIG" maxLength="2">IS</string>
-    <string name="urchin_watchface_Estimate" maxLength="3">EST</string>
+    <string name="urchin_watchface_Estimate" maxLength="3">NUM</string>
     <string name="urchin_watchface_Alert" maxLength="2">A!</string>
     <string name="urchin_watchface_Suspend" maxLength="1">S</string>
-    <string name="urchin_watchface_Temp" maxLength="1">T</string>
+    <string name="urchin_watchface_Temp" maxLength="1">L</string>
     <string name="urchin_watchface_Dual" maxLength="1">d</string>
     <string name="urchin_watchface_Square" maxLength="1">s</string>
-    <string name="urchin_watchface_CalibrateNow" maxLength="2">C!</string>
-    <string name="urchin_watchface_Calibrating" maxLength="2">C</string>
+    <string name="urchin_watchface_CalibrateNow" maxLength="2">K!</string>
+    <string name="urchin_watchface_Calibrating" maxLength="2">K</string>
     <string name="urchin_watchface_WarmUp" maxLength="2">W</string>
     <string name="urchin_watchface_SensorEndOfLife" maxLength="2">X!</string>
     <string name="urchin_watchface_SensorError" maxLength="2">E!</string>
-    <string name="urchin_text_unit_u" maxLength="1">u</string>
-    <string name="urchin_text_unit_U" maxLength="1">U</string>
-    <string name="urchin_text_none" maxLength="20">none</string>
+    <string name="urchin_text_unit_u" maxLength="1">v</string>
+    <string name="urchin_text_unit_U" maxLength="1">V</string>
+    <string name="urchin_text_none" maxLength="20">nieko</string>
     <string name="urchin_text_space" maxLength="20">tarpas</string>
     <string name="urchin_text_double_space" maxLength="20">dvigubas tarpas</string>
     <string name="urchin_text_dot" maxLength="20">taškas</string>
-    <string name="urchin_text_bullet" maxLength="20">bullet</string>
-    <string name="urchin_text_dash" maxLength="20">dash</string>
+    <string name="urchin_text_bullet" maxLength="20">eilutė</string>
+    <string name="urchin_text_dash" maxLength="20">brūkšnys</string>
     <string name="urchin_text_line" maxLength="20">eilutė</string>
-    <string name="urchin_text_forward_slash" maxLength="20">forward slash</string>
-    <string name="urchin_text_backslash" maxLength="20">backslash</string>
-    <string name="urchin_text_colon" maxLength="20">colon</string>
+    <string name="urchin_text_forward_slash" maxLength="20">pasviręs brūkšnys</string>
+    <string name="urchin_text_backslash" maxLength="20">kair. pasv. brūkšnys</string>
+    <string name="urchin_text_colon" maxLength="20">dvitaškis</string>
     <string name="urchin_status_layout_Empty" maxLength="20">Tuščias</string>
-    <string name="urchin_status_layout_Nextline" maxLength="20">Nextline</string>
+    <string name="urchin_status_layout_Nextline" maxLength="20">Sekanti eilutė</string>
     <string name="urchin_status_layout_Text" maxLength="20">Tekstas</string>
-    <string name="urchin_status_layout_Custom_Text" maxLength="20">Custom Text</string>
+    <string name="urchin_status_layout_Custom_Text" maxLength="20">Pasirinktas Tekstas</string>
     <string name="urchin_status_layout_Active_Insulin" maxLength="20">Aktyvus Insulinas</string>
     <string name="urchin_status_layout_Basal" maxLength="20">Bazė</string>
     <string name="urchin_status_layout_Basal_State" maxLength="20">Bazės būsena</string>
     <string name="urchin_status_layout_Last_Bolus" maxLength="20">Paskutinis Bolusas</string>
     <string name="urchin_status_layout_Bolusing" maxLength="20">Bolusuojama</string>
     <string name="urchin_status_layout_Calibration" maxLength="20">Kalibracija</string>
-    <string name="urchin_status_layout_Uploader_Battery" maxLength="20">Siųstuvo Baterija</string>
+    <string name="urchin_status_layout_Uploader_Battery" maxLength="20">Skaitytuvo Baterija</string>
     <string name="urchin_status_layout_Pump_Battery" maxLength="20">Pompos Baterija</string>
     <string name="urchin_status_layout_Transmitter_Battery" maxLength="20">Siųstuvėlio Baterija</string>
-    <string name="urchin_status_layout_Sensor_Life" maxLength="20">Sensor Life</string>
-    <string name="urchin_status_layout_Sensor_Age" maxLength="20">Sensor Age</string>
-    <string name="urchin_status_layout_Reservoir_Age" maxLength="20">Reservoir Age</string>
-    <string name="urchin_status_layout_Pump_Battery_Age" maxLength="20">Pump Battery Age</string>
-    <string name="urchin_status_layout_Reservoir_Units" maxLength="20">Reservoir Units</string>
+    <string name="urchin_status_layout_Sensor_Life" maxLength="20">Sensoriaus Veikimas</string>
+    <string name="urchin_status_layout_Sensor_Age" maxLength="20">Sensoriaus laikas</string>
+    <string name="urchin_status_layout_Reservoir_Age" maxLength="20">Rezervuaro laikas</string>
+    <string name="urchin_status_layout_Pump_Battery_Age" maxLength="20">Pompos Bat. laikas</string>
+    <string name="urchin_status_layout_Reservoir_Units" maxLength="20">Rezervuaro Vienetai</string>
     <string name="urchin_status_layout_Day" maxLength="20">Diena</string>
     <string name="urchin_status_layout_Month" maxLength="20">Mėnuo</string>
     <string name="urchin_status_layout_BG" maxLength="20">BG</string>
     <string name="urchin_status_layout_Factor" maxLength="20">Faktorius</string>
     <string name="urchin_status_layout_ISIG" maxLength="20">ISIG</string>
-    <string name="urchin_status_layout_Estimate" maxLength="20">Įvertinti</string>
+    <string name="urchin_status_layout_Estimate" maxLength="20">Numatyti</string>
     <string name="urchin_status_layout_Pump_Alert" maxLength="20">Pompos Pranešimas</string>
     <string name="urchin_status_layout_GROUP_START" maxLength="20">GRUPĖ</string>
     <string name="urchin_status_layout_GROUP_END" maxLength="20">GRUPĖS PABAIGA</string>
     <string name="urchin_status_layout_dynamic" maxLength="20">dinaminis</string>
-    <string name="urchin_status_layout_when_recent" maxLength="20">when recent</string>
-    <string name="urchin_status_layout_when_active" maxLength="20">when active</string>
-    <string name="urchin_status_layout_when_available" maxLength="20">when available</string>
-    <string name="urchin_status_layout_first_active_only" maxLength="20">first active only</string>
+    <string name="urchin_status_layout_when_recent" maxLength="20">kada paskutinis</string>
+    <string name="urchin_status_layout_when_active" maxLength="20">kada aktyvus</string>
+    <string name="urchin_status_layout_when_available" maxLength="20">kada įmanomas</string>
+    <string name="urchin_status_layout_first_active_only" maxLength="20">tik pirmas aktyvus</string>
     <string name="pref_category_urchin_pebble_watchface" maxLength="30">Urchin Pebble Watchface</string>
-    <string name="pref_urchin_enable_title" maxLength="40">Enable Urchin support</string>
-    <string name="pref_urchin_enable_summary">Local broadcast of data to Urchin allowing full offline viewing of SGV and extended Pump status information</string>
+    <string name="pref_urchin_enable_title" maxLength="40">Įjungti Urchin palaikymą</string>
+    <string name="pref_urchin_enable_summary">Lokalus duomenų siuntimas į Urchin leidžia pilną SGV ir išplėstinės Pompos būsenos informacijos offline peržiūrą</string>
     <string name="pref_urchin_basal_graph_title" maxLength="40">Bazės Grafikas</string>
-    <string name="pref_urchin_basal_graph_summary">Basal can be graphed with heights relative to the period selected and scaled to the value selected.</string>
+    <string name="pref_urchin_basal_graph_summary">Bazė gali būti vaizduojama aukštumomis priklausomai nuo pasirinkto periodo ir padalinta į pasirinktas reikšmes.</string>
     <string name="pref_urchin_basal_graph_period_title" maxLength="40">Laikotarpis</string>
     <string name="pref_urchin_basal_graph_yscale_title" maxLength="40">Y-Skalė</string>
     <string name="pref_urchin_bolus_graph_title" maxLength="40">Bolusų Grafikas</string>
     <string name="pref_urchin_bolus_graph_markers_title" maxLength="40">Įjungti bolus markerius</string>
     <string name="pref_urchin_bolus_graph_markers_summary">Pažymėti bolusą grafike.</string>
-    <string name="pref_urchin_bolus_graph_tags_title" maxLength="40">Enable bolus tags</string>
-    <string name="pref_urchin_bolus_graph_tags_summary">Square/Dual bolus tags in status text.</string>
-    <string name="pref_urchin_bolus_graph_ypop_title" maxLength="40">Square/Dual Y-Pop</string>
-    <string name="pref_urchin_bolus_graph_ypop_summary">A Square or Dual bolus can be popped to the height selected and shown on the basal graph during delivery period.</string>
+    <string name="pref_urchin_bolus_graph_tags_title" maxLength="40">Įjungti bolus žymas</string>
+    <string name="pref_urchin_bolus_graph_tags_summary">Ištęsto/dvigubo boluso žymės būsenos tekste.</string>
+    <string name="pref_urchin_bolus_graph_ypop_title" maxLength="40">Ištęstas/Dvigubas Y-Pop</string>
+    <string name="pref_urchin_bolus_graph_ypop_summary">Ištęstas ir Dvigubas bolusas gali būti pakeltas iki pasirinkto aukščio ir rodomas bazės grafike suleidimo periodu.</string>
     <string name="pref_urchin_status_styles_title" maxLength="40">Būsenos Stiliai</string>
     <string name="pref_urchin_time_style_title" maxLength="40">Laiko Stilius</string>
     <string name="pref_urchin_duration_style_title" maxLength="40">Trukmės Stilius</string>
     <string name="pref_urchin_units_style_title" maxLength="40">Vienetų Stilius</string>
     <string name="pref_urchin_battery_style_title" maxLength="40">Baterijos Stilius</string>
-    <string name="pref_urchin_concatenate_style_title" maxLength="40">Concatenate Style</string>
-    <string name="pref_urchin_custom_text_title" maxLength="40">Custom Text</string>
-    <string name="pref_urchin_custom_text_1_title" maxLength="40">Custom Text 1</string>
-    <string name="pref_urchin_custom_text_2_title" maxLength="40">Custom Text 2</string>
-    <string name="pref_urchin_custom_text_dialog_title" maxLength="40">Enter Custom Text</string>
-    <string name="pref_urchin_status_layout_title" maxLength="40">Status Layout</string>
+    <string name="pref_urchin_concatenate_style_title" maxLength="40">Susieti Stilius</string>
+    <string name="pref_urchin_custom_text_title" maxLength="40">Pasirinktas Tekstas</string>
+    <string name="pref_urchin_custom_text_1_title" maxLength="40">Pasirinktas Tekstas 1</string>
+    <string name="pref_urchin_custom_text_2_title" maxLength="40">Pasirinktas Tekstas 2</string>
+    <string name="pref_urchin_custom_text_dialog_title" maxLength="40">Įvesti Pasirinktą Tekstą</string>
+    <string name="pref_urchin_status_layout_title" maxLength="40">Būsenos Išklotinė</string>
     <!-- Pushover -->
     <string name="pref_pushover_priority_lowest" maxLength="30">žemiausias</string>
     <string name="pref_pushover_priority_low" maxLength="30">žemas</string>
@@ -559,109 +559,109 @@
     <string name="pref_pushover_priority_emergency" maxLength="30">skubus atvejis</string>
     <string name="pref_pushover_sound__none" maxLength="20">joks</string>
     <string name="pref_pushover_sound__default" maxLength="20">numatytasis</string>
-    <string name="pref_pushover_summary">Alerts and Events to any device</string>
+    <string name="pref_pushover_summary">Įspėjimai ir Įvykiai į bet kokį prietaisą</string>
     <string name="pref_pushover_enable_title" maxLength="40">Įgalinti Pushover palaikymą</string>
-    <string name="pref_pushover_enable_summary">Send push notifications for pump alerts and events to any device using Pushover. Download the Pushover app on your follower device from the App Store.</string>
+    <string name="pref_pushover_enable_summary">Siųsti push pranešimus apie pompos įspėjimus ir įvykius bet kokiam prietaisui, naudojančiam Pushover. Parsisiųskite Pushover app į savo sekėjo prietaisą iš App Store.</string>
     <string name="pref_pushover_website_title" maxLength="40">Svetainė</string>
-    <string name="pref_pushover_website_api_token_title" maxLength="40">Create a Pushover API Token</string>
+    <string name="pref_pushover_website_api_token_title" maxLength="40">Sukurti Pushover API Token</string>
     <string name="pref_pushover_account_category" maxLength="30">Paskyra</string>
     <string name="pref_pushover_api_token_title" maxLength="40">API Token</string>
     <string name="pref_pushover_api_token_summary">Įveskite savo api token</string>
     <string name="pref_pushover_user_group_key_title" maxLength="40">USER / GROUP Key</string>
-    <string name="pref_pushover_user_group_key_summary">Enter your user / group key</string>
-    <string name="pref_pushover_override_category" maxLength="30">Override</string>
+    <string name="pref_pushover_user_group_key_summary">Įveskite savo user / group key</string>
+    <string name="pref_pushover_override_category" maxLength="30">Nepaisyti</string>
     <string name="pref_pushover_override_priority_title" maxLength="40">Priority Override</string>
-    <string name="pref_pushover_override_all_priorities_title" maxLength="40">All Priorities</string>
-    <string name="pref_pushover_override_sound_title" maxLength="40">Sound Override</string>
+    <string name="pref_pushover_override_all_priorities_title" maxLength="40">Prioritetai</string>
+    <string name="pref_pushover_override_sound_title" maxLength="40">Garso Nepaisymas</string>
     <string name="pref_pushover_override_all_sounds_title" maxLength="40">Visi Garsai</string>
     <string name="pref_pushover_send_message_title" maxLength="40">Siųsti žinutę</string>
     <string name="pref_pushover_priority_title" maxLength="40">Pirmenybė</string>
     <string name="pref_pushover_sound_title" maxLength="40">Garsas</string>
-    <string name="pref_pushover_override_title" maxLength="40">Override</string>
-    <string name="pref_pushover_message_alarms_alerts_summary">Alarms and alerts that have not been acknowledged and cleared by the pump user can have a notification sent to followers.</string>
-    <string name="pref_pushover_message_priority_selection_title" maxLength="40">Message priority selection:</string>
-    <string name="pref_pushover_message_priority_summary">EMERGENCY: red notification &amp; sound (persistent alarm that must be aknowledged by follower)&newline;HIGH: red notification &amp; sound&newline;NORMAL: notification &amp; sound&newline;LOW: notification &amp; no sound&newline;LOWEST: no notification &amp; no sound (message can be viewed in the Pushover app/widget)</string>
-    <string name="pref_pushover_preview_sounds_title" maxLength="40">Preview sounds</string>
-    <string name="pref_pushover_preview_sounds_summary">Listen to the available notification sounds.</string>
+    <string name="pref_pushover_override_title" maxLength="40">Nepaisyti</string>
+    <string name="pref_pushover_message_alarms_alerts_summary">Aliarmai ir įspėjimai, kurių neperžiūrėjo ir neišvalė pompos naudotojas gali būti nusiųsti žinute sekėjams.</string>
+    <string name="pref_pushover_message_priority_selection_title" maxLength="40">Žinučių pirmenybės pasirinkimas:</string>
+    <string name="pref_pushover_message_priority_summary">SKUBUS ATVEJIS: raudonas pranešimas &amp; garsas (pastovus aliarmas, kuris turi būti patvirtintas sekėjo)&newline;AUKŠTAS: raudonas pranešimas &amp; garsas&newline;NORMALUS: pranešimas &amp; garsas&newline;ŽEMAS pranešimas &amp; be garso&newline;ŽEMIAUSIAS: be pranešimo &amp; be garso (žinutė gali būti peržiūrėta Pushover app/widget)</string>
+    <string name="pref_pushover_preview_sounds_title" maxLength="40">Perklausyti garsus</string>
+    <string name="pref_pushover_preview_sounds_summary">Klausyti galimų pranešimų garsų.</string>
     <string name="pref_pushover_settings_category" maxLength="30">Nustatymai</string>
-    <string name="pref_pushover_high_low_alerts_category" maxLength="30">High/Low Alerts</string>
-    <string name="pref_pushover_alert_on_high_category" maxLength="30">Alert On High</string>
-    <string name="pref_pushover_alert_on_low_category" maxLength="30">Alert On Low</string>
-    <string name="pref_pushover_alert_before_high_category" maxLength="30">Alert Before High</string>
-    <string name="pref_pushover_alert_before_low_category" maxLength="30">Alert Before Low</string>
+    <string name="pref_pushover_high_low_alerts_category" maxLength="30">Aukštas/Žemas Įspėjimai</string>
+    <string name="pref_pushover_alert_on_high_category" maxLength="30">Įspėjimas esant Aukštam</string>
+    <string name="pref_pushover_alert_on_low_category" maxLength="30">Įspėjimas esant Žemam</string>
+    <string name="pref_pushover_alert_before_high_category" maxLength="30">Įspėjimas prieš Aukštą</string>
+    <string name="pref_pushover_alert_before_low_category" maxLength="30">Įspėjimas prieš Žemą</string>
     <string name="pref_pushover_pump_alerts_category" maxLength="30">Pompos Pranešimai</string>
-    <string name="pref_pushover_emergency_alert_note_summary">Note: Some pump emergency alerts can block all communication until they are cleared by the pump user. Alert for this state can be set in \'Uploader Events\'</string>
-    <string name="pref_pushover_emergency_alert_category" maxLength="30">Emergency Alert</string>
+    <string name="pref_pushover_emergency_alert_note_summary">Pastaba: Kai kurie pompos skubūs pranešimai gali blokuoti komunikaciją kol jie nebus išvalyti pompos naudotojo. Įspėjimas šiai būsenai gali būti nustatomas \"Skaitytuvo Įvykiai\"</string>
+    <string name="pref_pushover_emergency_alert_category" maxLength="30">Skubus Įspėjimas</string>
     <string name="pref_pushover_emergency_alert_summary">Pranešimai, kurie reikalauja nedelsiant imtis veiksmų. Pavyzdžiui: „Užblokuotas insulino srautas“ „Pakeiskite bateriją dabar“</string>
-    <string name="pref_pushover_actionable_alert_category" maxLength="30">Actionable Alert</string>
+    <string name="pref_pushover_actionable_alert_category" maxLength="30">Veiksmų Įspėjimas</string>
     <string name="pref_pushover_actionable_alert_summary">Pranešimai, kurie gali reikalauti veikti. Pavyzdžiui: „Kalibruokite dabar“ „Bolusas nesuleistas“</string>
     <string name="pref_pushover_informational_alert_category" maxLength="30">Informaciniai Pranešimai</string>
-    <string name="pref_pushover_informational_alert_summary">Example: \'Low Reservoir 10U remain\' \'Low battery Pump\'</string>
+    <string name="pref_pushover_informational_alert_summary">Pavyzdys: \'Tuščias Rezervuaras 10vv likę\' \'Pompos baterija senla\'</string>
     <string name="pref_pushover_reminders_category" maxLength="30">Priminimai</string>
     <string name="pref_pushover_reminders_summary">Pavyzdžiui: „Turite kalibruoti iki 10:30“ „Praleistas Maisto Bolusas“</string>
-    <string name="pref_pushover_pump_events_category" maxLength="30">Pump Events</string>
-    <string name="pref_pushover_pump_events_summary">Treatments and events can have a notification sent to followers.</string>
+    <string name="pref_pushover_pump_events_category" maxLength="30">Pompos Įvykiai</string>
+    <string name="pref_pushover_pump_events_summary">Veiksmai ir įvykiai gali būti siunčiami kaip pranešimas sekėjams.</string>
     <string name="pref_pushover_bolus_category" maxLength="30">Bolus</string>
     <string name="pref_pushover_basal_category" maxLength="30">Bazė</string>
     <string name="pref_pushover_suspend_resume_category" maxLength="30">Stabdyti / Atnaujinti</string>
     <string name="pref_pushover_bg_category" maxLength="30">BG</string>
     <string name="pref_pushover_bg_calibration_title" maxLength="40">Kalibravimo rezultatai</string>
-    <string name="pref_pushover_consumables_category" maxLength="30">Consumables</string>
+    <string name="pref_pushover_consumables_category" maxLength="30">Priemonės</string>
     <string name="pref_pushover_lifetime_info_title" maxLength="40">Lifetime info</string>
-    <string name="pref_pushover_daily_totals_category" maxLength="30">Daily Totals</string>
-    <string name="pref_pushover_auto_mode_events_category" maxLength="30">Auto Mode Events</string>
-    <string name="pref_pushover_auto_mode_active_category" maxLength="30">Auto Mode Active</string>
+    <string name="pref_pushover_daily_totals_category" maxLength="30">Per dieną Viso</string>
+    <string name="pref_pushover_auto_mode_events_category" maxLength="30">Auto Mode Įvykiai</string>
+    <string name="pref_pushover_auto_mode_active_category" maxLength="30">Auto Mode Aktyvus</string>
     <string name="pref_pushover_auto_mode_stop_category" maxLength="30">Auto Mode Stop</string>
-    <string name="pref_pushover_auto_mode_exit_category" maxLength="30">Auto Mode Exit</string>
-    <string name="pref_pushover_auto_mode_min_max_category" maxLength="30">Auto Mode Min/Max Delivery</string>
-    <string name="pref_pushover_uploader_events_category" maxLength="30">Uploader Events</string>
-    <string name="pref_pushover_uploader_events_summary">Send Uploader status events to followers.</string>
+    <string name="pref_pushover_auto_mode_exit_category" maxLength="30">Auto Mode Išeiti</string>
+    <string name="pref_pushover_auto_mode_min_max_category" maxLength="30">Auto Mode Min/Max Leidimas</string>
+    <string name="pref_pushover_uploader_events_category" maxLength="30">Skaitytuvo Įvykiai</string>
+    <string name="pref_pushover_uploader_events_summary">Siųsti Skaitytuvo būsenos įvykius sekėjams.</string>
     <string name="pref_pushover_pump_errors_category" maxLength="30">Pompos klaidos</string>
-    <string name="pref_pushover_pump_errors_summary">Some pump errors can block all communication until they are cleared by the pump user. Notify follower when pump is in this state.</string>
+    <string name="pref_pushover_pump_errors_summary">Kai kurios pompos klaidos gali visai blokuoti komunikaciją kol jos neišvalytos pompos naudotojo. Pranešti sekėjui, kai pompa yra tokioje būsenoje.</string>
     <string name="pref_pushover_usb_errors_category" maxLength="30">USB klaidos</string>
-    <string name="pref_pushover_usb_errors_summary">When the Contour Next Link is unplugged.</string>
+    <string name="pref_pushover_usb_errors_summary">Kada Contour Next Link yra atjungtas.</string>
     <string name="pref_pushover_status_category" maxLength="30">Būsena</string>
-    <string name="pref_pushover_status_summary">Send follower uploader status messages.</string>
-    <string name="pref_pushover_connection_states_title" maxLength="40">Uploader-Pump connection states</string>
-    <string name="pref_pushover_sgv_estimation_active_title" maxLength="40">SGV Estimation active</string>
+    <string name="pref_pushover_status_summary">Siųsti sekėjams skaitytuvo būsenos žinutes.</string>
+    <string name="pref_pushover_connection_states_title" maxLength="40">Skaitytuvo-Pompos jungties būsenos</string>
+    <string name="pref_pushover_sgv_estimation_active_title" maxLength="40">SGV Skaičiavimas aktyvus</string>
     <string name="pref_pushover_battery_category" maxLength="30">Baterija</string>
-    <string name="pref_pushover_low_battery_state_title" maxLength="40">Low battery state</string>
-    <string name="pref_pushover_fully_charged_state_title" maxLength="40">Fully charged state</string>
-    <string name="pref_pushover_advanced_category" maxLength="30">Advanced</string>
+    <string name="pref_pushover_low_battery_state_title" maxLength="40">Senkančios baterijos būsena</string>
+    <string name="pref_pushover_fully_charged_state_title" maxLength="40">Pilnai įkrauta būsena</string>
+    <string name="pref_pushover_advanced_category" maxLength="30">Papildomi</string>
     <string name="pref_pushover_extended_info_category" maxLength="30">Išplėstinė informacija</string>
-    <string name="pref_pushover_extended_message_info_title" maxLength="40">Extended message info</string>
-    <string name="pref_pushover_extended_message_info_summary">Full extended message as shown on the pump</string>
-    <string name="pref_pushover_time_in_notification_title" maxLength="40">Time in Notification Title</string>
-    <string name="pref_pushover_time_in_notification_summary">Include the time in the title part of a notification</string>
-    <string name="pref_pushover_text_in_notification_title" maxLength="40">Text in Notification Title</string>
-    <string name="pref_pushover_text_in_notification_summary">Include custom text in the title part of a notification</string>
-    <string name="pref_pushover_custom_text_title" maxLength="40">Custom Text</string>
-    <string name="pref_pushover_emergency_alerts_category" maxLength="30">Emergency Alerts</string>
-    <string name="pref_pushover_retry_every_title" maxLength="40">Retry every</string>
-    <string name="pref_pushover_expire_after_title" maxLength="40">Expire after</string>
-    <string name="pref_pushover_cleared_alert_category" maxLength="30">Cleared Alert</string>
-    <string name="pref_pushover_cleared_alert_summary">Alerts that were not active at time of polling and have already been cleared by the pump user are available after history has been retrieved for other live events.</string>
-    <string name="pref_pushover_acknowledged_title" maxLength="40">Acknowledged</string>
-    <string name="pref_pushover_acknowledged_summary">When a active alert notification has been sent to a follower, always send another message to show when this alert has been acknowledged and cleared on the pump.</string>
+    <string name="pref_pushover_extended_message_info_title" maxLength="40">Išplėstinė žinutės info</string>
+    <string name="pref_pushover_extended_message_info_summary">Pilna žinutė kaip rodoma ant pompos</string>
+    <string name="pref_pushover_time_in_notification_title" maxLength="40">Laikas Pranešimo Pavadinime</string>
+    <string name="pref_pushover_time_in_notification_summary">Įtraukti laiką pranešimo pavadinimo dalyje</string>
+    <string name="pref_pushover_text_in_notification_title" maxLength="40">Tekstas Pranešimo Pavadinime</string>
+    <string name="pref_pushover_text_in_notification_summary">Įtraukti pasirinktą tekstą pranešimo pavadinimo dalyje</string>
+    <string name="pref_pushover_custom_text_title" maxLength="40">Pasirinktas Tekstas</string>
+    <string name="pref_pushover_emergency_alerts_category" maxLength="30">Skubus Įspėjimas</string>
+    <string name="pref_pushover_retry_every_title" maxLength="40">Bandyti iš naujo kas</string>
+    <string name="pref_pushover_expire_after_title" maxLength="40">Baigiasi po</string>
+    <string name="pref_pushover_cleared_alert_category" maxLength="30">Išvalytas Įspėjimas</string>
+    <string name="pref_pushover_cleared_alert_summary">Įspėjimai, kurie nebuvo aktyvūs užklausos metu ir jau išvalyti pompos naudotojo yra prieinami po to, kai istorija atnaujinama kitiems tiesioginiams įvykiams.</string>
+    <string name="pref_pushover_acknowledged_title" maxLength="40">Patvirtinimai</string>
+    <string name="pref_pushover_acknowledged_summary">Kai aktyvaus įspėjimo pranešimas buvo nusiųstas sekėjui, visada siųsti kitą žinutę parodyti, kada šis įspėjimas buvo patvirtintas ir išvalytas pompoje.</string>
     <string name="pref_pushover_silenced_alerts_category" maxLength="30">Nutildytas pranešimas</string>
-    <string name="pref_pushover_silenced_alerts_summary">Silenced unacknowledged sensor alerts can be sent to followers. Pump will stay quiet and follower will be alerted.</string>
-    <string name="pref_pushover_silenced_alerts_override_summary">Change message priority and sound when pump issues a silent alert.</string>
-    <string name="pref_pushover_backfill_category" maxLength="30">Backfill</string>
-    <string name="pref_pushover_backfill_period_title" maxLength="40">Backfill Period</string>
-    <string name="pref_pushover_start_restart_title" maxLength="40">Start/Restart</string>
-    <string name="pref_pushover_start_restart_summary">Only backfill from the time the uploader or device has been started/restarted.</string>
+    <string name="pref_pushover_silenced_alerts_summary">Nutildyti nepatvirtinti sensoriaus įspėjimai gali būti siunčiami sekėjams. Pompa liks tyli, o sekėjai informuoti.</string>
+    <string name="pref_pushover_silenced_alerts_override_summary">Pakeisti žinutės pirmenybę ir garsą, kai pompa siunčia tylų įspėjimą.</string>
+    <string name="pref_pushover_backfill_category" maxLength="30">Atgalinis užpildymas</string>
+    <string name="pref_pushover_backfill_period_title" maxLength="40">Atgalinio užpildymo periodas</string>
+    <string name="pref_pushover_start_restart_title" maxLength="40">Pradėti/Paleisti iš naujo</string>
+    <string name="pref_pushover_start_restart_summary">Užpildyti atgal nuo laiko, kai skaitytuvas ar prietaisas buvo startuoti/perkrauti.</string>
     <string name="pref_pushover_unpluged_limiter_title" maxLength="40">Unpluged Limiter</string>
-    <string name="pref_pushover_unpluged_limiter_summary">Do not backfill messages when a CNL meter has been unplugged for longer then this amount of time.</string>
+    <string name="pref_pushover_unpluged_limiter_summary">Nepildyti žinuçių istorijos, kai CNL matuoklis buvo atjungtas ilgesniam nei šis laikui.</string>
     <string name="pref_pushover_age_title" maxLength="40">Amžius</string>
-    <string name="pref_pushover_age_summary">Messages older then this age can have their priority and sound changed.</string>
+    <string name="pref_pushover_age_summary">Žinutės, senesnės nei šis laikas gali turėti savo pirmenynę ir pakeistą garsą.</string>
     <string name="pref_pushover_api_category" maxLength="30">Pushover API</string>
     <string name="pref_pushover_device_name_title" maxLength="40">Įrenginio Pavadinimas</string>
-    <string name="pref_pushover_device_name_summary">Use a Pushover device name to send the message directly to that device, rather than all of the users devices (multiple devices may be separated by a comma)</string>
+    <string name="pref_pushover_device_name_summary">Naudoti Pushover prietaiso vardą siųsti žinutėms tiesiai į tą prietaisą, ne į visus vartotijo prietaisus (daug prietaisų gali būti atskirta kableliu)</string>
     <!-- Text used to generated info strings for Nightscout and Messages (Pushover etc) -->
     <string name="text__Pump">Pompa</string>
     <string name="text__Bolus">Bolusas</string>
     <string name="text__Basal">Bazė</string>
-    <string name="text__Lifetimes">Lifetimes</string>
+    <string name="text__Lifetimes">Galiojimai</string>
     <string name="text__Prime">Užpildymas</string>
     <string name="text__new_reservoir">naujas rezervuaras</string>
     <string name="text__fill_cannula">užpildyti kaniulę</string>
@@ -669,31 +669,31 @@
     <string name="text__battery_inserted">baterija įdėta</string>
     <string name="text__Sensor_Change">Sensoriaus Pakeitimas</string>
     <string name="text__Battery_Change">Baterijos Pakeitimas</string>
-    <string name="text__Cannula_Change">Cannula Change</string>
+    <string name="text__Cannula_Change">Kaniulės Pakeitimas</string>
     <string name="text__Insulin_Change">Insulino Pakeitimas</string>
     <string name="text__Normal">Normalus</string>
     <string name="text__Square">Ištęstas</string>
     <string name="text__Dual">Dvigubas</string>
-    <string name="text__Temp">Temp</string>
+    <string name="text__Temp">Laik</string>
     <string name="text__Normal_Bolus">Normalus Bolusas</string>
     <string name="text__Square_Bolus">Ištęstas Bolusas</string>
-    <string name="text__Dual_Bolus">Dual Bolus</string>
-    <string name="text__Temp_Basal">Temp Basal</string>
+    <string name="text__Dual_Bolus">Dvigubas Bolusas</string>
+    <string name="text__Temp_Basal">Laik Bazė</string>
     <string name="text__Auto_Mode">Auto Mode</string>
     <string name="text__Pump_Suspend">Pompa Sustabdyta</string>
-    <string name="text__Pump_Resume">Pump Resume</string>
-    <string name="text__Finger_BG">Finger BG</string>
-    <string name="text__Factor">Factor</string>
+    <string name="text__Pump_Resume">Atnaujinti Pompą</string>
+    <string name="text__Finger_BG">Piršto BG</string>
+    <string name="text__Factor">Faktorius</string>
     <string name="text__Target">Tikslas</string>
     <string name="text__Pattern">Ruošinys</string>
     <string name="text__basal_pattern">Bazės ruošinys</string>
     <string name="text__previous_basal_pattern">Ankstesnis ruošinys</string>
-    <string name="text__microbolus">microbolus</string>
+    <string name="text__microbolus">mikrobolusas</string>
     <string name="text__bolus">bolusas</string>
-    <string name="text__basal">basal</string>
+    <string name="text__basal">bazė</string>
     <string name="text__bg">bg</string>
     <string name="text__iob">iob</string>
-    <string name="text__carb">carb</string>
+    <string name="text__carb">angl</string>
     <string name="text__correction">korekcija</string>
     <string name="text__duration">trukmė</string>
     <string name="text__normal">normalus</string>
@@ -705,9 +705,9 @@
     <string name="text__active">aktyvus</string>
     <string name="text__stopped">sustojo</string>
     <!-- Pump Event Marker -->
-    <string name="event_marker__heading">Event Marker</string>
+    <string name="event_marker__heading">Įvykio Žymuo</string>
     <string name="event_marker__food">Maistas</string>
-    <string name="event_marker__exercise">Exercise</string>
+    <string name="event_marker__exercise">Pratimas</string>
     <string name="event_marker__injection">Injekcija</string>
     <string name="event_marker__other">Kita</string>
     <!-- Pump Daily Totals -->
@@ -726,7 +726,7 @@
     <string name="daily_totals_heading__total_values" maxLength="10">Viso</string>
     <string name="daily_totals_heading__high_values" maxLength="10">Aukštas</string>
     <string name="daily_totals_heading__low_values" maxLength="10">Žemas</string>
-    <string name="daily_totals_heading__bolus_manual_entry" maxLength="10">Manual</string>
+    <string name="daily_totals_heading__bolus_manual_entry" maxLength="10">Rankinis</string>
     <string name="daily_totals_heading__bolus_wizard_entry" maxLength="10">Wizard</string>
     <string name="daily_totals_heading__carb" maxLength="10">Angl</string>
     <string name="daily_totals_heading__food" maxLength="10">Maistas</string>
@@ -736,55 +736,55 @@
     <string name="daily_totals_heading__alert_on_high" maxLength="10">Aukštas</string>
     <string name="daily_totals_heading__alert_on_low" maxLength="10">Žemas</string>
     <string name="daily_totals_heading__alert_on_suspend" maxLength="10">Sustabdyti</string>
-    <string name="daily_totals_heading__alert_before_high" maxLength="10">PreHigh</string>
-    <string name="daily_totals_heading__alert_before_low" maxLength="10">PreLow</string>
-    <string name="daily_totals_heading__alert_before_suspend" maxLength="10">PreSuspd</string>
-    <string name="daily_totals_heading__within_range" maxLength="10">Within</string>
+    <string name="daily_totals_heading__alert_before_high" maxLength="10">PriešAukšt</string>
+    <string name="daily_totals_heading__alert_before_low" maxLength="10">PriešŽemas</string>
+    <string name="daily_totals_heading__alert_before_suspend" maxLength="10">PriešSustb</string>
+    <string name="daily_totals_heading__within_range" maxLength="10">Per</string>
     <string name="daily_totals_heading__automode_active_time" maxLength="10">Aktyvus</string>
     <string name="daily_totals_heading__microbolus" maxLength="10">Mikro</string>
     <string name="daily_totals_heading__therapy" maxLength="10">Terapija</string>
-    <string name="daily_totals_heading__therapy_in_range" maxLength="10">Range</string>
+    <string name="daily_totals_heading__therapy_in_range" maxLength="10">Diapazonas</string>
     <string name="daily_totals_heading__therapy_above_range" maxLength="10">Virš</string>
     <string name="daily_totals_heading__therapy_below_range" maxLength="10">Žemiau</string>
     <!-- Nightscout PUMP pill -->
-    <string name="nightscout_pump_pill__temp" maxLength="1">T</string>
-    <string name="nightscout_pump_pill__square" maxLength="1">S</string>
+    <string name="nightscout_pump_pill__temp" maxLength="1">L</string>
+    <string name="nightscout_pump_pill__square" maxLength="1">I</string>
     <string name="nightscout_pump_pill__dual" maxLength="1">D</string>
-    <string name="nightscout_pump_pill__no_cgm" maxLength="20">no cgm</string>
-    <string name="nightscout_pump_pill__bolusing" maxLength="20">bolusing</string>
+    <string name="nightscout_pump_pill__no_cgm" maxLength="20">nėra cgm</string>
+    <string name="nightscout_pump_pill__bolusing" maxLength="20">bolusuojama</string>
     <string name="nightscout_pump_pill__bolusing_abreviation" maxLength="6">bol</string>
     <string name="nightscout_pump_pill__suspended" maxLength="20">sustabdyta</string>
     <string name="nightscout_pump_pill__suspended_abreviation" maxLength="6">sus</string>
-    <string name="nightscout_pump_pill__lost_sensor" maxLength="20">lost sensor</string>
-    <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="6">lost</string>
-    <string name="nightscout_pump_pill__estimate" maxLength="20">*estimate</string>
-    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="6">*est</string>
+    <string name="nightscout_pump_pill__lost_sensor" maxLength="20">pamestas sensorius</string>
+    <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="6">pam</string>
+    <string name="nightscout_pump_pill__estimate" maxLength="20">*numatytas</string>
+    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="6">*num</string>
     <!-- pump/sensor/automode states -->
     <string name="pump_suspend__pump_suspended_insulin_delivery">Pompa sustabdė insulino tiekimą</string>
-    <string name="pump_suspend__alarm_suspend">Alarm suspend</string>
-    <string name="pump_suspend__user_suspend">User suspend</string>
-    <string name="pump_suspend__auto_suspend">Auto suspend</string>
-    <string name="pump_suspend__low_glucose_suspend">Low glucose suspend</string>
-    <string name="pump_suspend__set_change_suspend">Set change suspend</string>
-    <string name="pump_suspend__predicted_low_glucose_suspend">Predicted low glucose suspend</string>
-    <string name="pump_resume__pump_resumed_insulin_delivery">Pump resumed insulin delivery</string>
-    <string name="pump_resume__user_resumed">User resumed</string>
-    <string name="pump_resume__user_clears_alarm">User cleared alarm</string>
-    <string name="pump_resume__low_glucose_manual_resume">Low glucose manual resume</string>
-    <string name="pump_resume__low_glucose_auto_resume_max_suspend_period">Low glucose auto resume - max suspend period</string>
-    <string name="pump_resume__low_glucose_auto_resume_preset_glucose_reached">Low glucose auto resume - preset glucose reached</string>
-    <string name="pump_resume__low_glucose_manual_resume_via_disable">Low glucose manual resume via disable</string>
-    <string name="automode_transition__into_active_due_to_sensor_calibration">Into active due to sensor calibration</string>
-    <string name="automode_transition__out_of_active_due_to_user_override">Out of active due to user override</string>
-    <string name="automode_transition__out_of_active_due_to_alarm">Out of active due to alarm</string>
-    <string name="automode_transition__out_of_active_due_to_timeout_from_safe_basal">Out of active due to timeout from safe basal</string>
-    <string name="automode_transition__out_of_active_due_to_prolonged_high_sg">Out of active due to prolonged high SG</string>
+    <string name="pump_suspend__alarm_suspend">Aliarmas sustabdyti</string>
+    <string name="pump_suspend__user_suspend">Naudotojo sustabdyta</string>
+    <string name="pump_suspend__auto_suspend">Auto sustabdymas</string>
+    <string name="pump_suspend__low_glucose_suspend">Žemos gliukozės sutabdymas</string>
+    <string name="pump_suspend__set_change_suspend">Kateterio keitimo sustabdymas</string>
+    <string name="pump_suspend__predicted_low_glucose_suspend">Numatomas žemos gliukozės sustabdymas</string>
+    <string name="pump_resume__pump_resumed_insulin_delivery">Pompa atnaujino insulino tiekimą</string>
+    <string name="pump_resume__user_resumed">Naudotojo atnaujinta</string>
+    <string name="pump_resume__user_clears_alarm">Naudotojo išvalytas aliarmas</string>
+    <string name="pump_resume__low_glucose_manual_resume">Žemos gliukozės rankinis atnaujinimas</string>
+    <string name="pump_resume__low_glucose_auto_resume_max_suspend_period">Žemos gliukozės auto paleidimas - max sustabdymo periodas</string>
+    <string name="pump_resume__low_glucose_auto_resume_preset_glucose_reached">Žemos gliukozės auto paleidimas - nustatyta gliukozė pasiekta</string>
+    <string name="pump_resume__low_glucose_manual_resume_via_disable">Žemos gliukozės rankinis atnaujinimas per išjungimą</string>
+    <string name="automode_transition__into_active_due_to_sensor_calibration">Į aktyvų dėl sensoriaus kalibravimo</string>
+    <string name="automode_transition__out_of_active_due_to_user_override">Iš aktyvaus dėl vartotojo nepaisymo</string>
+    <string name="automode_transition__out_of_active_due_to_alarm">Iš aktyvaus dėl aliarmo</string>
+    <string name="automode_transition__out_of_active_due_to_timeout_from_safe_basal">Iš aktyvaus dėl timeout iš saugios bazės</string>
+    <string name="automode_transition__out_of_active_due_to_prolonged_high_sg">Iš aktyvaus dėl per ilgo aukšto SG</string>
     <string name="sensor_state__ok" maxLength="10">OK</string>
     <string name="sensor_state__warm_up" maxLength="30">warm up</string>
     <string name="sensor_state__warm_up_abbreviation" maxLength="10">WU</string>
     <string name="sensor_state__calibrate_now" maxLength="30">kalibruoti dabar</string>
     <string name="sensor_state__calibrate_now_abbreviation" maxLength="10">KalDab</string>
-    <string name="sensor_state__sg_not_available" maxLength="30">sg not available</string>
+    <string name="sensor_state__sg_not_available" maxLength="30">sg negalimas</string>
     <string name="sensor_state__sg_not_available_abbreviation" maxLength="10">NėraSG</string>
     <string name="sensor_state__cal_error" maxLength="30">kal klaida</string>
     <string name="sensor_state__cal_error_abbreviation" maxLength="10">KalKld</string>
@@ -799,7 +799,7 @@
     <string name="sensor_state__reading_low" maxLength="30">sg matavimas žemas</string>
     <string name="sensor_state__reading_low_abbreviation" maxLength="10">ŽemSG</string>
     <string name="sensor_state__calibrating" maxLength="30">kalibruojama</string>
-    <string name="sensor_state__calibrating_abbreviation" maxLength="10">InCal</string>
+    <string name="sensor_state__calibrating_abbreviation" maxLength="10">PrKal</string>
     <string name="sensor_state__cal_error_change_sensor" maxLength="30">kal klaida pakeiskite sensorių</string>
     <string name="sensor_state__cal_error_change_sensor_abbreviation" maxLength="6">PakSen</string>
     <string name="sensor_state__time_unknown" maxLength="30">laikas nežinomas</string>
@@ -832,17 +832,17 @@
     <string name="pump_default__bolus_preset_5" maxLength="30" comment="local name as shown on the pump for bolus preset 5">Pusryčiai</string>
     <string name="pump_default__bolus_preset_6" maxLength="30" comment="local name as shown on the pump for bolus preset 6">Pietūs</string>
     <string name="pump_default__bolus_preset_7" maxLength="30" comment="local name as shown on the pump for bolus preset 7">Vakarienė</string>
-    <string name="pump_default__bolus_preset_8" maxLength="30" comment="local name as shown on the pump for bolus preset 8">Snack</string>
+    <string name="pump_default__bolus_preset_8" maxLength="30" comment="local name as shown on the pump for bolus preset 8">Užkandis</string>
     <!-- system status messages -->
-    <string name="system_status__header">System Status</string>
-    <string name="system_status__could_not_communicate_with_the_pump">Could not communicate with the pump</string>
-    <string name="system_status__pump_now_connected">Pump now connected</string>
-    <string name="system_status__last_seen" comment="example: Pump now connected. Last seen 30m ago">Last seen</string>
-    <string name="system_status__time_ago" comment="example: Pump now connected. Last seen 30m ago">ago</string>
-    <string name="system_status__usb_error">USB Error. Contour Next Link disconnected.</string>
-    <string name="system_status__pump_device_error">Pump has a device error. No data can be read until this error has been cleared on the Pump.</string>
-    <string name="system_status__uploader_battery_level" comment="example: Uploader battery at 15%">Uploader battery at</string>
-    <string name="system_status__uploader_battery_charge_soon">Charge your uploader device soon</string>
-    <string name="system_status__uploader_battery_fully_charged">Uploader battery fully charged</string>
-    <string name="system_status__estimate_active">SGV Estimate is active</string>
+    <string name="system_status__header">Sistemos būsena</string>
+    <string name="system_status__could_not_communicate_with_the_pump">Nepavyko susisiekti su pompa</string>
+    <string name="system_status__pump_now_connected">Pompa dabar prijungta</string>
+    <string name="system_status__last_seen" comment="example: Pump now connected. Last seen 30m ago">Paskutinis matytas</string>
+    <string name="system_status__time_ago" comment="example: Pump now connected. Last seen 30m ago">prieš</string>
+    <string name="system_status__usb_error">USB Klaida. Contour Next Link atjungtas.</string>
+    <string name="system_status__pump_device_error">Pompoje įrenginio klaida. Duomenys negali būti nuskaityti kol ši klaida nebus išvalyta Pompoje.</string>
+    <string name="system_status__uploader_battery_level" comment="example: Uploader battery at 15%">Skaitytuvo Baterija yra</string>
+    <string name="system_status__uploader_battery_charge_soon">Pakeiskite savi skaitytuvo prietaisą neužilgo</string>
+    <string name="system_status__uploader_battery_fully_charged">Skaitytuvo baterija pilnai įkrauta</string>
+    <string name="system_status__estimate_active">SGV Numatymas aktyvus</string>
 </resources>

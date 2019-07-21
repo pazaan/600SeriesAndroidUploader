@@ -13,24 +13,24 @@
  -->
 <resources>
     <!-- alert title -->
-    <string name="alert_na">Alert</string>
-    <string name="alert_system">System Alert</string>
-    <string name="alert_pump">Pump Alert</string>
+    <string name="alert_na">Waarschuwing</string>
+    <string name="alert_system">Systeem Waarschuwing</string>
+    <string name="alert_pump">Pomp waarschuwingen</string>
     <string name="alert_smartguard">SmartGuard</string>
     <string name="alert_sensor">Sensoralarm</string>
-    <string name="alert_reminder">Reminder</string>
-    <string name="alert_automode">Auto Mode Alert</string>
+    <string name="alert_reminder">Herinnering</string>
+    <string name="alert_automode">Auto Modus Waarschuwing</string>
     <!-- alert additional -->
-    <string name="alert_cleared">Cleared Alert</string>
-    <string name="alert_cleared_reminder">Cleared Reminder</string>
-    <string name="alert_cleared_tag">cleared</string>
-    <string name="alert_silenced">Silenced Alert</string>
-    <string name="alert_silenced_tag">silenced</string>
-    <string name="alert_repeated">Repeated Alert</string>
-    <string name="alert_repeated_tag">repeated</string>
+    <string name="alert_cleared">Waarschuwing gewist</string>
+    <string name="alert_cleared_reminder">Herinnering Gewist</string>
+    <string name="alert_cleared_tag">gewist</string>
+    <string name="alert_silenced">Waarschuwing stil</string>
+    <string name="alert_silenced_tag">stil</string>
+    <string name="alert_repeated">Herhaalde waarschuwing</string>
+    <string name="alert_repeated_tag">herhaald</string>
     <!-- default when no alert definition found -->
-    <string name="alert_unknown_in_history">Unknown|Please check your PUMP Alarm History and report the FULL alert message as shown on the pump. Include the #code and data in brackets as shown here and send to the dev team.</string>
-    <string name="alert_unknown_not_in_history">Unknown|Alert does not show in the pumps alarm history and is only displayed as an on-screen notification. Please take a photo of the alert as displayed on the pump when available. Include the #code and data in brackets as shown here and send to the dev team.</string>
+    <string name="alert_unknown_in_history">Onbekend|Controleer uw POMP Alarm Geschiedenis en meld het VOLLEDIG waarschuwingsbericht zoals getoond op de pomp. Neem de #code en gegevens in haakjes op zoals hier is weergegeven en stuur naar het ontwikkelteam.</string>
+    <string name="alert_unknown_not_in_history">Onbekend|Melding wordt niet weergegeven in de pomp alarm geschiedenis en wordt alleen weergegeven als een melding op het scherm. Neem een foto van de waarschuwing zoals weergegeven op de pomp wanneer beschikbaar. Voeg de #code en gegevens toe in de haakjes zoals hier getoond en stuur naar het dev team.</string>
     <!-- taken from pump alarm history -->
     <string name="alert_4" comment="pump alert (see your pump manual) format: heading message|extended message">Pompfout 4|Toediening gestopt. Instellingen ongewijzigd. Selecteer OK om door te gaan. Zie handleiding.</string>
     <string name="alert_6" comment="pump alert (see your pump manual) format: heading message|extended message">Geen spanning|AA-batterij langer dan 10 minuten verwijderd of geen spanning. Selecteer OK en voer tijd en datum opnieuw in.</string>
@@ -66,7 +66,7 @@
     <string name="alert_790" comment="pump alert (see your pump manual) format: heading message|extended message">Geen sensorsignaal|Maak zender los en weer vast. Selecteer OK. Kijk of zenderlampje knippert.</string>
     <string name="alert_791" comment="pump alert (see your pump manual) format: heading message|extended message">Geen sensorsignaal|Knipperde zenderlampje bij aansluiten op sensor?</string>
     <string name="alert_794" comment="pump alert (see your pump manual) format: heading message|extended message">Sensor uitgewerkt|Plaats nieuwe sensor.</string>
-    <string name="alert_795" comment="pump alert (see your pump manual) format: heading message|extended message">Check connection|Ensure transmitter and sensor connection is secure.</string>
+    <string name="alert_795" comment="pump alert (see your pump manual) format: heading message|extended message">Controleer verbinding|Zorg ervoor dat de zender en sensor goed verbonden is.</string>
     <string name="alert_796" comment="pump alert (see your pump manual) format: heading message|extended message">Geen sensorsignaal|Zie handleiding.</string>
     <string name="alert_797" comment="pump alert (see your pump manual) format: heading message|extended message">Sensor aangesloten|Nieuwe sensor starten.</string>
     <string name="alert_798" comment="pump alert (see your pump manual) format: heading message|extended message">Sensor aangesloten|Selecteer Nieuwe sensor starten of Zelfde sensor aansluiten.</string>
@@ -81,34 +81,34 @@
     <string name="alert_809" comment="pump alert (see your pump manual) format: heading message|extended message">Stop bij Laag|Toediening gestopt. SG %1$s. Controleer BG.</string>
     <string name="alert_810" comment="pump alert (see your pump manual) format: heading message|extended message">Stop vóór Laag|(stil)</string>
     <string name="alert_811" comment="pump alert (see your pump manual) format: heading message|extended message">Stop vóór Laag|Toediening gestopt. Sensorglucose bijna op ondergrens. Controleer BG.</string>
-    <string name="alert_812" comment="pump alert (see your pump manual) format: heading message|extended message">Suspend Before Low|Patient unresponsive, medical device emergency</string>
+    <string name="alert_812" comment="pump alert (see your pump manual) format: heading message|extended message">Stop voor laag|Patiënt reageert niet, medische noodtoestand</string>
     <string name="alert_814" comment="pump alert (see your pump manual) format: heading message|extended message">Basaal hervat|Maximale stoptijd van 2 h bereikt. SG nog steeds onder ondergrens. Controleer BG.</string>
     <string name="alert_815" comment="pump alert (see your pump manual) format: heading message|extended message">Basaal hervat|Basaal hervat vanwege gewijzigde Laag-instellingen. Controleer BG.</string>
     <string name="alert_816" comment="pump alert (see your pump manual) format: heading message|extended message">Alarm bij Hoog %1$s|Sensorglucose hoog. Controleer BG.</string>
     <string name="alert_817" comment="pump alert (see your pump manual) format: heading message|extended message">Alarm vóór Hoog %1$s|Sensorglucose bijna op bovengrens. Controleer BG.</string>
-    <string name="alert_869" comment="pump alert (see your pump manual) format: heading message|extended message">Calibrate by %1$s|Check BG and calibrate sensor to continue receiving sensor information.</string>
+    <string name="alert_869" comment="pump alert (see your pump manual) format: heading message|extended message">Kalibreer voor %1$s|Controleer BG en kalibreer sensor om door te gaan met het ontvangen van sensor informatie.</string>
     <string name="alert_870" comment="pump alert (see your pump manual) format: heading message|extended message">Zenderbatterij laag|Laad zender binnen 24 h op.</string>
     <!-- not shown in the pump alarm history, only as an active alert -->
-    <string name="alert_103" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">BG Check %1$s hr since last bolus|Check BG</string>
-    <string name="alert_107" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Missed Meal Bolus|No bolus delivered during the time set in the reminder.</string>
+    <string name="alert_103" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Controleer BG %1$s uur sinds laatste bolus|Controleer BG</string>
+    <string name="alert_107" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Gemiste maaltijd Bolus|Geen bolus geleverd tijdens de tijd die in de herinnering is geconfigureerd.</string>
     <string name="alert_108" comment="pump reminder alert (dynamic: ITEM at TIME) text for ITEM comes from alert_108_list">%1$s om %2$s</string>
     <string name="alert_108_list" comment="pump reminder alert (dynamic: ITEM text list) see alert_108">Persoonlijk 1|Persoonlijk 2|Persoonlijk 3|Persoonlijk 4|Persoonlijk 5|Persoonlijk 6|BG-controle|Medicatie</string>
-    <string name="alert_109" comment="pump reminder alert (dynamic: ITEM text) text for ITEM comes from alert_109_list, format: heading message|extended message">Set Change Reminder: %1$s since the last set change|Time to change reservoir and infusion set.</string>
+    <string name="alert_109" comment="pump reminder alert (dynamic: ITEM text) text for ITEM comes from alert_109_list, format: heading message|extended message">Stel wijzigingsherinnering in: %1$s sinds de laatste wijziging|Tijd om reservoir en infusieset te veranderen.</string>
     <string name="alert_109_list" comment="pump reminder alert (dynamic: ITEM text list) see alert_109">Een dag|Twee dagen|Drie dagen</string>
     <string name="alert_110" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Sensoralarm opgetreden|Controleer alarmhistorie op stille alarmen.</string>
     <!--  670G auto mode alerts -->
-    <string name="alert_819" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode off|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
-    <string name="alert_820" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
-    <string name="alert_821" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode</string>
-    <string name="alert_822" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.</string>
-    <string name="alert_823" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
-    <string name="alert_824" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
-    <string name="alert_827" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_829" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_830" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_831" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode</string>
-    <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus recommended|For %1$s entered, a correction bolus is recommended.</string>
+    <string name="alert_819" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto-modus uit|%1$s gestart. Wilt u het Auto Modus gereedheidsscherm bekijken?</string>
+    <string name="alert_820" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto-modus exit|%1$s gestart. Wilt u het Auto Modus gereedheidsscherm bekijken?</string>
+    <string name="alert_821" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Modus min levering|Auto Modus is op minimale toediening gebleven gedurende 2:30 uur. Voer BG in om door te gaan in Auto Modus</string>
+    <string name="alert_822" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto-modus max levering|Auto Modus is op Maximale toediening gebleven gedurende 4 uur. Voer BG in om door te gaan in Auto Mode.</string>
+    <string name="alert_823" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Modus verlaten hoge SG|Handmatige modus gestart. Controleer infusieset. Controleer ketonen. Overweeg een injectie. Controleer uw BG. Basal Patroon %1$s hervat.</string>
+    <string name="alert_824" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Modus verlaten hoge SG|Handmatige modus gestart. Controleer infusieset. Controleer ketonen. Overweeg een injectie. Controleer uw BG. Basal Patroon %1$s hervat.</string>
+    <string name="alert_827" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG vereist|Voer een nieuwe BG in voor Auto-modus.</string>
+    <string name="alert_829" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG vereist|Voer een nieuwe BG in voor Auto-modus.</string>
+    <string name="alert_830" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG vereist|Voer een nieuwe BG in voor Auto-modus.</string>
+    <string name="alert_831" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG vereist|Voer een nieuwe BG in voor Auto-modus.</string>
+    <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Kalibratie vereist voor Auto modus|Geen BG in en kalibreer sensor voor Auto Mode</string>
+    <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus aanbevolen|Voor %1$s is ingevoerd, wordt een correctie bolus aanbevolen.</string>
     <!-- unqualified alerts -->
     <string name="alert_99001" comment="pump alert (see your pump manual) format: heading message|extended message">AutoStop|Insulinetoediening gestopt: geen knoppen ingedrukt gedurende AutoStop-tijd.</string>
     <string name="alert_99002" comment="pump alert (see your pump manual) format: heading message|extended message">Ongeschikte batterij|Zie handleiding.</string>
@@ -129,9 +129,9 @@
     <string name="alert_99031" comment="pump alert (see your pump manual) format: heading message|extended message">Verkeerde toets ingedrukt|Probeer opnieuw</string>
     <string name="alert_99101" comment="pump alert (see your pump manual) format: heading message|extended message">Vervang sensor|Tweede kalibratie ongeldig. Plaats nieuwe sensor.</string>
     <string name="alert_99102" comment="pump alert (see your pump manual) format: heading message|extended message">Zenderbatterij leeg|Laad zender nu op.</string>
-    <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|Current action canceled.</string>
-    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</string>
-    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">High BG %1$s|Check infusion set. Check ketones. Monitor BG.</string>
+    <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode gestart|Huidige actie geannuleerd.</string>
+    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode gestart|De volgende SmartGuard instellingen zijn nu uitgeschakeld: Stop voor laag - stop bij laag</string>
+    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">Hoog BG %1$s|Controleer infusieset. Controleer ketonen. Controleer BG.</string>
 </resources>
 <!---
 
