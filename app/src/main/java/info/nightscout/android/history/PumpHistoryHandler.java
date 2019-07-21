@@ -930,6 +930,7 @@ public class PumpHistoryHandler {
 
                 RealmResults<HistorySegment> results = historyRealm
                         .where(HistorySegment.class)
+                        .equalTo("historyType", HISTORY_PUMP)
                         .sort("toDate", Sort.DESCENDING)
                         .findAll();
                 if (results.size() == 0) return;

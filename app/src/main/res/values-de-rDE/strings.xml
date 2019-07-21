@@ -570,7 +570,7 @@
     <string name="pref_pushover_override_title" maxLength="40">Überschreiben</string>
     <string name="pref_pushover_message_alarms_alerts_summary">Alarme und Hinweise, welche vom Pumpenträger noch nicht bemerkt und entfernt wurden, können als Benachrichtigung an die Follower gesendet werden.</string>
     <string name="pref_pushover_message_priority_selection_title" maxLength="40">Auswahl der Mitteilungs-Priorität:</string>
-    <string name="pref_pushover_message_priority_summary">EMERGENCY: red notification &amp; sound (persistent alarm that must be aknowledged by follower)&newline;HIGH: red notification &amp; sound&newline;NORMAL: notification &amp; sound&newline;LOW: notification &amp; no sound&newline;LOWEST: no notification &amp; no sound (message can be viewed in the Pushover app/widget)</string>
+    <string name="pref_pushover_message_priority_summary">EMERGENCY: rote Benachrichtigung &amp; Ton (persistenter Alarm, der von follower bestätigt sein muss)&newline;HIGH: rote Benachrichtigung &amp; Ton&newline;NORMAL: Benachrichtigung &amp; Ton&newline;LOW: Benachrichtigung &amp; kein Ton&newline;LOWEST: keine Benachrichtigung &amp; kein Ton (Nachricht kann in der Pushover App/Widget betrachtet werden)</string>
     <string name="pref_pushover_preview_sounds_title" maxLength="40">Vorschau Töne</string>
     <string name="pref_pushover_preview_sounds_summary">Höre Dir zur Verfügung stehenden Benachrichtigungs-Töne an.</string>
     <string name="pref_pushover_settings_category" maxLength="30">Einstellungen</string>
@@ -637,7 +637,7 @@
     <string name="pref_pushover_silenced_alerts_summary">Stummgeschaltete unbemerktr Sensorhinweise können an Follower gesendet werden. Die Pumpe wird nichts unternehmen und die Folloerr werden benachrichtigt.</string>
     <string name="pref_pushover_silenced_alerts_override_summary">Ändere Benachrichtigungspriorität und -ton wenn die Pumpe einen stummen Hinweis gibt.</string>
     <string name="pref_pushover_backfill_category" maxLength="30">Auffüllen</string>
-    <string name="pref_pushover_backfill_period_title" maxLength="40">Backfill Period</string>
+    <string name="pref_pushover_backfill_period_title" maxLength="40">Rückfüllzeit</string>
     <string name="pref_pushover_start_restart_title" maxLength="40">Start/Neustart</string>
     <string name="pref_pushover_start_restart_summary">Only backfill from the time the uploader or device has been started/restarted.</string>
     <string name="pref_pushover_unpluged_limiter_title" maxLength="40">Unpluged Limiter</string>
@@ -648,19 +648,19 @@
     <string name="pref_pushover_device_name_title" maxLength="40">Gerätename</string>
     <string name="pref_pushover_device_name_summary">Use a Pushover device name to send the message directly to that device, rather than all of the users devices (multiple devices may be separated by a comma)</string>
     <!-- Text used to generated info strings for Nightscout and Messages (Pushover etc) -->
-    <string name="text__Pump">Pump</string>
+    <string name="text__Pump">Pumpe</string>
     <string name="text__Bolus">Bolus</string>
     <string name="text__Basal">Basal</string>
-    <string name="text__Lifetimes">Lifetimes</string>
+    <string name="text__Lifetimes">Zeitraum</string>
     <string name="text__Prime">Prime</string>
     <string name="text__new_reservoir">neues Reservoir</string>
-    <string name="text__fill_cannula">fill cannula</string>
+    <string name="text__fill_cannula">fülle Kanüle</string>
     <string name="text__new_sensor_started">Neuer Sensor wurde erkannt</string>
     <string name="text__battery_inserted">Batterie eingelegt</string>
-    <string name="text__Sensor_Change">Sensor Change</string>
-    <string name="text__Battery_Change">Battery Change</string>
-    <string name="text__Cannula_Change">Cannula Change</string>
-    <string name="text__Insulin_Change">Insulin Change</string>
+    <string name="text__Sensor_Change">Sensorwechsel</string>
+    <string name="text__Battery_Change">Batteriewechsel</string>
+    <string name="text__Cannula_Change">Kanülenwechsel</string>
+    <string name="text__Insulin_Change">Reservoirwechsel</string>
     <string name="text__Normal">Normal</string>
     <string name="text__Square">Square</string>
     <string name="text__Dual">Dual</string>
@@ -691,15 +691,15 @@
     <string name="text__cancelled">Abgebrochen</string>
     <string name="text__completed">abgeschlossen</string>
     <string name="text__ended">beendet</string>
-    <string name="text__delivered">delivered</string>
-    <string name="text__active">active</string>
-    <string name="text__stopped">stopped</string>
+    <string name="text__delivered">abgegeben</string>
+    <string name="text__active">aktiv</string>
+    <string name="text__stopped">gestoppt</string>
     <!-- Pump Event Marker -->
     <string name="event_marker__heading">Event Marker</string>
-    <string name="event_marker__food">Food</string>
-    <string name="event_marker__exercise">Exercise</string>
+    <string name="event_marker__food">Nahrung</string>
+    <string name="event_marker__exercise">Bewegung</string>
     <string name="event_marker__injection">Injection</string>
-    <string name="event_marker__other">Other</string>
+    <string name="event_marker__other">Sonstiges</string>
     <!-- Pump Daily Totals -->
     <string name="daily_totals_heading__daily_totals" maxLength="15">Daily Totals</string>
     <string name="daily_totals_heading__bolus" maxLength="10">Bolus</string>
@@ -719,8 +719,8 @@
     <string name="daily_totals_heading__bolus_manual_entry" maxLength="10">Manual</string>
     <string name="daily_totals_heading__bolus_wizard_entry" maxLength="10">Wizard</string>
     <string name="daily_totals_heading__carb" maxLength="10">Carb</string>
-    <string name="daily_totals_heading__food" maxLength="10">Food</string>
-    <string name="daily_totals_heading__correction_bolus" maxLength="10">Correct</string>
+    <string name="daily_totals_heading__food" maxLength="10">Nahrung</string>
+    <string name="daily_totals_heading__correction_bolus" maxLength="10">Korrektur</string>
     <string name="daily_totals_heading__food_and_correction_bolus" maxLength="10">Food+Corr</string>
     <string name="daily_totals_heading__alert_on_rise" maxLength="10">Rise</string>
     <string name="daily_totals_heading__alert_on_high" maxLength="10">High</string>
@@ -757,9 +757,9 @@
     <string name="pump_suspend__low_glucose_suspend">Low glucose suspend</string>
     <string name="pump_suspend__set_change_suspend">Set change suspend</string>
     <string name="pump_suspend__predicted_low_glucose_suspend">Predicted low glucose suspend</string>
-    <string name="pump_resume__pump_resumed_insulin_delivery">Pump resumed insulin delivery</string>
-    <string name="pump_resume__user_resumed">User resumed</string>
-    <string name="pump_resume__user_clears_alarm">User cleared alarm</string>
+    <string name="pump_resume__pump_resumed_insulin_delivery">Pumpe hat Insulinabgabe wiederaufgenommen</string>
+    <string name="pump_resume__user_resumed">Benutzer wieder aufgenommen</string>
+    <string name="pump_resume__user_clears_alarm">Alarme durch Benutzer gelöscht</string>
     <string name="pump_resume__low_glucose_manual_resume">Low glucose manual resume</string>
     <string name="pump_resume__low_glucose_auto_resume_max_suspend_period">Low glucose auto resume - max suspend period</string>
     <string name="pump_resume__low_glucose_auto_resume_preset_glucose_reached">Low glucose auto resume - preset glucose reached</string>
@@ -770,25 +770,25 @@
     <string name="automode_transition__out_of_active_due_to_timeout_from_safe_basal">Out of active due to timeout from safe basal</string>
     <string name="automode_transition__out_of_active_due_to_prolonged_high_sg">Out of active due to prolonged high SG</string>
     <string name="sensor_state__ok" maxLength="10">OK</string>
-    <string name="sensor_state__warm_up" maxLength="30">warm up</string>
-    <string name="sensor_state__warm_up_abbreviation" maxLength="10">WU</string>
+    <string name="sensor_state__warm_up" maxLength="30">initialisieren</string>
+    <string name="sensor_state__warm_up_abbreviation" maxLength="10">INIT</string>
     <string name="sensor_state__calibrate_now" maxLength="30">Jetzt kalibrieren</string>
-    <string name="sensor_state__calibrate_now_abbreviation" maxLength="10">CalNow</string>
+    <string name="sensor_state__calibrate_now_abbreviation" maxLength="10">JetztKali</string>
     <string name="sensor_state__sg_not_available" maxLength="30">sg nicht verfügbar</string>
-    <string name="sensor_state__sg_not_available_abbreviation" maxLength="10">NoSG</string>
-    <string name="sensor_state__cal_error" maxLength="30">cal error</string>
-    <string name="sensor_state__cal_error_abbreviation" maxLength="10">CalErr</string>
-    <string name="sensor_state__change_sensor" maxLength="30">change sensor</string>
+    <string name="sensor_state__sg_not_available_abbreviation" maxLength="10">KeinWert</string>
+    <string name="sensor_state__cal_error" maxLength="30">Kalibrierungsfehler</string>
+    <string name="sensor_state__cal_error_abbreviation" maxLength="10">KalFeh</string>
+    <string name="sensor_state__change_sensor" maxLength="30">Sensorwechsel</string>
     <string name="sensor_state__change_sensor_abbreviation" maxLength="10">ChgSen</string>
-    <string name="sensor_state__sensor_expired" maxLength="30">sensor expired</string>
+    <string name="sensor_state__sensor_expired" maxLength="30">sensor abgelaufen</string>
     <string name="sensor_state__sensor_expired_abbreviation" maxLength="10">EOL</string>
-    <string name="sensor_state__not_ready" maxLength="30">not ready</string>
+    <string name="sensor_state__not_ready" maxLength="30">Nicht bereit</string>
     <string name="sensor_state__not_ready_abbreviation" maxLength="10">NotRdy</string>
     <string name="sensor_state__reading_high" maxLength="30">sg lesen hoch</string>
     <string name="sensor_state__reading_high_abbreviation" maxLength="10">HiSG</string>
     <string name="sensor_state__reading_low" maxLength="30">sg lesen niedrig</string>
     <string name="sensor_state__reading_low_abbreviation" maxLength="10">LoSG</string>
-    <string name="sensor_state__calibrating" maxLength="30">calibrating</string>
+    <string name="sensor_state__calibrating" maxLength="30">kalibrieren</string>
     <string name="sensor_state__calibrating_abbreviation" maxLength="10">InCal</string>
     <string name="sensor_state__cal_error_change_sensor" maxLength="30">cal error change sensor</string>
     <string name="sensor_state__cal_error_change_sensor_abbreviation" maxLength="6">ChgSen</string>
@@ -831,8 +831,8 @@
     <string name="system_status__time_ago" comment="example: Pump now connected. Last seen 30m ago">vor</string>
     <string name="system_status__usb_error">USB Fehler. Verbindung zu Contour Next Link getrennt.</string>
     <string name="system_status__pump_device_error">Die Pumpe hat einen Gerätefehler. Es können keine Daten übertragen werden, so lange bis dieser Fehler auf der Pumpe behoben ist.</string>
-    <string name="system_status__uploader_battery_level" comment="example: Uploader battery at 15%">Uploader battery at</string>
-    <string name="system_status__uploader_battery_charge_soon">Charge your uploader device soon</string>
-    <string name="system_status__uploader_battery_fully_charged">Uploader battery fully charged</string>
+    <string name="system_status__uploader_battery_level" comment="example: Uploader battery at 15%">Sendehandy Akku bei</string>
+    <string name="system_status__uploader_battery_charge_soon">Sendehandy muß geladen werden</string>
+    <string name="system_status__uploader_battery_fully_charged">Übertragungshandy voll geladen</string>
     <string name="system_status__estimate_active">SG-Geschätzte ist aktiv</string>
 </resources>

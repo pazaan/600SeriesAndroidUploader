@@ -11,7 +11,7 @@
 <resources>
     <!-- plurals -->
     <plurals name="grams">
-        <item quantity="one">%d gram</item>
+        <item quantity="one">%d gramů</item>
         <item quantity="few">%d grams</item>
         <item quantity="many">%d grams</item>
         <item quantity="other">%d grams</item>
@@ -99,21 +99,21 @@
     <string name="notification__SUSPEND" maxLength="30" comment="visible on pull down / lock screen, example">Pozastaveno</string>
     <string name="notification__SUSPEND_time" maxLength="30" comment="visible on pull down / lock screen, example:  Suspended at 3.30 pm">Pozastaveno na %1$s</string>
     <string name="notification__TEMPBASAL_rate_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain">Dočasný bazál: %1$s %2$s zbývá</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime_preset" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Temp Basal: %1$s %2$s remain (%3$s)</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime_preset" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Dočasný bazál: %1$s %2$s zbývá)</string>
     <string name="notification__BG_value_time" maxLength="40" comment="BG = Blood Glucose, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm">GL: %1$s v %2$s</string>
     <string name="notification__BG_value_time_factor" maxLength="40" comment="BG = Blood Glucose, Factor = Calibration Factor, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm • Factor: 4.5">GL: %1$s v %2$s • Faktor: %3$s</string>
-    <string name="notification__BOLUS_delivered_time" maxLength="40" comment="visible on pull down / lock screen, example:  Bolus: 3.5U at 3.15 pm">Bolus: %1$s at %2$s</string>
+    <string name="notification__BOLUS_delivered_time" maxLength="40" comment="visible on pull down / lock screen, example:  Bolus: 3.5U at 3.15 pm">Bolus: %1$s v %2$s</string>
     <string name="notification__DUALBOLUS_delivered_duration_time" maxLength="40" comment="visible on pull down / lock screen, example:  Dual: 3U:5U/1h30m at 3.15 pm">Dual: %1$s:%2$s/%3$s at %4$s</string>
     <string name="notification__SQUAREBOLUS_delivered_duration_time" maxLength="40" comment="visible on pull down / lock screen, example:  Square: 5U/1h30m at 3.15 pm">Square: %1$s/%2$s at %3$s</string>
     <string name="notification__BOLUSING_delivered_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Bolusing 0.5U 1h30m remain">Bolusing&dots; %1$s %2$s remain</string>
     <string name="notification__CAL_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Cal 10h30m">Cal %1$s</string>
     <string name="notification__WARMUP_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Warmup 1h30m">Warmup %1$s</string>
-    <string name="notification__BUSY" maxLength="20" comment="pump polling is in progress, visible on pull down / lock screen">Polling</string>
+    <string name="notification__BUSY" maxLength="20" comment="pump polling is in progress, visible on pull down / lock screen">Stahování dat</string>
     <string name="notification__ERROR" maxLength="20" comment="error state, visible on pull down / lock screen">Chyba připojení</string>
     <!-- Userlog -->
     <string name="ul_main__requesting_poll_now">Requesting poll now&dots;</string>
     <string name="ul_main__requesting_pump_profile">Scheduled pump profile update&dots;</string>
-    <string name="ul_main__cgm_service_disabled">CGM Service is disabled.</string>
+    <string name="ul_main__cgm_service_disabled">Služba CGM je vypnuta.</string>
     <string name="ul_main__pump_profile_disabled">Aktualizace profilu je vypnuta.</string>
     <string name="ul_main__hello">Nightscout 600 Series Uploader</string>
     <string name="ul_main__goodbye">Nashledanou :)</string>
@@ -121,18 +121,18 @@
     <string name="ul_main__uploading">Nahrávání</string>
     <string name="ul_main__treatments">Ošetření</string>
     <string name="ul_main__poll_interval">Interval dotazování</string>
-    <string name="ul_main__low_battery_poll_interval">Low battery poll interval</string>
-    <string name="ul_main__auto_mode_update">Auto Mode update</string>
+    <string name="ul_main__low_battery_poll_interval">Frekvence stahování s vybitou baterií</string>
+    <string name="ul_main__auto_mode_update">Automatická aktualizace režimu</string>
     <string name="ul_share__nightscout_status">Nightscout status</string>
     <string name="ul_share__nightscout_site">Adresa Nightscoutu</string>
     <string name="ul_share__is_available">je k dispozici</string>
     <string name="ul_share__is_not_available">není k dispozici</string>
     <string name="ul_share__offline">Offline / žádný  internet</string>
-    <string name="ul_share__processed">processed</string>
+    <string name="ul_share__processed">zpracované</string>
     <string name="ul_share__version">verze</string>
-    <string name="ul_share__pushover_validation_failed">Pushover validation failed. Check that your Pushover account is active and your account settings are correct.</string>
+    <string name="ul_share__pushover_validation_failed">Pushover ověřování  selhalo, zkontrolujte, že Váš účet Pushover je aktivní a nastavení účtu jsou správná.</string>
     <string name="ul_poll__connecting_to_contour_next_link">Připojení k Contour Next Link</string>
-    <string name="ul_poll__connected_on_channel">Connected on channel</string>
+    <string name="ul_poll__connected_on_channel">Připojeno   channel </string>
     <string name="ul_poll__rssi" comment="RSSI = Received Signal Strength Indicator (CNL-PUMP radio signal)">RSSI</string>
     <string name="ul_poll__please_wait">Čekejte prosím</string>
     <string name="ul_poll__pump_is_expecting_sensor_communication">Pump is expecting sensor communication. Poll due in</string>

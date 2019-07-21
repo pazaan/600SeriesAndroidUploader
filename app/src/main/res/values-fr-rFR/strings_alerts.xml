@@ -19,7 +19,7 @@
     <string name="alert_smartguard">SmartGuard</string>
     <string name="alert_sensor">Alerte Capteur</string>
     <string name="alert_reminder">Rappel</string>
-    <string name="alert_automode">Auto Mode Alert</string>
+    <string name="alert_automode">Alerte Mode Automatique</string>
     <!-- alert additional -->
     <string name="alert_cleared">Alerte Effacé</string>
     <string name="alert_cleared_reminder">Rappel Effacé</string>
@@ -29,8 +29,8 @@
     <string name="alert_repeated">Alerte Répétée</string>
     <string name="alert_repeated_tag">répété</string>
     <!-- default when no alert definition found -->
-    <string name="alert_unknown_in_history">Unknown|Please check your PUMP Alarm History and report the FULL alert message as shown on the pump. Include the #code and data in brackets as shown here and send to the dev team.</string>
-    <string name="alert_unknown_not_in_history">Unknown|Alert does not show in the pumps alarm history and is only displayed as an on-screen notification. Please take a photo of the alert as displayed on the pump when available. Include the #code and data in brackets as shown here and send to the dev team.</string>
+    <string name="alert_unknown_in_history">Inconnu|Veuillez vérifier l\'historique d\'alarmes de la POMPE et signaler le message d\'alerte AU COMPLET tel qu\'affiché sur la pompe. Inclure le #code et les données entre crochets comme indiqué ici et envoyez le tout à l\'équipe dev.</string>
+    <string name="alert_unknown_not_in_history">Inconnu|L\'alerte ne s\'affiche pas sur l\'historique d\'alarmes de la pompe et est seulement visible en tant que notification à l\'écran. Veuillez prendre une photo de l\'alerte tel qu\'elle est affiché sur la pompe. Inclure le #code et les données entre crochets comme indiqué ici et envoyez le tout à l\'équipe de dev.</string>
     <!-- taken from pump alarm history -->
     <string name="alert_4" comment="pump alert (see your pump manual) format: heading message|extended message">Erreur de pompe 4|Administration arrêtée. Réglages inchangés. Sélectionnez OK pour continuer. Se référer au manuel d\'utilisation.</string>
     <string name="alert_6" comment="pump alert (see your pump manual) format: heading message|extended message">Défaut d\'alimentation|La pile AA a été retirée pendant plus de 10 minou l\'alimentation interrompue. Sélectionner OK pour saisir heure et date à nouveau.</string>
@@ -86,29 +86,29 @@
     <string name="alert_815" comment="pump alert (see your pump manual) format: heading message|extended message">Reprise administr. basale|Reprise administration basale due à la modification des réglages gluc. Vérifier la glycémie.</string>
     <string name="alert_816" comment="pump alert (see your pump manual) format: heading message|extended message">Alerte Hyper %1$s|Taux de glucose élevé. Vérifier la glycémie.</string>
     <string name="alert_817" comment="pump alert (see your pump manual) format: heading message|extended message">Alerte Avant Hyper %1$s|Le taux de glucose approche de la limite haute. Vérifier la glycémie.</string>
-    <string name="alert_869" comment="pump alert (see your pump manual) format: heading message|extended message">Calibrate by %1$s|Check BG and calibrate sensor to continue receiving sensor information.</string>
+    <string name="alert_869" comment="pump alert (see your pump manual) format: heading message|extended message">Calibrer par %1$s|Vérifiez BG et calibrez le capteur pour continuer à recevoir les informations du capteur.</string>
     <string name="alert_870" comment="pump alert (see your pump manual) format: heading message|extended message">Pile du transmetteur faible|Recharger le transmetteur dans un délai de 24 heures.</string>
     <!-- not shown in the pump alarm history, only as an active alert -->
-    <string name="alert_103" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">BG Check %1$s hr since last bolus|Check BG</string>
-    <string name="alert_107" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Missed Meal Bolus|No bolus delivered during the time set in the reminder.</string>
+    <string name="alert_103" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Contrôle de glycémie %1$s h depuis le dernier bolus|Vérifiez Glycémie</string>
+    <string name="alert_107" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Bolus de Repas Manqué|Pas de bolus administré pendant le temps mis dans le rappel.</string>
     <string name="alert_108" comment="pump reminder alert (dynamic: ITEM at TIME) text for ITEM comes from alert_108_list">%1$s à %2$s</string>
     <string name="alert_108_list" comment="pump reminder alert (dynamic: ITEM text list) see alert_108">Personnel 1|personnel 2|Personnel 3|Personnel 4|Personnel 5|Personnel 6|Vérifier la glycémie|Médication</string>
-    <string name="alert_109" comment="pump reminder alert (dynamic: ITEM text) text for ITEM comes from alert_109_list, format: heading message|extended message">Set Change Reminder: %1$s since the last set change|Time to change reservoir and infusion set.</string>
+    <string name="alert_109" comment="pump reminder alert (dynamic: ITEM text) text for ITEM comes from alert_109_list, format: heading message|extended message">Définir le rappel de changement: %1$s depuis le dernier changement|Temps de changer le réservoir et site de perfusion.</string>
     <string name="alert_109_list" comment="pump reminder alert (dynamic: ITEM text list) see alert_109">Un jour|Deux jours|Trois jours</string>
     <string name="alert_110" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Alerte capteur s\'est produite|Vérifier les alertes en mode silence dans Hist. alarmes.</string>
     <!--  670G auto mode alerts -->
-    <string name="alert_819" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode off|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
-    <string name="alert_820" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit|%1$s started. Would you like to review the Auto Mode Readiness screen?</string>
-    <string name="alert_821" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode min delivery|Auto Mode has been at minimum delivery for 2:30 hours. Enter BG to continue in Auto Mode</string>
-    <string name="alert_822" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.</string>
-    <string name="alert_823" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
-    <string name="alert_824" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
-    <string name="alert_827" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_829" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_830" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_831" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode</string>
-    <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus recommended|For %1$s entered, a correction bolus is recommended.</string>
+    <string name="alert_819" comment="670G pump alert (see your pump manual) format: heading message|extended message">Mode Automatique désactivé|%1$s démarré. Voulez-vous revoir l\'écran de Preparation du Mode Automatique ?</string>
+    <string name="alert_820" comment="670G pump alert (see your pump manual) format: heading message|extended message">Sortie du Mode Automatique|%1$s démarré. Voulez-vous revoir l\'écran de Préparation du Mode Automatique ?</string>
+    <string name="alert_821" comment="670G pump alert (see your pump manual) format: heading message|extended message">Livraison min Mode Automatique|Le Mode Automatique a été en livraison mini pendant 2h30. Entrez une valeur de glycémie pour continuer en Mode Automatique</string>
+    <string name="alert_822" comment="670G pump alert (see your pump manual) format: heading message|extended message">Livraison max Mode Automatique|Le Mode Automatique a été en livraison max pendant 4h. Entrez une valeur de glycémie pour continuer en Mode Automatique.</string>
+    <string name="alert_823" comment="670G pump alert (see your pump manual) format: heading message|extended message">Sortie de Mode Automatique SG Elevé|Mode Manuel demarré. Vérifiez le site de perfusion. Vérifiez Ketones. Considérez une injection. Surveillez votre glycémie. Basal %1$s repris.</string>
+    <string name="alert_824" comment="670G pump alert (see your pump manual) format: heading message|extended message">Sortie de Mode Automatique SG Elevé|Mode Manuel demarré. Vérifiez le site de perfusion. Vérifiez Ketones. Considérez une injection. Surveillez votre glycémie. Basal %1$s repris.</string>
+    <string name="alert_827" comment="670G pump alert (see your pump manual) format: heading message|extended message">Glycémie requise|Entrez une nouvelle glycémie pour le Mode Automatique.</string>
+    <string name="alert_829" comment="670G pump alert (see your pump manual) format: heading message|extended message">Glycémie requise|Entrez une nouvelle glycémie pour le Mode Automatique.</string>
+    <string name="alert_830" comment="670G pump alert (see your pump manual) format: heading message|extended message">Glycémie requise|Entrez une nouvelle glycémie pour le Mode Automatique.</string>
+    <string name="alert_831" comment="670G pump alert (see your pump manual) format: heading message|extended message">Glycémie requise|Entrez une nouvelle glycémie pour le Mode Automatique.</string>
+    <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Calibration requise pour le Mode Automatique|Entrez une glycémie et calibrez le capteur pour le Mode Automatique</string>
+    <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus recommandé|Pour %1$s entrés, un bolus de correction est recommandé.</string>
     <!-- unqualified alerts -->
     <string name="alert_99001" comment="pump alert (see your pump manual) format: heading message|extended message">Stop auto|Administration d\'insuline interrompue. Aucune touche n\'a été actionnée dans le délai défini dans Durée Stop auto.</string>
     <string name="alert_99002" comment="pump alert (see your pump manual) format: heading message|extended message">Pile non compatible|Se référer au manuel d\'utilisation.</string>
@@ -129,9 +129,9 @@
     <string name="alert_99031" comment="pump alert (see your pump manual) format: heading message|extended message">Mauvaise touche enfoncée|Réessayer</string>
     <string name="alert_99101" comment="pump alert (see your pump manual) format: heading message|extended message">Remplacer capteur|Deuxième calibration a été rejetée. Insérer un nouveau capteur.</string>
     <string name="alert_99102" comment="pump alert (see your pump manual) format: heading message|extended message">Pile transmetteur épuisée|Recharger le transmetteur maintenant.</string>
-    <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|Current action canceled.</string>
-    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</string>
-    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">High BG %1$s|Check infusion set. Check ketones. Monitor BG.</string>
+    <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Mode Automatique démarré|Action en cours annulée.</string>
+    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Mode Automatique demarré|Les fonctions SmartGuard suivantes sont maintenant désactivées : Suspension avant glycémie base - Suspension en glycémie base</string>
+    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">Glycémie élevée %1$s|Vérifiez le site de perfusion. Vérifiez Ketones. Surveillez glycémie.</string>
 </resources>
 <!---
 

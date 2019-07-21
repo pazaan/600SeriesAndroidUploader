@@ -17,12 +17,12 @@
     <string name="alert_system">Sistema de Alertas</string>
     <string name="alert_pump">Alerta da Bomba</string>
     <string name="alert_smartguard">SmartGuard</string>
-    <string name="alert_sensor">Alerta de Sensor</string>
+    <string name="alert_sensor">Alerta de sensor</string>
     <string name="alert_reminder">Lembrete</string>
     <string name="alert_automode">Alerta de Modo Automático</string>
     <!-- alert additional -->
     <string name="alert_cleared">Alerta Limpo</string>
-    <string name="alert_cleared_reminder">Lembrete Limpo</string>
+    <string name="alert_cleared_reminder">Lembrete limpo</string>
     <string name="alert_cleared_tag">limpo</string>
     <string name="alert_silenced">Alerta Silenciado</string>
     <string name="alert_silenced_tag">silenciado</string>
@@ -51,7 +51,7 @@
     <string name="alert_104" comment="pump alert (see your pump manual) format: heading message|extended message">Pilha da bomba de insulina fraca|Substitua a pilha em breve.</string>
     <string name="alert_105" comment="pump alert (see your pump manual) format: heading message|extended message">Reservatório baixo Restam %1$s unidades|Mude o reservatório.</string>
     <string name="alert_106" comment="pump alert (see your pump manual) format: heading message|extended message">Reservatório baixo Restam %1$s horas|Mude o reservatório.</string>
-    <string name="alert_113" comment="pump alert (see your pump manual) format: heading message|extended message">Nível do reservatório a 0U|Mude o reservatório para garantir admin. de insulina.</string>
+    <string name="alert_113" comment="pump alert (see your pump manual) format: heading message|extended message">Nível do reservatório a 0U|Mude o reservatório para garantir administração de insulina.</string>
     <string name="alert_117" comment="pump alert (see your pump manual) format: heading message|extended message">Insulina ativa apagada|Foi apagada qualquer quantidade de insulina ativa.</string>
     <string name="alert_775" comment="pump alert (see your pump manual) format: heading message|extended message">Calibrar agora|Verifique a GS e calibre o sensor.</string>
     <string name="alert_776" comment="pump alert (see your pump manual) format: heading message|extended message">Calibração rejeitada|Verifique a GS e calibre o sensor.</string>
@@ -107,8 +107,8 @@
     <string name="alert_829" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG necessário|Insira um novo BG para o Modo Automático.</string>
     <string name="alert_830" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG necessário|Insira um novo BG para o Modo Automático.</string>
     <string name="alert_831" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG necessário|Insira um novo BG para o Modo Auto.</string>
-    <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode</string>
-    <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus recommended|For %1$s entered, a correction bolus is recommended.</string>
+    <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Calibração necessário para Auto Mode|Introduzir BG e calibrar sensor para Auto Mode</string>
+    <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus recomendado|Para %1$s introduzido, um bolus de correcção é recomendado.</string>
     <!-- unqualified alerts -->
     <string name="alert_99001" comment="pump alert (see your pump manual) format: heading message|extended message">Suspensão automática|Administração de insulina suspensa. Nenhum botão foi pressionado dentro do tempo definido em suspensão automática.</string>
     <string name="alert_99002" comment="pump alert (see your pump manual) format: heading message|extended message">Pilha incompatível|Consulte o guia do utilizador.</string>
@@ -129,9 +129,9 @@
     <string name="alert_99031" comment="pump alert (see your pump manual) format: heading message|extended message">Tecla errada pressionada|Tente novamente</string>
     <string name="alert_99101" comment="pump alert (see your pump manual) format: heading message|extended message">Mudar sensor|A segunda calibração foi rejeitada. Insira um sensor novo.</string>
     <string name="alert_99102" comment="pump alert (see your pump manual) format: heading message|extended message">Bateria transmissor descarregada|Carregue o transmissor agora.</string>
-    <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|Current action canceled.</string>
-    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</string>
-    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">High BG %1$s|Check infusion set. Check ketones. Monitor BG.</string>
+    <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode iniciado|Ação atual cancelada.</string>
+    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode iniciado|As seguintes configurações SmartGuard estão agora desativadas: Suspender antes de baixo - Suspender em baixo</string>
+    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG Alto %1$s|Verificar o conjunto de infusão. Verificar cetónicos. Monitorar BG.</string>
 </resources>
 <!---
 
