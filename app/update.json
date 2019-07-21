@@ -1,12 +1,19 @@
 {
-  "latestVersion": "0.6.1",
-  "latestVersionCode": "11",
-  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.6.1",
+  "latestVersion": "0.7.0",
+  "latestVersionCode": "12",
+  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.7.0",
   "releaseNotes": [
-    "- Nightscout alarm triggers for calibration and expired sensor",
-    "- Option to change Grams Per Exchange value",
-    "- Option to use old method for requesting USB permission",
-    "- Messaging for busy states",
-    "- Bug and crash fixes"
+    "- Bug fixes",
+    "- Updates for integration with Android 8 and 9",
+    "- CNL stability and reading efficiency improvements",
+    "- Automation to handle profiles and dynamic setting changes",
+    "- Pump based event markers and reminders",
+    "- Pump alerts and alarms viewable in Nightscout",
+    "- Customisable events and alerts sent to any device using Pushover integration",
+    "- Estimation of sg values when a calibration is missed or whenever the pump stops showing sg due to sensor error or sensor expired",
+    "- ISIG reporter automatically shows during warm-up or sensor error states",
+    "- Language localisation",
+    " * Language translation is ongoing, please help with checking and completion for your locality.",
+    " * Thanks to all out contributors!"
   ]
 }
