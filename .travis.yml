@@ -26,12 +26,12 @@ android:
   - platform-tools
   - tools
   - build-tools-$ANDROID_BUILD_TOOLS_VERSION
-  - android-$EMULATOR_API_LEVEL
+  #- android-$EMULATOR_API_LEVEL
   - android-$ANDROID_API_LEVEL
   - extra-android-support
   - extra-android-m2repository
   - sys-img-$ANDROID_ABI-android-$ANDROID_API_LEVEL
-  - sys-img-$ANDROID_ABI-android-$EMULATOR_API_LEVEL
+  #- sys-img-$ANDROID_ABI-android-$EMULATOR_API_LEVEL
   licenses:
   - android-sdk-license-.+
   - android-sdk-preview-license-.+
