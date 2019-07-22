@@ -54,8 +54,8 @@ before_install:
   - yes | sdkmanager "platforms;android-28"
   - yes | sdkmanager "platforms;android-14"
   - yes | sdkmanager "build-tools;28.0.3"
-  - yes | sdkmanager "tools;26.1.1"
   - sdkmanager --list
+  - yes | sdkmanager "tools;26.1.1"
   - yes | sdkmanager "platform-tools;28.0.2"
 
 before_script:
