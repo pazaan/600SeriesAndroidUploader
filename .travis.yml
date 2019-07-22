@@ -46,10 +46,13 @@ before_install:
   - echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > "$ANDROID_HOME/licenses/android-sdk-license"
   - echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
   - chmod +x gradlew
-  - echo y | android update sdk --no-ui --all --filter "tool,extra-android-m2repository,extra-android-support,extra-google-google_play_services,extra-google-m2repository"
+  - echo y | android update sdk --no-ui --all --filter "tools,extra-android-m2repository,extra-android-support,extra-google-google_play_services,extra-google-m2repository"
   - echo y | $ANDROID_HOME/tools/bin/sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout-solver;1.0.2"
   #- ./gradlew dependencies || true # DON'T ADD unless you are getting "Install missing components using SDK manager"
   #Source: https://medium.com/@oldergod/constraint-layout-and-circleci-travis-d50342696d2
+  - yes | sdkmanager "platforms;android-28"
+  - - yes | sdkmanager "platforms;android-14"
+  - yes | sdkmanager "build-tools;28.0.3"
 
 before_script:
   - echo "y" | android update sdk -a --no-ui --filter android-14
