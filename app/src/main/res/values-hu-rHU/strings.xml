@@ -731,7 +731,7 @@
     <string name="daily_totals_heading__alert_before_suspend" maxLength="10">Felf.ha.k.</string>
     <string name="daily_totals_heading__within_range" maxLength="10">Benne</string>
     <string name="daily_totals_heading__automode_active_time" maxLength="10">AutMod.Akt</string>
-    <string name="daily_totals_heading__microbolus" maxLength="10">Mikrobólus</string>
+    <string name="daily_totals_heading__microbolus" maxLength="10">Mikro</string>
     <string name="daily_totals_heading__therapy" maxLength="10">SZG áttek.</string>
     <string name="daily_totals_heading__therapy_in_range" maxLength="10">Benne</string>
     <string name="daily_totals_heading__therapy_above_range" maxLength="10">Fölötte</string>
