@@ -1,10 +1,10 @@
 language: android
 jdk: oraclejdk8
-sudo: false
+sudo: required
 
 before_cache:
-- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 
 cache:
   directories:
@@ -35,24 +35,40 @@ android:
   licenses:
   - android-sdk-license-.+
   - android-sdk-preview-license-.+
+  - google-gdk-license-.+
 
 before_install:
-- openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
-  -in keystore.jks.enc -out keystore.jks -d
-- openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
-  -in fabric.properties.enc -out app/fabric.properties -d
+  - openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
+    -in keystore.jks.enc -out keystore.jks -d
+  - openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
+    -in fabric.properties.enc -out app/fabric.properties -d
+  - mkdir "$ANDROID_HOME/licenses" || true
+  - echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > "$ANDROID_HOME/licenses/android-sdk-license"
+  - echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+  - chmod +x gradlew
+  - touch $HOME/.android/repositories.cfg
+  - yes | sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout-solver;1.0.2"
+  - yes | sdkmanager "platforms;android-28"
+  - yes | sdkmanager "platforms;android-14"
+  - yes | sdkmanager "build-tools;28.0.3"
+  - sdkmanager --list
+  - yes | sdkmanager --update
 
 before_script:
-- echo no | android create avd --force -n test -t android-14 --abi armeabi-v7a
-- emulator -avd test -no-skin -no-audio -no-window &
-- android-wait-for-emulator
-- adb shell input keyevent 82 &
+  #- echo "y" | android update sdk -a --no-ui --filter android-14
+  #- echo "y" | android update sdk -a --no-ui --filter sys-img-armeabi-v7a-android-14
+  #- android list targets | grep -E '^id:' | awk -F '"' '{$1=""; print $2}' # list all targets
+  #- echo no | android create avd --force -n test -t android-14 --abi armeabi-v7a
+  - echo no | avdmanager create avd --force -n test -k "system-images;android-14;default;armeabi-v7a"
+  - emulator -avd test -no-skin -no-window &
+  - android-wait-for-emulator
+  - adb shell input keyevent 82 &
 
 script:
-- ./gradlew clean build connectedCheck -PdisablePreDex --stacktrace
+  - ./gradlew clean build connectedCheck -PdisablePreDex --stacktrace
 
 before_deploy:
-- mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/600-series-ns-uploader.apk
+  - mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/600-series-ns-uploader.apk
 
 deploy:
   skip_cleanup: true
