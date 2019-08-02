@@ -142,20 +142,20 @@
     <string name="ul_poll__polling_service_could_not_complete">Polling service could not complete. Will try again in 60 seconds.</string>
     <string name="ul_poll__unexpected_error">Neočekávaná chyba!</string>
     <string name="ul_poll__next_poll_due_at">Next poll due at</string>
-    <string name="ul_poll__sensor_is_in_warm_up_phase">sensor is in warm-up phase</string>
-    <string name="ul_poll__sensor_calibration_is_due_now">sensor calibration is due now!</string>
-    <string name="ul_poll__sensor_is_calibrating">sensor is calibrating</string>
+    <string name="ul_poll__sensor_is_in_warm_up_phase">senzor ještě není připravený</string>
+    <string name="ul_poll__sensor_calibration_is_due_now">je nutno nyní zkalibrovat senzor!</string>
+    <string name="ul_poll__sensor_is_calibrating">senzor se kalibruje</string>
     <string name="ul_poll__sensor_error">chyba senzoru</string>
     <string name="ul_poll__old_cgm_event_received">přijata stará událost cgm</string>
-    <string name="ul_poll__no_cgm_pump_lost_sensor">no cgm (pump lost sensor)</string>
-    <string name="ul_poll__no_cgm">no cgm</string>
+    <string name="ul_poll__no_cgm_pump_lost_sensor">žádné cgm (pumpa ztratila spojení se senzorem)</string>
+    <string name="ul_poll__no_cgm">žádné cgm</string>
     <string name="ul_poll__estimated_sgv" comment="SGV = Sensor Glucose Value, example: estimated SGV 120 at 3:15">odhadovaná GS</string>
     <string name="ul_poll__reading_sgv__SGV" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">GS</string>
     <string name="ul_poll__reading_time__at" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">v</string>
     <string name="ul_poll__reading_pump_clock_difference__Pump" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">Pumpy</string>
     <string name="ul_poll__warn_pump_battery_low">Varování: baterie v pumpě je téměř prázdná</string>
-    <string name="ul_poll__info_pump_low_battery_mode_change">Poll interval increased, history and backfill processing reduced.</string>
-    <string name="ul_poll__info_low_battery_interval">Low battery poll interval:</string>
+    <string name="ul_poll__info_pump_low_battery_mode_change">Interval čtení hodnot se zvětšil, zpracovaní historie a zpětného načtení dat se snížilo.</string>
+    <string name="ul_poll__info_low_battery_interval">Interval čtení při vybité baterii:</string>
     <string name="ul_poll__warn_pump_time_difference">Warning: Pump is over</string>
     <string name="ul_poll__warn_pump_time_difference_ahead">ahead of the time used by uploader.</string>
     <string name="ul_poll__warn_pump_time_difference_behind">behind the time used by uploader.</string>

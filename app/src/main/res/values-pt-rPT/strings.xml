@@ -359,7 +359,7 @@
     <string name="pref_ns_uploader_status_fully_charged_state">Estado totalmente carregado</string>
     <string name="pref_ns_uploader_status_automatic_remove_from_nightscout_summary">Mensagens de status do Uploader são automaticamente removidas do Nightscout após 24 horas</string>
     <string name="pref_ns_misc_category" maxLength="30">Diversos</string>
-    <string name="pref_ns_grams_per_exchange_title" maxLength="40">Grams Per Exchange</string>
+    <string name="pref_ns_grams_per_exchange_title" maxLength="40">Gramas por Equivalente</string>
     <string name="pref_ns_daily_totals_title" maxLength="40">Totais diários</string>
     <string name="pref_ns_daily_totals_summary">Enviar totais diários da bomba para o Nightscout</string>
     <string name="pref_ns_formatting_title" maxLength="40">A formatar</string>
