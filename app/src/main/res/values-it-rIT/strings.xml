@@ -82,53 +82,53 @@
     <string name="notification__SGV_value" maxLength="15" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen, example: SGV 100">SGV %1$s</string>
     <string name="notification__SGV_value_estimated" maxLength="15" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen when sensor glucose estimator is in use, example: SGV 100*">SGV %1$s*</string>
     <string name="notification__SGV_not_available" maxLength="20" comment="SGV = Sensor Glucose Value, visible on pull down / lock screen">SGV non disponibile</string>
-    <string name="notification__ESTIMATE" maxLength="30" comment="visible on pull down / lock screen when sensor glucose estimator is in use">*estimated sgv</string>
-    <string name="notification__NEXTPOLL_time" maxLength="20" comment="visible on pull down / lock screen, example: Next 12:15 pm">Next %1$s</string>
+    <string name="notification__ESTIMATE" maxLength="30" comment="visible on pull down / lock screen when sensor glucose estimator is in use">*sgv stimato</string>
+    <string name="notification__NEXTPOLL_time" maxLength="20" comment="visible on pull down / lock screen, example: Next 12:15 pm">Prossima %1$s</string>
     <string name="notification__IOB_value" maxLength="30" comment="IOB = Insulin On Board, visible on pull down / lock screen, example: IOB 3.5U">IOB %1$s</string>
-    <string name="notification__BASAL_rate" maxLength="30" comment="visible on pull down / lock screen, example:  Basal: 0.85U">Basal: %1$s</string>
-    <string name="notification__SUSPEND" maxLength="30" comment="visible on pull down / lock screen, example">Suspended</string>
-    <string name="notification__SUSPEND_time" maxLength="30" comment="visible on pull down / lock screen, example:  Suspended at 3.30 pm">Suspended at %1$s</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain">Temp Basal: %1$s %2$s remain</string>
-    <string name="notification__TEMPBASAL_rate_remainingtime_preset" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Temp Basal: %1$s %2$s remain (%3$s)</string>
-    <string name="notification__BG_value_time" maxLength="40" comment="BG = Blood Glucose, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm">BG: %1$s at %2$s</string>
-    <string name="notification__BG_value_time_factor" maxLength="40" comment="BG = Blood Glucose, Factor = Calibration Factor, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm • Factor: 4.5">BG: %1$s at %2$s • Factor: %3$s</string>
-    <string name="notification__BOLUS_delivered_time" maxLength="40" comment="visible on pull down / lock screen, example:  Bolus: 3.5U at 3.15 pm">Bolus: %1$s at %2$s</string>
-    <string name="notification__DUALBOLUS_delivered_duration_time" maxLength="40" comment="visible on pull down / lock screen, example:  Dual: 3U:5U/1h30m at 3.15 pm">Dual: %1$s:%2$s/%3$s at %4$s</string>
-    <string name="notification__SQUAREBOLUS_delivered_duration_time" maxLength="40" comment="visible on pull down / lock screen, example:  Square: 5U/1h30m at 3.15 pm">Square: %1$s/%2$s at %3$s</string>
-    <string name="notification__BOLUSING_delivered_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Bolusing 0.5U 1h30m remain">Bolusing&dots; %1$s %2$s remain</string>
-    <string name="notification__CAL_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Cal 10h30m">Cal %1$s</string>
+    <string name="notification__BASAL_rate" maxLength="30" comment="visible on pull down / lock screen, example:  Basal: 0.85U">Basale: %1$s</string>
+    <string name="notification__SUSPEND" maxLength="30" comment="visible on pull down / lock screen, example">Sospesa</string>
+    <string name="notification__SUSPEND_time" maxLength="30" comment="visible on pull down / lock screen, example:  Suspended at 3.30 pm">Sospesa alle %1$s</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain">Tempo basale: %1$s %2$s rimane</string>
+    <string name="notification__TEMPBASAL_rate_remainingtime_preset" maxLength="40" comment="visible on pull down / lock screen, example:  Temp Basal: 0.15U 45m remain (Temp 2)">Tempo basale: %1$s %2$s rimane (%3$s)</string>
+    <string name="notification__BG_value_time" maxLength="40" comment="BG = Blood Glucose, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm">Glicemia BG: %1$s alle %2$s</string>
+    <string name="notification__BG_value_time_factor" maxLength="40" comment="BG = Blood Glucose, Factor = Calibration Factor, visible on pull down / lock screen, example:  BG: 120 at 3:15 pm • Factor: 4.5">BG: %1$s alle %2$s • Fattore: %3$s</string>
+    <string name="notification__BOLUS_delivered_time" maxLength="40" comment="visible on pull down / lock screen, example:  Bolus: 3.5U at 3.15 pm">Bolo: %1$s alle %2$s</string>
+    <string name="notification__DUALBOLUS_delivered_duration_time" maxLength="40" comment="visible on pull down / lock screen, example:  Dual: 3U:5U/1h30m at 3.15 pm">Duale: %1$s:%2$s/%3$s alle %4$s</string>
+    <string name="notification__SQUAREBOLUS_delivered_duration_time" maxLength="40" comment="visible on pull down / lock screen, example:  Square: 5U/1h30m at 3.15 pm">Quadra: %1$s/%2$s alle %3$s</string>
+    <string name="notification__BOLUSING_delivered_remainingtime" maxLength="40" comment="visible on pull down / lock screen, example:  Bolusing 0.5U 1h30m remain">Infusione&dots; %1$s %2$s rimane</string>
+    <string name="notification__CAL_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Cal 10h30m">Calibraz %1$s</string>
     <string name="notification__WARMUP_remainingtime" maxLength="15" comment="time remaining until calibration is due, visible on pull down / lock screen, example:  Warmup 1h30m">Warmup %1$s</string>
     <string name="notification__BUSY" maxLength="20" comment="pump polling is in progress, visible on pull down / lock screen">Polling</string>
-    <string name="notification__ERROR" maxLength="20" comment="error state, visible on pull down / lock screen">Connection error</string>
+    <string name="notification__ERROR" maxLength="20" comment="error state, visible on pull down / lock screen">Errore connessione</string>
     <!-- Userlog -->
-    <string name="ul_main__requesting_poll_now">Requesting poll now&dots;</string>
-    <string name="ul_main__requesting_pump_profile">Scheduled pump profile update&dots;</string>
-    <string name="ul_main__cgm_service_disabled">CGM Service is disabled.</string>
-    <string name="ul_main__pump_profile_disabled">Profile update is disabled.</string>
-    <string name="ul_main__hello">Nightscout 600 Series Uploader</string>
-    <string name="ul_main__goodbye">Goodbye :)</string>
-    <string name="ul_main__shutting_down_cgm_service">Shutting down CGM Service</string>
-    <string name="ul_main__uploading">Uploading</string>
-    <string name="ul_main__treatments">Treatments</string>
-    <string name="ul_main__poll_interval">Poll interval</string>
-    <string name="ul_main__low_battery_poll_interval">Low battery poll interval</string>
-    <string name="ul_main__auto_mode_update">Auto Mode update</string>
-    <string name="ul_share__nightscout_status">Nightscout status</string>
-    <string name="ul_share__nightscout_site">Nightscout site</string>
-    <string name="ul_share__is_available">is available</string>
-    <string name="ul_share__is_not_available">is not available</string>
-    <string name="ul_share__offline">Offline / No internet service</string>
-    <string name="ul_share__processed">processed</string>
-    <string name="ul_share__version">version</string>
-    <string name="ul_share__pushover_validation_failed">Pushover validation failed. Check that your Pushover account is active and your account settings are correct.</string>
-    <string name="ul_poll__connecting_to_contour_next_link">Connecting to Contour Next Link</string>
-    <string name="ul_poll__connected_on_channel">Connected on channel</string>
+    <string name="ul_main__requesting_poll_now">Richiesta poll ora&dots;</string>
+    <string name="ul_main__requesting_pump_profile">Aggiornamento profilo pompa pianificato&dots;</string>
+    <string name="ul_main__cgm_service_disabled">Il servizio CGM è disabilitato.</string>
+    <string name="ul_main__pump_profile_disabled">Aggiornamento del profilo disabilitato.</string>
+    <string name="ul_main__hello">Uploader Nightscout per la serie 600</string>
+    <string name="ul_main__goodbye">Arrivederci :)</string>
+    <string name="ul_main__shutting_down_cgm_service">Arresto del servizio CGM</string>
+    <string name="ul_main__uploading">Caricamento</string>
+    <string name="ul_main__treatments">Trattamenti</string>
+    <string name="ul_main__poll_interval">Intervallo di polling</string>
+    <string name="ul_main__low_battery_poll_interval">Intervallo di sondaggio in caso di batteria scarica</string>
+    <string name="ul_main__auto_mode_update">Aggiornamento modalità automatica</string>
+    <string name="ul_share__nightscout_status">Stato di Nightscout</string>
+    <string name="ul_share__nightscout_site">Sito di Nightscout</string>
+    <string name="ul_share__is_available">è disponibile</string>
+    <string name="ul_share__is_not_available">non è disponibile</string>
+    <string name="ul_share__offline">Offline / Nessun servizio internet</string>
+    <string name="ul_share__processed">elaborato</string>
+    <string name="ul_share__version">versione</string>
+    <string name="ul_share__pushover_validation_failed">Convalida pushover non riuscita. Verifica che il tuo account pushover sia attivo e le impostazioni del tuo account siano corrette.</string>
+    <string name="ul_poll__connecting_to_contour_next_link">Connessione al Contour Next Link</string>
+    <string name="ul_poll__connected_on_channel">Connesso al canale</string>
     <string name="ul_poll__rssi" comment="RSSI = Received Signal Strength Indicator (CNL-PUMP radio signal)">RSSI</string>
-    <string name="ul_poll__please_wait">Please wait</string>
-    <string name="ul_poll__pump_is_expecting_sensor_communication">Pump is expecting sensor communication. Poll due in</string>
-    <string name="ul_poll__radio_clash_protection_is_disabled">Radio clash protection is disabled.</string>
-    <string name="ul_poll__could_not_communicate_with_the_pump">Could not communicate with the pump. Is it nearby?</string>
-    <string name="ul_poll__pump_signal_too_weak">Warning: pump signal too weak. Is it nearby?</string>
+    <string name="ul_poll__please_wait">Attendere prego</string>
+    <string name="ul_poll__pump_is_expecting_sensor_communication">La pompa in attesa del sensore. Connessione in</string>
+    <string name="ul_poll__radio_clash_protection_is_disabled">La protezione contro le interferenze radio è disabilitata.</string>
+    <string name="ul_poll__could_not_communicate_with_the_pump">Non è stato possibile comunicare con la pompa. È nelle vicinanze?</string>
+    <string name="ul_poll__pump_signal_too_weak">Attenzione: il segnale della pompa è troppo debole. È nelle vicinanze?</string>
     <string name="ul_poll__polling_service_could_not_complete">Il servizio di sondaggio non è stato completato. Riprovare tra 60 secondi.</string>
     <string name="ul_poll__unexpected_error">Errore imprevisto!</string>
     <string name="ul_poll__next_poll_due_at">Prossimo sondaggio scade il</string>
@@ -137,9 +137,9 @@
     <string name="ul_poll__sensor_is_calibrating">sensore si sta calibrando</string>
     <string name="ul_poll__sensor_error">errore del sensore</string>
     <string name="ul_poll__old_cgm_event_received">vecchio evento cgm ricevuto</string>
-    <string name="ul_poll__no_cgm_pump_lost_sensor">no cgm (pump lost sensor)</string>
-    <string name="ul_poll__no_cgm">no cgm</string>
-    <string name="ul_poll__estimated_sgv" comment="SGV = Sensor Glucose Value, example: estimated SGV 120 at 3:15">estimated SGV</string>
+    <string name="ul_poll__no_cgm_pump_lost_sensor">nessun cgm disponibile (sensore perso della pompa)</string>
+    <string name="ul_poll__no_cgm">no cgm disponibile</string>
+    <string name="ul_poll__estimated_sgv" comment="SGV = Sensor Glucose Value, example: estimated SGV 120 at 3:15">glicemia sgv stimata</string>
     <string name="ul_poll__reading_sgv__SGV" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">SGV</string>
     <string name="ul_poll__reading_time__at" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">a</string>
     <string name="ul_poll__reading_pump_clock_difference__Pump" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">Microinfusore</string>
@@ -151,7 +151,7 @@
     <string name="ul_poll__warn_pump_time_difference_behind">prima del tempo utilizzato dal caricatore.</string>
     <string name="ul_poll__help_pump_time_difference">Il telefono/dispositivo di upload dovrebbe avere l\'ora corrente fornita dalla rete. L\'orologio del microinfusore è avanti e deve essere impostato per correggere occasionalmente il tempo.</string>
     <string name="ul_poll__warn_multiple_comms_errors">Attenzione: sono stati rilevati diversi errori di comms/timeout.</string>
-    <string name="ul_poll__help_multiple_comms_errors">Try: disconnecting and reconnecting the Contour Next Link to phone / restarting phone / check pairing of CNL with Pump.</string>
+    <string name="ul_poll__help_multiple_comms_errors">Prova a: disconnettere e riconnettere il Contour Next Link al telefono / riavviare il telefono / verificare l\'accoppiamento del CNL con la pompa.</string>
     <string name="ul_poll__warn_missing_transmissions">Warning: SGV is unavailable from pump often. The pump is missing transmissions from the sensor.</string>
     <string name="ul_poll__help_missing_transmissions">Keep pump on same side of body as sensor. Avoid using body sensor locations that can block radio signal.</string>
     <string name="ul_poll__warn_connection_fail">Warning: connecting to pump is failing often.</string>
@@ -166,10 +166,10 @@
     <string name="ul_error__checksum">Errore di checksum:</string>
     <string name="ul_error__checksum_cnl">Checksum error getting message from the Contour Next Link.</string>
     <string name="ul_error__decryption">Errore di decriptazione:</string>
-    <string name="ul_error__decryption_cnl">Error decrypting messages from Contour Next Link.</string>
-    <string name="ul_error__hashing">Error connecting to Contour Next Link: Hashing error.</string>
-    <string name="ul_error__connecting_cnl">Error connecting to Contour Next Link.</string>
-    <string name="ul_error__cnl_reset_success">CNL reset successful.</string>
+    <string name="ul_error__decryption_cnl">Errore nel decriptare i messaggi dal Contour Next Link.</string>
+    <string name="ul_error__hashing">Errore connessione al Contour Next Link: errore di hashing.</string>
+    <string name="ul_error__connecting_cnl">Errore connessione al Contour Next Link.</string>
+    <string name="ul_error__cnl_reset_success">CNL reimpostato con successo.</string>
     <string name="ul_error__close_connection">Impossibile chiudere la connessione.</string>
     <string name="ul_error__pump_device_error">Pump has a device error. No data can be read until this error has been cleared on the Pump.</string>
     <string name="ul_isig__isig">isig</string>
@@ -180,41 +180,41 @@
     <string name="ul_isig__falling">discesa</string>
     <string name="ul_isig__falling_fast">in discesa veloce</string>
     <string name="ul_history__history">cronologia</string>
-    <string name="ul_history__pump_history">PUMP history</string>
-    <string name="ul_history__cgm_history">CGM history</string>
-    <string name="ul_history__reading_pump_basal_basal_patterns">Reading pump basal patterns</string>
-    <string name="ul_history__reading_pump_carb_ratios">Reading pump carb ratios</string>
-    <string name="ul_history__reading_pump_sensitivity_factors">Reading pump sensitivity factors</string>
-    <string name="ul_history__reading_pump_hi_lo_targets">Reading pump hi-lo targets</string>
+    <string name="ul_history__pump_history">Cronologia pompa</string>
+    <string name="ul_history__cgm_history">Cronologia sensore</string>
+    <string name="ul_history__reading_pump_basal_basal_patterns">Lettura schemi basali della pompa</string>
+    <string name="ul_history__reading_pump_carb_ratios">Lettura rapporti insulina-carboidrati della pompa</string>
+    <string name="ul_history__reading_pump_sensitivity_factors">Lettura fattori di sensibilità della pompa</string>
+    <string name="ul_history__reading_pump_hi_lo_targets">Lettura obiettivi glicemia alta-bassa della pompa</string>
     <string name="ul_history__cgm_backfill">cgm backfill</string>
-    <string name="ul_history__requested">requested</string>
-    <string name="ul_history__received">received</string>
+    <string name="ul_history__requested">richiesto</string>
+    <string name="ul_history__received">ricevuto</string>
     <string name="ul_history__stale_status">stale status</string>
     <string name="ul_history__recency">recency</string>
-    <string name="ul_history__no_recent_data">no recent data</string>
-    <string name="ul_history__auto_mode">auto mode</string>
-    <string name="ul_history__basal_pattern_changed">basal pattern changed</string>
-    <string name="ul_history__basal_suspend">basal suspend</string>
-    <string name="ul_history__basal_resume">basal resume</string>
-    <string name="ul_history__temp_basal">temp basal</string>
-    <string name="ul_history__temp_ended">temp ended</string>
-    <string name="ul_history__temp_extended">temp changed</string>
-    <string name="ul_history__normal_bolus">normal bolus</string>
-    <string name="ul_history__square_bolus">square bolus</string>
-    <string name="ul_history__square_ended">square ended</string>
-    <string name="ul_history__dual_bolus">dual bolus</string>
-    <string name="ul_history__dual_ended">dual ended</string>
-    <string name="ul_history__bolus_ended">bolus ended</string>
-    <string name="ul_history__recent_finger_bg">recent finger bg</string>
-    <string name="ul_history__calibration_info">calibration info</string>
-    <string name="ul_history__reservoir_changed">reservoir changed</string>
-    <string name="ul_history__battery_changed">battery changed</string>
-    <string name="ul_history__pattern_resume">pattern resume</string>
-    <string name="ul_history__cannula_fill">cannula fill</string>
-    <string name="ul_history__sensor_changed">sensor changed</string>
-    <string name="ul_history__daily_totals">daily totals</string>
-    <string name="ul_history__active_alert">active alert</string>
-    <string name="ul_history__cleared_alert">cleared alert</string>
+    <string name="ul_history__no_recent_data">nessun dato recente</string>
+    <string name="ul_history__auto_mode">modalità automatica</string>
+    <string name="ul_history__basal_pattern_changed">schema basale modificato</string>
+    <string name="ul_history__basal_suspend">sospensione basale</string>
+    <string name="ul_history__basal_resume">riavvio basale</string>
+    <string name="ul_history__temp_basal">basale temporanea</string>
+    <string name="ul_history__temp_ended">basale temporanea terminata</string>
+    <string name="ul_history__temp_extended">basale temporanea modificata</string>
+    <string name="ul_history__normal_bolus">bolo normale</string>
+    <string name="ul_history__square_bolus">bolo quadro</string>
+    <string name="ul_history__square_ended">bolo quadro terminato</string>
+    <string name="ul_history__dual_bolus">bolo doppio</string>
+    <string name="ul_history__dual_ended">bolo doppio terminato</string>
+    <string name="ul_history__bolus_ended">bolo terminato</string>
+    <string name="ul_history__recent_finger_bg">glicemia BG recente</string>
+    <string name="ul_history__calibration_info">informazioni di calibrazione</string>
+    <string name="ul_history__reservoir_changed">serbatoio cambiato</string>
+    <string name="ul_history__battery_changed">batteria cambiata</string>
+    <string name="ul_history__pattern_resume">ripreso schema basale</string>
+    <string name="ul_history__cannula_fill">riempimento cannula</string>
+    <string name="ul_history__sensor_changed">sensore cambiato</string>
+    <string name="ul_history__daily_totals">totali giornalieri</string>
+    <string name="ul_history__active_alert">allarme attivo</string>
+    <string name="ul_history__cleared_alert">allarme tacitato</string>
     <string name="ul_history__alert_recheck">ricontrollo allarme</string>
     <string name="ul_history__report_isig">segnalazione isig</string>
     <string name="ul_history__estimate_sgv">stima sgv</string>
@@ -258,22 +258,22 @@
     <string name="pref_error_text_exceeds_length">Text exceeds maximum length</string>
     <string name="pref_error_text_empty">Text is empty</string>
     <string name="pref_monitor_category" maxLength="30">Monitor</string>
-    <string name="pref_monitor_bg_unit_title" maxLength="30">BG Unit</string>
-    <string name="pref_monitor_bg_unit_summary_off" maxLength="40">Values are shown and set in mg/dL</string>
-    <string name="pref_monitor_bg_unit_summary_on" maxLength="40">Values are shown and set in mmol/L</string>
-    <string name="pref_monitor_decimals_title" maxLength="30">Decimals</string>
-    <string name="pref_monitor_decimals_summary_off" maxLength="40">1 decimal value will be shown</string>
-    <string name="pref_monitor_decimals_summary_on" maxLength="40">2 decimal values will be shown</string>
-    <string name="pref_monitor_poll_interval_title" maxLength="30">Poll interval</string>
+    <string name="pref_monitor_bg_unit_title" maxLength="30">Unità BG</string>
+    <string name="pref_monitor_bg_unit_summary_off" maxLength="40">Valori in mg/dL</string>
+    <string name="pref_monitor_bg_unit_summary_on" maxLength="40">Valori in mmol/L</string>
+    <string name="pref_monitor_decimals_title" maxLength="30">Decimali</string>
+    <string name="pref_monitor_decimals_summary_off" maxLength="40">Verrà mostrato un valore decimale</string>
+    <string name="pref_monitor_decimals_summary_on" maxLength="40">Verranno mostrati due valori decimali</string>
+    <string name="pref_monitor_poll_interval_title" maxLength="30">Intervallo di polling</string>
     <string name="pref_monitor_poll_overdue_title" maxLength="30">Polling interval when overdue</string>
-    <string name="pref_monitor_poll_overdue_summary_off" maxLength="40">Normal polling rate</string>
-    <string name="pref_monitor_poll_overdue_summary_on" maxLength="40">Double polling rate</string>
+    <string name="pref_monitor_poll_overdue_summary_off" maxLength="40">Velocità normale di polling</string>
+    <string name="pref_monitor_poll_overdue_summary_on" maxLength="40">Velocità doppia di polling</string>
     <string name="pref_monitor_low_battery_poll_interval_title" maxLength="40">Polling interval on low pump battery</string>
-    <string name="pref_display_category" maxLength="30">Display</string>
+    <string name="pref_display_category" maxLength="30">Schermo</string>
     <string name="pref_chart_zoom_title" maxLength="40">Chart Zoom</string>
-    <string name="pref_screen_sleep_title" maxLength="40">Screen Sleep</string>
-    <string name="pref_screen_sleep_always_sleep">Always sleep</string>
-    <string name="pref_screen_sleep_portrait_mode_only">Portrait mode only</string>
+    <string name="pref_screen_sleep_title" maxLength="40">Schermo in modalità sospensione</string>
+    <string name="pref_screen_sleep_always_sleep">Sempre disattivato</string>
+    <string name="pref_screen_sleep_portrait_mode_only">Solo modalità ritratto</string>
     <string name="pref_screen_sleep_landscape_mode_only">Landscape mode only</string>
     <string name="pref_screen_sleep_never_sleep">Never sleep</string>
     <string name="pref_sharing_category" maxLength="30">Sharing</string>
@@ -296,18 +296,18 @@
     <string name="pref_ns_treatments_summary">Enable upload of treatments to Nightscout</string>
     <string name="pref_ns_bolus_title" maxLength="40">Bolus</string>
     <string name="pref_ns_bolus_summary">Send Bolus treatments to Nightscout</string>
-    <string name="pref_ns_basal_title" maxLength="40">Basal</string>
+    <string name="pref_ns_basal_title" maxLength="40">Basale</string>
     <string name="pref_ns_basal_summary">Send Basal treatments to Nightscout</string>
-    <string name="pref_ns_entered_by_title">Entered By</string>
-    <string name="pref_ns_device_status_category" maxLength="30">Device Status</string>
-    <string name="pref_ns_device_title" maxLength="40">Device</string>
+    <string name="pref_ns_entered_by_title">Inserito da</string>
+    <string name="pref_ns_device_status_category" maxLength="30">Stato del dispositivo</string>
+    <string name="pref_ns_device_title" maxLength="40">Dispositivo</string>
     <string name="pref_ns_device_summary">Send Device Status updates to Nightscout</string>
-    <string name="pref_ns_pump_title" maxLength="40">PUMP</string>
+    <string name="pref_ns_pump_title" maxLength="40">Pompa</string>
     <string name="pref_ns_pump_summary">Send pump status and iob to Nightscout</string>
-    <string name="pref_ns_device_name_title" maxLength="40">Device Name</string>
-    <string name="pref_ns_bg_readings_category" maxLength="30">BG Readings</string>
-    <string name="pref_ns_finger_bg_title" maxLength="40">Finger BG</string>
-    <string name="pref_ns_finger_bg_summary">Send finger BG readings to Nightscout</string>
+    <string name="pref_ns_device_name_title" maxLength="40">Nome del dispositivo</string>
+    <string name="pref_ns_bg_readings_category" maxLength="30">Letture della glicemia BG</string>
+    <string name="pref_ns_finger_bg_title" maxLength="40">Glicemia del dito</string>
+    <string name="pref_ns_finger_bg_summary">Invia le letture della glicemia BG a Nightscout</string>
     <string name="pref_ns_calibration_info_title" maxLength="40">Calibration Info</string>
     <string name="pref_ns_calibration_info_summary">Add factor to BG readings used for calibration (additional calibration graph will be visible in SAGE)</string>
     <string name="pref_ns_consumables_category" maxLength="30">Consumables</string>
@@ -321,26 +321,26 @@
     <string name="pref_ns_insulin_change_title" maxLength="40">Insulin Change</string>
     <string name="pref_ns_insulin_change_summary">Send insulin changes to Nightscout (IAGE)</string>
     <string name="pref_ns_insulin_change_threshold_title" maxLength="40">Threshold for insulin change</string>
-    <string name="pref_ns_insulin_change_New_Reservoir">New Reservoir</string>
-    <string name="pref_ns_insulin_change_Reservoir_1_8ml">1.8ml Reservoir</string>
-    <string name="pref_ns_insulin_change_Reservoir_3_0ml">3.0ml Reservoir</string>
-    <string name="pref_ns_battery_change_title" maxLength="40">Pump Battery Change</string>
+    <string name="pref_ns_insulin_change_New_Reservoir">Nuovo serbatoio</string>
+    <string name="pref_ns_insulin_change_Reservoir_1_8ml">Serbatoio 1.8ml</string>
+    <string name="pref_ns_insulin_change_Reservoir_3_0ml">Serbatoio 3.0ml</string>
+    <string name="pref_ns_battery_change_title" maxLength="40">Cambio batteria della pompa</string>
     <string name="pref_ns_battery_change_summary">Send pump battery changes to Nightscout (BAGE)</string>
-    <string name="pref_ns_lifetimes_title" maxLength="40">Estimate Lifetimes</string>
+    <string name="pref_ns_lifetimes_title" maxLength="40">Durata stimata</string>
     <string name="pref_ns_lifetimes_summary">Add lifetime estimate to pump consumables</string>
-    <string name="pref_ns_profiles_category" maxLength="30">Profiles</string>
+    <string name="pref_ns_profiles_category" maxLength="30">Profili</string>
     <string name="pref_ns_profile_upload_title" maxLength="40">Enable Profile Upload</string>
     <string name="pref_ns_profile_upload_summary">Upload profiles to Nightscout with basal patterns, carb ratios, sensitivity and targets</string>
     <string name="pref_ns_profile_single_title" maxLength="40">Single Profile Group</string>
     <string name="pref_ns_profile_single_summary">Only use a single profile group in nightscout (note: obsolete groups will be removed)</string>
-    <string name="pref_ns_profile_offset_title" maxLength="40">Offset start date</string>
+    <string name="pref_ns_profile_offset_title" maxLength="40">Imposta data di inizio</string>
     <string name="pref_ns_profile_offset_summary">Uploaded profile will be valid from 12 months ago</string>
-    <string name="pref_ns_profile_default_pattern_title" maxLength="40">Default Pattern</string>
-    <string name="pref_ns_profile_default_pattern_use_active">Use Active</string>
-    <string name="pref_ns_profile_active_insulin_time_title" maxLength="40">Active Insulin Time</string>
+    <string name="pref_ns_profile_default_pattern_title" maxLength="40">Schema predefinito</string>
+    <string name="pref_ns_profile_default_pattern_use_active">Usa attivo</string>
+    <string name="pref_ns_profile_active_insulin_time_title" maxLength="40">Insulina attiva</string>
     <string name="pref_ns_profile_send_pattern_change_title" maxLength="40">Basal Pattern Change</string>
     <string name="pref_ns_profile_send_pattern_change_summary">Send basal pattern changes to Nightscout</string>
-    <string name="pref_ns_pump_alerts_category" maxLength="30">Pump Alerts</string>
+    <string name="pref_ns_pump_alerts_category" maxLength="30">Allarmi della pompa</string>
     <string name="pref_ns_pump_alerts_title" maxLength="40">Alarms, Alerts, Reminders</string>
     <string name="pref_ns_pump_alerts_summary">Send pump alarms, alerts, reminders and status info to Nightscout</string>
     <string name="pref_ns_pump_alerts_extended_message_info_title" maxLength="40">Extended message info</string>
@@ -364,49 +364,49 @@
     <string name="pref_ns_daily_totals_summary">Send pump daily totals to Nightscout</string>
     <string name="pref_ns_formatting_title" maxLength="40">Formatting</string>
     <string name="pref_ns_formatting_summary">Use HTML formatting for notes</string>
-    <string name="pref_ns_trend_style_title" maxLength="40">Trend Style</string>
+    <string name="pref_ns_trend_style_title" maxLength="40">Stile di tendenza</string>
     <string name="pref_ns_trend_style_summary">Use Medtronic style trend arrows (may be incompatible with some follower apps)</string>
     <string name="pref_ns_pattern_and_preset_naming_category" maxLength="30">Pattern and Preset Naming</string>
-    <string name="pref_ns_basal_patterns_category" maxLength="30">Basal Patterns</string>
-    <string name="pref_ns_temp_basal_presets_category" maxLength="30">Temp Basal Presets</string>
-    <string name="pref_ns_bolus_presets_category" maxLength="30">Bolus Presets</string>
-    <string name="pref_ns_enter_preset_name_dialog_title" maxLength="30">Enter Preset Name</string>
-    <string name="pref_ns_enter_pattern_name_dialog_title" maxLength="30">Enter Pattern Name</string>
-    <string name="pref_ns_pattern_1_title" maxLength="30">Pattern 1</string>
-    <string name="pref_ns_pattern_2_title" maxLength="30">Pattern 2</string>
-    <string name="pref_ns_pattern_3_title" maxLength="30">Pattern 3</string>
-    <string name="pref_ns_pattern_4_title" maxLength="30">Pattern 4</string>
-    <string name="pref_ns_pattern_5_title" maxLength="30">Pattern 5</string>
-    <string name="pref_ns_pattern_6_title" maxLength="30">Pattern 6</string>
-    <string name="pref_ns_pattern_7_title" maxLength="30">Pattern 7</string>
-    <string name="pref_ns_pattern_8_title" maxLength="30">Pattern 8</string>
-    <string name="pref_ns_preset_1_title" maxLength="30">Preset 1</string>
-    <string name="pref_ns_preset_2_title" maxLength="30">Preset 2</string>
-    <string name="pref_ns_preset_3_title" maxLength="30">Preset 3</string>
-    <string name="pref_ns_preset_4_title" maxLength="30">Preset 4</string>
-    <string name="pref_ns_preset_5_title" maxLength="30">Preset 5</string>
-    <string name="pref_ns_preset_6_title" maxLength="30">Preset 6</string>
-    <string name="pref_ns_preset_7_title" maxLength="30">Preset 7</string>
-    <string name="pref_ns_preset_8_title" maxLength="30">Preset 8</string>
-    <string name="pref_ns_cgm_category" maxLength="30">CGM</string>
-    <string name="pref_ns_insert_bg_as_cgm_title" maxLength="40">Insert BG as CGM</string>
+    <string name="pref_ns_basal_patterns_category" maxLength="30">Schemi basali</string>
+    <string name="pref_ns_temp_basal_presets_category" maxLength="30">Basali temporanee predefinite</string>
+    <string name="pref_ns_bolus_presets_category" maxLength="30">Bolo predefinito</string>
+    <string name="pref_ns_enter_preset_name_dialog_title" maxLength="30">Inserire nome predefinito</string>
+    <string name="pref_ns_enter_pattern_name_dialog_title" maxLength="30">Inserire nome schema</string>
+    <string name="pref_ns_pattern_1_title" maxLength="30">Schema 1</string>
+    <string name="pref_ns_pattern_2_title" maxLength="30">Schema 2</string>
+    <string name="pref_ns_pattern_3_title" maxLength="30">Schema 3</string>
+    <string name="pref_ns_pattern_4_title" maxLength="30">Schema 4</string>
+    <string name="pref_ns_pattern_5_title" maxLength="30">Schema 5</string>
+    <string name="pref_ns_pattern_6_title" maxLength="30">Schema 6</string>
+    <string name="pref_ns_pattern_7_title" maxLength="30">Schema 7</string>
+    <string name="pref_ns_pattern_8_title" maxLength="30">Schema 8</string>
+    <string name="pref_ns_preset_1_title" maxLength="30">Impostazioni predefinite 1</string>
+    <string name="pref_ns_preset_2_title" maxLength="30">Impostazioni predefinite 2</string>
+    <string name="pref_ns_preset_3_title" maxLength="30">Impostazioni predefinite 3</string>
+    <string name="pref_ns_preset_4_title" maxLength="30">Impostazioni predefinite 4</string>
+    <string name="pref_ns_preset_5_title" maxLength="30">Impostazioni predefinite 5</string>
+    <string name="pref_ns_preset_6_title" maxLength="30">Impostazioni predefinite 6</string>
+    <string name="pref_ns_preset_7_title" maxLength="30">Impostazioni predefinite 7</string>
+    <string name="pref_ns_preset_8_title" maxLength="30">Impostazioni predefinite 8</string>
+    <string name="pref_ns_cgm_category" maxLength="30">Controllo continuo glicemia</string>
+    <string name="pref_ns_insert_bg_as_cgm_title" maxLength="40">Inserisci glicemia BG come CGM</string>
     <string name="pref_ns_insert_bg_as_cgm_summary">Insert BG readings into CGM chart (helps Nightscout to show treatments when no CGM is in use)</string>
-    <string name="pref_system_category" maxLength="30">System</string>
+    <string name="pref_system_category" maxLength="30">Sistema</string>
     <string name="pref_advanced_system_settings_category" maxLength="30">Advanced System Settings</string>
-    <string name="pref_system_history_sync_category" maxLength="30">History Sync</string>
-    <string name="pref_system_cgm_history_title" maxLength="40">Enable CGM History</string>
+    <string name="pref_system_history_sync_category" maxLength="30">Cronologia Sincronizzazione</string>
+    <string name="pref_system_cgm_history_title" maxLength="40">Abilita cronologia CGM</string>
     <string name="pref_system_cgm_history_summary">Backfill missed CGM data</string>
     <string name="pref_system_cgm_backfill_title" maxLength="40">CGM history backfill period</string>
-    <string name="pref_system_pump_history_title" maxLength="40">Enable PUMP History</string>
+    <string name="pref_system_pump_history_title" maxLength="40">Abilita cronologia della pompa</string>
     <string name="pref_system_pump_history_summary">Used for nightscout treatments</string>
     <string name="pref_system_pump_backfill_title" maxLength="40">PUMP history backfill period</string>
-    <string name="pref_system_auto_mode_update_frequency_title" maxLength="40">Auto Mode update frequency</string>
-    <string name="pref_system_experimental_category" maxLength="30">Experimental</string>
-    <string name="pref_system_estimate_sgv_title" maxLength="40">Estimate SGV</string>
+    <string name="pref_system_auto_mode_update_frequency_title" maxLength="40">Frequenza aggiornamento modalità auto</string>
+    <string name="pref_system_experimental_category" maxLength="30">Sperimentale</string>
+    <string name="pref_system_estimate_sgv_title" maxLength="40">Glicemia SGV stimata</string>
     <string name="pref_system_estimate_sgv_summary">Calculate an estimated SGV when a calibration is missed (warning: calculation is based on the last pump calibration point and may be unreliable)</string>
-    <string name="pref_system_estimate_sgv_eol">Sensor expired</string>
+    <string name="pref_system_estimate_sgv_eol">Sensore scaduto</string>
     <string name="pref_system_estimate_sgv_error">Sensor error/updating</string>
-    <string name="pref_system_report_isig_title" maxLength="40">Report ISIG</string>
+    <string name="pref_system_report_isig_title" maxLength="40">Segnala ISIG</string>
     <string name="pref_system_report_isig_summary">Report ISIG when SGV is not available from the pump and CGM is in use.</string>
     <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG\'s to include</string>
     <string name="pref_system_report_isig_minimum_runtime_title" maxLength="40">Minimum runtime</string>
@@ -495,15 +495,15 @@
     <string name="urchin_status_layout_Bolusing" maxLength="20">Bolusing</string>
     <string name="urchin_status_layout_Calibration" maxLength="20">Calibration</string>
     <string name="urchin_status_layout_Uploader_Battery" maxLength="20">Uploader Battery</string>
-    <string name="urchin_status_layout_Pump_Battery" maxLength="20">Pump Battery</string>
+    <string name="urchin_status_layout_Pump_Battery" maxLength="20">Batteria della pompa</string>
     <string name="urchin_status_layout_Transmitter_Battery" maxLength="20">Transmitter Battery</string>
-    <string name="urchin_status_layout_Sensor_Life" maxLength="20">Sensor Life</string>
-    <string name="urchin_status_layout_Sensor_Age" maxLength="20">Sensor Age</string>
-    <string name="urchin_status_layout_Reservoir_Age" maxLength="20">Reservoir Age</string>
+    <string name="urchin_status_layout_Sensor_Life" maxLength="20">Età sensore</string>
+    <string name="urchin_status_layout_Sensor_Age" maxLength="20">Età sensore</string>
+    <string name="urchin_status_layout_Reservoir_Age" maxLength="20">Età del serbatoio</string>
     <string name="urchin_status_layout_Pump_Battery_Age" maxLength="20">Pump Battery Age</string>
     <string name="urchin_status_layout_Reservoir_Units" maxLength="20">Reservoir Units</string>
-    <string name="urchin_status_layout_Day" maxLength="20">Day</string>
-    <string name="urchin_status_layout_Month" maxLength="20">Month</string>
+    <string name="urchin_status_layout_Day" maxLength="20">Giorno</string>
+    <string name="urchin_status_layout_Month" maxLength="20">Mese</string>
     <string name="urchin_status_layout_BG" maxLength="20">BG</string>
     <string name="urchin_status_layout_Factor" maxLength="20">Factor</string>
     <string name="urchin_status_layout_ISIG" maxLength="20">ISIG</string>

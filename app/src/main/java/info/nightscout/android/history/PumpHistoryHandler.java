@@ -708,8 +708,13 @@ public class PumpHistoryHandler {
         // already processed?
         boolean processed = cgmResults.size() > 0 && cgmResults.first().getCgmRTC() == rtc;
 
-        // cgm gap?
-        boolean gap = cgmResults.size() > 0 && date.getTime() - cgmResults.first().getEventDate().getTime() > 9 * 60 * 1000L;
+        boolean gap = false;
+        if (cgmResults.size() > 0 &&
+                date.getTime() - cgmResults.first().getEventDate().getTime() > 9 * 60000L)
+            gap = true;
+        else if (cgmResults.size() > 1 && !cgmResults.first().isHistory()
+                && cgmResults.first().getEventDate().getTime() - cgmResults.get(1).getEventDate().getTime() > 9 * 60000L)
+            gap = true;
 
         // cgm is available do we need the backfill?
         if (dataStore.isSysEnableCgmHistory()) {
