@@ -51,8 +51,10 @@ before_install:
   - yes | sdkmanager "platforms;android-28"
   - yes | sdkmanager "platforms;android-14"
   - yes | sdkmanager "build-tools;28.0.3"
+  - yes | sdkmanager "system-images;android-14;default;armeabi-v7a"
   - sdkmanager --list
   - yes | sdkmanager --update
+  - yes | sdkmanager --licenses
 
 before_script:
   #- echo "y" | android update sdk -a --no-ui --filter android-14
