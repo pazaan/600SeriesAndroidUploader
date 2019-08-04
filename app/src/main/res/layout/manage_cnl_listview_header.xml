@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="10sp"
-        android:text="@string/serial_number"
+        android:text="@string/manage_cnl__serial_number"
         android:layout_marginLeft="10sp" />
 
 </LinearLayout>

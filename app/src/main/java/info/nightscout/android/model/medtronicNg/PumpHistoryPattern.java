@@ -6,9 +6,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import info.nightscout.android.model.store.DataStore;
-import info.nightscout.api.TreatmentsEndpoints;
-import info.nightscout.api.UploadItem;
+import info.nightscout.android.R;
+import info.nightscout.android.history.HistoryUtils;
+import info.nightscout.android.history.MessageItem;
+import info.nightscout.android.history.PumpHistorySender;
+import info.nightscout.android.utils.FormatKit;
+import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
+import info.nightscout.android.history.NightscoutItem;
 import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -23,66 +27,125 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
     private static final String TAG = PumpHistoryPattern.class.getSimpleName();
 
     @Index
-    private Date eventDate;
+    private String senderREQ = "";
+    @Index
+    private String senderACK = "";
+    @Index
+    private String senderDEL = "";
 
     @Index
-    private boolean uploadREQ = false;
-    private boolean uploadACK = false;
-
-    private boolean xdripREQ = false;
-    private boolean xdripACK = false;
+    private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
     @Index
     private int eventRTC;
     private int eventOFFSET;
-    private int oldPatternNumber;
-    private int newPatternNumber;
+    private byte oldPatternNumber;
+    private byte newPatternNumber;
 
     @Override
-    public List nightscout(DataStore dataStore) {
-        List<UploadItem> uploadItems = new ArrayList<>();
+    public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
+        List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        if (dataStore.isNsEnableTreatments() && dataStore.isNsEnablePatternChange()) {
-
-            UploadItem uploadItem = new UploadItem();
-            uploadItems.add(uploadItem);
-            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
-
-            treatment.setKey600(key);
-            treatment.setCreated_at(eventDate);
-            treatment.setEventType("Profile Switch");
-
-            String oldName = dataStore.getNameBasalPattern(oldPatternNumber);
-            String newName = dataStore.getNameBasalPattern(newPatternNumber);
-
-            treatment.setProfile(newName);
-            treatment.setNotes("Changed profile from " + oldName + " to " + newName);
+        if (!pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN_CHANGE)) {
+            HistoryUtils.nightscoutDeleteTreatment(nightscoutItems, this, senderID);
+            return nightscoutItems;
         }
 
-        return uploadItems;
+        TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID);
+        treatment.setEventType("Profile Switch");
+
+        String oldName = pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, oldPatternNumber - 1);
+        String newName = pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1);
+
+        treatment.setProfile(newName);
+        treatment.setNotes(String.format("%s: %s. %s: %s.",
+                FormatKit.getInstance().getString(R.string.text__basal_pattern),
+                newName,
+                FormatKit.getInstance().getString(R.string.text__previous_basal_pattern),
+                oldName));
+
+        return nightscoutItems;
     }
 
-    public static void change(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                              int oldPatternNumber,
-                              int newPatternNumber) {
+    @Override
+    public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {
+        List<MessageItem> messageItems = new ArrayList<>();
 
-        PumpHistoryPattern object = realm.where(PumpHistoryPattern.class)
+        String title = FormatKit.getInstance().getString(R.string.text__Basal);
+
+        String message = String.format("%s: %s. %s: %s.",
+                FormatKit.getInstance().getString(R.string.text__basal_pattern),
+                pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, newPatternNumber - 1),
+                FormatKit.getInstance().getString(R.string.text__previous_basal_pattern),
+                pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN, oldPatternNumber - 1));
+
+        messageItems.add(new MessageItem()
+                .type(MessageItem.TYPE.BASAL)
+                .date(eventDate)
+                .clock(FormatKit.getInstance().formatAsClock(eventDate.getTime()))
+                .title(title)
+                .message(message));
+
+        return messageItems;
+    }
+
+    public static void pattern(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            byte oldPatternNumber,
+            byte newPatternNumber) {
+
+        PumpHistoryPattern record = realm.where(PumpHistoryPattern.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("eventRTC", eventRTC)
                 .findFirst();
-        if (object == null) {
+        if (record == null) {
             Log.d(TAG, "*new*" + " basal pattern switch");
             // create new entry
-            object = realm.createObject(PumpHistoryPattern.class);
-            object.setKey("PRO" + String.format("%08X", eventRTC));
-            object.setEventDate(eventDate);
-            object.setEventRTC(eventRTC);
-            object.setEventOFFSET(eventOFFSET);
-            object.setOldPatternNumber(oldPatternNumber);
-            object.setNewPatternNumber(newPatternNumber);
-            object.setUploadREQ(true);
+            record = realm.createObject(PumpHistoryPattern.class);
+            record.pumpMAC = pumpMAC;
+            record.key = HistoryUtils.key("PRO", eventRTC);
+            record.eventDate = eventDate;
+            record.eventRTC = eventRTC;
+            record.eventOFFSET = eventOFFSET;
+            record.oldPatternNumber = oldPatternNumber;
+            record.newPatternNumber = newPatternNumber;
+            pumpHistorySender.setSenderREQ(record);
         }
+    }
+
+    @Override
+    public String getSenderREQ() {
+        return senderREQ;
+    }
+
+    @Override
+    public void setSenderREQ(String senderREQ) {
+        this.senderREQ = senderREQ;
+    }
+
+    @Override
+    public String getSenderACK() {
+        return senderACK;
+    }
+
+    @Override
+    public void setSenderACK(String senderACK) {
+        this.senderACK = senderACK;
+    }
+
+    @Override
+    public String getSenderDEL() {
+        return senderDEL;
+    }
+
+    @Override
+    public void setSenderDEL(String senderDEL) {
+        this.senderDEL = senderDEL;
     }
 
     @Override
@@ -96,46 +159,6 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
     }
 
     @Override
-    public boolean isUploadREQ() {
-        return uploadREQ;
-    }
-
-    @Override
-    public void setUploadREQ(boolean uploadREQ) {
-        this.uploadREQ = uploadREQ;
-    }
-
-    @Override
-    public boolean isUploadACK() {
-        return uploadACK;
-    }
-
-    @Override
-    public void setUploadACK(boolean uploadACK) {
-        this.uploadACK = uploadACK;
-    }
-
-    @Override
-    public boolean isXdripREQ() {
-        return xdripREQ;
-    }
-
-    @Override
-    public void setXdripREQ(boolean xdripREQ) {
-        this.xdripREQ = xdripREQ;
-    }
-
-    @Override
-    public boolean isXdripACK() {
-        return xdripACK;
-    }
-
-    @Override
-    public void setXdripACK(boolean xdripACK) {
-        this.xdripACK = xdripACK;
-    }
-
-    @Override
     public String getKey() {
         return key;
     }
@@ -145,35 +168,29 @@ public class PumpHistoryPattern extends RealmObject implements PumpHistoryInterf
         this.key = key;
     }
 
-    public int getEventRTC() {
-        return eventRTC;
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
     }
 
-    public void setEventRTC(int eventRTC) {
-        this.eventRTC = eventRTC;
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
+    }
+
+    public int getEventRTC() {
+        return eventRTC;
     }
 
     public int getEventOFFSET() {
         return eventOFFSET;
     }
 
-    public void setEventOFFSET(int eventOFFSET) {
-        this.eventOFFSET = eventOFFSET;
-    }
-
-    public int getOldPatternNumber() {
+    public byte getOldPatternNumber() {
         return oldPatternNumber;
     }
 
-    public void setOldPatternNumber(int oldPatternNumber) {
-        this.oldPatternNumber = oldPatternNumber;
-    }
-
-    public int getNewPatternNumber() {
+    public byte getNewPatternNumber() {
         return newPatternNumber;
-    }
-
-    public void setNewPatternNumber(int newPatternNumber) {
-        this.newPatternNumber = newPatternNumber;
     }
 }

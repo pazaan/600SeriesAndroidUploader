@@ -75,11 +75,11 @@ public class EditTextPreferenceSECRET extends EditTextPreference {
     public String onValidate(String text) {
         for (int i = 0; i < text.length(); i++) {
             if (illegalCharacters.contains(text.substring(i, i+1)))
-                return getContext().getString(R.string.error_msg_illegal_characters);
+                return getContext().getString(R.string.pref_error_text_illegal_characters);
         }
 
         if (text.length() < 12)
-            return getContext().getString(R.string.error_msg_api_secret_length);
+            return getContext().getString(R.string.pref_error_api_secret_length);
 
         return null;
     }

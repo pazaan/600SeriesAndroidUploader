@@ -7,13 +7,20 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import info.nightscout.android.medtronic.PumpHistoryParser;
-import info.nightscout.android.model.store.DataStore;
-import info.nightscout.api.EntriesEndpoints;
-import info.nightscout.api.TreatmentsEndpoints;
-import info.nightscout.api.UploadItem;
+import info.nightscout.android.R;
+import info.nightscout.android.history.HistoryUtils;
+import info.nightscout.android.history.MessageItem;
+import info.nightscout.android.history.NightscoutItem;
+import info.nightscout.android.history.PumpHistoryParser;
+import info.nightscout.android.history.PumpHistorySender;
+import info.nightscout.android.utils.FormatKit;
+import info.nightscout.android.upload.nightscout.EntriesEndpoints;
+import info.nightscout.android.upload.nightscout.TreatmentsEndpoints;
 import io.realm.Realm;
+import io.realm.RealmList;
 import io.realm.RealmObject;
+import io.realm.RealmResults;
+import io.realm.Sort;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
 
@@ -28,14 +35,16 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     private static final String TAG = PumpHistoryBG.class.getSimpleName();
 
     @Index
-    private Date eventDate;
+    private String senderREQ = "";
+    @Index
+    private String senderACK = "";
+    @Index
+    private String senderDEL = "";
 
     @Index
-    private boolean uploadREQ = false;
-    private boolean uploadACK = false;
-
-    private boolean xdripREQ = false;
-    private boolean xdripACK = false;
+    private Date eventDate;
+    @Index
+    private long pumpMAC;
 
     private String key; // unique identifier for nightscout, key = "ID" + RTC as 8 char hex ie. "CGM6A23C5AA"
 
@@ -46,12 +55,18 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
 
     private byte bgUnits;
     private byte bgSource;
-    private byte bgContext;
+    private RealmList<String> bgContext = new RealmList<>();
 
+    @Index
+    private boolean entered;
+
+    @Index
     private int bg;
     private String serial;
+    @Index
     private boolean calibrationFlag;
 
+    @Index
     private boolean calibration;
     private Date calibrationDate;
 
@@ -62,174 +77,305 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     private int calibrationTarget;
 
     @Override
-    public List nightscout(DataStore dataStore) {
-        List<UploadItem> uploadItems = new ArrayList<>();
+    public List<NightscoutItem> nightscout(PumpHistorySender pumpHistorySender, String senderID) {
+        List<NightscoutItem> nightscoutItems = new ArrayList<>();
 
-        if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableFingerBG()) {
-
-            if (PumpHistoryParser.BG_CONTEXT.BG_SENT_FOR_CALIB.equals(bgContext)
-                    && !dataStore.isNsEnableCalibrationInfo()) {
-                return uploadItems;
-            }
-
-            UploadItem uploadItem = new UploadItem();
-            uploadItems.add(uploadItem);
-            TreatmentsEndpoints.Treatment treatment = uploadItem.ack(uploadACK).treatment();
-
-            String notes = "";
-
-            BigDecimal bgl;
-            String units;
-            if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits)) {
-                bgl = new BigDecimal(bg);
-                units = "mg/dl";
-            } else {
-                bgl = new BigDecimal(bg / MMOLXLFACTOR).setScale(1, BigDecimal.ROUND_HALF_UP);
-                units = "mmol";
-            }
-            treatment.setKey600(key);
-            treatment.setCreated_at(bgDate);
-
-            treatment.setEventType("BG Check");
-            treatment.setGlucoseType("Finger");
-            treatment.setGlucose(bgl);
-            treatment.setUnits(units);
-
-            if (calibration && dataStore.isNsEnableCalibrationInfo()) {
-                long seconds = (calibrationDate.getTime() - bgDate.getTime()) / 1000;
-                notes += "CAL: ⋊ " + calibrationFactor + " (" + (seconds / 60) + "m" + (seconds % 60) + "s)";
-                uploadItem.update();
-            }
-
-            //notes += " [DEBUG: bgContext=" + bgContext + " " + PumpHistoryParser.BG_CONTEXT.convert(bgContext).name() + " bgSource=" + bgSource + " cal=" + calibrationFlag + " rtc=" + String.format("%08X", bgRTC) + "]";
-
-            if (!notes.equals("")) treatment.setNotes(notes);
-
-            // insert BG reading as CGM chart entry
-            if (dataStore.isNsEnableTreatments() && dataStore.isNsEnableInsertBGasCGM()
-                    && !PumpHistoryParser.BG_CONTEXT.BG_SENT_FOR_CALIB.equals(bgContext)) {
-
-                UploadItem uploadItem1 = new UploadItem();
-                uploadItems.add(uploadItem1);
-                EntriesEndpoints.Entry entry = uploadItem1.ack(uploadACK).entry();
-
-                entry.setKey600(key + "CGM");
-                entry.setType("sgv");
-                entry.setDate(bgDate.getTime());
-                entry.setDateString(bgDate.toString());
-                entry.setSgv(bg);
-            }
-
+        if (!pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.BG_INFO)) {
+            HistoryUtils.nightscoutDeleteTreatment(nightscoutItems, this, senderID);
+            HistoryUtils.nightscoutDeleteEntry(nightscoutItems, this, senderID).setKey600(key + "CGM");
+            return nightscoutItems;
         }
 
-        return uploadItems;
+        TreatmentsEndpoints.Treatment treatment = HistoryUtils.nightscoutTreatment(nightscoutItems, this, senderID, bgDate);
+        treatment.setEventType("BG Check");
+        treatment.setGlucoseType("Finger");
+
+        BigDecimal bgl;
+        String units;
+        if (PumpHistoryParser.BG_UNITS.MG_DL.equals(bgUnits)) {
+            bgl = new BigDecimal(bg);
+            units = "mg/dl";
+        } else {
+            bgl = new BigDecimal(bg / MMOLXLFACTOR).setScale(1, BigDecimal.ROUND_HALF_UP);
+            units = "mmol";
+        }
+        treatment.setGlucose(bgl);
+        treatment.setUnits(units);
+
+        if (calibration && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.CALIBRATION_INFO)) {
+            treatment.setNotes(String.format("%s: %s %s: %s (%s)",
+                    FormatKit.getInstance().getString(R.string.text__Factor),
+                    calibrationFactor,
+                    FormatKit.getInstance().getString(R.string.text__Target),
+                    FormatKit.getInstance().formatAsGlucose(calibrationTarget, true),
+                    FormatKit.getInstance().formatSecondsAsDHMS((int) ((calibrationDate.getTime() - bgDate.getTime()) / 1000L))
+            ));
+            nightscoutItems.get(0).update();
+        }
+
+        // insert BG reading as CGM chart entry
+        if (pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.INSERT_BG_AS_CGM)) {
+            EntriesEndpoints.Entry entry = HistoryUtils.nightscoutEntry(nightscoutItems,this, senderID, bgDate);
+            entry.setKey600(key + "CGM");
+            entry.setType("sgv");
+            entry.setSgv(bg);
+        } else {
+            HistoryUtils.nightscoutDeleteEntry(nightscoutItems, this, senderID).setKey600(key + "CGM");
+        }
+/*
+        // debug for 670 testing, resend all context updates
+        String s = treatment.getNotes();
+        if (s == null) s = "";
+        s = s + "<br>{ debug: ";
+        for (int i = 0; i < bgContext.size(); i++) {
+            s = s + PumpHistoryParser.BG_CONTEXT.convert(Integer.parseInt(bgContext.get(i))).name() + " ";
+        }
+        s = s +" }";
+        treatment.setNotes(s);
+        nightscoutItems.get(0).update();
+*/
+        return nightscoutItems;
     }
 
-    public static void bg(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                          boolean calibrationFlag,
-                          int bg,
-                          byte bgUnits,
-                          byte bgSource,
-                          byte bgContext,
-                          String serial) {
+    @Override
+    public List<MessageItem> message(PumpHistorySender pumpHistorySender, String senderID) {
+        List<MessageItem> messageItems = new ArrayList<>();
 
-        switch (PumpHistoryParser.BG_CONTEXT.convert(bgContext)) {
-            case BG_READING_RECEIVED:
-                break;
-            case USER_ACCEPTED_REMOTE_BG:
-                return;
-            case USER_REJECTED_REMOTE_BG:
-                return;
-            case REMOTE_BG_ACCEPTANCE_SCREEN_TIMEOUT:
-                return;
-            case BG_SI_PASS_RESULT_RECD_FRM_GST:
-                return;
-            case BG_SI_FAIL_RESULT_RECD_FRM_GST:
-                return;
-            case BG_SENT_FOR_CALIB:
-                break;
-            case USER_REJECTED_SENSOR_CALIB:
-                return;
-            case ENTERED_IN_BG_ENTRY:
-                break;
-            case ENTERED_IN_MEAL_WIZARD:
-                break;
-            case ENTERED_IN_BOLUS_WIZRD:
-                break;
-            case ENTERED_IN_SENSOR_CALIB:
-                break;
-            case ENTERED_AS_BG_MARKER:
-                break;
+        MessageItem.TYPE type;
+        Date date;
+        String title;
+        String message;
+
+        if (calibration && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.CALIBRATION_INFO)) {
+            type = MessageItem.TYPE.CALIBRATION;
+            date = calibrationDate;
+            title = "Calibration";
+            message = String.format("%s %s %s %s",
+                    FormatKit.getInstance().getString(R.string.text__Factor),
+                    calibrationFactor,
+                    FormatKit.getInstance().getString(R.string.text__Target),
+                    FormatKit.getInstance().formatAsGlucose(bg, pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS)));
+
+        } else if (!senderACK.contains(senderID) && pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.BG_INFO)) {
+            type = MessageItem.TYPE.BG;
+            date = eventDate;
+            title = "BG";
+            message = String.format("%s %s",
+                    FormatKit.getInstance().getString(R.string.text__Finger_BG),
+                    FormatKit.getInstance().formatAsGlucose(bg, pumpHistorySender.isOpt(senderID, PumpHistorySender.SENDEROPT.GLUCOSE_UNITS)));
+
+        } else return messageItems;
+
+        messageItems.add(new MessageItem()
+                .type(type)
+                .date(date)
+                .clock(FormatKit.getInstance().formatAsClock(date.getTime()))
+                .title(title)
+                .message(message));
+
+        return messageItems;
+    }
+
+    public static void bg(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            boolean calibrationFlag,
+            int bg,
+            byte bgUnits,
+            byte bgSource,
+            byte bgContext,
+            String serial) {
+
+        PumpHistoryBG record;
+
+        boolean entered = false;
+        if (PumpHistoryParser.BG_CONTEXT.BG_READING_RECEIVED.equals(bgContext)
+                || PumpHistoryParser.BG_CONTEXT.ENTERED_IN_BG_ENTRY.equals(bgContext)
+                || PumpHistoryParser.BG_CONTEXT.ENTERED_IN_MEAL_WIZARD.equals(bgContext)
+                || PumpHistoryParser.BG_CONTEXT.ENTERED_IN_BOLUS_WIZRD.equals(bgContext)
+                || PumpHistoryParser.BG_CONTEXT.ENTERED_IN_SENSOR_CALIB.equals(bgContext)
+                || PumpHistoryParser.BG_CONTEXT.ENTERED_AS_BG_MARKER.equals(bgContext)
+        )
+        {
+            entered = true;
+            record = realm.where(PumpHistoryBG.class)
+                    .equalTo("pumpMAC", pumpMAC)
+                    .equalTo("bg", bg)
+                    .greaterThanOrEqualTo("bgRTC", eventRTC)
+                    .lessThanOrEqualTo("bgRTC", HistoryUtils.offsetRTC(eventRTC, 15 * 60))
+                    .sort("eventDate", Sort.ASCENDING)
+                    .findFirst();
+        } else {
+            record = realm.where(PumpHistoryBG.class)
+                    .equalTo("pumpMAC", pumpMAC)
+                    .equalTo("bg", bg)
+                    .greaterThan("bgRTC", HistoryUtils.offsetRTC(eventRTC,- 15 * 60))
+                    .lessThanOrEqualTo("bgRTC", eventRTC)
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findFirst();
         }
 
-        PumpHistoryBG object = realm.where(PumpHistoryBG.class)
-                .equalTo("bgRTC", eventRTC)
-                .findFirst();
-
-        if (object == null) {
+        if (record == null) {
             // look for a calibration
-            object = realm.where(PumpHistoryBG.class)
+            record = realm.where(PumpHistoryBG.class)
+                    .equalTo("pumpMAC", pumpMAC)
                     .equalTo("calibration", true)
                     .equalTo("calibrationFlag", false)
-                    .greaterThan("calibrationRTC", eventRTC)
-                    .lessThan("calibrationRTC", eventRTC + 20 * 60)
+                    .greaterThanOrEqualTo("calibrationRTC", eventRTC)
+                    .lessThan("calibrationRTC", HistoryUtils.offsetRTC(eventRTC, 20 * 60))
+                    .sort("eventDate", Sort.ASCENDING)
                     .findFirst();
-            if (object == null) {
-                Log.d(TAG, "*new*" + " bg");
-                object = realm.createObject(PumpHistoryBG.class);
-                object.setEventDate(eventDate);
+            if (record == null) {
+                Log.d(TAG, "*new* bg");
+                record = realm.createObject(PumpHistoryBG.class);
+                record.pumpMAC = pumpMAC;
             } else {
-                Log.d(TAG, "*update*" + " add bg to calibration");
+                Log.d(TAG, "*update* add bg to calibration");
             }
+            record.eventDate = eventDate;
+            record.bgDate = eventDate;
+            record.bgRTC = eventRTC;
+            record.bgOffset = eventOFFSET;
+            record.bg = bg;
+            record.bgUnits = bgUnits;
+            record.bgSource = bgSource;
+            record.serial = serial;
+        }
 
-            object.setBgDate(eventDate);
-            object.setBgRTC(eventRTC);
-            object.setBgOffset(eventOFFSET);
-            object.setCalibrationFlag(calibrationFlag);
-            object.setBg(bg);
-            object.setBgUnits(bgUnits);
-            object.setBgSource(bgSource);
-            object.setBgContext(bgContext);
-            object.setSerial(serial);
-            object.setKey("BG" + String.format("%08X", eventRTC));
-            object.setUploadREQ(true);
+        if (entered && !record.entered) {
+            Log.d(TAG, "*update* entered");
+            record.entered = true;
+            record.eventDate = eventDate;
+            record.bgDate = eventDate;
+            record.bgRTC = eventRTC;
+            record.bgOffset = eventOFFSET;
+            record.key = HistoryUtils.key("BG", eventRTC);
+            pumpHistorySender.setSenderREQ(record);
+        }
 
-        } else if (PumpHistoryParser.BG_CONTEXT.NA.equals(bgContext) && calibrationFlag && !object.isCalibrationFlag()){
-            Log.d(TAG, "*update*" + " bg used for calibration");
-            object.setCalibrationFlag(true);
+        if (!record.bgContext.contains(String.valueOf(bgContext))) {
+            Log.d(TAG, "*update* bgContext: " + PumpHistoryParser.BG_CONTEXT.convert(bgContext).name() + " calibrationFlag: " + calibrationFlag);
+            record.bgContext.add(String.valueOf(bgContext));
+            record.calibrationFlag |= calibrationFlag;
         }
     }
 
-    public static void calibration(Realm realm, Date eventDate, int eventRTC, int eventOFFSET,
-                                   double calFactor,
-                                   int bgTarget) {
+    public static void calibration(
+            PumpHistorySender pumpHistorySender, Realm realm, long pumpMAC,
+            Date eventDate, int eventRTC, int eventOFFSET,
+            double calFactor,
+            int bgTarget) {
 
-        PumpHistoryBG object = realm.where(PumpHistoryBG.class)
+        // failed calibration
+        if (calFactor == 0) return;
+
+        PumpHistoryBG record = realm.where(PumpHistoryBG.class)
+                .equalTo("pumpMAC", pumpMAC)
                 .equalTo("calibrationRTC", eventRTC)
                 .findFirst();
-        if (object == null) {
+        if (record == null) {
             // look for a bg
-            object = realm.where(PumpHistoryBG.class)
-                    .greaterThan("bgRTC", eventRTC - 20 * 60)
-                    .lessThan("bgRTC", eventRTC)
+            record = realm.where(PumpHistoryBG.class)
+                    .equalTo("pumpMAC", pumpMAC)
+                    .greaterThan("bgRTC", HistoryUtils.offsetRTC(eventRTC, - 20 * 60))
+                    .lessThanOrEqualTo("bgRTC", eventRTC)
                     .equalTo("calibrationFlag", true)
                     .equalTo("calibration", false)
                     .findFirst();
-            if (object == null) {
+            if (record == null) {
                 Log.d(TAG, "*new*" + " calibration");
-                object = realm.createObject(PumpHistoryBG.class);
-                object.setEventDate(eventDate);
+                record = realm.createObject(PumpHistoryBG.class);
+                record.pumpMAC = pumpMAC;
+                record.eventDate = eventDate;
             } else {
                 Log.d(TAG, "*update*"  + " bg with calibration");
-                object.setUploadREQ(true);
+                if (record.entered) pumpHistorySender.setSenderREQ(record);
             }
-            object.setCalibration(true);
-            object.setCalibrationDate(eventDate);
-            object.setCalibrationRTC(eventRTC);
-            object.setCalibrationOFFSET(eventOFFSET);
-            object.setCalibrationFactor(calFactor);
-            object.setCalibrationTarget(bgTarget);
+            record.calibration = true;
+            record.calibrationDate = eventDate;
+            record.calibrationRTC = eventRTC;
+            record.calibrationOFFSET = eventOFFSET;
+            record.calibrationFactor = calFactor;
+            record.calibrationTarget = bgTarget;
+
+            // update calibrations for the sensor
+            // find the sensor
+            RealmResults<PumpHistoryMisc> results1 = realm.where(PumpHistoryMisc.class)
+                    .equalTo("pumpMAC", pumpMAC)
+                    .greaterThan("eventDate", new Date(eventDate.getTime() - 8 * 24 * 60 * 60000L))
+                    .lessThan("eventDate", eventDate)
+                    .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR.value())
+                    .sort("eventDate", Sort.DESCENDING)
+                    .findAll();
+
+            if (results1.size() > 0) {
+
+                // find the sensor date range
+                RealmResults<PumpHistoryMisc> results2 = realm.where(PumpHistoryMisc.class)
+                        .equalTo("pumpMAC", pumpMAC)
+                        .lessThan("eventDate", new Date(eventDate.getTime() + 8 * 24 * 60 * 60000L))
+                        .greaterThan("eventDate", eventDate)
+                        .equalTo("recordtype", PumpHistoryMisc.RECORDTYPE.CHANGE_SENSOR.value())
+                        .sort("eventDate", Sort.ASCENDING)
+                        .findAll();
+
+                Date begin = results1.first().getEventDate();
+                Date end = eventDate;
+
+                if (results2.size() > 0)
+                    end = results2.first().getEventDate();
+
+                // find all the calibrations for this sensor
+                RealmResults<PumpHistoryBG> results3 = realm.where(PumpHistoryBG.class)
+                        .equalTo("pumpMAC", pumpMAC)
+                        .greaterThan("eventDate", begin)
+                        .lessThan("eventDate", end)
+                        .equalTo("calibration", true)
+                        .sort("eventDate", Sort.ASCENDING)
+                        .findAll();
+
+                if (results3.size() > 0) {
+                    byte[] calibrations = new byte[results3.size()];
+                    for (int i = 0; i < results3.size(); i++) {
+                        calibrations[i] = (byte) (results3.get(i).calibrationFactor * 10);
+                    }
+                    results1.first().setCalibrations(calibrations);
+                    pumpHistorySender.setSenderREQ(results1.first());
+                }
+
+            }
+
         }
+    }
+
+    @Override
+    public String getSenderREQ() {
+        return senderREQ;
+    }
+
+    @Override
+    public void setSenderREQ(String senderREQ) {
+        this.senderREQ = senderREQ;
+    }
+
+    @Override
+    public String getSenderACK() {
+        return senderACK;
+    }
+
+    @Override
+    public void setSenderACK(String senderACK) {
+        this.senderACK = senderACK;
+    }
+
+    @Override
+    public String getSenderDEL() {
+        return senderDEL;
+    }
+
+    @Override
+    public void setSenderDEL(String senderDEL) {
+        this.senderDEL = senderDEL;
     }
 
     @Override
@@ -243,46 +389,6 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
     }
 
     @Override
-    public boolean isUploadREQ() {
-        return uploadREQ;
-    }
-
-    @Override
-    public void setUploadREQ(boolean uploadREQ) {
-        this.uploadREQ = uploadREQ;
-    }
-
-    @Override
-    public boolean isUploadACK() {
-        return uploadACK;
-    }
-
-    @Override
-    public void setUploadACK(boolean uploadACK) {
-        this.uploadACK = uploadACK;
-    }
-
-    @Override
-    public boolean isXdripREQ() {
-        return xdripREQ;
-    }
-
-    @Override
-    public void setXdripREQ(boolean xdripREQ) {
-        this.xdripREQ = xdripREQ;
-    }
-
-    @Override
-    public boolean isXdripACK() {
-        return xdripACK;
-    }
-
-    @Override
-    public void setXdripACK(boolean xdripACK) {
-        this.xdripACK = xdripACK;
-    }
-
-    @Override
     public String getKey() {
         return key;
     }
@@ -292,123 +398,73 @@ public class PumpHistoryBG extends RealmObject implements PumpHistoryInterface {
         this.key = key;
     }
 
-    public Date getBgDate() {
-        return bgDate;
+    @Override
+    public long getPumpMAC() {
+        return pumpMAC;
     }
 
-    public void setBgDate(Date bgDate) {
-        this.bgDate = bgDate;
+    @Override
+    public void setPumpMAC(long pumpMAC) {
+        this.pumpMAC = pumpMAC;
     }
 
     public int getBgRTC() {
         return bgRTC;
     }
 
-    public void setBgRTC(int bgRTC) {
-        this.bgRTC = bgRTC;
-    }
-
     public int getBgOffset() {
         return bgOffset;
     }
 
-    public void setBgOffset(int bgOffset) {
-        this.bgOffset = bgOffset;
+    public Date getBgDate() {
+        return bgDate;
     }
 
-    public int getBgUnits() {
+    public byte getBgUnits() {
         return bgUnits;
     }
 
-    public void setBgUnits(byte bgUnits) {
-        this.bgUnits = bgUnits;
-    }
-
-    public int getBgSource() {
+    public byte getBgSource() {
         return bgSource;
-    }
-
-    public void setBgSource(byte bgSource) {
-        this.bgSource = bgSource;
-    }
-
-    public byte getBgContext() {
-        return bgContext;
-    }
-
-    public void setBgContext(byte bgContext) {
-        this.bgContext = bgContext;
     }
 
     public int getBg() {
         return bg;
     }
 
-    public void setBg(int bg) {
-        this.bg = bg;
-    }
-
     public String getSerial() {
         return serial;
-    }
-
-    public void setSerial(String serial) {
-        this.serial = serial;
     }
 
     public boolean isCalibrationFlag() {
         return calibrationFlag;
     }
 
-    public void setCalibrationFlag(boolean calibrationFlag) {
-        this.calibrationFlag = calibrationFlag;
-    }
-
     public boolean isCalibration() {
         return calibration;
-    }
-
-    public void setCalibration(boolean calibration) {
-        this.calibration = calibration;
     }
 
     public Date getCalibrationDate() {
         return calibrationDate;
     }
 
-    public void setCalibrationDate(Date calibrationDate) {
-        this.calibrationDate = calibrationDate;
-    }
-
     public int getCalibrationRTC() {
         return calibrationRTC;
-    }
-
-    public void setCalibrationRTC(int calibrationRTC) {
-        this.calibrationRTC = calibrationRTC;
     }
 
     public int getCalibrationOFFSET() {
         return calibrationOFFSET;
     }
 
-    public void setCalibrationOFFSET(int calibrationOFFSET) {
-        this.calibrationOFFSET = calibrationOFFSET;
-    }
-
     public double getCalibrationFactor() {
         return calibrationFactor;
-    }
-
-    public void setCalibrationFactor(double calibrationFactor) {
-        this.calibrationFactor = calibrationFactor;
     }
 
     public int getCalibrationTarget() {
         return calibrationTarget;
     }
 
-    public void setCalibrationTarget(int calibrationTarget) {
-        this.calibrationTarget = calibrationTarget;
+    public RealmList<String> getBgContext() {
+        return bgContext;
     }
 }

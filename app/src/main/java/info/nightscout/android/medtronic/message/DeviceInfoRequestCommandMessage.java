@@ -30,14 +30,14 @@ public class DeviceInfoRequestCommandMessage extends ContourNextLinkRequestMessa
             } catch (InterruptedException ignored) {
             }
         }
-        byte[] response1 = readMessage(mDevice);
+        byte[] response1 = readMessage(mDevice, CNL_READ_TIMEOUT_MS);
         if (millis > 0) {
             try {
                 Thread.sleep(millis);
             } catch (InterruptedException ignored) {
             }
         }
-        byte[] response2 = readMessage(mDevice);
+        byte[] response2 = readMessage(mDevice, CNL_READ_TIMEOUT_MS);
 
         boolean doRetry = false;
         DeviceInfoResponseCommandMessage response = null;

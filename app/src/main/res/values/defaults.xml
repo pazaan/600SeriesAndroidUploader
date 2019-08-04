@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE resources [
+    <!ENTITY EMERGENCY "2">
+    <!ENTITY HIGH "1">
+    <!ENTITY NORMAL "0">
+    <!ENTITY LOW "-1">
+    <!ENTITY LOWEST "-2">
+    ]>
+
+<resources>
+
+    <!-- Keys -->
+
+    <!-- key >values< should not be changed as they will exist as user pref key names in storage, name="xxx" can be refactored -->
+
+    <string translatable="false" name="key_mmolxl">mmolxl</string>
+    <string translatable="false" name="key_mmolDecimals">mmolDecimals</string>
+    <string translatable="false" name="key_pollInterval">pollInterval</string>
+    <string translatable="false" name="key_doublePollOnPumpAway">doublePollOnPumpAway</string>
+    <string translatable="false" name="key_lowBatPollInterval">lowBatPollInterval</string>
+
+    <string translatable="false" name="key_chartZoom">chartZoom</string>
+    <string translatable="false" name="key_screenSleep">screenSleep</string>
+
+    <string translatable="false" name="key_EnableRESTUpload">EnableRESTUpload</string>
+    <string translatable="false" name="key_nightscoutURL">YOUR.NIGHTSCOUT.URL</string>
+    <string translatable="false" name="key_nightscoutSECRET">YOUR.API.SECRET</string>
+    <string translatable="false" name="key_scanButton">scanButton</string>
+    <string translatable="false" name="key_enableXdripPlusUpload">EnablexDripPlusUpload</string>
+
+    <string translatable="false" name="key_eulaAccepted">IUNDERSTAND</string>
+    <string translatable="false" name="key_version">version</string>
+
+    // system
+    <string translatable="false" name="key_sysEnableCgmHistory">sysEnableCgmHistory</string>
+    <string translatable="false" name="key_sysCgmHistoryDays">sysCgmHistoryDays</string>
+    <string translatable="false" name="key_sysEnablePumpHistory">sysEnablePumpHistory</string>
+    <string translatable="false" name="key_sysPumpHistoryDays">sysPumpHistoryDays</string>
+    <string translatable="false" name="key_sysPumpHistoryFrequency">sysPumpHistoryFrequency</string>
+    <string translatable="false" name="key_sysEnableEstimateSGV">sysEnableEstimateSGV</string>
+    <string translatable="false" name="key_sysEnableEstimateSGVeol">sysEnableEstimateSGVeol</string>
+    <string translatable="false" name="key_sysEnableEstimateSGVerror">sysEnableEstimateSGVerror</string>
+    <string translatable="false" name="key_sysEnableReportISIG">sysEnableReportISIG</string>
+    <string translatable="false" name="key_sysReportISIGinclude">sysReportISIGinclude</string>
+    <string translatable="false" name="key_sysReportISIGminimum">sysReportISIGminimum</string>
+    <string translatable="false" name="key_sysReportISIGnewsensor">sysReportISIGnewsensor</string>
+    <string translatable="false" name="key_sysEnableClashProtect">sysEnableClashProtect</string>
+    <string translatable="false" name="key_sysRssiAllowConnect">sysRssiAllowConnect</string>
+    <string translatable="false" name="key_sysEnablePollOverride">sysEnablePollOverride</string>
+    <string translatable="false" name="key_sysPollGracePeriod">sysPollGracePeriod</string>
+    <string translatable="false" name="key_sysPollRecoveryPeriod">sysPollRecoveryPeriod</string>
+    <string translatable="false" name="key_sysPollWarmupPeriod">sysPollWarmupPeriod</string>
+    <string translatable="false" name="key_sysPollErrorRetry">sysPollErrorRetry</string>
+    <string translatable="false" name="key_sysPollOldSgvRetry">sysPollOldSgvRetry</string>
+    <string translatable="false" name="key_sysEnableWait500ms">sysEnableWait500ms</string>
+    <string translatable="false" name="key_sysEnableUsbPermissionDialog">sysEnableUsbPermissionDialog</string>
+
+    // debug
+    <string translatable="false" name="key_dbgCrashlytics">preferences_enable_crashlytics</string>
+    <string translatable="false" name="key_dbgAnswers">prefs_enable_answers</string>
+    <string translatable="false" name="key_dbgRemoteLogcat">prefs_enable_remote_logcat</string>
+    <string translatable="false" name="key_dbgLogLevel">logLevel</string>
+    <string translatable="false" name="key_dbgEnableExtendedErrors">dbgEnableExtendedErrors</string>
+    <string translatable="false" name="key_dbgEnableUploadErrors">dbgEnableUploadErrors</string>
+
+    // nightscout
+    <string translatable="false" name="key_nsEnableTreatments">nsEnableTreatments</string>
+    <string translatable="false" name="key_nsEnableBasalTreatments">nsEnableBasalTreatments</string>
+    <string translatable="false" name="key_nsEnableBolusTreatments">nsEnableBolusTreatments</string>
+    <string translatable="false" name="key_nsEnteredBy">nsEnteredBy</string>
+
+    <string translatable="false" name="key_nsEnableDeviceStatus">nsEnableDeviceStatus</string>
+    <string translatable="false" name="key_nsEnableDevicePUMP">nsEnableDevicePUMP</string>
+    <string translatable="false" name="key_nsDeviceName">nsDeviceName</string>
+
+    <string translatable="false" name="key_nsEnableFingerBG">nsEnableFingerBG</string>
+    <string translatable="false" name="key_nsEnableCalibrationInfo">nsEnableCalibrationInfo</string>
+
+    <string translatable="false" name="key_nsEnableSensorChange">nsEnableSensorChange</string>
+    <string translatable="false" name="key_nsEnableReservoirChange">nsEnableReservoirChange</string>
+    <string translatable="false" name="key_nsEnableInsulinChange">nsEnableInsulinChange</string>
+    <string translatable="false" name="key_nsCannulaChangeThreshold">"nsCannulaChangeThreshold"</string>
+    <string translatable="false" name="key_nsInsulinChangeThreshold">"nsInsulinChangeThreshold"</string>
+    <string translatable="false" name="key_nsEnableBatteryChange">nsEnableBatteryChange</string>
+    <string translatable="false" name="key_nsEnableLifetimes">nsEnableLifetimes</string>
+
+    <string translatable="false" name="key_nsEnableProfileUpload">nsEnableProfileUpload</string>
+    <string translatable="false" name="key_nsEnableProfileSingle">nsEnableProfileSingle</string>
+    <string translatable="false" name="key_nsEnableProfileOffset">nsEnableProfileOffset</string>
+    <string translatable="false" name="key_nsProfileDefault">nsProfileDefault</string>
+    <string translatable="false" name="key_nsActiveInsulinTime">nsActiveInsulinTime</string>
+    <string translatable="false" name="key_nsEnablePatternChange">nsEnablePatternChange</string>
+
+    <string translatable="false" name="key_nsEnableAlarms">nsEnableAlarms</string>
+    <string translatable="false" name="key_nsAlarmExtended">nsAlarmExtended</string>
+    <string translatable="false" name="key_nsAlarmCleared">nsAlarmCleared</string>
+    <string translatable="false" name="key_nsAlarmTTL">nsAlarmTTL</string>
+
+    <string translatable="false" name="key_nsEnableSystemStatus">nsEnableSystemStatus</string>
+    <string translatable="false" name="key_nsSystemStatusUsbErrors">nsSystemStatusUsbErrors</string>
+    <string translatable="false" name="key_nsSystemStatusConnection">nsSystemStatusConnection</string>
+    <string translatable="false" name="key_nsSystemStatusBatteryLow">nsSystemStatusBatteryLow</string>
+    <string translatable="false" name="key_nsSystemStatusBatteryCharged">nsSystemStatusBatteryCharged</string>
+
+    <string translatable="false" name="key_nameBasalPatternP1">nameBasalPatternP1</string>
+    <string translatable="false" name="key_nameBasalPatternP2">nameBasalPatternP2</string>
+    <string translatable="false" name="key_nameBasalPatternP3">nameBasalPatternP3</string>
+    <string translatable="false" name="key_nameBasalPatternP4">nameBasalPatternP4</string>
+    <string translatable="false" name="key_nameBasalPatternP5">nameBasalPatternP5</string>
+    <string translatable="false" name="key_nameBasalPatternP6">nameBasalPatternP6</string>
+    <string translatable="false" name="key_nameBasalPatternP7">nameBasalPatternP7</string>
+    <string translatable="false" name="key_nameBasalPatternP8">nameBasalPatternP8</string>
+    <string translatable="false" name="key_nameTempBasalPresetP1">nameTempBasalPresetP1</string>
+    <string translatable="false" name="key_nameTempBasalPresetP2">nameTempBasalPresetP2</string>
+    <string translatable="false" name="key_nameTempBasalPresetP3">nameTempBasalPresetP3</string>
+    <string translatable="false" name="key_nameTempBasalPresetP4">nameTempBasalPresetP4</string>
+    <string translatable="false" name="key_nameTempBasalPresetP5">nameTempBasalPresetP5</string>
+    <string translatable="false" name="key_nameTempBasalPresetP6">nameTempBasalPresetP6</string>
+    <string translatable="false" name="key_nameTempBasalPresetP7">nameTempBasalPresetP7</string>
+    <string translatable="false" name="key_nameTempBasalPresetP8">nameTempBasalPresetP8</string>
+    <string translatable="false" name="key_nameBolusPresetP1">nameBolusPresetP1</string>
+    <string translatable="false" name="key_nameBolusPresetP2">nameBolusPresetP2</string>
+    <string translatable="false" name="key_nameBolusPresetP3">nameBolusPresetP3</string>
+    <string translatable="false" name="key_nameBolusPresetP4">nameBolusPresetP4</string>
+    <string translatable="false" name="key_nameBolusPresetP5">nameBolusPresetP5</string>
+    <string translatable="false" name="key_nameBolusPresetP6">nameBolusPresetP6</string>
+    <string translatable="false" name="key_nameBolusPresetP7">nameBolusPresetP7</string>
+    <string translatable="false" name="key_nameBolusPresetP8">nameBolusPresetP8</string>
+
+    <string translatable="false" name="key_nsEnableInsertBGasCGM">nsEnableInsertBGasCGM</string>
+
+    <string translatable="false" name="key_nsGramsPerExchange">nsGramsPerExchange</string>
+    <string translatable="false" name="key_nsEnableDailyTotals">nsEnableDailyTotals</string>
+    <string translatable="false" name="key_nsEnableFormatHTML">nsEnableFormatHTML</string>
+    <string translatable="false" name="key_nsEnableMedtronicTrendStyle">nsEnableMedtronicTrendStyle</string>
+
+    // urchin
+    <string translatable="false" name="key_urchinEnable">urchinEnable</string>
+    <string translatable="false" name="key_urchinBasalPeriod">urchinBasalPeriod</string>
+    <string translatable="false" name="key_urchinBasalScale">urchinBasalScale</string>
+    <string translatable="false" name="key_urchinBolusGraph">urchinBolusGraph</string>
+    <string translatable="false" name="key_urchinBolusTags">urchinBolusTags</string>
+    <string translatable="false" name="key_urchinBolusPop">urchinBolusPop</string>
+    <string translatable="false" name="key_urchinTimeStyle">urchinTimeStyle</string>
+    <string translatable="false" name="key_urchinDurationStyle">urchinDurationStyle</string>
+    <string translatable="false" name="key_urchinUnitsStyle">urchinUnitsStyle</string>
+    <string translatable="false" name="key_urchinBatteyStyle">urchinBatteyStyle</string>
+    <string translatable="false" name="key_urchinConcatenateStyle">urchinConcatenateStyle</string>
+    <string translatable="false" name="key_urchinCustomText1">urchinCustomText1</string>
+    <string translatable="false" name="key_urchinCustomText2">urchinCustomText2</string>
+    <string translatable="false" name="key_urchinStatusLayout">urchinStatusLayout</string>
+
+    // pushover
+    <string translatable="false" name="key_pushoverEnable">pushoverEnable</string>
+    <string translatable="false" name="key_pushoverAPItoken">pushoverAPItoken</string>
+    <string translatable="false" name="key_pushoverUSERtoken">pushoverUSERtoken</string>
+
+    <string translatable="false" name="key_pushoverEnablePriorityOverride">pushoverEnablePriorityOverride</string>
+    <string translatable="false" name="key_pushoverPriorityOverride">pushoverPriorityOverride</string>
+    <string translatable="false" name="key_pushoverEnableSoundOverride">pushoverEnableSoundOverride</string>
+    <string translatable="false" name="key_pushoverSoundOverride">pushoverSoundOverride</string>
+
+    <string translatable="false" name="key_pushoverEnableOnHigh">pushoverEnableOnHigh</string>
+    <string translatable="false" name="key_pushoverPriorityOnHigh">pushoverPriorityOnHigh</string>
+    <string translatable="false" name="key_pushoverSoundOnHigh">pushoverSoundOnHigh</string>
+    <string translatable="false" name="key_pushoverEnableOnLow">pushoverEnableOnLow</string>
+    <string translatable="false" name="key_pushoverPriorityOnLow">pushoverPriorityOnLow</string>
+    <string translatable="false" name="key_pushoverSoundOnLow">pushoverSoundOnLow</string>
+    <string translatable="false" name="key_pushoverEnableBeforeHigh">pushoverEnableBeforeHigh</string>
+    <string translatable="false" name="key_pushoverPriorityBeforeHigh">pushoverPriorityBeforeHigh</string>
+    <string translatable="false" name="key_pushoverSoundBeforeHigh">pushoverSoundBeforeHigh</string>
+    <string translatable="false" name="key_pushoverEnableBeforeLow">pushoverEnableBeforeLow</string>
+    <string translatable="false" name="key_pushoverPriorityBeforeLow">pushoverPriorityBeforeLow</string>
+    <string translatable="false" name="key_pushoverSoundBeforeLow">pushoverSoundBeforeLow</string>
+
+    <string translatable="false" name="key_pushoverEnablePumpEmergency">pushoverEnablePumpEmergency</string>
+    <string translatable="false" name="key_pushoverPriorityPumpEmergency">pushoverPriorityPumpEmergency</string>
+    <string translatable="false" name="key_pushoverSoundPumpEmergency">pushoverSoundPumpEmergency</string>
+    <string translatable="false" name="key_pushoverEnablePumpActionable">pushoverEnablePumpActionable</string>
+    <string translatable="false" name="key_pushoverPriorityPumpActionable">pushoverPriorityPumpActionable</string>
+    <string translatable="false" name="key_pushoverSoundPumpActionable">pushoverSoundPumpActionable</string>
+    <string translatable="false" name="key_pushoverEnablePumpInformational">pushoverEnablePumpInformational</string>
+    <string translatable="false" name="key_pushoverPriorityPumpInformational">pushoverPriorityPumpInformational</string>
+    <string translatable="false" name="key_pushoverSoundPumpInformational">pushoverSoundPumpInformational</string>
+    <string translatable="false" name="key_pushoverEnablePumpReminder">pushoverEnablePumpReminder</string>
+    <string translatable="false" name="key_pushoverPriorityPumpReminder">pushoverPriorityPumpReminder</string>
+    <string translatable="false" name="key_pushoverSoundPumpReminder">pushoverSoundPumpReminder</string>
+
+    <string translatable="false" name="key_pushoverEnableBolus">pushoverEnableBolus</string>
+    <string translatable="false" name="key_pushoverPriorityBolus">pushoverPriorityBolus</string>
+    <string translatable="false" name="key_pushoverSoundBolus">pushoverSoundBolus</string>
+    <string translatable="false" name="key_pushoverEnableBasal">pushoverEnableBasal</string>
+    <string translatable="false" name="key_pushoverPriorityBasal">pushoverPriorityBasal</string>
+    <string translatable="false" name="key_pushoverSoundBasal">pushoverSoundBasal</string>
+    <string translatable="false" name="key_pushoverEnableSuspendResume">pushoverEnableSuspendResume</string>
+    <string translatable="false" name="key_pushoverPrioritySuspendResume">pushoverPrioritySuspendResume</string>
+    <string translatable="false" name="key_pushoverSoundSuspendResume">pushoverSoundSuspendResume</string>
+    <string translatable="false" name="key_pushoverEnableBG">pushoverEnableBG</string>
+    <string translatable="false" name="key_pushoverPriorityBG">pushoverPriorityBG</string>
+    <string translatable="false" name="key_pushoverSoundBG">pushoverSoundBG</string>
+    <string translatable="false" name="key_pushoverEnableCalibration">pushoverEnableCalibration</string>
+    <string translatable="false" name="key_pushoverPriorityCalibration">pushoverPriorityCalibration</string>
+    <string translatable="false" name="key_pushoverSoundCalibration">pushoverSoundCalibration</string>
+    <string translatable="false" name="key_pushoverEnableConsumables">pushoverEnableConsumables</string>
+    <string translatable="false" name="key_pushoverPriorityConsumables">pushoverPriorityConsumables</string>
+    <string translatable="false" name="key_pushoverSoundConsumables">pushoverSoundConsumables</string>
+    <string translatable="false" name="key_pushoverLifetimeInfo">pushoverLifetimeInfo</string>
+    <string translatable="false" name="key_pushoverEnableDailyTotals">pushoverEnableDailyTotals</string>
+    <string translatable="false" name="key_pushoverPriorityDailyTotals">pushoverPriorityDailyTotals</string>
+    <string translatable="false" name="key_pushoverSoundDailyTotals">pushoverSoundDailyTotals</string>
+
+    <string translatable="false" name="key_pushoverEnableAutoModeActive">pushoverEnableAutoModeActive</string>
+    <string translatable="false" name="key_pushoverPriorityAutoModeActive">pushoverPriorityAutoModeActive</string>
+    <string translatable="false" name="key_pushoverSoundAutoModeActive">pushoverSoundAutoModeActive</string>
+    <string translatable="false" name="key_pushoverEnableAutoModeStop">pushoverEnableAutoModeStop</string>
+    <string translatable="false" name="key_pushoverPriorityAutoModeStop">pushoverPriorityAutoModeStop</string>
+    <string translatable="false" name="key_pushoverSoundAutoModeStop">pushoverSoundAutoModeStop</string>
+    <string translatable="false" name="key_pushoverEnableAutoModeExit">pushoverEnableAutoModeExit</string>
+    <string translatable="false" name="key_pushoverPriorityAutoModeExit">pushoverPriorityAutoModeExit</string>
+    <string translatable="false" name="key_pushoverSoundAutoModeExit">pushoverSoundAutoModeExit</string>
+    <string translatable="false" name="key_pushoverEnableAutoModeMinMax">pushoverEnableAutoModeMinMax</string>
+    <string translatable="false" name="key_pushoverPriorityAutoModeMinMax">pushoverPriorityAutoModeMinMax</string>
+    <string translatable="false" name="key_pushoverSoundAutoModeMinMax">pushoverSoundAutoModeMinMax</string>
+
+    <string translatable="false" name="key_pushoverEnableUploaderPumpErrors">pushoverEnableUploaderPumpErrors</string>
+    <string translatable="false" name="key_pushoverPriorityUploaderPumpErrors">pushoverPriorityUploaderPumpErrors</string>
+    <string translatable="false" name="key_pushoverSoundUploaderPumpErrors">pushoverSoundUploaderPumpErrors</string>
+    <string translatable="false" name="key_pushoverEnableUploaderUsbErrors">pushoverEnableUploaderUsbErrors</string>
+    <string translatable="false" name="key_pushoverPriorityUploaderUsbErrors">pushoverPriorityUploaderUsbErrors</string>
+    <string translatable="false" name="key_pushoverSoundUploaderUsbErrors">pushoverSoundUploaderUsbErrors</string>
+    <string translatable="false" name="key_pushoverEnableUploaderStatus">pushoverEnableUploaderStatus</string>
+    <string translatable="false" name="key_pushoverPriorityUploaderStatus">pushoverPriorityUploaderStatus</string>
+    <string translatable="false" name="key_pushoverSoundUploaderStatus">pushoverSoundUploaderStatus</string>
+    <string translatable="false" name="key_pushoverEnableUploaderStatusConnection">pushoverEnableUploaderStatusConnection</string>
+    <string translatable="false" name="key_pushoverEnableUploaderStatusEstimate">pushoverEnableUploaderStatusEstimate</string>
+    <string translatable="false" name="key_pushoverEnableUploaderBattery">pushoverEnableUploaderBattery</string>
+    <string translatable="false" name="key_pushoverPriorityUploaderBattery">pushoverPriorityUploaderBattery</string>
+    <string translatable="false" name="key_pushoverSoundUploaderBattery">pushoverSoundUploaderBattery</string>
+    <string translatable="false" name="key_pushoverEnableBatteryLow">pushoverEnableBatteryLow</string>
+    <string translatable="false" name="key_pushoverEnableBatteryCharged">pushoverEnableBatteryCharged</string>
+
+    <string translatable="false" name="key_pushoverEnableInfoExtended">pushoverInfoExtended</string>
+    <string translatable="false" name="key_pushoverEnableTitleTime">pushoverEnableTitleTime</string>
+    <string translatable="false" name="key_pushoverEnableTitleText">pushoverEnableTitleText</string>
+    <string translatable="false" name="key_pushoverTitleText">pushoverTitleText</string>
+
+    <string translatable="false" name="key_pushoverEmergencyRetry">pushoverEmergencyRetry</string>
+    <string translatable="false" name="key_pushoverEmergencyExpire">pushoverEmergencyExpire</string>
+
+    <string translatable="false" name="key_pushoverEnableCleared">pushoverEnableCleared</string>
+    <string translatable="false" name="key_pushoverEnableClearedAcknowledged">pushoverEnableClearedAcknowledged</string>
+    <string translatable="false" name="key_pushoverPriorityCleared">pushoverPriorityCleared</string>
+    <string translatable="false" name="key_pushoverSoundCleared">pushoverSoundCleared</string>
+
+    <string translatable="false" name="key_pushoverEnableSilenced">pushoverEnableSilenced</string>
+    <string translatable="false" name="key_pushoverEnableSilencedOverride">pushoverEnableSilencedOverride</string>
+    <string translatable="false" name="key_pushoverPrioritySilenced">pushoverPrioritySilenced</string>
+    <string translatable="false" name="key_pushoverSoundSilenced">pushoverSoundSilenced</string>
+
+    <string translatable="false" name="key_pushoverEnableBackfillOnStart">pushoverEnableBackfillOnStart</string>
+    <string translatable="false" name="key_pushoverBackfillPeriod">pushoverBackfillPeriod</string>
+    <string translatable="false" name="key_pushoverBackfillLimiter">pushoverBackfillLimiter</string>
+    <string translatable="false" name="key_pushoverEnableBackfillOverride">pushoverEnableBackfillOverride</string>
+    <string translatable="false" name="key_pushoverBackfillOverrideAge">pushoverBackfillOverrideAge</string>
+    <string translatable="false" name="key_pushoverPriorityBackfill">pushoverPriorityBackfill</string>
+    <string translatable="false" name="key_pushoverSoundBackfill">pushoverSoundBackfill</string>
+
+    <string translatable="false" name="key_pushoverSendToDevice">pushoverSendToDevice</string>
+
+    <!-- Defaults -->
+
+    <bool name="default_mmolxl">false</bool>
+    <bool name="default_mmolDecimals">false</bool>
+    <string translatable="false" name="default_pollInterval">300000</string>
+    <bool name="default_doublePollOnPumpAway">false</bool>
+    <string translatable="false" name="default_lowBatPollInterval">900000</string>
+
+    <string translatable="false" name="default_chartZoom">3</string>
+    <string translatable="false" name="default_screenSleep">1</string>
+
+    <bool name="default_EnableRESTUpload">false</bool>
+    <string translatable="false" name="default_nightscoutURL">https://mysite.herokuapp.com</string>
+    <string translatable="false" name="default_nightscoutSECRET">YOURAPISECRET</string>
+    <bool name="default_enableXdripPlusUpload">false</bool>
+
+    <bool name="default_eulaAccepted">false</bool>
+
+    // system
+    <bool name="default_sysEnableCgmHistory">true</bool>
+    <string translatable="false" name="default_sysCgmHistoryDays">7</string>
+    <bool name="default_sysEnablePumpHistory">true</bool>
+    <string translatable="false" name="default_sysPumpHistoryDays">7</string>
+    <string translatable="false" name="default_sysPumpHistoryFrequency">60</string>
+    <bool name="default_sysEnableEstimateSGV">false</bool>
+    <bool name="default_sysEnableEstimateSGVeol">false</bool>
+    <bool name="default_sysEnableEstimateSGVerror">false</bool>
+    <bool name="default_sysEnableReportISIG">false</bool>
+    <string translatable="false" name="default_sysReportISIGinclude">3</string>
+    <string translatable="false" name="default_sysReportISIGminimum">15</string>
+    <string translatable="false" name="default_sysReportISIGnewsensor">120</string>
+    <bool name="default_sysEnableClashProtect">true</bool>
+    <string translatable="false" name="default_sysRssiAllowConnect">10</string>
+    <bool name="default_sysEnablePollOverride">false</bool>
+    <string translatable="false" name="default_sysPollGracePeriod">30000</string>
+    <string translatable="false" name="default_sysPollRecoveryPeriod">90000</string>
+    <string translatable="false" name="default_sysPollWarmupPeriod">90000</string>
+    <string translatable="false" name="default_sysPollErrorRetry">90000</string>
+    <string translatable="false" name="default_sysPollOldSgvRetry">90000</string>
+    <bool name="default_sysEnableWait500ms">false</bool>
+    <bool name="default_sysEnableUsbPermissionDialog">false</bool>
+
+    // debug
+    <bool name="default_dbgCrashlytics">true</bool>
+    <bool name="default_dbgAnswers">true</bool>
+    <bool name="default_dbgRemoteLogcat">false</bool>
+    <string translatable="false" name="default_dbgLogLevel">1</string>
+    <bool name="default_dbgEnableExtendedErrors">false</bool>
+    <bool name="default_dbgEnableUploadErrors">true</bool>
+
+    // nightscout
+    <bool name="default_nsEnableTreatments">true</bool>
+    <bool name="default_nsEnableBasalTreatments">true</bool>
+    <bool name="default_nsEnableBolusTreatments">true</bool>
+    <string translatable="false" name="default_nsEnteredBy" />
+
+    <bool name="default_nsEnableDeviceStatus">true</bool>
+    <bool name="default_nsEnableDevicePUMP">true</bool>
+    <string translatable="false" name="default_nsDeviceName" />
+
+    <bool name="default_nsEnableFingerBG">true</bool>
+    <bool name="default_nsEnableCalibrationInfo">false</bool>
+
+    <bool name="default_nsEnableSensorChange">true</bool>
+    <bool name="default_nsEnableReservoirChange">true</bool>
+    <string translatable="false" name="default_nsCannulaChangeThreshold">"0"</string>
+    <bool name="default_nsEnableInsulinChange">false</bool>
+    <string translatable="false" name="default_nsInsulinChangeThreshold">"0"</string>
+    <bool name="default_nsEnableBatteryChange">true</bool>
+    <bool name="default_nsEnableLifetimes">false</bool>
+
+    <bool name="default_nsEnableProfileUpload">true</bool>
+    <bool name="default_nsEnableProfileSingle">true</bool>
+    <bool name="default_nsEnableProfileOffset">true</bool>
+    <string translatable="false" name="default_nsProfileDefault">0</string>
+    <string translatable="false" name="default_nsActiveInsulinTime">3</string>
+    <bool name="default_nsEnablePatternChange">true</bool>
+
+    <bool name="default_nsEnableAlarms">true</bool>
+    <bool name="default_nsAlarmExtended">true</bool>
+    <bool name="default_nsAlarmCleared">false</bool>
+    <string translatable="false" name="default_nsAlarmTTL">24</string>
+
+    <bool name="default_nsEnableSystemStatus">true</bool>
+    <bool name="default_nsSystemStatusUsbErrors">true</bool>
+    <bool name="default_nsSystemStatusConnection">false</bool>
+    <bool name="default_nsSystemStatusBatteryLow">false</bool>
+    <bool name="default_nsSystemStatusBatteryCharged">false</bool>
+
+    <string translatable="false" name="default_empty">""</string>
+
+    <string translatable="false" name="default_nameBasalPatternP1">@string/pump_default__basal_pattern_1</string>
+    <string translatable="false" name="default_nameBasalPatternP2">@string/pump_default__basal_pattern_2</string>
+    <string translatable="false" name="default_nameBasalPatternP3">@string/pump_default__basal_pattern_3</string>
+    <string translatable="false" name="default_nameBasalPatternP4">@string/pump_default__basal_pattern_4</string>
+    <string translatable="false" name="default_nameBasalPatternP5">@string/pump_default__basal_pattern_5</string>
+    <string translatable="false" name="default_nameBasalPatternP6">@string/pump_default__basal_pattern_6</string>
+    <string translatable="false" name="default_nameBasalPatternP7">@string/pump_default__basal_pattern_7</string>
+    <string translatable="false" name="default_nameBasalPatternP8">@string/pump_default__basal_pattern_8</string>
+    <string translatable="false" name="default_nameTempBasalPresetP1">@string/pump_default__temp_basal_preset_1</string>
+    <string translatable="false" name="default_nameTempBasalPresetP2">@string/pump_default__temp_basal_preset_2</string>
+    <string translatable="false" name="default_nameTempBasalPresetP3">@string/pump_default__temp_basal_preset_3</string>
+    <string translatable="false" name="default_nameTempBasalPresetP4">@string/pump_default__temp_basal_preset_4</string>
+    <string translatable="false" name="default_nameTempBasalPresetP5">@string/pump_default__temp_basal_preset_5</string>
+    <string translatable="false" name="default_nameTempBasalPresetP6">@string/pump_default__temp_basal_preset_6</string>
+    <string translatable="false" name="default_nameTempBasalPresetP7">@string/pump_default__temp_basal_preset_7</string>
+    <string translatable="false" name="default_nameTempBasalPresetP8">@string/pump_default__temp_basal_preset_8</string>
+    <string translatable="false" name="default_nameBolusPresetP1">@string/pump_default__bolus_preset_1</string>
+    <string translatable="false" name="default_nameBolusPresetP2">@string/pump_default__bolus_preset_2</string>
+    <string translatable="false" name="default_nameBolusPresetP3">@string/pump_default__bolus_preset_3</string>
+    <string translatable="false" name="default_nameBolusPresetP4">@string/pump_default__bolus_preset_4</string>
+    <string translatable="false" name="default_nameBolusPresetP5">@string/pump_default__bolus_preset_5</string>
+    <string translatable="false" name="default_nameBolusPresetP6">@string/pump_default__bolus_preset_6</string>
+    <string translatable="false" name="default_nameBolusPresetP7">@string/pump_default__bolus_preset_7</string>
+    <string translatable="false" name="default_nameBolusPresetP8">@string/pump_default__bolus_preset_8</string>
+
+    <bool name="default_nsEnableInsertBGasCGM">false</bool>
+
+    <string translatable="false" name="default_nsGramsPerExchange">15</string>
+    <bool name="default_nsEnableDailyTotals">true</bool>
+    <bool name="default_nsEnableFormatHTML">true</bool>
+    <bool name="default_nsEnableMedtronicTrendStyle">false</bool>
+
+    // urchin
+    <bool name="default_urchinEnable">false</bool>
+    <string translatable="false" name="default_urchinBasalPeriod">23</string>
+    <string translatable="false" name="default_urchinBasalScale">0</string>
+    <bool name="default_urchinBolusGraph">false</bool>
+    <bool name="default_urchinBolusTags">false</bool>
+    <string translatable="false" name="default_urchinBolusPop">0</string>
+    <string translatable="false" name="default_urchinTimeStyle">1</string>
+    <string translatable="false" name="default_urchinDurationStyle">1</string>
+    <string translatable="false" name="default_urchinUnitsStyle">1</string>
+    <string translatable="false" name="default_urchinBatteyStyle">1</string>
+    <string translatable="false" name="default_urchinConcatenateStyle">2</string>
+    <string translatable="false" name="default_urchinCustomText1">NS</string>
+    <string translatable="false" name="default_urchinCustomText2">:)</string>
+    <string translatable="false" name="default_urchinStatusLayout_Empty">0</string>
+    <string translatable="false" name="default_urchinStatusLayout_Nextline">1</string>
+    <string translatable="false" name="default_urchinStatusLayout_Text_Space">2</string>
+    <string translatable="false" name="default_urchinStatusLayout_ActiveInsulin">12</string>
+    <string translatable="false" name="default_urchinStatusLayout_Basal">13</string>
+    <string translatable="false" name="default_urchinStatusLayout_Calibrate">19</string>
+    <string translatable="false" name="default_urchinStatusLayout_Battery">21</string>
+
+    // pushover
+    <bool name="default_pushoverEnable">false</bool>
+    <string translatable="false" name="default_pushoverAPItoken" />
+    <string translatable="false" name="default_pushoverUSERtoken" />
+
+    <bool name="default_pushoverEnablePriorityOverride">false</bool>
+    <string translatable="false" name="default_pushoverPriorityOverride">&LOWEST;</string>
+    <bool name="default_pushoverEnableSoundOverride">false</bool>
+    <string translatable="false" name="default_pushoverSoundOverride">none</string>
+
+    <bool name="default_pushoverEnableOnHigh">true</bool>
+    <string translatable="false" name="default_pushoverPriorityOnHigh">&HIGH;</string>
+    <string translatable="false" name="default_pushoverSoundOnHigh">updown</string>
+    <bool name="default_pushoverEnableOnLow">true</bool>
+    <string translatable="false" name="default_pushoverPriorityOnLow">&EMERGENCY;</string>
+    <string translatable="false" name="default_pushoverSoundOnLow">persistent</string>
+    <bool name="default_pushoverEnableBeforeHigh">true</bool>
+    <string translatable="false" name="default_pushoverPriorityBeforeHigh">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundBeforeHigh">updown</string>
+    <bool name="default_pushoverEnableBeforeLow">true</bool>
+    <string translatable="false" name="default_pushoverPriorityBeforeLow">&HIGH;</string>
+    <string translatable="false" name="default_pushoverSoundBeforeLow">updown</string>
+
+    <bool name="default_pushoverEnablePumpEmergency">true</bool>
+    <string translatable="false" name="default_pushoverPriorityPumpEmergency">&EMERGENCY;</string>
+    <string translatable="false" name="default_pushoverSoundPumpEmergency">persistent</string>
+    <bool name="default_pushoverEnablePumpActionable">true</bool>
+    <string translatable="false" name="default_pushoverPriorityPumpActionable">&HIGH;</string>
+    <string translatable="false" name="default_pushoverSoundPumpActionable">updown</string>
+    <bool name="default_pushoverEnablePumpInformational">true</bool>
+    <string translatable="false" name="default_pushoverPriorityPumpInformational">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundPumpInformational">bike</string>
+    <bool name="default_pushoverEnablePumpReminder">true</bool>
+    <string translatable="false" name="default_pushoverPriorityPumpReminder">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundPumpReminder">tugboat</string>
+
+    <bool name="default_pushoverEnableBolus">true</bool>
+    <string translatable="false" name="default_pushoverPriorityBolus">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundBolus">classical</string>
+    <bool name="default_pushoverEnableBasal">true</bool>
+    <string translatable="false" name="default_pushoverPriorityBasal">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundBasal">pianobar</string>
+    <bool name="default_pushoverEnableSuspendResume">true</bool>
+    <string translatable="false" name="default_pushoverPrioritySuspendResume">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundSuspendResume">gamelan</string>
+    <bool name="default_pushoverEnableBG">true</bool>
+    <string translatable="false" name="default_pushoverPriorityBG">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundBG">bike</string>
+    <bool name="default_pushoverEnableCalibration">false</bool>
+    <string translatable="false" name="default_pushoverPriorityCalibration">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundCalibration">bike</string>
+    <bool name="default_pushoverEnableConsumables">true</bool>
+    <string translatable="false" name="default_pushoverPriorityConsumables">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundConsumables">bike</string>
+    <bool name="default_pushoverLifetimeInfo">false</bool>
+    <bool name="default_pushoverEnableDailyTotals">true</bool>
+    <string translatable="false" name="default_pushoverPriorityDailyTotals">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundDailyTotals">bike</string>
+
+    <bool name="default_pushoverEnableAutoModeActive">false</bool>
+    <string translatable="false" name="default_pushoverPriorityAutoModeActive">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundAutoModeActive">bike</string>
+    <bool name="default_pushoverEnableAutoModeStop">false</bool>
+    <string translatable="false" name="default_pushoverPriorityAutoModeStop">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundAutoModeStop">bike</string>
+    <bool name="default_pushoverEnableAutoModeExit">true</bool>
+    <string translatable="false" name="default_pushoverPriorityAutoModeExit">&HIGH;</string>
+    <string translatable="false" name="default_pushoverSoundAutoModeExit">updown</string>
+    <bool name="default_pushoverEnableAutoModeMinMax">true</bool>
+    <string translatable="false" name="default_pushoverPriorityAutoModeMinMax">&HIGH;</string>
+    <string translatable="false" name="default_pushoverSoundAutoModeMinMax">updown</string>
+
+    <bool name="default_pushoverEnableUploaderPumpErrors">true</bool>
+    <string translatable="false" name="default_pushoverPriorityUploaderPumpErrors">&EMERGENCY;</string>
+    <string translatable="false" name="default_pushoverSoundUploaderPumpErrors">persistent</string>
+    <bool name="default_pushoverEnableUploaderUsbErrors">true</bool>
+    <string translatable="false" name="default_pushoverPriorityUploaderUsbErrors">&EMERGENCY;</string>
+    <string translatable="false" name="default_pushoverSoundUploaderUsbErrors">persistent</string>
+    <bool name="default_pushoverEnableUploaderStatus">true</bool>
+    <string translatable="false" name="default_pushoverPriorityUploaderStatus">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundUploaderStatus">bike</string>
+    <bool name="default_pushoverEnableUploaderStatusConnection">false</bool>
+    <bool name="default_pushoverEnableUploaderStatusEstimate">true</bool>
+    <bool name="default_pushoverEnableUploaderBattery">true</bool>
+    <string translatable="false" name="default_pushoverPriorityUploaderBattery">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundUploaderBattery">bike</string>
+    <bool name="default_pushoverEnableBatteryLow">true</bool>
+    <bool name="default_pushoverEnableBatteryCharged">false</bool>
+
+    <bool name="default_pushoverEnableInfoExtended">true</bool>
+    <bool name="default_pushoverEnableTitleTime">true</bool>
+    <bool name="default_pushoverEnableTitleText">false</bool>
+    <string translatable="false" name="default_pushoverTitleText">NS</string>
+
+    <string translatable="false" name="default_pushoverEmergencyRetry">30</string>
+    <string translatable="false" name="default_pushoverEmergencyExpire">3600</string>
+
+    <bool name="default_pushoverEnableCleared">true</bool>
+    <bool name="default_pushoverEnableClearedAcknowledged">false</bool>
+    <string translatable="false" name="default_pushoverPriorityCleared">&LOW;</string>
+    <string translatable="false" name="default_pushoverSoundCleared">none</string>
+
+    <bool name="default_pushoverEnableSilenced">false</bool>
+    <bool name="default_pushoverEnableSilencedOverride">false</bool>
+    <string translatable="false" name="default_pushoverPrioritySilenced">&NORMAL;</string>
+    <string translatable="false" name="default_pushoverSoundSilenced">none</string>
+
+    <bool name="default_pushoverEnableBackfillOnStart">true</bool>
+    <string translatable="false" name="default_pushoverBackfillPeriod">480</string>
+    <string translatable="false" name="default_pushoverBackfillLimiter">120</string>
+    <bool name="default_pushoverEnableBackfillOverride">false</bool>
+    <string translatable="false" name="default_pushoverBackfillOverrideAge">120</string>
+    <string translatable="false" name="default_pushoverPriorityBackfill">&LOW;</string>
+    <string translatable="false" name="default_pushoverSoundBackfill">none</string>
+
+    <string translatable="false" name="default_pushoverSendToDevice" />
+
+</resources>

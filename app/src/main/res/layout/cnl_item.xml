@@ -21,5 +21,5 @@
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
         android:layout_marginRight="5dp"
-        android:text="Delete" />
+        android:text="@string/manage_cnl__delete" />
 </RelativeLayout>

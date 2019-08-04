@@ -9,10 +9,12 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
 import info.nightscout.android.USB.UsbHidDriver;
+import info.nightscout.android.history.PumpHistoryParser;
 import info.nightscout.android.medtronic.message.BeginEHSMMessage;
 import info.nightscout.android.medtronic.message.BolusWizardCarbRatiosRequestMessage;
 import info.nightscout.android.medtronic.message.BolusWizardCarbRatiosResponseMessage;
@@ -28,6 +30,7 @@ import info.nightscout.android.medtronic.message.ContourNextLinkCommandMessage;
 import info.nightscout.android.medtronic.message.DeviceInfoRequestCommandMessage;
 import info.nightscout.android.medtronic.message.DeviceInfoResponseCommandMessage;
 import info.nightscout.android.medtronic.exception.EncryptionException;
+import info.nightscout.android.medtronic.message.DiscoveryRequestMessage;
 import info.nightscout.android.medtronic.message.EndEHSMMessage;
 import info.nightscout.android.medtronic.message.MessageUtils;
 import info.nightscout.android.medtronic.message.OpenConnectionRequestMessage;
@@ -104,21 +107,25 @@ public class MedtronicCnlReader {
         this.cnlCommandMessageSleepMS = cnlCommandMessageSleepMS;
     }
 
-    public void requestDeviceInfo()
-            throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
+    public void requestDeviceInfo() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
+        Log.d(TAG, "Begin requestDeviceInfo");
         DeviceInfoResponseCommandMessage response = new DeviceInfoRequestCommandMessage().send(mDevice);
 
         //TODO - extract more details form the device info.
         mStickSerial = response.getSerial();
+
+        Log.d(TAG, "Finished requestDeviceInfo");
     }
 
     public void enterControlMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
+        Log.d(TAG, "Begin enterControlMode");
         try {
             enterControlModeAttempt();
         } catch (TimeoutException e) {
             resetCNL();
             enterControlModeAttempt();
         }
+        Log.d(TAG, "Finished enterControlMode");
     }
 
     private void enterControlModeAttempt() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
@@ -133,7 +140,7 @@ public class MedtronicCnlReader {
                         .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
             } catch (UnexpectedMessageException e2) {
                 try {
-                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice);
+                    new ContourNextLinkCommandMessage(ContourNextLinkCommandMessage.ASCII.EOT).send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS);
                 } catch (IOException ignored) {}
                 finally {
                     doRetry = true;
@@ -143,25 +150,25 @@ public class MedtronicCnlReader {
     }
 
     public void enterPassthroughMode() throws IOException, TimeoutException, UnexpectedMessageException, ChecksumException, EncryptionException {
-        Log.d(TAG, "Begin enterPasshtroughMode");
+        Log.d(TAG, "Begin enterPassthroughMode");
         new ContourNextLinkCommandMessage("W|")
                 .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("Q|")
                 .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
         new ContourNextLinkCommandMessage("1|")
                 .send(mDevice, cnlCommandMessageSleepMS, CNL_READ_TIMEOUT_MS).checkControlMessage(ContourNextLinkCommandMessage.ASCII.ACK);
-        Log.d(TAG, "Finished enterPasshtroughMode");
+        Log.d(TAG, "Finished enterPassthroughMode");
     }
 
     public void openConnection() throws IOException, TimeoutException, NoSuchAlgorithmException, ChecksumException, EncryptionException, UnexpectedMessageException {
         Log.d(TAG, "Begin openConnection");
-        new OpenConnectionRequestMessage(mPumpSession, mPumpSession.getHMAC()).send(mDevice);
+        new OpenConnectionRequestMessage(mPumpSession, mPumpSession.getHMAC()).send(mDevice, 0 , CNL_READ_TIMEOUT_MS);
         Log.d(TAG, "Finished openConnection");
     }
 
     public void requestReadInfo() throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin requestReadInfo");
-        ReadInfoResponseMessage response = new ReadInfoRequestMessage(mPumpSession).send(mDevice);
+        ReadInfoResponseMessage response = new ReadInfoRequestMessage(mPumpSession).send(mDevice, 0 , CNL_READ_TIMEOUT_MS);
 
         long linkMAC = response.getLinkMAC();
         long pumpMAC = response.getPumpMAC();
@@ -175,7 +182,7 @@ public class MedtronicCnlReader {
     public void requestLinkKey() throws IOException, TimeoutException, EncryptionException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin requestLinkKey");
 
-        RequestLinkKeyResponseMessage response = new RequestLinkKeyRequestMessage(mPumpSession).send(mDevice);
+        RequestLinkKeyResponseMessage response = new RequestLinkKeyRequestMessage(mPumpSession).send(mDevice, 0 , CNL_READ_TIMEOUT_MS);
         this.getPumpSession().setKey(response.getKey());
 
         Log.d(TAG, String.format("Finished requestLinkKey. linkKey = '%s'", (Object) this.getPumpSession().getKey()));
@@ -184,13 +191,12 @@ public class MedtronicCnlReader {
     public byte negotiateChannel(byte lastRadioChannel) throws IOException, ChecksumException, TimeoutException, EncryptionException, UnexpectedMessageException {
         ArrayList<Byte> radioChannels = new ArrayList<>(Arrays.asList(ArrayUtils.toObject(RADIO_CHANNELS)));
 
-        // retry strategy: last,chan0,last,chan1,last,chan2,last,chan3,last
+        // retry strategy: last,chan0,chan1,last,chan2,chan3,last
         if (lastRadioChannel != 0x00) {
+            //noinspection RedundantCollectionOperation
             radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
             radioChannels.add(4, lastRadioChannel);
-            radioChannels.add(3, lastRadioChannel);
             radioChannels.add(2, lastRadioChannel);
-            radioChannels.add(1, lastRadioChannel);
             radioChannels.add(0, lastRadioChannel);
         }
 
@@ -213,6 +219,12 @@ public class MedtronicCnlReader {
         return mPumpSession.getRadioChannel();
     }
 
+    public void discovery() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
+        Log.d(TAG, "Begin beginDiscoverySession");
+        new DiscoveryRequestMessage(mPumpSession).send(mDevice);
+        Log.d(TAG, "Finished beginDiscoverySession");
+    }
+
     public void beginEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
         Log.d(TAG, "Begin beginEHSMSession");
         new BeginEHSMMessage(mPumpSession).send(mDevice);
@@ -222,18 +234,18 @@ public class MedtronicCnlReader {
     public Date getPumpTime() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getPumpTime");
 
-        Message message = new Message() {
+        RequestMessage requestMessage = new RequestMessage() {
             @Override
             PumpTimeResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
                 return new PumpTimeRequestMessage(mPumpSession).send(mDevice);
             }
         };
 
-        PumpTimeResponseMessage response = (PumpTimeResponseMessage) message.execute();
+        PumpTimeResponseMessage response = (PumpTimeResponseMessage) requestMessage.execute();
 
         sessionRTC = response.getPumpTimeRTC();
         sessionOFFSET = response.getPumpTimeOFFSET();
-        sessionDate = new Date(System.currentTimeMillis());
+        sessionDate = new Date(Calendar.getInstance().getTimeInMillis());
         sessionClockDifference = response.getPumpTime().getTime() - sessionDate.getTime();
 
         Log.d(TAG, "Finished getPumpTime with date " + response.getPumpTime());
@@ -243,14 +255,14 @@ public class MedtronicCnlReader {
     public PumpStatusEvent updatePumpStatus(PumpStatusEvent pumpRecord) throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin updatePumpStatus");
 
-        Message message = new Message() {
+        RequestMessage requestMessage = new RequestMessage() {
             @Override
             PumpStatusResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
                 return new PumpStatusRequestMessage(mPumpSession).send(mDevice);
             }
         };
 
-        PumpStatusResponseMessage response = (PumpStatusResponseMessage) message.execute();
+        PumpStatusResponseMessage response = (PumpStatusResponseMessage) requestMessage.execute();
 
         response.updatePumpRecord(pumpRecord);
 
@@ -258,13 +270,38 @@ public class MedtronicCnlReader {
         return pumpRecord;
     }
 
+    public PumpStatusResponseMessage updatePumpStatus() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+        Log.d(TAG, "Begin updatePumpStatus");
+
+        RequestMessage requestMessage = new RequestMessage() {
+            @Override
+            PumpStatusResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                return new PumpStatusRequestMessage(mPumpSession).send(mDevice);
+            }
+        };
+
+        PumpStatusResponseMessage response = (PumpStatusResponseMessage) requestMessage.execute();
+
+        Log.d(TAG, "Finished updatePumpStatus");
+        return response;
+    }
+
     public byte[] getBasalPatterns() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getBasalPatterns");
 
         ByteArrayOutputStream basalPatterns = new ByteArrayOutputStream();
 
-        for (byte i = 1; i < 9; i ++) {
-            PumpBasalPatternResponseMessage response = new PumpBasalPatternRequestMessage(mPumpSession, i).send(mDevice);
+        for (byte i = 1; i < 9; i++) {
+
+            final byte ii = i;
+            RequestMessage requestMessage = new RequestMessage() {
+                @Override
+                PumpBasalPatternResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                    return new PumpBasalPatternRequestMessage(mPumpSession, ii).send(mDevice);
+                }
+            };
+
+            PumpBasalPatternResponseMessage response = (PumpBasalPatternResponseMessage) requestMessage.execute();
             basalPatterns.write(response.getBasalPattern());
         }
 
@@ -277,7 +314,14 @@ public class MedtronicCnlReader {
     public byte[] getBolusWizardCarbRatios() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getBolusWizardCarbRatios");
 
-        BolusWizardCarbRatiosResponseMessage response = new BolusWizardCarbRatiosRequestMessage(mPumpSession).send(mDevice);
+        RequestMessage requestMessage = new RequestMessage() {
+            @Override
+            BolusWizardCarbRatiosResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                return new BolusWizardCarbRatiosRequestMessage(mPumpSession).send(mDevice);
+            }
+        };
+
+        BolusWizardCarbRatiosResponseMessage response = (BolusWizardCarbRatiosResponseMessage) requestMessage.execute();
 
         Log.d(TAG, "Finished getBolusWizardCarbRatios");
         return response.getCarbRatios();
@@ -286,7 +330,14 @@ public class MedtronicCnlReader {
     public byte[] getBolusWizardTargets() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getBolusWizardTargets");
 
-        BolusWizardTargetsResponseMessage response = new BolusWizardTargetsRequestMessage(mPumpSession).send(mDevice);
+        RequestMessage requestMessage = new RequestMessage() {
+            @Override
+            BolusWizardTargetsResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                return new BolusWizardTargetsRequestMessage(mPumpSession).send(mDevice);
+            }
+        };
+
+        BolusWizardTargetsResponseMessage response = (BolusWizardTargetsResponseMessage) requestMessage.execute();
 
         Log.d(TAG, "Finished getBolusWizardTargets");
         return response.getTargets();
@@ -295,7 +346,14 @@ public class MedtronicCnlReader {
     public byte[] getBolusWizardSensitivity() throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getBolusWizardCarbRatios");
 
-        BolusWizardSensitivityResponseMessage response = new BolusWizardSensitivityRequestMessage(mPumpSession).send(mDevice);
+        RequestMessage requestMessage = new RequestMessage() {
+            @Override
+            BolusWizardSensitivityResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
+                return new BolusWizardSensitivityRequestMessage(mPumpSession).send(mDevice);
+            }
+        };
+
+        BolusWizardSensitivityResponseMessage response = (BolusWizardSensitivityResponseMessage) requestMessage.execute();
 
         Log.d(TAG, "Finished getBolusWizardSensitivity");
         return response.getSensitivity();
@@ -314,7 +372,7 @@ public class MedtronicCnlReader {
     }
 
     public void getHistoryLogcat(long startTime, long endTime, int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
-        Log.d(TAG, "Begin getHistory");
+        Log.d(TAG, "Begin getHistoryLogcat");
 
         int startRTC = (int) MessageUtils.rtcFromTime(startTime, sessionOFFSET);
         int endRTC = (int) MessageUtils.rtcFromTime(endTime, sessionOFFSET);
@@ -322,27 +380,28 @@ public class MedtronicCnlReader {
         ReadHistoryResponseMessage response = new ReadHistoryRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
         new PumpHistoryParser(response.getEventData()).logcat();
 
-        Log.d(TAG, "Finished getHistory");
+        Log.d(TAG, "Finished getHistoryLogcat");
     }
 
-    public Date[] getHistory(long startTime, long endTime, final int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
+    public ReadHistoryResponseMessage getHistory(long startTime, long endTime, final int type) throws EncryptionException, IOException, ChecksumException, TimeoutException, UnexpectedMessageException {
         Log.d(TAG, "Begin getHistory");
 
         long maxRTC = sessionRTC & 0xFFFFFFFFL;
         long minRTC = maxRTC - ((90 * 24 * 60 * 60) - 3600);
 
         // adjust min RTC to allow for a new pump with <90 days on the RTC clock
-        if (minRTC < 0x80000000L) minRTC = 0x80000000L;
+        if (minRTC < 0x80000000L) minRTC = 0x80000001L;
+        Log.d (TAG, "getHistory: minRTC=" + HexDump.toHexString(minRTC) + " maxRTC=" + HexDump.toHexString(maxRTC));
 
-        long reqStartRTC = MessageUtils.rtcFromTime(startTime, sessionOFFSET);
-        long reqEndRTC = MessageUtils.rtcFromTime(endTime, sessionOFFSET);
+        long reqStartRTC = MessageUtils.rtcFromTime(startTime + sessionClockDifference, sessionOFFSET);
+        long reqEndRTC = MessageUtils.rtcFromTime(endTime + sessionClockDifference, sessionOFFSET);
         Log.d (TAG, "getHistory: reqStartRTC=" + HexDump.toHexString(reqStartRTC) + " reqEndRTC=" + HexDump.toHexString(reqEndRTC));
 
         // check RTC bounds as pump doesn't like out of range requests
 
         if (reqEndRTC < minRTC || reqStartRTC > maxRTC) {
-            // out of RTC range, return start/end dates as processed period
-            return new Date[] {new Date(startTime), new Date(endTime)};
+            Log.d (TAG, "getHistory: out of RTC range, no events for requested period");
+            return null;
         }
 
         if (reqEndRTC > maxRTC) {
@@ -356,19 +415,22 @@ public class MedtronicCnlReader {
         final int endRTC = (int) reqEndRTC;
         Log.d (TAG, "getHistory: final startRTC=" + HexDump.toHexString(startRTC) + " endRTC=" + HexDump.toHexString(endRTC));
 
-        Message message = new Message() {
+        RequestMessage requestMessage = new RequestMessage() {
             @Override
             ReadHistoryResponseMessage request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
                 return new ReadHistoryRequestMessage(mPumpSession, startRTC, endRTC, type).send(mDevice);
             }
         };
 
-        ReadHistoryResponseMessage response = (ReadHistoryResponseMessage) message.execute();
+        ReadHistoryResponseMessage response = (ReadHistoryResponseMessage) requestMessage.execute();
 
-        Date[] range = new PumpHistoryParser(response.getEventData()).process(sessionRTC, sessionOFFSET, sessionClockDifference, startTime, endTime);
+        response.setReqStartRTC(startRTC);
+        response.setReqEndRTC(endRTC);
+        response.setReqType(type);
+        response.setReqStartTime(startTime);
+        response.setReqEndTime(endTime);
 
-        Log.d(TAG, "Finished getHistory");
-        return range;
+        return response;
     }
 
     public void endEHSMSession() throws EncryptionException, IOException, TimeoutException, ChecksumException, UnexpectedMessageException {
@@ -419,7 +481,7 @@ public class MedtronicCnlReader {
         return success;
     }
 
-    private class Message {
+    private class RequestMessage {
 
         Object request() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
             return null;
@@ -427,41 +489,50 @@ public class MedtronicCnlReader {
 
         Object execute() throws IOException, EncryptionException, ChecksumException, TimeoutException, UnexpectedMessageException {
 
-            int unexpected = 0;
-            int timeout = 0;
+            long starttime = System.currentTimeMillis();
+            long retrytime = 30000L;
+
+            StringBuilder sb = new StringBuilder();
+
+            int attempt = 0;
 
             Object response = null;
 
             do {
                 try {
                     response = request();
-                    unexpected = 0;
-                    timeout = 0;
+                    attempt = 0;
+
                 } catch (UnexpectedMessageException e) {
-                    Log.e(TAG, "Attempt: " + (unexpected + 1) + " UnexpectedMessageException: " + e.getMessage());
+                    attempt++;
+                    String error = String.format("Attempt %s: UnexpectedMessageException: %s", attempt, e.getMessage());
+                    Log.e(TAG, error);
+                    sb.append("\n").append(error);
+
                     // needs to end immediately on these errors
-                    if (e.getMessage().contains("0x81 response was empty") || e.getMessage().contains("NAK")) {
-                        throw new UnexpectedMessageException(e.getMessage());
+                    if (e.getMessage().contains("connection lost") || e.getMessage().contains("NAK")) {
+                        throw new UnexpectedMessageException(sb.toString());
                     }
-                    // retry (5x or around 30 seconds for attempts)
-                    if (++unexpected >= 5) {
-                        throw new UnexpectedMessageException("retry failed, " + e.getMessage());
-                    }
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ignored) {}
+
+                    if (System.currentTimeMillis() - starttime >= retrytime)
+                        throw new UnexpectedMessageException(sb.toString());
+
                 } catch (TimeoutException e) {
-                    Log.e(TAG, "Attempt: " + (timeout + 1) + " TimeoutException: " + e.getMessage());
+                    attempt++;
+                    String error = String.format("Attempt %s: TimeoutException: %s", attempt, e.getMessage());
+                    Log.e(TAG, error);
+                    sb.append("\n").append(error);
+
                     // needs to end immediately on these errors
                     if (e.getMessage().contains("Timeout waiting for 0x81 response")) {
-                        throw new TimeoutException(e.getMessage());
+                        throw new TimeoutException(sb.toString());
                     }
-                    // retry (3x or around 30 seconds for attempts)
-                    if (++timeout >= 3) {
-                        throw new TimeoutException("retry failed, " + e.getMessage());
-                    }
+
+                    if (System.currentTimeMillis() - starttime >= retrytime)
+                        throw new TimeoutException(sb.toString());
                 }
-            } while (unexpected > 0 || timeout > 0);
+
+            } while (attempt > 0);
 
             return response;
         }

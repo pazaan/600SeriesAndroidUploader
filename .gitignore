@@ -5,3 +5,5 @@ local.properties
 .idea
 /app/app.iml
 bugfender.properties
+/app/release/
+/crowdin.properties

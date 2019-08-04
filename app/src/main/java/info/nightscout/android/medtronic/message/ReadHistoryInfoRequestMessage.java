@@ -35,7 +35,7 @@ public class ReadHistoryInfoRequestMessage extends MedtronicSendMessageRequestMe
     }
 
     public ReadHistoryInfoResponseMessage send(UsbHidDriver mDevice, int millis) throws IOException, TimeoutException, ChecksumException, EncryptionException, UnexpectedMessageException {
-        sendToPump(mDevice, mPumpSession, TAG);
+        sendToPump(mDevice, TAG);
         return getResponse(readFromPump(mDevice, mPumpSession, TAG));
     }
 

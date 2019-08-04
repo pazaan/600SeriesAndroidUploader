@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -22,179 +23,135 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <LinearLayout
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/view_sgv"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10sp"
         android:layout_marginTop="10sp"
+        android:layout_marginBottom="10sp"
         android:baselineAligned="true"
-        android:gravity="bottom"
-        android:orientation="vertical">
+        android:gravity="bottom">
 
         <TextView
             android:id="@+id/textview_bg_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="5sp"
-            android:text="never"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:text="@string/dots"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            app:layout_constraintEnd_toEndOf="@+id/textview_units"
+            app:layout_constraintStart_toStartOf="@+id/textview_bg"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/textview_bg"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            android:baselineAligned="false">
+            android:layout_marginBottom="8dp"
+            android:maxLines="1"
+            android:text="@string/dash"
+            android:textAlignment="center"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textSize="70sp"
+            app:layout_constraintBottom_toTopOf="@+id/textview_iob"
+            app:layout_constraintEnd_toStartOf="@+id/textview_units"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textview_bg_time" />
 
-            <TextView
-                android:id="@+id/textview_bg"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:layout_weight="1"
-                android:maxLines="1"
-                android:text="-"
-                android:textAlignment="center"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:textSize="70sp" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:layout_weight="1"
-                android:gravity="bottom|center_horizontal"
-                android:orientation="vertical">
-
-                <com.mikepenz.iconics.view.IconicsTextView
-                    android:id="@+id/textview_trend"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center|top"
-                    android:maxLines="1"
-                    android:text="-"
-                    android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:textSize="40sp" />
-
-                <TextView
-                    android:id="@+id/textview_units"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="mmol/L"
-                    android:textAppearance="?android:attr/textAppearanceSmall"
-                    android:maxLines="1" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
+        <com.mikepenz.iconics.view.IconicsTextView
+            android:id="@+id/textview_trend"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_horizontal"
-            android:orientation="horizontal"
-            android:paddingTop="10sp">
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:text="@string/dash"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textSize="40sp"
+            app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
+            app:layout_constraintEnd_toEndOf="@+id/textview_units"
+            app:layout_constraintStart_toStartOf="@+id/textview_units"
+            app:layout_constraintTop_toTopOf="@+id/textview_bg"
+            app:layout_constraintVertical_bias="0.6" />
 
-            <TextView
-                android:id="@+id/label_iob"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Active Insulin: "
-                android:textAppearance="?android:attr/textAppearanceMedium" />
+        <TextView
+            android:id="@+id/textview_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:text="@string/glucose_mgdl"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/textview_bg" />
 
-            <TextView
-                android:id="@+id/textview_iob"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
+        <TextView
+            android:id="@+id/textview_iob"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/main_screen__active_insulin"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/textview_bg_time"
+            app:layout_constraintStart_toStartOf="@+id/textview_bg_time"
+            app:layout_constraintTop_toBottomOf="@+id/textview_bg" />
 
-            <TextView
-                android:id="@+id/label_units"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=" U"
-                android:textAppearance="?android:attr/textAppearanceMedium" />
-        </LinearLayout>
+    </android.support.constraint.ConstraintLayout>
 
-    </LinearLayout>
-
-    <android.support.percent.PercentRelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
+    <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:gravity="center_horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-        <com.jjoe64.graphview.GraphView
-            app:layout_widthPercent="100%"
-            app:layout_aspectRatio="333%"
-            app:layout_marginTopPercent="0%"
-            app:layout_marginLeftPercent="0%"
-            android:id="@+id/chart"/>
-    </android.support.percent.PercentRelativeLayout>
 
-    <ScrollView
-        android:id="@+id/scrollView"
+        <info.nightscout.android.medtronic.ChartSgv
+            android:id="@+id/chart"
+            android:gravity="center_horizontal"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintDimensionRatio="333:100"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </android.support.constraint.ConstraintLayout>
+
+    <android.support.design.widget.CoordinatorLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:saveEnabled="false"
         android:layout_width="match_parent"
-        android:layout_height="fill_parent">
+        android:layout_height="match_parent">
 
-        <LinearLayout
-            android:orientation="vertical"
+        <co.moonmonkeylabs.realmrecyclerview.RealmRecyclerView
+            android:saveEnabled="false"
+            android:id="@+id/recyclerview_log"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            app:rrvLayoutType="LinearLayout"
+            app:rrvSwipeToDelete="false" />
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="-10sp"
-                android:layout_gravity="center_horizontal"
-                android:orientation="horizontal">
+        <android.support.design.widget.FloatingActionButton
+            android:saveEnabled="false"
+            android:id="@+id/fab_log_current"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="16dp"
+            android:src="@android:drawable/ic_menu_revert"
+            android:visibility="gone"
+            app:backgroundTint="#40000000"
+            app:fabSize="mini" />
 
-                <Button
-                    android:id="@+id/button_log_top"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="older log entries" />
+        <android.support.design.widget.FloatingActionButton
+            android:saveEnabled="false"
+            android:id="@+id/fab_log_search"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:src="@android:drawable/ic_menu_search"
+            android:visibility="gone"
+            app:backgroundTint="#40000000"
+            app:fabSize="mini" />
 
-                <Button
-                    android:id="@+id/button_log_top_recent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="most recent" />
-            </LinearLayout>
-
-            <com.mikepenz.iconics.view.IconicsTextView
-                android:id="@+id/textview_log"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10sp"
-                android:gravity="bottom"
-                android:text=""
-                android:layout_weight="0.33" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="-10sp"
-                android:layout_gravity="center_horizontal"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/button_log_bottom"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="newer log entries" />
-
-                <Button
-                    android:id="@+id/button_log_bottom_recent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="most recent" />
-            </LinearLayout>
-
-        </LinearLayout>
-    </ScrollView>
+    </android.support.design.widget.CoordinatorLayout>
 
 </LinearLayout>

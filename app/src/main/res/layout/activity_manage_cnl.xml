@@ -54,7 +54,7 @@
             android:id="@+id/manage_cnl_listview_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/no_registered_contour_next_link_devices"
+            android:text="@string/manage_cnl__no_registered_devices"
             android:layout_marginBottom="10sp"
             android:textSize="@dimen/materialize_typography_headline"
             android:textStyle="bold" />
@@ -63,6 +63,6 @@
             android:id="@+id/manage_cnl_listview_text2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/to_register_a_contour_next_link_you_must_first_plug_it_in_and_get_a_reading_from_the_pump" />
+            android:text="@string/manage_cnl__how_to_register" />
     </LinearLayout>
 </LinearLayout>
