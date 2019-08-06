@@ -129,7 +129,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setDuration((float) squareProgrammedDuration);
             treatment.setSplitNow("0");
             treatment.setSplitExt("100");
-            treatment.setRelative((float) ((squareProgrammedAmount * 60) / squareProgrammedDuration));
+            treatment.setRelative((float) (squareProgrammedDuration == 0 ? 0 : (squareProgrammedAmount * 60) / squareProgrammedDuration));
             notes.append(String.format("%s%s %s %s %s",
                     notes.length() == 0 ? "" : " ",
                     FormatKit.getInstance().getString(R.string.text__Square_Bolus),
@@ -142,11 +142,11 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setEnteredinsulin(String.valueOf(normalProgrammedAmount + squareProgrammedAmount));
             treatment.setDuration((float) squareProgrammedDuration);
             treatment.setInsulin((float) normalProgrammedAmount);
-            int splitNow = (int) (normalProgrammedAmount * (100 / (normalProgrammedAmount + squareProgrammedAmount)));
+            int splitNow = (int) (normalProgrammedAmount + squareProgrammedAmount == 0 ? 0 : normalProgrammedAmount * (100 / (normalProgrammedAmount + squareProgrammedAmount)));
             int splitExt = 100 - splitNow;
             treatment.setSplitNow(String.valueOf(splitNow));
             treatment.setSplitExt(String.valueOf(splitExt));
-            treatment.setRelative((float) ((squareProgrammedAmount * 60) / squareProgrammedDuration));
+            treatment.setRelative((float) (squareProgrammedDuration == 0 ? 0 : (squareProgrammedAmount * 60) / squareProgrammedDuration));
             notes.append(String.format("%s%s %s : %s %s %s",
                     notes.length() == 0 ? "" : " ",
                     FormatKit.getInstance().getString(R.string.text__Dual_Bolus),
@@ -189,11 +189,11 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             treatment.setEnteredinsulin(String.valueOf(normalDeliveredAmount + squareDeliveredAmount));
             treatment.setDuration((float) squareDeliveredDuration);
             treatment.setInsulin((float) normalDeliveredAmount);
-            int splitNow = (int) (normalDeliveredAmount * (100 / (normalDeliveredAmount + squareDeliveredAmount)));
+            int splitNow = (int) (normalDeliveredAmount + squareDeliveredAmount == 0 ? 0 : normalDeliveredAmount * (100 / (normalDeliveredAmount + squareDeliveredAmount)));
             int splitExt = 100 - splitNow;
             treatment.setSplitNow(String.valueOf(splitNow));
             treatment.setSplitExt(String.valueOf(splitExt));
-            treatment.setRelative((float) ((squareDeliveredAmount * 60) / squareDeliveredDuration));
+            treatment.setRelative((float) (squareDeliveredDuration == 0 ? 0 : (squareDeliveredAmount * 60) / squareDeliveredDuration));
             notes.append(String.format("%s* %s: %s %s : %s %s %s",
                     notes.length() == 0 ? "" : formatSeperator,
                     FormatKit.getInstance().getString(R.string.text__cancelled),
@@ -215,7 +215,7 @@ public class PumpHistoryBolus extends RealmObject implements PumpHistoryInterfac
             String gramsPerU;
             if (PumpHistoryParser.CARB_UNITS.EXCHANGES.equals(carbUnits)) {
                 carbInputAsGrams = gramsPerExchange * carbInput;
-                carbRatioAsGrams = gramsPerExchange / carbRatio;
+                carbRatioAsGrams = carbRatio == 0 ? 0 : gramsPerExchange / carbRatio;
                 gramsPerU = String.format("(%s/%s %s/%s/%s)",
                         FormatKit.getInstance().formatAsGrams(carbRatioAsGrams),
                         FormatKit.getInstance().getString(R.string.insulin_U),
