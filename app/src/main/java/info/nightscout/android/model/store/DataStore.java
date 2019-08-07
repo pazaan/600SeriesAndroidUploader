@@ -359,12 +359,12 @@ public class DataStore extends RealmObject {
             }
             if (nsEnableBolusTreatments != getBoolean(c, p, R.string.key_nsEnableBolusTreatments, R.bool.default_nsEnableBolusTreatments)
                     || nsGramsPerExchange != getInt(c, p, R.string.key_nsGramsPerExchange, R.string.default_nsGramsPerExchange)
-                    ) {
+            ) {
                 resendPumpHistoryBolus = true;
             }
             if (nsEnableFingerBG != getBoolean(c, p, R.string.key_nsEnableFingerBG, R.bool.default_nsEnableFingerBG)
                     || nsEnableCalibrationInfo != getBoolean(c, p, R.string.key_nsEnableCalibrationInfo, R.bool.default_nsEnableCalibrationInfo)
-                    ) {
+            ) {
                 resendPumpHistoryBG = true;
                 resendPumpHistoryMisc = true;
             }
@@ -378,12 +378,12 @@ public class DataStore extends RealmObject {
                     || nsEnableLifetimes != getBoolean(c, p, R.string.key_nsEnableLifetimes, R.bool.default_nsEnableLifetimes)
                     || nsCannulaChangeThreshold != getInt(c, p, R.string.key_nsCannulaChangeThreshold, R.string.default_nsCannulaChangeThreshold)
                     || nsInsulinChangeThreshold != getInt(c, p, R.string.key_nsInsulinChangeThreshold, R.string.default_nsInsulinChangeThreshold)
-                    ) {
+            ) {
                 resendPumpHistoryMisc = true;
             }
             if (nsActiveInsulinTime != getFloat(c, p, R.string.key_nsActiveInsulinTime, R.string.default_nsActiveInsulinTime)
                     || nsProfileDefault != getInt(c, p, R.string.key_nsProfileDefault, R.string.default_nsProfileDefault)
-                    ) {
+            ) {
                 requestProfile = true;
             }
             if (nsAlarmExtended != getBoolean(c, p, R.string.key_nsAlarmExtended, R.bool.default_nsAlarmExtended)
@@ -392,14 +392,14 @@ public class DataStore extends RealmObject {
                     || nsSystemStatusConnection != getBoolean(c, p, R.string.key_nsSystemStatusConnection, R.bool.default_nsSystemStatusConnection)
                     || nsSystemStatusBatteryLow != getBoolean(c, p, R.string.key_nsSystemStatusBatteryLow, R.bool.default_nsSystemStatusBatteryLow)
                     || nsSystemStatusBatteryCharged != getBoolean(c, p, R.string.key_nsSystemStatusBatteryCharged, R.bool.default_nsSystemStatusBatteryCharged)
-                    ) {
+            ) {
                 resendPumpHistoryAlarm = true;
             }
             if (nsSystemStatusUsbErrors != getBoolean(c, p, R.string.key_nsSystemStatusUsbErrors, R.bool.default_nsSystemStatusUsbErrors)
                     || nsSystemStatusConnection != getBoolean(c, p, R.string.key_nsSystemStatusConnection, R.bool.default_nsSystemStatusConnection)
                     || nsSystemStatusBatteryLow != getBoolean(c, p, R.string.key_nsSystemStatusBatteryLow, R.bool.default_nsSystemStatusBatteryLow)
                     || nsSystemStatusBatteryCharged != getBoolean(c, p, R.string.key_nsSystemStatusBatteryCharged, R.bool.default_nsSystemStatusBatteryCharged)
-                    ) {
+            ) {
                 resendPumpHistorySystem = true;
             }
             if (nsEnableDailyTotals != getBoolean(c, p, R.string.key_nsEnableDailyTotals, R.bool.default_nsEnableDailyTotals)) {
@@ -416,7 +416,7 @@ public class DataStore extends RealmObject {
                     || !nameBasalPattern6.equals(p.getString(c.getString(R.string.key_nameBasalPatternP6), ""))
                     || !nameBasalPattern7.equals(p.getString(c.getString(R.string.key_nameBasalPatternP7), ""))
                     || !nameBasalPattern8.equals(p.getString(c.getString(R.string.key_nameBasalPatternP8), ""))
-                    ) {
+            ) {
                 resendPumpHistoryPattern = true;
                 requestProfile = true;
             }
@@ -428,7 +428,7 @@ public class DataStore extends RealmObject {
                     || !nameTempBasalPreset6.equals(p.getString(c.getString(R.string.key_nameTempBasalPresetP6), ""))
                     || !nameTempBasalPreset7.equals(p.getString(c.getString(R.string.key_nameTempBasalPresetP7), ""))
                     || !nameTempBasalPreset8.equals(p.getString(c.getString(R.string.key_nameTempBasalPresetP8), ""))
-                    ) {
+            ) {
                 resendPumpHistoryBasal = true;
             }
             if (!nameBolusPreset1.equals(p.getString(c.getString(R.string.key_nameBolusPresetP1), ""))
@@ -439,7 +439,7 @@ public class DataStore extends RealmObject {
                     || !nameBolusPreset6.equals(p.getString(c.getString(R.string.key_nameBolusPresetP6), ""))
                     || !nameBolusPreset7.equals(p.getString(c.getString(R.string.key_nameBolusPresetP7), ""))
                     || !nameBolusPreset8.equals(p.getString(c.getString(R.string.key_nameBolusPresetP8), ""))
-                    ){
+            ){
                 resendPumpHistoryBolus = true;
             }
         }
@@ -1310,44 +1310,50 @@ public class DataStore extends RealmObject {
         return urchinStatusLayout;
     }
 
+    // NS rest api does not like dots as part of a basal pattern name and will cause a server error
+    private String scrub(String s) {
+        s = s.replace(".", " ");
+        return s;
+    }
+
     public String getNameBasalPattern1() {
-        return nameBasalPattern1.isEmpty() ?
-                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP1) : nameBasalPattern1;
+        return scrub(nameBasalPattern1.isEmpty() ?
+                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP1) : nameBasalPattern1);
     }
 
     public String getNameBasalPattern2() {
-        return nameBasalPattern2.isEmpty() ?
-                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP2) : nameBasalPattern2;
+        return scrub(nameBasalPattern2.isEmpty() ?
+                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP2) : nameBasalPattern2);
     }
 
     public String getNameBasalPattern3() {
-        return nameBasalPattern3.isEmpty() ?
-                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP3) : nameBasalPattern3;
+        return scrub(nameBasalPattern3.isEmpty() ?
+                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP3) : nameBasalPattern3);
     }
 
     public String getNameBasalPattern4() {
-        return nameBasalPattern4.isEmpty() ?
-                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP4) : nameBasalPattern4;
+        return scrub(nameBasalPattern4.isEmpty() ?
+                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP4) : nameBasalPattern4);
     }
 
     public String getNameBasalPattern5() {
-        return nameBasalPattern5.isEmpty() ?
-                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP5) : nameBasalPattern5;
+        return scrub(nameBasalPattern5.isEmpty() ?
+                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP5) : nameBasalPattern5);
     }
 
     public String getNameBasalPattern6() {
-        return nameBasalPattern6.isEmpty() ?
-                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP6) : nameBasalPattern6;
+        return scrub(nameBasalPattern6.isEmpty() ?
+                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP6) : nameBasalPattern6);
     }
 
     public String getNameBasalPattern7() {
-        return nameBasalPattern7.isEmpty() ?
-                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP7) : nameBasalPattern7;
+        return scrub(nameBasalPattern7.isEmpty() ?
+                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP7) : nameBasalPattern7);
     }
 
     public String getNameBasalPattern8() {
-        return nameBasalPattern8.isEmpty() ?
-                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP8) : nameBasalPattern8;
+        return scrub(nameBasalPattern8.isEmpty() ?
+                FormatKit.getInstance().getString(R.string.default_nameBasalPatternP8) : nameBasalPattern8);
     }
 
     public String getNameTempBasalPreset1() {
