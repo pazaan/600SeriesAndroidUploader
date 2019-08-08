@@ -1451,15 +1451,15 @@ public class PumpHistoryHandler {
                 eventDate = cgmResults.first().getEventDate();
                 int cgmRTC = cgmResults.first().getCgmRTC() - 60;
                 int pos = 0;
-                int count = 0;
-                while (count < max && pos < cgmResults.size()) {
+                int loc = 0;
+                while (pos < max && pos < cgmResults.size()) {
                     if (cgmResults.get(pos).getCgmRTC() > cgmRTC - (pos * 300)) {
                         isig.add(cgmResults.get(pos).getIsig());
                         delta.add(0.0);
-                        if (pos > 0) delta.set(pos - 1, isig.get(pos - 1) - isig.get(pos));
-                        pos++;
+                        if (loc > 0) delta.set(loc - 1, isig.get(loc - 1) - isig.get(loc));
+                        loc++;
                     }
-                    count++;
+                    pos++;
                 }
             } else {
                 // no current cgm event, set the event date to now
