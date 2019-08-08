@@ -55,6 +55,7 @@ import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_PRE_GRACE_PERIOD_MS;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_RECOVERY_PERIOD_MS;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.POLL_WARMUP_PERIOD_MS;
+import static info.nightscout.android.medtronic.service.MedtronicCnlService.USB_WARMUP_TIME_MS;
 import static info.nightscout.android.utils.ToolKit.getWakeLock;
 import static info.nightscout.android.utils.ToolKit.releaseWakeLock;
 
@@ -297,7 +298,7 @@ public class MasterService extends Service {
                     setHeartbeatAlarm();
                     runUploadServices();
                     if (checkUsbDevice()) {
-                        if (hasUsbPermission()) startCgmService();
+                        if (hasUsbPermission()) startCgmServiceDelayed(USB_WARMUP_TIME_MS);
                         else usbNoPermission();
                     }
                     break;
@@ -315,8 +316,7 @@ public class MasterService extends Service {
 
                 case Constants.ACTION_READ_NOW:
                     UserLogMessage.send(mContext, R.string.ul_main__requesting_poll_now);
-                    startService(new Intent(mContext, MedtronicCnlService.class)
-                            .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
+                    setPollingAlarm(System.currentTimeMillis() + 1000L);
                     break;
 
                 case Constants.ACTION_READ_PROFILE:
@@ -334,8 +334,7 @@ public class MasterService extends Service {
                 case Constants.ACTION_READ_OVERDUE:
                     if (isUsbOperational()
                             && System.currentTimeMillis() - lastPollSuccess() > POLL_PERIOD_MS) {
-                        startService(new Intent(mContext, MedtronicCnlService.class)
-                                .setAction(MasterService.Constants.ACTION_CNL_READPUMP));
+                        setPollingAlarm(System.currentTimeMillis() + USB_WARMUP_TIME_MS);
                     }
                     break;
 
