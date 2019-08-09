@@ -723,7 +723,7 @@ public class MasterService extends Service {
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST)) {
             Log.e(TAG, "Device does not support USB OTG");
             statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_support));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_support);
             return false;
         }
 
@@ -732,14 +732,14 @@ public class MasterService extends Service {
         if (usbManager == null) {
             Log.e(TAG, "USB connection error. mUsbManager == null");
             statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_connection));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_connection);
             return false;
         }
 
         if (UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID) == null) {
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
             statusNotification.updateNotification(StatusNotification.NOTIFICATION.ERROR);
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_connection));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_connection);
             return false;
         }
 

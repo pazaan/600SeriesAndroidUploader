@@ -1480,20 +1480,20 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     private boolean openUsbDevice() {
         if (!hasUsbHostFeature()) {
             Log.e(TAG, "Device does not support USB OTG");
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_support));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_support);
             return false;
         }
 
         if (mUsbManager == null) {
             Log.e(TAG, "USB connection error. mUsbManager == null");
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_connection));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_connection);
             return false;
         }
 
         UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
         if (cnlStick == null) {
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_connection));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_connection);
             return false;
         }
 
@@ -1507,7 +1507,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             mHidDevice.open();
         } catch (Exception e) {
             Log.e(TAG, "Unable to open serial device", e);
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_open));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_open);
             return false;
         }
 

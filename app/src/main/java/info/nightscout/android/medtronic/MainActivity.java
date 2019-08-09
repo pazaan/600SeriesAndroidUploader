@@ -304,7 +304,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                                 if (dataStore.isNsEnableProfileUpload()) {
                                     sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_PROFILE));
                                 } else {
-                                    UserLogMessage.getInstance().add(getString(R.string.ul_main__pump_profile_disabled));
+                                    UserLogMessage.getInstance().add(R.string.ul_main__pump_profile_disabled);
                                 }
                             } else {
                                 UserLogMessage.getInstance().add(R.string.ul_main__cgm_service_disabled);
