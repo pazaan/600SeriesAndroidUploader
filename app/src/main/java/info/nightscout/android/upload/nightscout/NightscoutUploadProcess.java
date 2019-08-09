@@ -65,6 +65,19 @@ public class NightscoutUploadProcess {
 
     private boolean cancel;
 
+    private int entriesBulkCount;
+    private int entriesDeleteCount;
+    private int entriesCheckCount;
+    private int treatmentsBulkCount;
+    private int treatmentsDeleteCount;
+    private int treatmentsCheckCount;
+    private int profileWriteCount;
+    private int profileDeleteCount;
+    private int profileCheckCount;
+    private int deviceWriteCount;
+    private int cheanupCheckCount;
+    private int cheanupDeleteCount;
+
     private UploadApi uploadApi;
 
     NightscoutUploadProcess(String url, String secret) throws Exception {
@@ -110,6 +123,14 @@ public class NightscoutUploadProcess {
             uploadStatus(statusRecords, uploaderBatteryLevel);
 
         if (!cancel) uploadEvents(records);
+
+        Log.d(TAG, String.format("HTTP workload: Entries: check=%s delete=%s bulk=%s Treatments: check=%s delete=%s bulk=%s Device: write=%s Profile: check=%s delete=%s write=%s Clean: check=%s delete=%s",
+                entriesCheckCount, entriesDeleteCount, entriesBulkCount,
+                treatmentsCheckCount, treatmentsDeleteCount, treatmentsBulkCount,
+                deviceWriteCount,
+                profileCheckCount, profileDeleteCount, profileWriteCount,
+                cheanupCheckCount, cheanupDeleteCount
+                ));
     }
 
     // Format date to Zulu (UTC) time
@@ -171,6 +192,7 @@ public class NightscoutUploadProcess {
         String key = entry.getKey600();
         String mac = entry.getPumpMAC600();
 
+        entriesCheckCount++;
         Response<List<EntriesEndpoints.Entry>> response = entriesEndpoints.findKey(from, key).execute();
 
         if (response.isSuccessful()) {
@@ -186,6 +208,7 @@ public class NightscoutUploadProcess {
                     if (count > 1 || item.getPumpMAC600() == null ||
                             (item.getPumpMAC600().equals(mac) &&
                                     mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE)) {
+                        entriesDeleteCount++;
                         Response<ResponseBody> responseBody = entriesEndpoints.deleteID(item.getDate().toString(), item.get_id()).execute();
                         if (responseBody.isSuccessful()) {
                             Log.d(TAG, String.format("deleted entry ID: %s with KEY: %s MAC: %s DATE: %s (%s)",
@@ -207,6 +230,7 @@ public class NightscoutUploadProcess {
                 Log.d(TAG, String.format("queued item for nightscout entries bulk upload. KEY: %s MAC: %s DATE: %s (%s)", key, mac, entry.getDateString(), entry.getDate()));
                 entry.setDevice(device);
                 entries.add(entry);
+                entriesBulkCount++;
             }
 
         } else {
@@ -222,6 +246,7 @@ public class NightscoutUploadProcess {
         String key = treatment.getKey600();
         String mac = treatment.getPumpMAC600();
 
+        treatmentsCheckCount++;
         Response<List<TreatmentsEndpoints.Treatment>> response = treatmentsEndpoints.findKey(from, key).execute();
 
         if (response.isSuccessful()) {
@@ -237,6 +262,7 @@ public class NightscoutUploadProcess {
                     if (count > 1 || item.getPumpMAC600() == null ||
                             (item.getPumpMAC600().equals(mac) &&
                                     mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE)) {
+                        treatmentsDeleteCount++;
                         Response<ResponseBody> responseBody = dataStore.isNightscoutUseQuery()
                                 ? treatmentsEndpoints.deleteID(item.getCreated_at(), item.get_id()).execute()
                                 : treatmentsEndpoints.deleteID(item.get_id()).execute();
@@ -260,6 +286,7 @@ public class NightscoutUploadProcess {
                 Log.d(TAG, String.format("queued item for nightscout treatments bulk upload. KEY: %s MAC: %s DATE: %s", key, mac, treatment.getCreated_at()));
                 if (enteredBy.length() > 0) treatment.setEnteredBy(enteredBy);
                 treatments.add(treatment);
+                treatmentsBulkCount++;
             }
 
         } else {
@@ -271,6 +298,7 @@ public class NightscoutUploadProcess {
     private void processProfile(NightscoutItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
 
         String key = profile.getKey600();
+        profileCheckCount++;
         Response<List<ProfileEndpoints.Profile>> response = profileEndpoints.getProfiles().execute();
 
         if (response.isSuccessful()) {
@@ -289,6 +317,7 @@ public class NightscoutUploadProcess {
 
                     for (ProfileEndpoints.Profile item : list) {
                         foundID = item.get_id();
+                        profileDeleteCount++;
                         Response<ResponseBody> responseBody = profileEndpoints.deleteID(foundID).execute();
                         if (responseBody.isSuccessful()) {
                             Log.d(TAG, "deleted this item! ID: " + foundID);
@@ -313,6 +342,7 @@ public class NightscoutUploadProcess {
                                 foundKey = item.getKey600();
                                 if (foundKey != null && foundKey.equals(key)) {
                                     foundID = item.get_id();
+                                    profileDeleteCount++;
                                     Response<ResponseBody> responseBody = profileEndpoints.deleteID(foundID).execute();
                                     if (responseBody.isSuccessful()) {
                                         Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + foundID);
@@ -332,6 +362,7 @@ public class NightscoutUploadProcess {
 
             if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
                 Log.d(TAG, "new item sending to nightscout profile, KEY: " + key);
+                profileWriteCount++;
                 Response<ResponseBody> responseBody = profileEndpoints.sendProfile(profile).execute();
                 if (!responseBody.isSuccessful()) {
                     Log.d(TAG, "no POST response from nightscout site");
@@ -382,6 +413,7 @@ public class NightscoutUploadProcess {
 
         } else {
             // pump pill / iob device status disabled then just send the uploader battery state
+            Log.d(TAG, "pump pill / iob device status disabled: send the uploader battery state");
             deviceStatus = new DeviceStatus();
             deviceStatus.setCreatedAt(formatDateForNS(System.currentTimeMillis()));
             deviceEntries.add(deviceStatus);
@@ -390,6 +422,7 @@ public class NightscoutUploadProcess {
         }
 
         for (DeviceStatus status : deviceEntries) {
+            deviceWriteCount++;
             Response<ResponseBody> result = deviceEndpoints.sendDeviceStatus(status).execute();
             if (!result.isSuccessful()) throw new Exception("(device status) " + result.message());
             if (cancel) break;
@@ -508,10 +541,10 @@ public class NightscoutUploadProcess {
     }
 
     private void cleanupCheck() throws Exception {
-        Log.d(TAG, "running cleanup check");
-        long now = System.currentTimeMillis();
+        final long now = System.currentTimeMillis();
 
         if (dataStore.isNightscoutInitCleanup()) {
+            Log.i(TAG, "running nightscout initial cleanup check");
 
             String cleanFrom = formatDateForNS(now - dataStore.getSysPumpHistoryDays() * 24 * 60 * 60000L);
             String cleanTo = formatDateForNS(now);
@@ -547,7 +580,10 @@ public class NightscoutUploadProcess {
                 }
             });
 
-        } else {
+        }
+
+        if (now - dataStore.getNightscoutCleanTimestamp() >= 4 * 60 * 60000L) {
+            Log.d(TAG, "running nightscout message cleanup check");
 
             // clean up any old alarm or system messages that may remain in NS when multiple uploaders are in use
             String cleanTo = formatDateForNS(now - 24 * 60 * 60000L);
@@ -565,11 +601,18 @@ public class NightscoutUploadProcess {
                                 : cleanTo,
                         "ALARM", "20").execute()) == 20) ;
             }
+
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
+                    dataStore.setNightscoutCleanTimestamp(now);
+                }
+            });
         }
     }
 
     private void cleanupNonKeyed() throws Exception {
-        long now = System.currentTimeMillis();
+        final long now = System.currentTimeMillis();
         int cgmDays = dataStore.getSysCgmHistoryDays();
         int pumpDays = dataStore.getSysPumpHistoryDays();
 
@@ -652,10 +695,12 @@ public class NightscoutUploadProcess {
     }
 
     private int deleteTreatments(Response<List<TreatmentsEndpoints.Treatment>> response) throws Exception {
+        cheanupCheckCount++;
         int result = 0;
         if (response.isSuccessful()) {
             List<TreatmentsEndpoints.Treatment> list = response.body();
             for (TreatmentsEndpoints.Treatment item : list) {
+                cheanupDeleteCount++;
                 Response<ResponseBody> responseBody = dataStore.isNightscoutUseQuery()
                         ? treatmentsEndpoints.deleteID(item.getCreated_at(), item.get_id()).execute()
                         : treatmentsEndpoints.deleteID(item.get_id()).execute();
@@ -672,4 +717,59 @@ public class NightscoutUploadProcess {
         return result;
     }
 
+    public int getEntriesBulkCount() {
+        return entriesBulkCount;
+    }
+
+    public int getEntriesDeleteCount() {
+        return entriesDeleteCount;
+    }
+
+    public int getEntriesCheckCount() {
+        return entriesCheckCount;
+    }
+
+    public int getTreatmentsBulkCount() {
+        return treatmentsBulkCount;
+    }
+
+    public int getTreatmentsDeleteCount() {
+        return treatmentsDeleteCount;
+    }
+
+    public int getTreatmentsCheckCount() {
+        return treatmentsCheckCount;
+    }
+
+    public int getProfileWriteCount() {
+        return profileWriteCount;
+    }
+
+    public int getProfileDeleteCount() {
+        return profileDeleteCount;
+    }
+
+    public int getProfileCheckCount() {
+        return profileCheckCount;
+    }
+
+    public int getDeviceWriteCount() {
+        return deviceWriteCount;
+    }
+
+    public int getCheanupCheckCount() {
+        return cheanupCheckCount;
+    }
+
+    public int getCheanupDeleteCount() {
+        return cheanupDeleteCount;
+    }
+
+    public int getHttpWorkload() {
+        return entriesCheckCount + entriesDeleteCount + (entriesBulkCount == 0 ? 0 : 1) +
+                treatmentsCheckCount + treatmentsDeleteCount + (treatmentsBulkCount == 0 ? 0 : 1) +
+                deviceWriteCount +
+                profileCheckCount + profileDeleteCount + profileWriteCount +
+                cheanupCheckCount + cheanupDeleteCount;
+    }
 }

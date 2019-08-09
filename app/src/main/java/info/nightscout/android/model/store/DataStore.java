@@ -20,6 +20,7 @@ public class DataStore extends RealmObject {
     private boolean nightscoutInitCleanup;
     private long nightscoutCgmCleanFrom;
     private long nightscoutPumpCleanFrom;
+    private long nightscoutCleanTimestamp;
     private long nightscoutAlwaysUpdateTimestamp; // items for upload will always update prior to this time
 
     private boolean nightscoutUpload;
@@ -700,6 +701,14 @@ public class DataStore extends RealmObject {
 
     public void setNightscoutPumpCleanFrom(long nightscoutPumpCleanFrom) {
         this.nightscoutPumpCleanFrom = nightscoutPumpCleanFrom;
+    }
+
+    public long getNightscoutCleanTimestamp() {
+        return nightscoutCleanTimestamp;
+    }
+
+    public void setNightscoutCleanTimestamp(long nightscoutCleanTimestamp) {
+        this.nightscoutCleanTimestamp = nightscoutCleanTimestamp;
     }
 
     public long getNightscoutAlwaysUpdateTimestamp() {
