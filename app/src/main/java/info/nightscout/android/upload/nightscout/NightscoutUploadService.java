@@ -176,8 +176,8 @@ public class NightscoutUploadService extends Service {
                             .equalTo("uploaded", false)
                             .findAll());
 
-            if (statusRecords.size() > 50) {
-                statusRecords = statusRecords.subList(statusRecords.size() - 50, statusRecords.size());
+            if (statusRecords.size() > 20) {
+                statusRecords = statusRecords.subList(statusRecords.size() - 20, statusRecords.size());
                 Log.i(TAG, "Process limit reached for status records, another pass scheduled.");
                 rerun = true;
             }

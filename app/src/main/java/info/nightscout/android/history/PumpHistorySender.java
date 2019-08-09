@@ -54,7 +54,7 @@ public class PumpHistorySender {
                 .ttl(PumpHistoryAlarm.class, dataStore.isNsEnableAlarms() ? dataStore.getNsAlarmTTL() * 60 * 60000L : 0)
                 .ttl(PumpHistorySystem.class, dataStore.isNsEnableSystemStatus() ? 24 * 60 * 60000L : 0)
 
-                .limiter(dataStore.getNightscoutURL() != null && dataStore.getNightscoutURL().toLowerCase().contains("azure") ? 60 : 200)
+                .limiter(dataStore.getNightscoutURL() != null && dataStore.getNightscoutURL().toLowerCase().contains("azure") ? 40 : 80)
                 .process(180 * 24 * 60 * 60000L)
 
                 .opt(SENDEROPT.TREATMENTS, treatments)

@@ -105,6 +105,7 @@ public class NightscoutUploadProcess {
             throws Exception {
 
         cancel = false;
+        resetCounts();
 
         this.pumpHistorySender = pumpHistorySender;
 
@@ -131,6 +132,21 @@ public class NightscoutUploadProcess {
                 profileCheckCount, profileDeleteCount, profileWriteCount,
                 cheanupCheckCount, cheanupDeleteCount
                 ));
+    }
+
+    private void resetCounts() {
+        entriesBulkCount = 0;
+        entriesDeleteCount = 0;
+        entriesCheckCount = 0;
+        treatmentsBulkCount = 0;
+        treatmentsDeleteCount = 0;
+        treatmentsCheckCount = 0;
+        profileWriteCount = 0;
+        profileDeleteCount = 0;
+        profileCheckCount = 0;
+        deviceWriteCount = 0;
+        cheanupCheckCount = 0;
+        cheanupDeleteCount = 0;
     }
 
     // Format date to Zulu (UTC) time
