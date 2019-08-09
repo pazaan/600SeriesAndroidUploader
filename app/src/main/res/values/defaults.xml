@@ -88,7 +88,7 @@
     <string translatable="false" name="key_nsEnableProfileUpload">nsEnableProfileUpload</string>
     <string translatable="false" name="key_nsEnableProfileSingle">nsEnableProfileSingle</string>
     <string translatable="false" name="key_nsEnableProfileOffset">nsEnableProfileOffset</string>
-    <string translatable="false" name="key_nsProfileDefault">nsProfileDefault</string>
+    <string translatable="false" name="key_nsProfileDefault">nsProfileDefaultPattern</string>
     <string translatable="false" name="key_nsActiveInsulinTime">nsActiveInsulinTime</string>
     <string translatable="false" name="key_nsEnablePatternChange">nsEnablePatternChange</string>
 
