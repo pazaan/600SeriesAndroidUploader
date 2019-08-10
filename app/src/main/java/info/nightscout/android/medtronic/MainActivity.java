@@ -787,7 +787,11 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     }
                 });
             }
-            startService(new Intent(this, MasterService.class));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(new Intent(this, MasterService.class));
+            } else {
+                startService(new Intent(this, MasterService.class));
+            }
         } else {
             mPrefs.edit().putBoolean("EnableCgmService", false).commit();
             Log.i(TAG, "startMasterService: CgmService is disabled");
