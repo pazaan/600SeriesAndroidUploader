@@ -102,7 +102,7 @@ public class NightscoutUploadProcess {
                              PumpHistoryHandler.ExtraInfo extraInfo,
                              List<PumpStatusEvent> statusRecords,
                              List<PumpHistoryInterface> records)
-            throws Exception {
+            throws Exception, NightscoutException {
 
         cancel = false;
         resetCounts();
@@ -159,7 +159,7 @@ public class NightscoutUploadProcess {
         return sdf.format(time) + "Z";
     }
 
-    private void uploadEvents(List<PumpHistoryInterface> records) throws Exception {
+    private void uploadEvents(List<PumpHistoryInterface> records) throws Exception, NightscoutException {
 
         cleanupCheck();
 
@@ -183,11 +183,11 @@ public class NightscoutUploadProcess {
 
         if (!cancel && entries.size() > 0) {
             Response<ResponseBody> result = entriesEndpoints.sendEntries(entries).execute();
-            if (!result.isSuccessful()) throw new Exception("(entries) " + result.message());
+            if (!result.isSuccessful()) throw new NightscoutException("(entries) " + result.message());
         }
         if (!cancel && treatments.size() > 0) {
             Response<ResponseBody> result = treatmentsEndpoints.sendTreatments(treatments).execute();
-            if (!result.isSuccessful()) throw new Exception("(treatments) " + result.message());
+            if (!result.isSuccessful()) throw new NightscoutException("(treatments) " + result.message());
         }
     }
 
@@ -201,7 +201,8 @@ public class NightscoutUploadProcess {
         return mode;
     }
 
-    private void processEntry(NightscoutItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries) throws Exception {
+    private void processEntry(NightscoutItem.MODE mode, EntriesEndpoints.Entry entry, List<EntriesEndpoints.Entry> entries)
+            throws Exception, NightscoutException {
 
         String from = Long.toString(new SimpleDateFormat("yyyy", Locale.ENGLISH).parse("2017").getTime());
 
@@ -231,7 +232,7 @@ public class NightscoutUploadProcess {
                                     item.get_id(), item.getKey600(), item.getPumpMAC600(), item.getDateString(), item.getDate()));
                         } else {
                             Log.d(TAG, "no DELETE response from nightscout site");
-                            throw new Exception("(processEntry) " + responseBody.message());
+                            throw new NightscoutException("(processEntry) " + responseBody.message());
                         }
                     }
 
@@ -243,7 +244,8 @@ public class NightscoutUploadProcess {
             }
 
             if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
-                Log.d(TAG, String.format("queued item for nightscout entries bulk upload. KEY: %s MAC: %s DATE: %s (%s)", key, mac, entry.getDateString(), entry.getDate()));
+                Log.d(TAG, String.format("queued item for nightscout entries bulk upload. KEY: %s MAC: %s DATE: %s (%s)",
+                        key, mac, entry.getDateString(), entry.getDate()));
                 entry.setDevice(device);
                 entries.add(entry);
                 entriesBulkCount++;
@@ -251,11 +253,12 @@ public class NightscoutUploadProcess {
 
         } else {
             Log.d(TAG, "no response from nightscout site!");
-            throw new Exception("(processEntry) " + response.message());
+            throw new NightscoutException("(processEntry) " + response.message());
         }
     }
 
-    private void processTreatment(NightscoutItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments) throws Exception {
+    private void processTreatment(NightscoutItem.MODE mode, TreatmentsEndpoints.Treatment treatment, List<TreatmentsEndpoints.Treatment> treatments)
+            throws Exception, NightscoutException {
 
         String from = "2017";
 
@@ -287,7 +290,7 @@ public class NightscoutUploadProcess {
                                     item.get_id(), item.getKey600(), item.getPumpMAC600(), item.getCreated_at(), dataStore.isNightscoutUseQuery()));
                         } else {
                             Log.d(TAG, "no DELETE response from nightscout site");
-                            throw new Exception("(processTreatment) " + responseBody.message());
+                            throw new NightscoutException("(processTreatment) " + responseBody.message());
                         }
                     }
 
@@ -299,7 +302,8 @@ public class NightscoutUploadProcess {
             }
 
             if (mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.CHECK) {
-                Log.d(TAG, String.format("queued item for nightscout treatments bulk upload. KEY: %s MAC: %s DATE: %s", key, mac, treatment.getCreated_at()));
+                Log.d(TAG, String.format("queued item for nightscout treatments bulk upload. KEY: %s MAC: %s DATE: %s",
+                        key, mac, treatment.getCreated_at()));
                 if (enteredBy.length() > 0) treatment.setEnteredBy(enteredBy);
                 treatments.add(treatment);
                 treatmentsBulkCount++;
@@ -307,11 +311,12 @@ public class NightscoutUploadProcess {
 
         } else {
             Log.d(TAG, "no response from nightscout site!");
-            throw new Exception("(processTreatment) " + response.message());
+            throw new NightscoutException("(processTreatment) " + response.message());
         }
     }
 
-    private void processProfile(NightscoutItem.MODE mode, ProfileEndpoints.Profile profile) throws Exception {
+    private void processProfile(NightscoutItem.MODE mode, ProfileEndpoints.Profile profile)
+            throws Exception, NightscoutException {
 
         String key = profile.getKey600();
         profileCheckCount++;
@@ -339,7 +344,7 @@ public class NightscoutUploadProcess {
                             Log.d(TAG, "deleted this item! ID: " + foundID);
                         } else {
                             Log.d(TAG, "no DELETE response from nightscout site");
-                            throw new Exception("(processProfile) " + responseBody.message());
+                            throw new NightscoutException("(processProfile) " + responseBody.message());
                         }
                     }
 
@@ -364,7 +369,7 @@ public class NightscoutUploadProcess {
                                         Log.d(TAG, "deleted this item! KEY: " + key + " ID: " + foundID);
                                     } else {
                                         Log.d(TAG, "no DELETE response from nightscout site");
-                                        throw new Exception("(processProfile) " + responseBody.message());
+                                        throw new NightscoutException("(processProfile) " + responseBody.message());
                                     }
                                     if (--count == 1) break;
                                 }
@@ -382,17 +387,18 @@ public class NightscoutUploadProcess {
                 Response<ResponseBody> responseBody = profileEndpoints.sendProfile(profile).execute();
                 if (!responseBody.isSuccessful()) {
                     Log.d(TAG, "no POST response from nightscout site");
-                    throw new Exception("(processProfile) " + responseBody.message());
+                    throw new NightscoutException("(processProfile) " + responseBody.message());
                 }
             }
 
         } else {
             Log.d(TAG, "no response from nightscout site!");
-            throw new Exception("(processProfile) " + response.message());
+            throw new NightscoutException("(processProfile) " + response.message());
         }
     }
 
-    private void uploadStatus(List<PumpStatusEvent> records, int uploaderBatteryLevel) throws Exception {
+    private void uploadStatus(List<PumpStatusEvent> records, int uploaderBatteryLevel)
+            throws Exception, NightscoutException {
         List<DeviceEndpoints.DeviceStatus> deviceEntries = new ArrayList<>();
         DeviceStatus deviceStatus;
 
@@ -440,7 +446,7 @@ public class NightscoutUploadProcess {
         for (DeviceStatus status : deviceEntries) {
             deviceWriteCount++;
             Response<ResponseBody> result = deviceEndpoints.sendDeviceStatus(status).execute();
-            if (!result.isSuccessful()) throw new Exception("(device status) " + result.message());
+            if (!result.isSuccessful()) throw new NightscoutException("(device status) " + result.message());
             if (cancel) break;
         }
     }

@@ -1,10 +1,11 @@
 package info.nightscout.android.medtronic;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import info.nightscout.android.UploaderApplication;
@@ -19,7 +20,7 @@ import io.realm.Realm;
 // UsbActivity is being used to intercept OS intents for Usb so that we can have permissions be excepted permanently for defaults
 // also to stop the MainActivity being brought forward when user is in another app and a unplug/plug happens due to loose connection
 
-public class UsbActivity extends AppCompatActivity {
+public class UsbActivity extends Activity {
     private static final String TAG = UsbActivity.class.getSimpleName();
 
     @Override
@@ -49,7 +50,14 @@ public class UsbActivity extends AppCompatActivity {
 
         if (service) {
             Log.d(TAG, "starting master service");
-            startService(new Intent(this, MasterService.class));
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(new Intent(this, MasterService.class));
+                } else {
+                    startService(new Intent(this, MasterService.class));
+                }
+            } catch (Exception ignored) {
+            }
             // notify usb activity received
             // may only receive intent from os after permission has been accepted or set as default for app
             // older os versions will send intent on usb connect whatever permission state

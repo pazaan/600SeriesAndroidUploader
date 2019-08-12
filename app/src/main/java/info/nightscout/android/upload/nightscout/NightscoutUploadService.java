@@ -128,7 +128,7 @@ public class NightscoutUploadService extends Service {
                             pumpHistoryHandler.refresh();
                         }
 
-                    } while (rerun);
+                    } while (rerun && dataStore.isNightscoutUpload());
 
                 } else {
                     statNightscout.incSiteUnavailable();
@@ -238,17 +238,31 @@ public class NightscoutUploadService extends Service {
                         long timer = System.currentTimeMillis() - start;
                         statNightscout.timer(timer);
                         statNightscout.settotalRecords(statNightscout.getTotalRecords() + total);
+                        statNightscout.setTotalHttp(statNightscout.getTotalHttp() + nightscoutUploadProcess.getHttpWorkload());
 
-                        UserLogMessage.sendE(mContext, String.format("{id;%s}: {id;%s} %s http %s [%sms]",
-                                R.string.ul_share__nightscout, R.string.ul_share__processed,
-                                total, nightscoutUploadProcess.getHttpWorkload(), timer));
+                        UserLogMessage.sendE(mContext, String.format("{id;%s}: {id;%s} %s http %s E:%s/%s/%s T:%s/%s/%s P:%s/%s/%s D:%s C:%s/%s [%sms]",
+                                R.string.ul_share__nightscout, R.string.ul_share__processed, total,
+                                nightscoutUploadProcess.getHttpWorkload(),
+                                nightscoutUploadProcess.getEntriesCheckCount(),
+                                nightscoutUploadProcess.getEntriesDeleteCount(),
+                                nightscoutUploadProcess.getEntriesBulkCount(),
+                                nightscoutUploadProcess.getTreatmentsCheckCount(),
+                                nightscoutUploadProcess.getTreatmentsDeleteCount(),
+                                nightscoutUploadProcess.getTreatmentsBulkCount(),
+                                nightscoutUploadProcess.getProfileCheckCount(),
+                                nightscoutUploadProcess.getProfileDeleteCount(),
+                                nightscoutUploadProcess.getProfileWriteCount(),
+                                nightscoutUploadProcess.getDeviceWriteCount(),
+                                nightscoutUploadProcess.getCheanupCheckCount(),
+                                nightscoutUploadProcess.getCheanupDeleteCount(),
+                                timer));
 
                     } else {
                         Log.i(TAG, "Uploading to Nightscout was canceled");
                     }
 
-                } catch (Exception e) {
-                    Log.e(TAG, "ERROR uploading to Nightscout", e);
+                } catch (NightscoutException e) {
+                    Log.e(TAG, "Nightscout Server Error:", e);
                     statNightscout.incError();
 
                     // Do not rerun, try again after the next poll
@@ -262,15 +276,34 @@ public class NightscoutUploadService extends Service {
                     });
 
                     if (dataStore.isDbgEnableUploadErrors()) {
-                        if (e.getMessage().contains("no longer valid"))
-                            // An integrity check database reset may have deleted the Realm object
-                            // Only show this message as an 'extended error'
-                            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN,
-                                    "Uploading to nightscout was unsuccessful: " + e.getMessage());
-                        else
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                                    "Uploading to nightscout was unsuccessful: " + e.getMessage());
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                                String.format("{id;%s} %s",
+                                        R.string.ul_ns__warn_upload_unsuccessful,
+                                        e.getMessage()));
                     }
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Exception while processing upload:", e);
+                    statNightscout.incError();
+
+                    // Do not rerun, try again after the next poll
+                    rerun = false;
+
+                    storeRealm.executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(@NonNull Realm realm) {
+                            dataStore.setNightscoutAvailable(false);
+                        }
+                    });
+
+                    String t[] = Log.getStackTraceString(e).split("at ");
+
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                            String.format("{id;%s} %s",
+                                    R.string.ul_ns__warn_upload_unsuccessful,
+                                    t.length < 2 ? e.getMessage() : e.getMessage() + " >>> " +
+                                            t[1].replace("info.nightscout.android","").replace("\n", "")));
+                    UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, Log.getStackTraceString(e));
                 }
 
             } else {
@@ -278,7 +311,7 @@ public class NightscoutUploadService extends Service {
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected exception while uploading to Nightscout, data may be corrupt or process broken");
+            Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
             stopSelf();
         }
     }

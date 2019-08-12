@@ -572,7 +572,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         openRealmHistory();
         openRealmDatastore();
 
-        checkForUpdateBackground(5);
+        checkForUpdateBackground(10);
 
         startDisplay();
         if (userLogDisplay != null)
@@ -703,6 +703,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         appUpdater.setUpdateFrom(UpdateFrom.JSON)
                 .setUpdateJSON("https://raw.githubusercontent.com/pazaan/600SeriesAndroidUploader/master/app/update.json")
+                .showAppUpdated(false)
                 .showEvery(checkEvery) // Only check for an update every `checkEvery` invocations
                 .start();
     }

@@ -649,7 +649,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             } catch (Exception e) {
                 Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
                 UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.ul_poll__polling_service_could_not_complete);
-                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_poll__unexpected_error, e.getMessage()));
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_poll__unexpected_error, Log.getStackTraceString(e)));
                 nextpoll = System.currentTimeMillis() + 60000L;
 
             } finally {

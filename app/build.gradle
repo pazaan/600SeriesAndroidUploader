@@ -31,7 +31,7 @@ repositories {
 
 // change dev to false for release version (release uses the generated version name and code)
 def dev = true
-def devName = "arecibo 0.7.1 (0.1)"
+def devName = "arecibo 0.7.1 (dev 0.2)"
 
 def generateVersionCode() {
     // We need to get the number of releases directly from GitHub, since Travis
@@ -115,9 +115,7 @@ release {
 }
 
 dependencies {
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.3'
-    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.3'
-    debugImplementation 'com.squareup.leakcanary:leakcanary-support-fragment:1.6.3'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.0-beta-2'
 
     implementation('com.crashlytics.sdk.android:crashlytics:2.8.0@aar') {
         transitive = true

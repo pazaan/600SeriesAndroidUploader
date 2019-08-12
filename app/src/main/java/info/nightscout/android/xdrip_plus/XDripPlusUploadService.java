@@ -102,6 +102,7 @@ public class XDripPlusUploadService extends Service {
                 PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
                 try {
+                    checkAvailable();
 
                     RealmResults<PumpStatusEvent> pumpStatusEvents = mRealm
                             .where(PumpStatusEvent.class)
@@ -133,6 +134,7 @@ public class XDripPlusUploadService extends Service {
                     }
 
                 } catch (Exception e) {
+                    Log.e(TAG, "Error:", e);
                     UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} {id;%s}",
                             R.string.ul_share__xdrip, R.string.ul_share__is_not_available));
                     storeRealm.executeTransaction(new Realm.Transaction() {
@@ -197,7 +199,7 @@ public class XDripPlusUploadService extends Service {
         sendBundle(mContext, "add", "devicestatus", devicestatusBody);
     }
 
-    private void sendBundle(Context context, String action, String collection, JSONArray json) throws Exception {
+    private void sendBundle(Context context, String action, String collection, JSONArray json) {
         final Bundle bundle = new Bundle();
         bundle.putString("action", action);
         bundle.putString("collection", collection);
@@ -206,8 +208,11 @@ public class XDripPlusUploadService extends Service {
         final Intent intent = new Intent(Constants.XDRIP_PLUS_NS_EMULATOR);
         intent.putExtras(bundle).addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
         context.sendBroadcast(intent);
+    }
 
-        List<ResolveInfo> receivers = context.getPackageManager().queryBroadcastReceivers(intent, 0);
+    private void checkAvailable() throws Exception {
+        final Intent intent = new Intent(Constants.XDRIP_PLUS_NS_EMULATOR);
+        List<ResolveInfo> receivers = mContext.getPackageManager().queryBroadcastReceivers(intent, 0);
         if (receivers.size() < 1) {
             Log.w(TAG, "No xDrip receivers found.");
             throw new Exception("No xDrip receivers found.");
