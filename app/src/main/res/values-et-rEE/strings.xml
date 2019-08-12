@@ -235,6 +235,7 @@ märgi see lubatuks</string>
     <string name="ul_usb__no_connection">USB connection error. Is the Contour Next Link plugged in?</string>
     <string name="ul_usb__no_open">Unable to open USB device</string>
     <string name="ul_usb__help_permission">Unplug/plug the Contour Next Link. Select \'use by default for this device\'.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
     <string name="ul_ns__warn_careportal">Careportal is not enabled in Nightscout, treatment data can not be uploaded.</string>
     <string name="ul_ns__help_careportal">Add \'careportal\' to your ENABLE string in Azure or Heroku. Treatments can be disabled in the \'Advanced Nightscout Settings\' menu.</string>
     <string name="ul_ns__warn_servertime">Time difference between uploader device and Nightscout server is greater then 10 minutes.</string>
@@ -799,14 +800,14 @@ märgi see lubatuks</string>
     <string name="sensor_state__sensor_error" maxLength="30">sensor error</string>
     <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SenErr</string>
     <!-- pump default pattern and preset names -->
-    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1">Basal 1</string>
-    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2">Basal 2</string>
-    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3">Basal 3</string>
-    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4">Basal 4</string>
-    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5">Basal 5</string>
-    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6">Workday</string>
-    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7">Day Off</string>
-    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8">Sick Day</string>
+    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1 (do not use dots/periods in name)">Basal 1</string>
+    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2 (do not use dots/periods in name)">Basal 2</string>
+    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3 (do not use dots/periods in name)">Basal 3</string>
+    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4 (do not use dots/periods in name)">Basal 4</string>
+    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5 (do not use dots/periods in name)">Basal 5</string>
+    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6 (do not use dots/periods in name)">Workday</string>
+    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7 (do not use dots/periods in name)">Day Off</string>
+    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8 (do not use dots/periods in name)">Sick Day</string>
     <string name="pump_default__temp_basal_preset_0" maxLength="30">Not Preset</string>
     <string name="pump_default__temp_basal_preset_1" maxLength="30" comment="local name as shown on the pump for temp basal preset 1">Temp 1</string>
     <string name="pump_default__temp_basal_preset_2" maxLength="30" comment="local name as shown on the pump for temp basal preset 2">Temp 2</string>

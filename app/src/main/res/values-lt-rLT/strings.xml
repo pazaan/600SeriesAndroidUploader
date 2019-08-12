@@ -243,6 +243,7 @@
     <string name="ul_usb__no_connection">USB jungties klaida. Ar Countour Next Link prijungtas?</string>
     <string name="ul_usb__no_open">Nepavyksta atidaryti USB įrenginio</string>
     <string name="ul_usb__help_permission">Atjunkit/prijunkit Contour Next Link. Pasirinkite \'naudoti kaip numatytą šiam prietaisui\'.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
     <string name="ul_ns__warn_careportal">Careportal neįgalintas Nightscout, veiksmų duomenys negali būti nusiųsti.</string>
     <string name="ul_ns__help_careportal">Pridėkite \'careporta\' prie jūsų ENABLE eilutės Azure ar Heroku. Veiksmai gali būti išjungti \'Advanced Nightscout Settings\' meniu.</string>
     <string name="ul_ns__warn_servertime">Laiko skirtumas tarp skaitytuvo prietaiso ir Nightscout serverio yra didesnis nei 10 minučių.</string>
@@ -807,14 +808,14 @@
     <string name="sensor_state__sensor_error" maxLength="30">sensoriaus klaida</string>
     <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SenKld</string>
     <!-- pump default pattern and preset names -->
-    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1">Bazė 1</string>
-    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2">Bazė 2</string>
-    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3">Bazė 3</string>
-    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4">Bazė 4</string>
-    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5">Bazė 5</string>
-    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6">Darbo diena</string>
-    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7">Laisva diena</string>
-    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8">Ligos diena</string>
+    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1 (do not use dots/periods in name)">Bazė 1</string>
+    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2 (do not use dots/periods in name)">Bazė 2</string>
+    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3 (do not use dots/periods in name)">Bazė 3</string>
+    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4 (do not use dots/periods in name)">Bazė 4</string>
+    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5 (do not use dots/periods in name)">Bazė 5</string>
+    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6 (do not use dots/periods in name)">Darbo diena</string>
+    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7 (do not use dots/periods in name)">Laisva diena</string>
+    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8 (do not use dots/periods in name)">Ligos diena</string>
     <string name="pump_default__temp_basal_preset_0" maxLength="30">Nenustatyta</string>
     <string name="pump_default__temp_basal_preset_1" maxLength="30" comment="local name as shown on the pump for temp basal preset 1">Laikina 1</string>
     <string name="pump_default__temp_basal_preset_2" maxLength="30" comment="local name as shown on the pump for temp basal preset 2">Laikina 2</string>

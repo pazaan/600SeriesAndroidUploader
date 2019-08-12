@@ -233,6 +233,7 @@
     <string name="ul_usb__no_connection">USB-fel. Är Contour Next Link ansluten?</string>
     <string name="ul_usb__no_open">Kan inte få kontakt med USB-enheten</string>
     <string name="ul_usb__help_permission">Plugga ur/in Contour Next Link. Välj \"\'Använd som standard för denna enhet\'.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
     <string name="ul_ns__warn_careportal">Careportal är inte aktiverat i Nightscout, behandlingsdata kan inte laddas upp.</string>
     <string name="ul_ns__help_careportal">Lägg till \'careportal\' till ENABLE strängen i Azure eller Heroku. Behandlingar kan stängas av i \'Avancerade Nightscout inställningar\' menyn.</string>
     <string name="ul_ns__warn_servertime">Tidsskillnaden mellan uppladdaren och Nightscout servern är mer än 10 minuter.</string>
@@ -797,14 +798,14 @@
     <string name="sensor_state__sensor_error" maxLength="30">sensorfel</string>
     <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SenFel</string>
     <!-- pump default pattern and preset names -->
-    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1">Basal 1</string>
-    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2">Basal 2</string>
-    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3">Basal 3</string>
-    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4">Basal 4</string>
-    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5">Basal 5</string>
-    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6">Arbetsdag</string>
-    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7">Ledig dag</string>
-    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8">Sjukdag</string>
+    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1 (do not use dots/periods in name)">Basal 1</string>
+    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2 (do not use dots/periods in name)">Basal 2</string>
+    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3 (do not use dots/periods in name)">Basal 3</string>
+    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4 (do not use dots/periods in name)">Basal 4</string>
+    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5 (do not use dots/periods in name)">Basal 5</string>
+    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6 (do not use dots/periods in name)">Arbetsdag</string>
+    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7 (do not use dots/periods in name)">Ledig dag</string>
+    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8 (do not use dots/periods in name)">Sjukdag</string>
     <string name="pump_default__temp_basal_preset_0" maxLength="30">Ej förinställt</string>
     <string name="pump_default__temp_basal_preset_1" maxLength="30" comment="local name as shown on the pump for temp basal preset 1">Temp 1</string>
     <string name="pump_default__temp_basal_preset_2" maxLength="30" comment="local name as shown on the pump for temp basal preset 2">Temp 2</string>

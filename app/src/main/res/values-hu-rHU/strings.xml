@@ -233,6 +233,7 @@
     <string name="ul_usb__no_connection">USB kapcsolódási hiba. Contour Plus Link csatlakoztatva van?</string>
     <string name="ul_usb__no_open">Nem sikerült csatlakozni USB eszközhöz</string>
     <string name="ul_usb__help_permission">Csatlakoztassa le majd vissza a Contour Plus Link-et. Válassza az \'\'alapértelmezett ehhez az eszközhöz\'\'-t.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
     <string name="ul_ns__warn_careportal">Careportal funkció nincs engedélyezve a Nightscout oldalon, ezért a kezelési adatokat nem lehet feltölteni.</string>
     <string name="ul_ns__help_careportal">Adja hozzá a \'careportal\'-t Nightscout oldal ENABLE paraméter értékéhez szóközzel elválasztva a Heroku vagy Azure felületén keresztül. A kezelési adatok feltöltése kikapcsolható a \'Spec. Nightscout beállítások\' menüpontban.</string>
     <string name="ul_ns__warn_servertime">Az időkülönbség a feltöltő készülék és a Nightscout oldal között 10 percnél több.</string>
@@ -797,22 +798,22 @@
     <string name="sensor_state__sensor_error" maxLength="30">szenzorhiba</string>
     <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SzenHib</string>
     <!-- pump default pattern and preset names -->
-    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1">Bázis 1</string>
-    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2">Bázis 2</string>
-    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3">Bázis 3</string>
-    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4">Bázis 4</string>
-    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5">Bázis 5</string>
-    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6">Munkanap</string>
-    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7">Szab.nap</string>
-    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8">Betegnap</string>
+    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1 (do not use dots/periods in name)">Bázis 1</string>
+    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2 (do not use dots/periods in name)">Bázis 2</string>
+    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3 (do not use dots/periods in name)">Bázis 3</string>
+    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4 (do not use dots/periods in name)">Bázis 4</string>
+    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5 (do not use dots/periods in name)">Bázis 5</string>
+    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6 (do not use dots/periods in name)">Munkanap</string>
+    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7 (do not use dots/periods in name)">Szabadnap</string>
+    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8 (do not use dots/periods in name)">Betegnap</string>
     <string name="pump_default__temp_basal_preset_0" maxLength="30">Nem előre beállított</string>
-    <string name="pump_default__temp_basal_preset_1" maxLength="30" comment="local name as shown on the pump for temp basal preset 1">Átm. báz. 1</string>
-    <string name="pump_default__temp_basal_preset_2" maxLength="30" comment="local name as shown on the pump for temp basal preset 2">Átm. báz. 2</string>
-    <string name="pump_default__temp_basal_preset_3" maxLength="30" comment="local name as shown on the pump for temp basal preset 3">Átm. báz. 3</string>
-    <string name="pump_default__temp_basal_preset_4" maxLength="30" comment="local name as shown on the pump for temp basal preset 4">Átm. báz. 3</string>
-    <string name="pump_default__temp_basal_preset_5" maxLength="30" comment="local name as shown on the pump for temp basal preset 5">Nagy int. mozgás</string>
-    <string name="pump_default__temp_basal_preset_6" maxLength="30" comment="local name as shown on the pump for temp basal preset 6">Közepes int. mozgás</string>
-    <string name="pump_default__temp_basal_preset_7" maxLength="30" comment="local name as shown on the pump for temp basal preset 7">Kis int. mozgás</string>
+    <string name="pump_default__temp_basal_preset_1" maxLength="30" comment="local name as shown on the pump for temp basal preset 1">Átm bázis 1</string>
+    <string name="pump_default__temp_basal_preset_2" maxLength="30" comment="local name as shown on the pump for temp basal preset 2">Átm bázis 2</string>
+    <string name="pump_default__temp_basal_preset_3" maxLength="30" comment="local name as shown on the pump for temp basal preset 3">Átm bázis 3</string>
+    <string name="pump_default__temp_basal_preset_4" maxLength="30" comment="local name as shown on the pump for temp basal preset 4">Átm bázis 3</string>
+    <string name="pump_default__temp_basal_preset_5" maxLength="30" comment="local name as shown on the pump for temp basal preset 5">Nagy int mozgás</string>
+    <string name="pump_default__temp_basal_preset_6" maxLength="30" comment="local name as shown on the pump for temp basal preset 6">Közepes int mozgás</string>
+    <string name="pump_default__temp_basal_preset_7" maxLength="30" comment="local name as shown on the pump for temp basal preset 7">Kis int mozgás</string>
     <string name="pump_default__temp_basal_preset_8" maxLength="30" comment="local name as shown on the pump for temp basal preset 8">Betegség</string>
     <string name="pump_default__bolus_preset_0">Nem előre beállított</string>
     <string name="pump_default__bolus_preset_1" maxLength="30" comment="local name as shown on the pump for bolus preset 1">Bólus 1</string>

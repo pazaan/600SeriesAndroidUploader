@@ -243,6 +243,7 @@
     <string name="ul_usb__no_connection">Błąd połączenia USB. Czy Contour Next Link jest podłączony?</string>
     <string name="ul_usb__no_open">Nie można otworzyć urządzenia USB</string>
     <string name="ul_usb__help_permission">Odłącz i podłącz ponownie glukometr Contour Next Link. Wybierz \'domyślnie używaj tego urządzenia\'.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
     <string name="ul_ns__warn_careportal">Careportal nie jest aktywny w Nightscout, dane dotyczące zdarzeń nie mogą zostać wysłane.</string>
     <string name="ul_ns__help_careportal">Dodaj \'careportal\' w sekcji ENABLE na Azure, bądź Heroku. Zdarzenia można włączyć w menu \'Zaawansowane ustawienia Nightscout\'.</string>
     <string name="ul_ns__warn_servertime">Różnica w czasie pomiędzy uploaderem a serverem Nightscout jest większa niż 10 minut.</string>
@@ -807,14 +808,14 @@
     <string name="sensor_state__sensor_error" maxLength="30">błąd sensora</string>
     <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SenErr</string>
     <!-- pump default pattern and preset names -->
-    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1">Baza 1</string>
-    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2">Baza 2</string>
-    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3">Baza 3</string>
-    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4">Baza 4</string>
-    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5">Baza 5</string>
-    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6">Dzień roboczy</string>
-    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7">Dzień wolny</string>
-    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8">Choroba</string>
+    <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1 (do not use dots/periods in name)">Baza 1</string>
+    <string name="pump_default__basal_pattern_2" maxLength="30" comment="local name as shown on the pump for basal pattern 2 (do not use dots/periods in name)">Baza 2</string>
+    <string name="pump_default__basal_pattern_3" maxLength="30" comment="local name as shown on the pump for basal pattern 3 (do not use dots/periods in name)">Baza 3</string>
+    <string name="pump_default__basal_pattern_4" maxLength="30" comment="local name as shown on the pump for basal pattern 4 (do not use dots/periods in name)">Baza 4</string>
+    <string name="pump_default__basal_pattern_5" maxLength="30" comment="local name as shown on the pump for basal pattern 5 (do not use dots/periods in name)">Baza 5</string>
+    <string name="pump_default__basal_pattern_6" maxLength="30" comment="local name as shown on the pump for basal pattern 6 (do not use dots/periods in name)">Dzień roboczy</string>
+    <string name="pump_default__basal_pattern_7" maxLength="30" comment="local name as shown on the pump for basal pattern 7 (do not use dots/periods in name)">Dzień wolny</string>
+    <string name="pump_default__basal_pattern_8" maxLength="30" comment="local name as shown on the pump for basal pattern 8 (do not use dots/periods in name)">Choroba</string>
     <string name="pump_default__temp_basal_preset_0" maxLength="30">Nie zdefiniowany</string>
     <string name="pump_default__temp_basal_preset_1" maxLength="30" comment="local name as shown on the pump for temp basal preset 1">Tymczasowa 1</string>
     <string name="pump_default__temp_basal_preset_2" maxLength="30" comment="local name as shown on the pump for temp basal preset 2">Tymczasowa 2</string>
