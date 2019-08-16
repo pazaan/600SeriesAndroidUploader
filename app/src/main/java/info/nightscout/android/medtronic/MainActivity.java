@@ -9,6 +9,7 @@ import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
@@ -40,6 +41,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -98,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     private long chartTimeOffset;
 
     private long chartChangeTimestamp;
+    private boolean chartLargeMode;
 
     private boolean landscape;
 
@@ -324,6 +327,8 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         chartZoom = Integer.parseInt(mPrefs.getString("chartZoom", "3"));
 
+        chartLargeMode = landscape;
+
         mChart = findViewById(R.id.chart);
 
         // disable scrolling at the moment
@@ -336,7 +341,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mChart.getGridLabelRenderer().setNumHorizontalLabels(6);
 
-        float factor = landscape ? 1.2f : 1.0f;
+        float factor = chartLargeMode ? 1.2f : 1.0f;
         float pixels = dipToPixels(getApplicationContext(), 12 * factor);
         mChart.getGridLabelRenderer().setTextSize(pixels);
         mChart.getGridLabelRenderer().setLabelHorizontalHeight((int) (pixels * 0.65));
@@ -349,7 +354,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                     public String formatLabel(double value, boolean isValueX) {
                         if (!isValueX)
                             return FormatKit.getInstance().formatAsGlucose((int) value);
-                        else if (landscape)
+                        else if (chartLargeMode)
                             return FormatKit.getInstance().formatAsClock((long) value);
                         else
                             return FormatKit.getInstance().formatAsClockNoAmPm((long) value);
@@ -393,6 +398,14 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 chartViewAdjusted();
             }
 
+        });
+
+        mChart.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                Log.d(TAG, "onLayoutChange called");
+                refreshDisplayChart();
+            }
         });
 
         findViewById(R.id.view_sgv).setOnClickListener(new View.OnClickListener()
@@ -464,11 +477,18 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         toast = Toast.makeText(mContext, ssb, Toast.LENGTH_LONG);
 
-        View parent = (View) v.getParent();
-        int parentHeight = parent.getHeight();
-        int yOffset = (parentHeight / 2) - (v.getTop() + ((v.getBottom() - v.getTop()) / 2));
+        WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+        Point screen_size = new Point();
+        wm.getDefaultDisplay().getSize(screen_size);
 
-        toast.setGravity(Gravity.NO_GRAVITY, 0, -yOffset);
+        int[] coords = {0,0};
+        v.getLocationOnScreen(coords);
+
+        toast.setGravity(Gravity.NO_GRAVITY,
+                coords[0] + (v.getWidth() / 2) - (screen_size.x / 2),
+                coords[1] + (v.getHeight() / 2) - (screen_size.y / 2)
+        );
+
         toast.show();
         return toast;
     }
@@ -658,6 +678,12 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                 break;
         }
         return true;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        Log.d(TAG, "onConfigurationChanged called");
+        super.onConfigurationChanged(newConfig);
     }
 
     synchronized private void openRealmDefault() {
@@ -1159,6 +1185,22 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private void updateChart(RealmResults<PumpHistoryCGM> results, long timestamp) {
 
+        int chartWidth = mChart.getWidth();
+        if (chartWidth > 0) {
+            float xdpi = getResources().getDisplayMetrics().xdpi;
+            boolean change = chartWidth / xdpi > 3;
+            if (change != chartLargeMode) {
+                Log.d(TAG, String.format("Chart large mode changed from %s to %s chartWidth = %s xdpi = %s",
+                        chartLargeMode, change, chartWidth, xdpi));
+                chartLargeMode = change;
+                float factor = chartLargeMode ? 1.2f : 1.0f;
+                float pixels = dipToPixels(getApplicationContext(), 12 * factor);
+                mChart.getGridLabelRenderer().setTextSize(pixels);
+                mChart.getGridLabelRenderer().setLabelHorizontalHeight((int) (pixels * 0.65));
+                mChart.getGridLabelRenderer().reloadStyles();
+            }
+        }
+
         // calc X & Y chart bounds with readable stepping for mmol & mg/dl
         // X needs offsetting as graphview will not always show points near edges
         long minX = (((timestamp + 150000L - (chartZoom * 60 * 60 * 1000L)) / 60000L) * 60000L);
@@ -1267,7 +1309,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             sgvSeries.setCustomShape(new PointsGraphSeries.CustomShape() {
                 @Override
                 public void draw(Canvas canvas, Paint paint, float x, float y, DataPointInterface dataPoint) {
-                    float factor = landscape ? 1.3f : 1.0f;
+                    float factor = chartLargeMode ? 1.4f : 1.0f;
                     float dotSize;
                     double sgv = dataPoint.getY();
 
