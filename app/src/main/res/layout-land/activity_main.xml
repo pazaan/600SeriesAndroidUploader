@@ -30,18 +30,28 @@
         >
 
         <android.support.constraint.ConstraintLayout
-            android:id="@+id/constraintLayout1"
+            android:id="@+id/cl_sgv_start"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="10dp"
-            app:layout_constraintHorizontal_weight="10"
+            app:layout_constraintHorizontal_weight="0.5"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/constraintLayout2"
+            app:layout_constraintEnd_toStartOf="@+id/cl_sgv_left"
+            >
+        </android.support.constraint.ConstraintLayout>
+
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/cl_sgv_left"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            app:layout_constraintHorizontal_weight="10"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/cl_sgv_start"
+            app:layout_constraintEnd_toStartOf="@+id/cl_sgv_center"
             >
 
             <TextView
@@ -110,25 +120,35 @@
         </android.support.constraint.ConstraintLayout>
 
         <android.support.constraint.ConstraintLayout
-            android:id="@+id/constraintLayout2"
+            android:id="@+id/cl_sgv_center"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            app:layout_constraintHorizontal_weight="0.5"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/cl_sgv_left"
+            app:layout_constraintEnd_toStartOf="@+id/cl_sgv_right"
+            >
+        </android.support.constraint.ConstraintLayout>
+
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/cl_sgv_right"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginLeft="10dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="20dp"
+            android:layout_marginRight="10dp"
             app:layout_constraintHorizontal_weight="10"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/constraintLayout1"
+            app:layout_constraintStart_toEndOf="@+id/cl_sgv_center"
+            app:layout_constraintEnd_toStartOf="@+id/cl_sgv_end"
             >
 
             <TextView
                 android:id="@+id/textview_bg_time"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginTop="22dp"
+                android:layout_marginTop="20dp"
                 android:layout_marginLeft="20dp"
                 android:layout_marginRight="20dp"
                 android:lines="1"
@@ -140,10 +160,10 @@
                 app:autoSizeStepGranularity="1px"
                 app:autoSizeTextType="uniform"
                 app:layout_constraintVertical_weight="1"
-                app:layout_constraintBottom_toTopOf="@+id/textview_iob"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/textview_iob"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 />
 
             <TextView
@@ -160,13 +180,25 @@
                 app:autoSizeStepGranularity="1px"
                 app:autoSizeTextType="uniform"
                 app:layout_constraintVertical_weight="1"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textview_bg_time"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 />
 
         </android.support.constraint.ConstraintLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/cl_sgv_end"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/cl_sgv_right"
+        app:layout_constraintEnd_toEndOf="parent"
+        >
+    </android.support.constraint.ConstraintLayout>
 
     </android.support.constraint.ConstraintLayout>
 

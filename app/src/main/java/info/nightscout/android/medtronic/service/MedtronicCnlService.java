@@ -158,6 +158,8 @@ public class MedtronicCnlService extends Service {
             mHidDevice = null;
         }
 
+        Stats.kill();
+
         // kill process if it's been around too long, stops android killing us without warning due to process age (if mid-comms can crash the CNL E86/E81)
         long uptime = UploaderApplication.getUptime() / 60000L;
         if (uptime > 60) {
@@ -308,8 +310,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             timePollStarted = System.currentTimeMillis();
             long nextpoll = 0;
 
-            statPoll = (StatPoll) Stats.open().readRecord(StatPoll.class);
-
             try {
                 // note: Realm use only in this thread!
                 realm = Realm.getDefaultInstance();
@@ -319,6 +319,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 readDataStore();
                 pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
+                statPoll = (StatPoll) Stats.open().readRecord(StatPoll.class);
                 statPoll.incPollCount();
 
                 // *** debug use only ***
@@ -662,8 +663,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 if (pumpHistoryHandler != null) pumpHistoryHandler.close();
 
-                Stats.close();
-                Stats.stale();
+                if (statPoll != null) {
+                    Stats.close();
+                    Stats.stale();
+                }
 
                 if (dataStore != null) {
                     statsReport();

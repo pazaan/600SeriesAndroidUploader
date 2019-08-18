@@ -792,14 +792,14 @@ public class PumpHistoryHandler {
                         sensormin = miscResults.first().getEventDate().getTime() + dataStore.getSysReportISIGnewsensor() * 60000L;
                     }
 
-                    if (sgv <= 70 || sensormin > now || min > now) {
+                    if (sgv <= 75 || sensormin > now || min > now) {
                         backfill = true;
                         isig = true;
 
                         if (!estimate) {
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                                     String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__report_isig));
-                            if (sgv <= 70) {
+                            if (sgv <= 75) {
                                 storeRealm.executeTransaction(new Realm.Transaction() {
                                     @Override
                                     public void execute(@NonNull Realm realm) {
@@ -1332,9 +1332,9 @@ public class PumpHistoryHandler {
                     ));
                 }
 
-                // discard estimate if out of range
-                if (estsgv < 40 || estsgv > 500)
-                    estsgv = 0;
+                // limit estimate result when out of range (same as pump)
+                if (estsgv > 0 && estsgv < 40) estsgv = 40;
+                else if (estsgv > 400) estsgv = 400;
 
                 if (!est && sgv == 0) {
                     int finalEstimate = (int) Math.round(estsgv);

@@ -312,6 +312,10 @@ public class NightscoutUploadService extends Service {
 
         } catch (Exception e) {
             Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
+            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_poll__unexpected_error, Log.getStackTraceString(e)));
+            if (pumpHistoryHandler != null) pumpHistoryHandler.close();
+            if (realm != null) realm.close();
+            if (storeRealm != null) storeRealm.close();
             stopSelf();
         }
     }
