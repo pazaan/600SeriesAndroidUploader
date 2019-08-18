@@ -1,18 +1,13 @@
 {
-  "latestVersion": "0.7.0",
-  "latestVersionCode": "12",
-  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.7.0",
+  "latestVersion": "0.7.1",
+  "latestVersionCode": "13",
+  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.7.1",
   "releaseNotes": [
-    "- Bug fixes",
-    "- Updates for integration with Android 8 and 9",
-    "- CNL stability and reading efficiency improvements",
-    "- Automation to handle profiles and dynamic setting changes",
-    "- Pump based event markers and reminders",
-    "- Pump alerts and alarms viewable in Nightscout",
-    "- Customisable events and alerts sent to any device using Pushover integration",
-    "- Estimation of sg values when a calibration is missed or whenever the pump stops showing sg due to sensor error or sensor expired",
-    "- ISIG reporter automatically shows during warm-up or sensor error states",
-    "- Language localisation",
+    "- 0.7.x maintenance release",
+    "- Bug fixes and Tweaks",
+    "- Better logging",
+    "- Android 8/9 improvements",
+    "- Translations updated",
     " * Language translation is ongoing, please help with checking and completion for your locality.",
     " * Thanks to all out contributors!"
   ]
