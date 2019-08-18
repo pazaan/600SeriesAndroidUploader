@@ -102,9 +102,9 @@
     <string name="notification__ERROR" maxLength="20" comment="error state, visible on pull down / lock screen">Kapcsolódási hiba</string>
     <!-- Userlog -->
     <string name="ul_main__requesting_poll_now">Lekérdezés most&dots;</string>
-    <string name="ul_main__requesting_pump_profile">Pumpa profil frissítés beütemezve&dots;</string>
-    <string name="ul_main__cgm_service_disabled">CGM szolgáltatás inakítv.</string>
-    <string name="ul_main__pump_profile_disabled">Pumpa profil frissítése inaktív.</string>
+    <string name="ul_main__requesting_pump_profile">Ütemezett pumpa profil frissítés&dots;</string>
+    <string name="ul_main__cgm_service_disabled">Szenzor kikapcsolva.</string>
+    <string name="ul_main__pump_profile_disabled">Pumpa profil frissítése kikapcsolva.</string>
     <string name="ul_main__hello">Nightscout 600 Series Uploader</string>
     <string name="ul_main__goodbye">Viszlát :)</string>
     <string name="ul_main__shutting_down_cgm_service">CGM szolgáltatás leáll</string>
@@ -123,13 +123,13 @@
     <string name="ul_share__pushover_validation_failed">Hiba a Pushover fiók ellenőrzésénél. Ellenőrizze, hogy a Pushover fiókja aktív-e és a megadott fiókadatok helyesek-e.</string>
     <string name="ul_poll__connecting_to_contour_next_link">Kapcsolódás Contour Plus Linkhez</string>
     <string name="ul_poll__connected_on_channel">Csatlakozási csatorna</string>
-    <string name="ul_poll__rssi" comment="RSSI = Received Signal Strength Indicator (CNL-PUMP radio signal)">RSSI</string>
+    <string name="ul_poll__rssi" comment="RSSI = Received Signal Strength Indicator (CNL-PUMP radio signal)">RSSI (jelerő)</string>
     <string name="ul_poll__please_wait">Kérem várjon</string>
     <string name="ul_poll__pump_is_expecting_sensor_communication">A pumpa szenzorkommunikációra vár. Következő lekérdezés</string>
     <string name="ul_poll__radio_clash_protection_is_disabled">Rádiós ütközés védelem kikapcsolva.</string>
     <string name="ul_poll__could_not_communicate_with_the_pump">Nem sikerült kommunikálni a pumpával. A közelben van?</string>
     <string name="ul_poll__pump_signal_too_weak">Figyelem: pumpa jele túl gyenge. A közelben van?</string>
-    <string name="ul_poll__polling_service_could_not_complete">Lekérdezés félbeszakadt. Következő próba 60 másodperc múlva.</string>
+    <string name="ul_poll__polling_service_could_not_complete">Lekérdezés félbeszakadt. Következő próbálkozás 60 másodperc múlva.</string>
     <string name="ul_poll__unexpected_error">Váratlan hiba!</string>
     <string name="ul_poll__next_poll_due_at">Következő lekérdezés</string>
     <string name="ul_poll__sensor_is_in_warm_up_phase">szenzor indítás alatt</string>
@@ -138,7 +138,7 @@
     <string name="ul_poll__sensor_error">szenzor hiba</string>
     <string name="ul_poll__old_cgm_event_received">nem érkezett új SZG adat</string>
     <string name="ul_poll__no_cgm_pump_lost_sensor">nincs szg (szenzorjel elveszett)</string>
-    <string name="ul_poll__no_cgm">nincs szg</string>
+    <string name="ul_poll__no_cgm">nincs szenzor</string>
     <string name="ul_poll__estimated_sgv" comment="SGV = Sensor Glucose Value, example: estimated SGV 120 at 3:15">becsült SZG</string>
     <string name="ul_poll__reading_sgv__SGV" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">SZG</string>
     <string name="ul_poll__reading_time__at" comment="SGV = Sensor Glucose Value, example: SGV 120 at 3:15 Pump +1m30s">-</string>
@@ -149,7 +149,7 @@
     <string name="ul_poll__warn_pump_time_difference">Figyelem: pumpa óra eltolódva</string>
     <string name="ul_poll__warn_pump_time_difference_ahead">siet a feltöltő készülékhez képest.</string>
     <string name="ul_poll__warn_pump_time_difference_behind">késik a feltöltő készülékhez képest.</string>
-    <string name="ul_poll__help_pump_time_difference">A felöltő készülék órájának pontosnak kell lennie. A pumpa órája rendszeren és időnként be kell állítani.</string>
+    <string name="ul_poll__help_pump_time_difference">A felöltő készülék órájának pontosnak kell lennie, használja a hálózat által biztosított időt. A pumpa órája pontatlan, időnként be kell állítani.</string>
     <string name="ul_poll__warn_multiple_comms_errors">Figyelem: többszöri kommunikációs / időtúllépési hiba.</string>
     <string name="ul_poll__help_multiple_comms_errors">Próbálja meg: csatlakoztassa le majd vissza a Contour Plus Link-et / indítsa újra a készüléket / ellenőrizze a CPL és Pumpa párosítva van-e.</string>
     <string name="ul_poll__warn_missing_transmissions">Figyelem: gyakran nincs SZG érték a pumpán. Adatátvitelek maradnak ki a távadóról a pumpára.</string>
@@ -171,7 +171,7 @@
     <string name="ul_error__connecting_cnl">Hiba Contour Plus Linkhez való kapcsolódáskor.</string>
     <string name="ul_error__cnl_reset_success">CNL sikeresen visszaállítva.</string>
     <string name="ul_error__close_connection">Kapcsolat lezárása nem sikerült.</string>
-    <string name="ul_error__pump_device_error">Eszközhiba a pumpán. Nem lehet adatok lekérdezni, amíg a hiba nem kerül törlésre a pumpán.</string>
+    <string name="ul_error__pump_device_error">Pumpahiba. Nem lehet adatokat lekérdezni, amíg a hiba nem kerül törlésre a pumpán.</string>
     <string name="ul_isig__isig">isig</string>
     <string name="ul_isig__steady">stabil</string>
     <string name="ul_isig__unstable">instabil</string>
@@ -197,7 +197,7 @@
     <string name="ul_history__basal_suspend">bázis felfüggesztve</string>
     <string name="ul_history__basal_resume">bázis újraindítva</string>
     <string name="ul_history__temp_basal">átmeneti bázis</string>
-    <string name="ul_history__temp_ended">átmeneti vége</string>
+    <string name="ul_history__temp_ended">átmeneti bázis vége</string>
     <string name="ul_history__temp_extended">átmeneti megváltozott</string>
     <string name="ul_history__normal_bolus">normál bólus</string>
     <string name="ul_history__square_bolus">szögletes bólus</string>
@@ -233,12 +233,12 @@
     <string name="ul_usb__no_connection">USB kapcsolódási hiba. Contour Plus Link csatlakoztatva van?</string>
     <string name="ul_usb__no_open">Nem sikerült csatlakozni USB eszközhöz</string>
     <string name="ul_usb__help_permission">Csatlakoztassa le majd vissza a Contour Plus Link-et. Válassza az \'\'alapértelmezett ehhez az eszközhöz\'\'-t.</string>
-    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Adatfeltöltés Nightscout oldalra sikertelen.</string>
     <string name="ul_ns__warn_careportal">Careportal funkció nincs engedélyezve a Nightscout oldalon, ezért a kezelési adatokat nem lehet feltölteni.</string>
     <string name="ul_ns__help_careportal">Adja hozzá a \'careportal\'-t Nightscout oldal ENABLE paraméter értékéhez szóközzel elválasztva a Heroku vagy Azure felületén keresztül. A kezelési adatok feltöltése kikapcsolható a \'Spec. Nightscout beállítások\' menüpontban.</string>
     <string name="ul_ns__warn_servertime">Az időkülönbség a feltöltő készülék és a Nightscout oldal között 10 percnél több.</string>
     <string name="ul_ns__help_servertime">Ellenőrizze az időt a feltöltő készüléken. Állítsa be a hálózat által biztosított idő használatát.</string>
-    <string name="ul_ns__help_version">A Nightscout oldal verziója elavult. A 600 Series Uploader alkalmazáshoz javasolt mindig a legfrissebb Niightscout verzió használata.</string>
+    <string name="ul_ns__help_version">A Nightscout oldal verziója elavult. A 600 Series Uploader alkalmazáshoz javasolt mindig a legfrissebb Nightscout verzió használata.</string>
     <string name="ul_ns__help_config_pump">A pumpa állapot információk megjeleníthetőek a Nightscout oldalon. Adja hozzá a \'pump\'-ot a Nightscout oldal ENABLE paraméter értékéhez szóközzel elválasztva a Heroku vagy Azure felületén keresztül.</string>
     <string name="ul_ns__help_config_sage">A szenzorcserék feltöltésre kerülnek a Nightscout oldalra. Adja hozzá a \'sage\'-t a Nightscout oldal ENABLE paraméter értékéhez szóközzel elválasztva a Heroku vagy Azure felületén keresztül. A feltöltés kikapcsolható a \'Spec. Nightscout beállítások\' menüpontban.</string>
     <string name="ul_ns__help_config_cage">A kanülcserék feltöltésre kerülnek a Nightscout oldalra. Adja hozzá a \'cage\'-t a Nightscout oldal ENABLE paraméter értékéhez szóközzel elválasztva a Heroku vagy Azure felületén keresztül. A feltöltés kikapcsolható a \'Spec. Nightscout beállítások\' menüpontban.</string>
@@ -269,17 +269,17 @@
     <string name="pref_monitor_poll_overdue_title" maxLength="30">Lekérés gyakoriság kihagyásnál</string>
     <string name="pref_monitor_poll_overdue_summary_off" maxLength="40">Normál lekérdezési gyakoriság</string>
     <string name="pref_monitor_poll_overdue_summary_on" maxLength="40">Kétszeres lekérdezési gyakoriság</string>
-    <string name="pref_monitor_low_battery_poll_interval_title" maxLength="40">Lekérdezés gyakorisága alacs. töltöttség</string>
+    <string name="pref_monitor_low_battery_poll_interval_title" maxLength="40">Lekérdezési gyakoriság merülő elemnél</string>
     <string name="pref_display_category" maxLength="30">Megjelenítés</string>
     <string name="pref_chart_zoom_title" maxLength="40">Grafikon időtáv</string>
     <string name="pref_screen_sleep_title" maxLength="40">Kijelző kikapcsolása</string>
     <string name="pref_screen_sleep_always_sleep">Mindig</string>
-    <string name="pref_screen_sleep_portrait_mode_only">Álló módban</string>
-    <string name="pref_screen_sleep_landscape_mode_only">Fekvő módban</string>
+    <string name="pref_screen_sleep_portrait_mode_only">Csak álló módban</string>
+    <string name="pref_screen_sleep_landscape_mode_only">Csak fekvő módban</string>
     <string name="pref_screen_sleep_never_sleep">Soha</string>
     <string name="pref_sharing_category" maxLength="30">Megosztás</string>
     <string name="pref_send_to_nightscout_title" maxLength="40">Feltöltés Nightscout oldalra</string>
-    <string name="pref_send_to_nightscout_summary">Adatfeltöltés Nightscout oldalra bekapcsolása</string>
+    <string name="pref_send_to_nightscout_summary">Adatfeltöltés Nightscout oldalra engedélyezése</string>
     <string name="pref_url_title" maxLength="40">Nightscout oldal címe (URL)</string>
     <string name="pref_url_dialog_title" maxLength="40">Adja meg a Nightscout oldal címét</string>
     <string name="pref_url_dialog_message">Nightscout oldalának a címe</string>
@@ -300,7 +300,7 @@
     <string name="pref_ns_basal_title" maxLength="40">Bázis</string>
     <string name="pref_ns_basal_summary">Bázis események feltöltése Nightscout oldalra</string>
     <string name="pref_ns_entered_by_title">Rögzítő neve</string>
-    <string name="pref_ns_device_status_category" maxLength="30">Eszközök állapota</string>
+    <string name="pref_ns_device_status_category" maxLength="30">Készülék állapota</string>
     <string name="pref_ns_device_title" maxLength="40">Készülék</string>
     <string name="pref_ns_device_summary">Készülék állapotváltozásainak feltöltése Nightscout oldalra</string>
     <string name="pref_ns_pump_title" maxLength="40">PUMPA</string>
@@ -416,7 +416,7 @@
     <string name="pref_system_radio_clash_protection_title" maxLength="40">Rádiós ütközés védelem</string>
     <string name="pref_system_radio_clash_protection_summary_off">Nincs ütközés védelem, mindig megpróbál lekérdezni</string>
     <string name="pref_system_radio_clash_protection_summary_on">Lekérdezés elhalasztása pumpa szenzorral való kommunikációja alatt</string>
-    <string name="pref_system_rssi_allow_connection_title" maxLength="40" comment="do not allow a pump connection when RSSI signal is less then this minimum">Min. RSSI kapcsolódáshoz</string>
+    <string name="pref_system_rssi_allow_connection_title" maxLength="40" comment="do not allow a pump connection when RSSI signal is less then this minimum">Min. RSSI (jelerő) kapcsolódáshoz</string>
     <string name="pref_system_polling_category" maxLength="30">Lekérdezés</string>
     <string name="pref_system_poll_timing_title" maxLength="40">Lekérdezés időzítése</string>
     <string name="pref_system_poll_timing_summary_on">Lekérdezés indítása a távadóval feltételezett kommunikáció és a feltételes időtartam alapján (figyelmeztetés: ezeknek a beállításoknak a megváltoztatása rádiókommunikációs zavarokat okozhat és hosszabb elveszett szenzorjel időszakhoz vezethet)</string>
@@ -558,8 +558,8 @@
     <string name="pref_pushover_account_category" maxLength="30">Felhasználói fiók</string>
     <string name="pref_pushover_api_token_title" maxLength="40">API Token</string>
     <string name="pref_pushover_api_token_summary">Adja meg az API Token-jét</string>
-    <string name="pref_pushover_user_group_key_title" maxLength="40">USER / GROUP Key</string>
-    <string name="pref_pushover_user_group_key_summary">Adja meg a user / group key-t</string>
+    <string name="pref_pushover_user_group_key_title" maxLength="40">USER Key vagy GROUP Key</string>
+    <string name="pref_pushover_user_group_key_summary">Adja meg a user key-t vagy group key-t</string>
     <string name="pref_pushover_override_category" maxLength="30">Egységesítés</string>
     <string name="pref_pushover_override_priority_title" maxLength="40">Egységes értesítési szint</string>
     <string name="pref_pushover_override_all_priorities_title" maxLength="40">Minden értesítési szint</string>

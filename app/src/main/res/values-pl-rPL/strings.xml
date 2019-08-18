@@ -243,7 +243,7 @@
     <string name="ul_usb__no_connection">Błąd połączenia USB. Czy Contour Next Link jest podłączony?</string>
     <string name="ul_usb__no_open">Nie można otworzyć urządzenia USB</string>
     <string name="ul_usb__help_permission">Odłącz i podłącz ponownie glukometr Contour Next Link. Wybierz \'domyślnie używaj tego urządzenia\'.</string>
-    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Wysyłanie do nightscout nie powiodło się.</string>
     <string name="ul_ns__warn_careportal">Careportal nie jest aktywny w Nightscout, dane dotyczące zdarzeń nie mogą zostać wysłane.</string>
     <string name="ul_ns__help_careportal">Dodaj \'careportal\' w sekcji ENABLE na Azure, bądź Heroku. Zdarzenia można włączyć w menu \'Zaawansowane ustawienia Nightscout\'.</string>
     <string name="ul_ns__warn_servertime">Różnica w czasie pomiędzy uploaderem a serverem Nightscout jest większa niż 10 minut.</string>
@@ -270,15 +270,15 @@
     <string name="pref_error_text_empty">Brak treści</string>
     <string name="pref_monitor_category" maxLength="30">Monitorowanie</string>
     <string name="pref_monitor_bg_unit_title" maxLength="30">Jednostki glukozy</string>
-    <string name="pref_monitor_bg_unit_summary_off" maxLength="40">Wartości wyświetlane i ustawione w mg/dL</string>
-    <string name="pref_monitor_bg_unit_summary_on" maxLength="40">Wartości wyświetlane i ustawione w mmol</string>
-    <string name="pref_monitor_decimals_title" maxLength="30">Dziesiętne</string>
-    <string name="pref_monitor_decimals_summary_off" maxLength="40">Wyświetli się 1 dziesiętna wartość</string>
-    <string name="pref_monitor_decimals_summary_on" maxLength="40">Wyświetlą się 2 dziesiętne wartości</string>
+    <string name="pref_monitor_bg_unit_summary_off" maxLength="40">Wartości wyświetlane i ustawiane w mg/dL</string>
+    <string name="pref_monitor_bg_unit_summary_on" maxLength="40">Wartości wyświetlane i ustawiane w mmol</string>
+    <string name="pref_monitor_decimals_title" maxLength="30">Miejsca po przecinku</string>
+    <string name="pref_monitor_decimals_summary_off" maxLength="40">Wyświetlą się wartości dziesiętne</string>
+    <string name="pref_monitor_decimals_summary_on" maxLength="40">Wyświetlą się wartości setne</string>
     <string name="pref_monitor_poll_interval_title" maxLength="30">Częstotliwość wysyłania</string>
     <string name="pref_monitor_poll_overdue_title" maxLength="30">Częstotliw wysyłania zaległych</string>
-    <string name="pref_monitor_poll_overdue_summary_off" maxLength="40">Normalny wskaźnik wysyłania</string>
-    <string name="pref_monitor_poll_overdue_summary_on" maxLength="40">Podwójny wskaźnik wysyłania</string>
+    <string name="pref_monitor_poll_overdue_summary_off" maxLength="40">Standardowa częstotliwość</string>
+    <string name="pref_monitor_poll_overdue_summary_on" maxLength="40">Podwojona częstotliwość</string>
     <string name="pref_monitor_low_battery_poll_interval_title" maxLength="40">Wysyłanie przy niskim poziomie baterii</string>
     <string name="pref_display_category" maxLength="30">Wyświetlanie</string>
     <string name="pref_chart_zoom_title" maxLength="40">Przybliżenie wykresu</string>
@@ -296,7 +296,7 @@
     <string name="pref_secret_title" maxLength="40">Hasło API</string>
     <string name="pref_secret_dialog_title" maxLength="40">Wprowadź swoje API secret</string>
     <string name="pref_secret_dialog_message">Twoje API secret Nightscout</string>
-    <string name="pref_scan_qr_code_title" maxLength="40">skanuj kod QR Nightscout-Autoconfig</string>
+    <string name="pref_scan_qr_code_title" maxLength="40">Skanuj kod QR Nightscout-Autoconfig</string>
     <string name="pref_scan_qr_code_summary">Kliknij tutaj by zeskanować kod QR ze strony http://nightscout.github.io/pages/configure/ używając skaneru kodów ZXing.</string>
     <string name="pref_send_to_xdrip_title" maxLength="40">Wyślij do xDrip+</string>
     <string name="pref_send_to_xdrip_summary">Włącz lokalne wysyłanie danych do xDrip+</string>
@@ -306,9 +306,9 @@
     <string name="pref_ns_treatments_title" maxLength="40">Zdarzenia</string>
     <string name="pref_ns_treatments_summary">Włącz wysyłanie zdarzeń do Nightscout</string>
     <string name="pref_ns_bolus_title" maxLength="40">Bolus</string>
-    <string name="pref_ns_bolus_summary">Wyślij zdarzenie z bolusem do Nightscout</string>
+    <string name="pref_ns_bolus_summary">Wyślij bolusy do Nightscout</string>
     <string name="pref_ns_basal_title" maxLength="40">Dawka bazowa</string>
-    <string name="pref_ns_basal_summary">Wyślij zdarzenie dotyczące dawki bazowej do Nightscout</string>
+    <string name="pref_ns_basal_summary">Wyślij zdarzenia dotyczące dawki bazowej do Nightscout</string>
     <string name="pref_ns_entered_by_title">Wprowadzono przez</string>
     <string name="pref_ns_device_status_category" maxLength="30">Status urządzenia</string>
     <string name="pref_ns_device_title" maxLength="40">Urządzenie</string>
@@ -317,18 +317,18 @@
     <string name="pref_ns_pump_summary">Wyślij status pompy i insulinę w organizmie do Nightscout</string>
     <string name="pref_ns_device_name_title" maxLength="40">Nazwa urządzenia</string>
     <string name="pref_ns_bg_readings_category" maxLength="30">Odczyt poziomu cukru</string>
-    <string name="pref_ns_finger_bg_title" maxLength="40">Poziomu cukru z palca</string>
+    <string name="pref_ns_finger_bg_title" maxLength="40">Poziom cukru z palca</string>
     <string name="pref_ns_finger_bg_summary">Wyślij poziom cukru z palca do Nightscout</string>
     <string name="pref_ns_calibration_info_title" maxLength="40">Informacja o kalibracji</string>
-    <string name="pref_ns_calibration_info_summary">Dodaj współczynnik do odczytanego poziomu cukru wymaganego do kalibracji (grafika dotycząca kalibracji będzie widoczna w SAGE)</string>
+    <string name="pref_ns_calibration_info_summary">Dodaj współczynnik do odczytanego poziomu cukru wymaganego do kalibracji (dodatkowy wykres kalibracji będzie widoczny w SAGE)</string>
     <string name="pref_ns_consumables_category" maxLength="30">Materiały eksploatacyjne</string>
     <string name="pref_ns_sensor_change_title" maxLength="40">Zmiana sensora</string>
     <string name="pref_ns_sensor_change_summary">Wyślij informację o zmianie sensora do Nightscout (SAGE)</string>
     <string name="pref_ns_cannula_change_title" maxLength="40">Zmiana wkłucia</string>
-    <string name="pref_ns_cannula_change_summary">Wysłano informację dotyczącą zmiany wkłucia do Nightscout (CAGE)</string>
-    <string name="pref_ns_cannula_change_threshold_title" maxLength="40">Poziom zmiany zbiorniczka</string>
-    <string name="pref_ns_cannula_change_Fill_Cannula">Uzupełnij zbiorniczek</string>
-    <string name="pref_ns_cannula_change_Prime_Cannula">Główny zbiorniczek</string>
+    <string name="pref_ns_cannula_change_summary">Wyślij informację dotyczącą zmiany wkłucia do Nightscout (CAGE)</string>
+    <string name="pref_ns_cannula_change_threshold_title" maxLength="40">Próg wypełnienia kaniuli</string>
+    <string name="pref_ns_cannula_change_Fill_Cannula">Wypełnienie kaniuli</string>
+    <string name="pref_ns_cannula_change_Prime_Cannula">Wypełnienie kaniuli</string>
     <string name="pref_ns_insulin_change_title" maxLength="40">Zmiana insuliny</string>
     <string name="pref_ns_insulin_change_summary">Wyślij informację dotyczącą zmiany insuliny do Nightscout (IAGE)</string>
     <string name="pref_ns_insulin_change_threshold_title" maxLength="40">Próg zmiany insuliny</string>
@@ -338,7 +338,7 @@
     <string name="pref_ns_battery_change_title" maxLength="40">Zmiana baterii w pompie</string>
     <string name="pref_ns_battery_change_summary">Wyślij informację dotyczącą zmiany baterii w pompie (BAGE)</string>
     <string name="pref_ns_lifetimes_title" maxLength="40">Szacowany cykl życia</string>
-    <string name="pref_ns_lifetimes_summary">Dodaj szacowany czas życia do materiałów eksploatacyjnych pompy</string>
+    <string name="pref_ns_lifetimes_summary">Dodaj szacowany czas życia do danych pompy</string>
     <string name="pref_ns_profiles_category" maxLength="30">Profile</string>
     <string name="pref_ns_profile_upload_title" maxLength="40">Włączono aktualizację profili</string>
     <string name="pref_ns_profile_upload_summary">Wyślij profile do Nightscout z dawkami podstawowymi, przeliczniki węglowodanów, wrażliwość na insulinę oraz zakresy docelowe</string>
@@ -356,8 +356,8 @@
     <string name="pref_ns_pump_alerts_summary">Wyślij alarmy pompy, powiadomienia, przypomnienia i informacje o statusie do Nightscout</string>
     <string name="pref_ns_pump_alerts_extended_message_info_title" maxLength="40">Rozszerzona wiadomość z informacją</string>
     <string name="pref_ns_pump_alerts_extended_message_info_summary" maxLength="40">Pełna wiadomość z informacją z pompy</string>
-    <string name="pref_ns_pump_alerts_time_to_clear_title" maxLength="40">Czas wyczyścić</string>
-    <string name="pref_ns_pump_alerts_time_to_clear_summary">Czas potrzebny na reakcję na pompie</string>
+    <string name="pref_ns_pump_alerts_time_to_clear_title" maxLength="40">Czas wyłączenia alarmu</string>
+    <string name="pref_ns_pump_alerts_time_to_clear_summary">Czas reakcji na alarm na pompie</string>
     <string name="pref_ns_pump_alerts_remove_from_nightscout_title" maxLength="40">Skasuj z Nightscout</string>
     <string name="pref_ns_pump_alerts_remove_from_nightscout_keep_all">Zachowaj wszystkie</string>
     <string name="pref_ns_uploader_status_category" maxLength="30">Status uploadera</string>
@@ -365,7 +365,7 @@
     <string name="pref_ns_uploader_status_enable_summary">Wyślij status alarmów uploadera i informacje do Nightscout</string>
     <string name="pref_ns_uploader_status_usb_error_title" maxLength="40">Błąd USB uploadera</string>
     <string name="pref_ns_uploader_status_usb_error_summary">Wyślij alarm błędu USB uploadera (rozłączony) do Nightscout</string>
-    <string name="pref_ns_uploader_status_connection_states">Status połączenia uploadera z pompą</string>
+    <string name="pref_ns_uploader_status_connection_states">Stany połączenia Uploader-Pompa</string>
     <string name="pref_ns_uploader_status_low_battery_state">Niski poziom baterii</string>
     <string name="pref_ns_uploader_status_fully_charged_state">Stan pełnego naładowania</string>
     <string name="pref_ns_uploader_status_automatic_remove_from_nightscout_summary">Status wiadomości uploadera zostanie automatycznie usunięty z Nightscout po 24 godzinach</string>
@@ -379,8 +379,8 @@
     <string name="pref_ns_trend_style_summary">Użyj stylu trendu strzałek Medtronic (mogą być niekompatybilne z niektórymi śledzącymi aplikacjami)</string>
     <string name="pref_ns_pattern_and_preset_naming_category" maxLength="30">Dawka bazowa i nazewnictwo</string>
     <string name="pref_ns_basal_patterns_category" maxLength="30">Profil dawki bazowej</string>
-    <string name="pref_ns_temp_basal_presets_category" maxLength="30">Wstępna tymczasowa dawka bazow</string>
-    <string name="pref_ns_bolus_presets_category" maxLength="30">Wstępny bolus</string>
+    <string name="pref_ns_temp_basal_presets_category" maxLength="30">Tymczasowe dawki bazowe</string>
+    <string name="pref_ns_bolus_presets_category" maxLength="30">Ustawienia bolusów</string>
     <string name="pref_ns_enter_preset_name_dialog_title" maxLength="30">Wprowadź wstępną nazwę</string>
     <string name="pref_ns_enter_pattern_name_dialog_title" maxLength="30">Wprowadź nazwę dawki bazowej</string>
     <string name="pref_ns_pattern_1_title" maxLength="30">Dawka bazowa 1</string>
@@ -391,26 +391,26 @@
     <string name="pref_ns_pattern_6_title" maxLength="30">Dawka bazowa 6</string>
     <string name="pref_ns_pattern_7_title" maxLength="30">Dawka bazowa 7</string>
     <string name="pref_ns_pattern_8_title" maxLength="30">Dawka bazowa 8</string>
-    <string name="pref_ns_preset_1_title" maxLength="30">Dawka wstępna 1</string>
-    <string name="pref_ns_preset_2_title" maxLength="30">Dawka wstępna 2</string>
-    <string name="pref_ns_preset_3_title" maxLength="30">Dawka wstępna 3</string>
-    <string name="pref_ns_preset_4_title" maxLength="30">Dawka wstępna 4</string>
-    <string name="pref_ns_preset_5_title" maxLength="30">Dawka wstępna 5</string>
-    <string name="pref_ns_preset_6_title" maxLength="30">Dawka wstępna 6</string>
-    <string name="pref_ns_preset_7_title" maxLength="30">Dawka wstępna 7</string>
-    <string name="pref_ns_preset_8_title" maxLength="30">Dawka wstępna 8</string>
+    <string name="pref_ns_preset_1_title" maxLength="30">Ustawienie 1</string>
+    <string name="pref_ns_preset_2_title" maxLength="30">Ustawienie 2</string>
+    <string name="pref_ns_preset_3_title" maxLength="30">Ustawienie 3</string>
+    <string name="pref_ns_preset_4_title" maxLength="30">Ustawienie 4</string>
+    <string name="pref_ns_preset_5_title" maxLength="30">Ustawienie 5</string>
+    <string name="pref_ns_preset_6_title" maxLength="30">Ustawienie 6</string>
+    <string name="pref_ns_preset_7_title" maxLength="30">Ustawienie 7</string>
+    <string name="pref_ns_preset_8_title" maxLength="30">Ustawienie 8</string>
     <string name="pref_ns_cgm_category" maxLength="30">CGM</string>
     <string name="pref_ns_insert_bg_as_cgm_title" maxLength="40">Wprowadź poziom cukru jako CGM</string>
     <string name="pref_ns_insert_bg_as_cgm_summary">Wprowadź odczyt poziomu cukru do wykresu CGM (pomaga Nightscout w wyświetlaniu zdarzeń, kiedy CGM nie jest w użyciu)</string>
     <string name="pref_system_category" maxLength="30">System</string>
     <string name="pref_advanced_system_settings_category" maxLength="30">Zaawans. ustawienia systemu</string>
     <string name="pref_system_history_sync_category" maxLength="30">Historia synchronizacji</string>
-    <string name="pref_system_cgm_history_title" maxLength="40">Włączenie historii CGM</string>
-    <string name="pref_system_cgm_history_summary">Uzupełnij pominięte dane z CGM</string>
-    <string name="pref_system_cgm_backfill_title" maxLength="40">Uzupełniono brakujący okres danych</string>
-    <string name="pref_system_pump_history_title" maxLength="40">Włączenie historii pompy</string>
+    <string name="pref_system_cgm_history_title" maxLength="40">Włącz historię CGM</string>
+    <string name="pref_system_cgm_history_summary">Uzupełnij brakujące dane z CGM</string>
+    <string name="pref_system_cgm_backfill_title" maxLength="40">Uzupełnianie danych CGM z okresu</string>
+    <string name="pref_system_pump_history_title" maxLength="40">Włącz historię pompy</string>
     <string name="pref_system_pump_history_summary">Używany do zdarzeń Nightscout</string>
-    <string name="pref_system_pump_backfill_title" maxLength="40">Uzupełniono historię pompy</string>
+    <string name="pref_system_pump_backfill_title" maxLength="40">Uzupełnianie danych POMPY z okresu</string>
     <string name="pref_system_auto_mode_update_frequency_title" maxLength="40">Częstotliwość aktualizacji trybu automat</string>
     <string name="pref_system_experimental_category" maxLength="30">Eksperymentalne</string>
     <string name="pref_system_estimate_sgv_title" maxLength="40">Szacowany poziom cukru z sensora</string>
@@ -419,14 +419,14 @@
     <string name="pref_system_estimate_sgv_error">Błąd sensora/aktualizacja</string>
     <string name="pref_system_report_isig_title" maxLength="40">Raport ISIG</string>
     <string name="pref_system_report_isig_summary">Raportuj ISIG kiedy odczyt z sensora nie jest dostępny na pompie i CGM jest w użyciu.</string>
-    <string name="pref_system_report_isig_to_include_title" maxLength="40">ISIG uwzględnia</string>
+    <string name="pref_system_report_isig_to_include_title" maxLength="40">Uwzględnione ISIG</string>
     <string name="pref_system_report_isig_minimum_runtime_title" maxLength="40">Minimalny czas pracy</string>
     <string name="pref_system_report_isig_minimum_runtime_new_sensor_title" maxLength="40">Minimalny czas pracy na nowym sensorze</string>
     <string name="pref_system_category_radio" maxLength="30">Radio</string>
     <string name="pref_system_radio_clash_protection_title" maxLength="40">Ochrona przed zdarzeniami radiowymi</string>
     <string name="pref_system_radio_clash_protection_summary_off">Brak zabezpieczenia, zawsze uruchamiaj żądanie pobrania danych</string>
     <string name="pref_system_radio_clash_protection_summary_on">Opóźnij żądanie pobrania danych z pompy kiedy pompa oczekuje na połączenie z sensorem</string>
-    <string name="pref_system_rssi_allow_connection_title" maxLength="40" comment="do not allow a pump connection when RSSI signal is less then this minimum">RSSI pozwala na połączenie</string>
+    <string name="pref_system_rssi_allow_connection_title" maxLength="40" comment="do not allow a pump connection when RSSI signal is less then this minimum">RSSI wymagane do połączenia</string>
     <string name="pref_system_polling_category" maxLength="30">Wysyłanie</string>
     <string name="pref_system_poll_timing_title" maxLength="40">Koordynacja wysyłania</string>
     <string name="pref_system_poll_timing_summary_on">Wysyłanie zostanie wyzwolone na podstawie oczekiwanego czasu zdarzenia czujnika plus okresu stanu warunkowego (ostrzeżenie: zmiana tych ustawień może prowadzić do zakłóceń radiowych i wydłużonych okresów utraty czujnika)</string>
@@ -437,7 +437,7 @@
     <string name="pref_system_poll_error_retry_title" maxLength="40">Ponowny błąd</string>
     <string name="pref_system_poll_old_sgv_retry_title" maxLength="40">Stara próba SGV</string>
     <string name="pref_system_timing_category" maxLength="30">Synchronizacja</string>
-    <string name="pref_system_control_passthrough_title" maxLength="40">Kontrola / Doznania</string>
+    <string name="pref_system_control_passthrough_title" maxLength="40">Control / Passthrough</string>
     <string name="pref_system_control_passthrough_summary_on">Poczekaj 500ms przed kolejnym żądaniem</string>
     <string name="pref_system_control_passthrough_summary_off">Brak czasu oczekiwania</string>
     <string name="pref_system_usb_category" maxLength="30">USB</string>
@@ -623,7 +623,7 @@
     <string name="pref_pushover_usb_errors_summary">Kiedy Contour Next Link jest odłączony.</string>
     <string name="pref_pushover_status_category" maxLength="30">Status</string>
     <string name="pref_pushover_status_summary">Wysyłaj komunikaty o statusie osobie obserwującej.</string>
-    <string name="pref_pushover_connection_states_title" maxLength="40">Status połączenia Uploader-Pompa</string>
+    <string name="pref_pushover_connection_states_title" maxLength="40">Stany połączenia Uploader-Pompa</string>
     <string name="pref_pushover_sgv_estimation_active_title" maxLength="40">Aktywne szacowanie SGV</string>
     <string name="pref_pushover_battery_category" maxLength="30">Bateria</string>
     <string name="pref_pushover_low_battery_state_title" maxLength="40">Niski poziom baterii</string>

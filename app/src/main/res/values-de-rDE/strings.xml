@@ -233,7 +233,7 @@
     <string name="ul_usb__no_connection">USB-Verbindungsfehler. Ist das Contour Next Link angeschlossen?</string>
     <string name="ul_usb__no_open">Auf das USB-Gerät konnte nicht zugegriffen werden</string>
     <string name="ul_usb__help_permission">Entkoppeln/Koppeln Sie Contour Next Link. Wählen Sie `standardmäßig für dieses Gerät verwenden`</string>
-    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Das Hochladen zu Nightscout war nicht erfolgreich.</string>
     <string name="ul_ns__warn_careportal">Careportal ist nicht in Nightscout aktiviert, Behandlungsdaten können nicht hochgeladen werden.</string>
     <string name="ul_ns__help_careportal">Füge \'careportal\' zu deiner ENABLE-Zeichenkette in Azure oder Heroku hinzu. Auf ns. 10be. de muss \'careportal \' in den Server-Einstellungen aktiviert werden. Das Hochladen der Behandlungen kann innerhalb dieser App im Menü \'Fortgeschrittene Einstellungen für Nightscout\' deaktiviert werden.</string>
     <string name="ul_ns__warn_servertime">Der Zeitunterschied zwischen diesem Gerät und dem Nightscout-Server ist größer als 10 Minuten.</string>
@@ -528,9 +528,9 @@
     <string name="pref_urchin_bolus_graph_markers_title" maxLength="40">Aktiviere Bolus-Markierungen</string>
     <string name="pref_urchin_bolus_graph_markers_summary">Markieren Sie ein Bolus-Ereignis in der Grafik.</string>
     <string name="pref_urchin_bolus_graph_tags_title" maxLength="40">Aktiviere Bolus-Markierungen</string>
-    <string name="pref_urchin_bolus_graph_tags_summary">Square/Dual bolus tags in status text.</string>
+    <string name="pref_urchin_bolus_graph_tags_summary">Verlängerter/Dualer Bolus Tags im Statustext.</string>
     <string name="pref_urchin_bolus_graph_ypop_title" maxLength="40">Square/Dual Y-Pop</string>
-    <string name="pref_urchin_bolus_graph_ypop_summary">A Square or Dual bolus can be popped to the height selected and shown on the basal graph during delivery period.</string>
+    <string name="pref_urchin_bolus_graph_ypop_summary">Ein verlängerter oder dualer Bolus kann auf die ausgewählte Höhe angehoben und während der Abgabe auf dem Basalgraphen angezeigt werden.</string>
     <string name="pref_urchin_status_styles_title" maxLength="40">Status Format</string>
     <string name="pref_urchin_time_style_title" maxLength="40">Zeit Format</string>
     <string name="pref_urchin_duration_style_title" maxLength="40">Dauer Format</string>
@@ -640,9 +640,9 @@
     <string name="pref_pushover_backfill_category" maxLength="30">Auffüllen</string>
     <string name="pref_pushover_backfill_period_title" maxLength="40">Rückfüllzeit</string>
     <string name="pref_pushover_start_restart_title" maxLength="40">Start/Neustart</string>
-    <string name="pref_pushover_start_restart_summary">Only backfill from the time the uploader or device has been started/restarted.</string>
+    <string name="pref_pushover_start_restart_summary">Nur auffüllen ab dem Zeitpunkt an dem der Uploader oder das Gerät (neu-) gestartet wurde.</string>
     <string name="pref_pushover_unpluged_limiter_title" maxLength="40">Unpluged Limiter</string>
-    <string name="pref_pushover_unpluged_limiter_summary">Do not backfill messages when a CNL meter has been unplugged for longer then this amount of time.</string>
+    <string name="pref_pushover_unpluged_limiter_summary">Werte nicht auffüllen wenn ein CNL-Messgerät länger als dieser Zeitraum ausgesteckt war.</string>
     <string name="pref_pushover_age_title" maxLength="40">Alter</string>
     <string name="pref_pushover_age_summary">Priorität und Ton von Mitteilungen, welche älter als dieses Alter din, können verändert werden.</string>
     <string name="pref_pushover_api_category" maxLength="30">Pushover API</string>
@@ -653,7 +653,7 @@
     <string name="text__Bolus">Bolus</string>
     <string name="text__Basal">Basal</string>
     <string name="text__Lifetimes">Zeitraum</string>
-    <string name="text__Prime">Prime</string>
+    <string name="text__Prime">Füllen</string>
     <string name="text__new_reservoir">neues Reservoir</string>
     <string name="text__fill_cannula">fülle Kanüle</string>
     <string name="text__new_sensor_started">Neuer Sensor wurde erkannt</string>
@@ -663,7 +663,7 @@
     <string name="text__Cannula_Change">Kanülenwechsel</string>
     <string name="text__Insulin_Change">Reservoirwechsel</string>
     <string name="text__Normal">Normal</string>
-    <string name="text__Square">Square</string>
+    <string name="text__Square">Verlängerter</string>
     <string name="text__Dual">Dual</string>
     <string name="text__Temp">Temporär</string>
     <string name="text__Normal_Bolus">Normaler Bolus</string>
@@ -677,8 +677,8 @@
     <string name="text__Factor">Faktor</string>
     <string name="text__Target">Ziel</string>
     <string name="text__Pattern">Muster</string>
-    <string name="text__basal_pattern">Basal pattern</string>
-    <string name="text__previous_basal_pattern">Previous pattern</string>
+    <string name="text__basal_pattern">Basalprofil</string>
+    <string name="text__previous_basal_pattern">Vorheriges Profil</string>
     <string name="text__microbolus">microbolus</string>
     <string name="text__bolus">Bolus</string>
     <string name="text__basal">basal</string>
@@ -688,7 +688,7 @@
     <string name="text__correction">Korrektur</string>
     <string name="text__duration">Dauer</string>
     <string name="text__normal">Normal</string>
-    <string name="text__square">square</string>
+    <string name="text__square">verlängerter</string>
     <string name="text__cancelled">Abgebrochen</string>
     <string name="text__completed">abgeschlossen</string>
     <string name="text__ended">beendet</string>
@@ -696,13 +696,13 @@
     <string name="text__active">aktiv</string>
     <string name="text__stopped">gestoppt</string>
     <!-- Pump Event Marker -->
-    <string name="event_marker__heading">Event Marker</string>
+    <string name="event_marker__heading">Ereignismarker</string>
     <string name="event_marker__food">Nahrung</string>
     <string name="event_marker__exercise">Bewegung</string>
-    <string name="event_marker__injection">Injection</string>
+    <string name="event_marker__injection">Injektion</string>
     <string name="event_marker__other">Sonstiges</string>
     <!-- Pump Daily Totals -->
-    <string name="daily_totals_heading__daily_totals" maxLength="15">Daily Totals</string>
+    <string name="daily_totals_heading__daily_totals" maxLength="15">Tagessumme</string>
     <string name="daily_totals_heading__bolus" maxLength="10">Bolus</string>
     <string name="daily_totals_heading__basal" maxLength="10">Basal</string>
     <string name="daily_totals_heading__sensor" maxLength="10">Sensor</string>
@@ -711,24 +711,24 @@
     <string name="daily_totals_heading__insulin" maxLength="10">Insulin</string>
     <string name="daily_totals_heading__total_daily_dose" maxLength="10">TDD</string>
     <string name="daily_totals_heading__sgv" maxLength="10">SG</string>
-    <string name="daily_totals_heading__average" maxLength="10">Avg</string>
-    <string name="daily_totals_heading__standard_deviation" maxLength="10">StdDev</string>
+    <string name="daily_totals_heading__average" maxLength="10">MW</string>
+    <string name="daily_totals_heading__standard_deviation" maxLength="10">StdAbw</string>
     <string name="daily_totals_heading__total_alerts" maxLength="10">Alarme</string>
     <string name="daily_totals_heading__total_values" maxLength="10">Gesamt</string>
     <string name="daily_totals_heading__high_values" maxLength="10">Hoch</string>
     <string name="daily_totals_heading__low_values" maxLength="10">Niedrig</string>
-    <string name="daily_totals_heading__bolus_manual_entry" maxLength="10">Manual</string>
-    <string name="daily_totals_heading__bolus_wizard_entry" maxLength="10">Wizard</string>
-    <string name="daily_totals_heading__carb" maxLength="10">Carb</string>
+    <string name="daily_totals_heading__bolus_manual_entry" maxLength="10">Manuell</string>
+    <string name="daily_totals_heading__bolus_wizard_entry" maxLength="10">Assistent</string>
+    <string name="daily_totals_heading__carb" maxLength="10">KH</string>
     <string name="daily_totals_heading__food" maxLength="10">Nahrung</string>
     <string name="daily_totals_heading__correction_bolus" maxLength="10">Korrektur</string>
     <string name="daily_totals_heading__food_and_correction_bolus" maxLength="10">Food+Corr</string>
-    <string name="daily_totals_heading__alert_on_rise" maxLength="10">Rise</string>
-    <string name="daily_totals_heading__alert_on_high" maxLength="10">High</string>
-    <string name="daily_totals_heading__alert_on_low" maxLength="10">Low</string>
-    <string name="daily_totals_heading__alert_on_suspend" maxLength="10">Suspend</string>
-    <string name="daily_totals_heading__alert_before_high" maxLength="10">PreHigh</string>
-    <string name="daily_totals_heading__alert_before_low" maxLength="10">PreLow</string>
+    <string name="daily_totals_heading__alert_on_rise" maxLength="10">Anstieg</string>
+    <string name="daily_totals_heading__alert_on_high" maxLength="10">Hoch</string>
+    <string name="daily_totals_heading__alert_on_low" maxLength="10">Niedrig</string>
+    <string name="daily_totals_heading__alert_on_suspend" maxLength="10">Unterbr.</string>
+    <string name="daily_totals_heading__alert_before_high" maxLength="10">vor Hoch</string>
+    <string name="daily_totals_heading__alert_before_low" maxLength="10">vor Niedr.</string>
     <string name="daily_totals_heading__alert_before_suspend" maxLength="10">PreSuspd</string>
     <string name="daily_totals_heading__within_range" maxLength="10">Innerhalb</string>
     <string name="daily_totals_heading__automode_active_time" maxLength="10">Aktiv</string>
@@ -739,7 +739,7 @@
     <string name="daily_totals_heading__therapy_below_range" maxLength="10">Unter</string>
     <!-- Nightscout PUMP pill -->
     <string name="nightscout_pump_pill__temp" maxLength="1">T</string>
-    <string name="nightscout_pump_pill__square" maxLength="1">S</string>
+    <string name="nightscout_pump_pill__square" maxLength="1">V</string>
     <string name="nightscout_pump_pill__dual" maxLength="1">D</string>
     <string name="nightscout_pump_pill__no_cgm" maxLength="20">kein cgm</string>
     <string name="nightscout_pump_pill__bolusing" maxLength="20">bolusabgabe</string>
@@ -748,24 +748,24 @@
     <string name="nightscout_pump_pill__suspended_abreviation" maxLength="6">sus</string>
     <string name="nightscout_pump_pill__lost_sensor" maxLength="20">verlorener sensor</string>
     <string name="nightscout_pump_pill__lost_sensor_abreviation" maxLength="6">v.sens</string>
-    <string name="nightscout_pump_pill__estimate" maxLength="20">*estimate</string>
-    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="6">*est</string>
+    <string name="nightscout_pump_pill__estimate" maxLength="20">*Schätzung</string>
+    <string name="nightscout_pump_pill__estimate_abreviation" maxLength="6">*sch</string>
     <!-- pump/sensor/automode states -->
-    <string name="pump_suspend__pump_suspended_insulin_delivery">Pump suspended insulin delivery</string>
-    <string name="pump_suspend__alarm_suspend">Alarm suspend</string>
-    <string name="pump_suspend__user_suspend">User suspend</string>
-    <string name="pump_suspend__auto_suspend">Auto suspend</string>
-    <string name="pump_suspend__low_glucose_suspend">Low glucose suspend</string>
-    <string name="pump_suspend__set_change_suspend">Set change suspend</string>
-    <string name="pump_suspend__predicted_low_glucose_suspend">Predicted low glucose suspend</string>
+    <string name="pump_suspend__pump_suspended_insulin_delivery">Pumpe hat Insulinabgabe unterbrochen</string>
+    <string name="pump_suspend__alarm_suspend">Unterbrechen durch Alarm</string>
+    <string name="pump_suspend__user_suspend">Unterbrechen durch Nutzer</string>
+    <string name="pump_suspend__auto_suspend">Automatisches Unterbrechen</string>
+    <string name="pump_suspend__low_glucose_suspend">Niedrigzucker-Unterbrechen</string>
+    <string name="pump_suspend__set_change_suspend">Setwechsel-Unterbrechen</string>
+    <string name="pump_suspend__predicted_low_glucose_suspend">Vor Niedrigzucker-Unterbrechen</string>
     <string name="pump_resume__pump_resumed_insulin_delivery">Pumpe hat Insulinabgabe wiederaufgenommen</string>
     <string name="pump_resume__user_resumed">Benutzer wieder aufgenommen</string>
     <string name="pump_resume__user_clears_alarm">Alarme durch Benutzer gelöscht</string>
-    <string name="pump_resume__low_glucose_manual_resume">Low glucose manual resume</string>
-    <string name="pump_resume__low_glucose_auto_resume_max_suspend_period">Low glucose auto resume - max suspend period</string>
-    <string name="pump_resume__low_glucose_auto_resume_preset_glucose_reached">Low glucose auto resume - preset glucose reached</string>
-    <string name="pump_resume__low_glucose_manual_resume_via_disable">Low glucose manual resume via disable</string>
-    <string name="automode_transition__into_active_due_to_sensor_calibration">Into active due to sensor calibration</string>
+    <string name="pump_resume__low_glucose_manual_resume">Manuelles Fortsetzen bei Niedrigzucker</string>
+    <string name="pump_resume__low_glucose_auto_resume_max_suspend_period">Automatisches Fortsetzen bei Niedrigzucker - maximale Unterbrechungszeit</string>
+    <string name="pump_resume__low_glucose_auto_resume_preset_glucose_reached">Automatisches Fortsetzen bei Niedrigzucker - eingestellter Zuckerwert erreicht</string>
+    <string name="pump_resume__low_glucose_manual_resume_via_disable">Manuelles Fortsetzen bei Niedrigzucker durch Deaktivieren</string>
+    <string name="automode_transition__into_active_due_to_sensor_calibration">nach Aktiv wegen Sensorkalibrierung</string>
     <string name="automode_transition__out_of_active_due_to_user_override">Out of active due to user override</string>
     <string name="automode_transition__out_of_active_due_to_alarm">Out of active due to alarm</string>
     <string name="automode_transition__out_of_active_due_to_timeout_from_safe_basal">Out of active due to timeout from safe basal</string>
@@ -786,7 +786,7 @@
     <string name="sensor_state__not_ready" maxLength="30">Nicht bereit</string>
     <string name="sensor_state__not_ready_abbreviation" maxLength="10">NotRdy</string>
     <string name="sensor_state__reading_high" maxLength="30">sg lesen hoch</string>
-    <string name="sensor_state__reading_high_abbreviation" maxLength="10">HiSG</string>
+    <string name="sensor_state__reading_high_abbreviation" maxLength="10">Hohe Sg</string>
     <string name="sensor_state__reading_low" maxLength="30">sg lesen niedrig</string>
     <string name="sensor_state__reading_low_abbreviation" maxLength="10">LoSG</string>
     <string name="sensor_state__calibrating" maxLength="30">kalibrieren</string>
@@ -795,7 +795,7 @@
     <string name="sensor_state__cal_error_change_sensor_abbreviation" maxLength="6">ChgSen</string>
     <string name="sensor_state__time_unknown" maxLength="30">time unknown</string>
     <string name="sensor_state__time_unknown_abbreviation" maxLength="10">NoTime</string>
-    <string name="sensor_state__sensor_error" maxLength="30">sensor error</string>
+    <string name="sensor_state__sensor_error" maxLength="30">sensorfehler</string>
     <string name="sensor_state__sensor_error_abbreviation" maxLength="10">SenErr</string>
     <!-- pump default pattern and preset names -->
     <string name="pump_default__basal_pattern_1" maxLength="30" comment="local name as shown on the pump for basal pattern 1 (do not use dots/periods in name)">Basal 1</string>

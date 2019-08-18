@@ -22,11 +22,11 @@
     <string name="alert_automode">Varování automatického režimu</string>
     <!-- alert additional -->
     <string name="alert_cleared">Cleared Alert</string>
-    <string name="alert_cleared_reminder">Cleared Reminder</string>
-    <string name="alert_cleared_tag">cleared</string>
-    <string name="alert_silenced">Silenced Alert</string>
-    <string name="alert_silenced_tag">silenced</string>
-    <string name="alert_repeated">Repeated Alert</string>
+    <string name="alert_cleared_reminder">Smazat připomínku</string>
+    <string name="alert_cleared_tag">vymazáno</string>
+    <string name="alert_silenced">Ztišit alarm</string>
+    <string name="alert_silenced_tag">ztišeno</string>
+    <string name="alert_repeated">Opakované upozornění</string>
     <string name="alert_repeated_tag">Znovu</string>
     <!-- default when no alert definition found -->
     <string name="alert_unknown_in_history">Unknown|Please check your PUMP Alarm History and report the FULL alert message as shown on the pump. Include the #code and data in brackets as shown here and send to the dev team.</string>
@@ -90,7 +90,7 @@
     <string name="alert_870" comment="pump alert (see your pump manual) format: heading message|extended message">Slabá baterie vysílače|Nabijte vysílač do 24 hodin.</string>
     <!-- not shown in the pump alarm history, only as an active alert -->
     <string name="alert_103" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">BG Check %1$s hr since last bolus|Check BG</string>
-    <string name="alert_107" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Missed Meal Bolus|No bolus delivered during the time set in the reminder.</string>
+    <string name="alert_107" comment="pump alert (not shown in the pump alarm history, only as an active alert) format: heading message|extended message">Zmeškaný bolus před jídlem|Během nastavené časového intervalu nebyl podán žádný bolus.</string>
     <string name="alert_108" comment="pump reminder alert (dynamic: ITEM at TIME) text for ITEM comes from alert_108_list">%1$s v %2$s</string>
     <string name="alert_108_list" comment="pump reminder alert (dynamic: ITEM text list) see alert_108">Osobní 1|Osobní 2|Osobní 3|Osobní 4|Osobní 5|Osobní 6|Změřte GL|Léky</string>
     <string name="alert_109" comment="pump reminder alert (dynamic: ITEM text) text for ITEM comes from alert_109_list, format: heading message|extended message">Set Change Reminder: %1$s since the last set change|Time to change reservoir and infusion set.</string>
@@ -131,7 +131,7 @@
     <string name="alert_99102" comment="pump alert (see your pump manual) format: heading message|extended message">Baterie vysílače vybitá|Ihned nabijte vysílač.</string>
     <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|Current action canceled.</string>
     <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</string>
-    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">High BG %1$s|Check infusion set. Check ketones. Monitor BG.</string>
+    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">Vysoká hladina glikemie %1$s|Zkontrolujte infuzni set|Zkontrolujte ketolátky|Monitorujte hladinu glikemie.</string>
 </resources>
 <!---
 

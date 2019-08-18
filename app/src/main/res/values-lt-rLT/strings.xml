@@ -243,7 +243,7 @@
     <string name="ul_usb__no_connection">USB jungties klaida. Ar Countour Next Link prijungtas?</string>
     <string name="ul_usb__no_open">Nepavyksta atidaryti USB įrenginio</string>
     <string name="ul_usb__help_permission">Atjunkit/prijunkit Contour Next Link. Pasirinkite \'naudoti kaip numatytą šiam prietaisui\'.</string>
-    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Siuntimas į Nightscout buvo nesėkmingas.</string>
     <string name="ul_ns__warn_careportal">Careportal neįgalintas Nightscout, veiksmų duomenys negali būti nusiųsti.</string>
     <string name="ul_ns__help_careportal">Pridėkite \'careporta\' prie jūsų ENABLE eilutės Azure ar Heroku. Veiksmai gali būti išjungti \'Advanced Nightscout Settings\' meniu.</string>
     <string name="ul_ns__warn_servertime">Laiko skirtumas tarp skaitytuvo prietaiso ir Nightscout serverio yra didesnis nei 10 minučių.</string>

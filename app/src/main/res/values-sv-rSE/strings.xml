@@ -233,7 +233,7 @@
     <string name="ul_usb__no_connection">USB-fel. Är Contour Next Link ansluten?</string>
     <string name="ul_usb__no_open">Kan inte få kontakt med USB-enheten</string>
     <string name="ul_usb__help_permission">Plugga ur/in Contour Next Link. Välj \"\'Använd som standard för denna enhet\'.</string>
-    <string name="ul_ns__warn_upload_unsuccessful">Uploading to nightscout was unsuccessful.</string>
+    <string name="ul_ns__warn_upload_unsuccessful">Uppladdning till nightscout misslyckades.</string>
     <string name="ul_ns__warn_careportal">Careportal är inte aktiverat i Nightscout, behandlingsdata kan inte laddas upp.</string>
     <string name="ul_ns__help_careportal">Lägg till \'careportal\' till ENABLE strängen i Azure eller Heroku. Behandlingar kan stängas av i \'Avancerade Nightscout inställningar\' menyn.</string>
     <string name="ul_ns__warn_servertime">Tidsskillnaden mellan uppladdaren och Nightscout servern är mer än 10 minuter.</string>
