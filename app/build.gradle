@@ -30,8 +30,8 @@ repositories {
 }
 
 // change dev to false for release version (release uses the generated version name and code)
-def dev = true
-def devName = "arecibo 0.7.1 (dev 0.2)"
+def dev = false
+def devName = "arecibo 0.7.1 (final)"
 
 def generateVersionCode() {
     // We need to get the number of releases directly from GitHub, since Travis
