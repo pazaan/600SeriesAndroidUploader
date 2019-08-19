@@ -20,6 +20,7 @@ public class StatNightscout extends RealmObject implements StatInterface {
     private int error;
     private int siteUnavailable;
     private int totalRecords;
+    private int totalHttp;
     private int timer;
     private long timerMS;
     private int timer1;
@@ -37,11 +38,12 @@ public class StatNightscout extends RealmObject implements StatInterface {
 
     @Override
     public String toString() {
-        return String.format("Run: %s Error: %s Unavailable: %s Records: %s Timers: %s~%sms %s~%sms",
+        return String.format("Run: %s Error: %s Unavailable: %s Records: %s Http: %s Timers: %s~%sms %s~%sms",
                 run,
                 error,
                 siteUnavailable,
                 totalRecords,
+                totalHttp,
                 timer,
                 timer == 0 ? 0 : timerMS / timer,
                 timer1,
@@ -99,5 +101,13 @@ public class StatNightscout extends RealmObject implements StatInterface {
 
     public void settotalRecords(int totalRecords) {
         this.totalRecords = totalRecords;
+    }
+
+    public int getTotalHttp() {
+        return totalHttp;
+    }
+
+    public void setTotalHttp(int totalHttp) {
+        this.totalHttp = totalHttp;
     }
 }

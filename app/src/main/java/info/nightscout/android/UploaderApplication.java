@@ -11,7 +11,6 @@ import android.util.Log;
 import com.bugfender.sdk.Bugfender;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
-import com.squareup.leakcanary.LeakCanary;
 
 import info.nightscout.android.model.medtronicNg.PumpHistoryMarker;
 import info.nightscout.android.model.medtronicNg.PumpHistorySystem;
@@ -64,14 +63,6 @@ public class UploaderApplication extends Application {
         Log.i(TAG, "onCreate Called");
 
         startupRealtime = SystemClock.elapsedRealtime();
-
-        // LeakCanary is only active for debug build variant
-        if (LeakCanary.isInAnalyzerProcess(this)) {
-            // This process is dedicated to LeakCanary for heap analysis.
-            // You should not init your app in this process.
-            return;
-        }
-        LeakCanary.install(this);
 
         CalligraphyConfig.initDefault(new CalligraphyConfig.Builder()
                 .setDefaultFontPath("fonts/OpenSans-Regular.ttf")

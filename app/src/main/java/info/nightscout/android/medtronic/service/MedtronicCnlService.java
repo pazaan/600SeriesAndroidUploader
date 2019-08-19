@@ -158,6 +158,8 @@ public class MedtronicCnlService extends Service {
             mHidDevice = null;
         }
 
+        Stats.kill();
+
         // kill process if it's been around too long, stops android killing us without warning due to process age (if mid-comms can crash the CNL E86/E81)
         long uptime = UploaderApplication.getUptime() / 60000L;
         if (uptime > 60) {
@@ -308,8 +310,6 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             timePollStarted = System.currentTimeMillis();
             long nextpoll = 0;
 
-            statPoll = (StatPoll) Stats.open().readRecord(StatPoll.class);
-
             try {
                 // note: Realm use only in this thread!
                 realm = Realm.getDefaultInstance();
@@ -319,6 +319,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 readDataStore();
                 pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
+                statPoll = (StatPoll) Stats.open().readRecord(StatPoll.class);
                 statPoll.incPollCount();
 
                 // *** debug use only ***
@@ -649,7 +650,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             } catch (Exception e) {
                 Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
                 UserLogMessage.sendN(mContext, UserLogMessage.TYPE.WARN, R.string.ul_poll__polling_service_could_not_complete);
-                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_poll__unexpected_error, e.getMessage()));
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_poll__unexpected_error, Log.getStackTraceString(e)));
                 nextpoll = System.currentTimeMillis() + 60000L;
 
             } finally {
@@ -662,8 +663,10 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                 if (pumpHistoryHandler != null) pumpHistoryHandler.close();
 
-                Stats.close();
-                Stats.stale();
+                if (statPoll != null) {
+                    Stats.close();
+                    Stats.stale();
+                }
 
                 if (dataStore != null) {
                     statsReport();
@@ -1480,20 +1483,20 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
     private boolean openUsbDevice() {
         if (!hasUsbHostFeature()) {
             Log.e(TAG, "Device does not support USB OTG");
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_support));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_support);
             return false;
         }
 
         if (mUsbManager == null) {
             Log.e(TAG, "USB connection error. mUsbManager == null");
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_connection));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_connection);
             return false;
         }
 
         UsbDevice cnlStick = UsbHidDriver.getUsbDevice(mUsbManager, USB_VID, USB_PID);
         if (cnlStick == null) {
             Log.w(TAG, "USB connection error. Is the CNL plugged in?");
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_connection));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_connection);
             return false;
         }
 
@@ -1507,7 +1510,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
             mHidDevice.open();
         } catch (Exception e) {
             Log.e(TAG, "Unable to open serial device", e);
-            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, getString(R.string.ul_usb__no_open));
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_usb__no_open);
             return false;
         }
 

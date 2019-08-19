@@ -67,6 +67,16 @@ public class Stats {
                 }
             }
         }
+
+        static void kill() {
+            synchronized (LazyHolder.class) {
+                if (instance.open != 0) {
+                    instance.writeRecords();
+                    instance.loadedRecords.clear();
+                    instance.open = 0;
+                }
+            }
+        }
     }
 
     public static Stats getInstance() {
@@ -79,6 +89,11 @@ public class Stats {
 
     public static void close() {
         LazyHolder.close();
+    }
+
+    public static void kill() {
+        if (LazyHolder.instance != null)
+            LazyHolder.kill();
     }
 
     public static int opened() {

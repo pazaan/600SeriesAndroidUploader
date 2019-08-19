@@ -147,11 +147,13 @@ public class HistoryUtils {
                 .lessThan("eventDate", new Date(timestamp + 2000L))
                 .findAll();
 
-        if (results.size() > 1) {
+        if (key != null && results.size() > 1) {
             Log.w(TAG, "found " + results.size() + " events with the same date");
             int n = 0;
-            while (n < results.size() &&
-                    !((PumpHistoryInterface) results.get(n)).getKey().equals(key)) {n++;}
+            while (n < results.size()
+                    && ((PumpHistoryInterface) results.get(n)).getKey() != null
+                    && !(((PumpHistoryInterface) results.get(n)).getKey().equals(key))
+            ) {n++;}
             if (n > 0) {
                 Log.w(TAG, String.format("adjusted eventDate for nightscout +%s seconds", n * 2));
                 treatment.setCreated_at(new Date(timestamp + n * 2000));

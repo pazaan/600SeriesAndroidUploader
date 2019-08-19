@@ -58,7 +58,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textview_bg_time" />
 
-        <com.mikepenz.iconics.view.IconicsTextView
+        <info.nightscout.android.utils.IconicsAppCompatTextView
             android:id="@+id/textview_trend"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -19,14 +19,14 @@
     <string name="alert_smartguard">SmartGuard</string>
     <string name="alert_sensor">Sensorvarsling</string>
     <string name="alert_reminder">Påminnelse</string>
-    <string name="alert_automode">Auto Mode Alert</string>
+    <string name="alert_automode">Automodus Varsel</string>
     <!-- alert additional -->
-    <string name="alert_cleared">Cleared Alert</string>
-    <string name="alert_cleared_reminder">Cleared Reminder</string>
-    <string name="alert_cleared_tag">cleared</string>
-    <string name="alert_silenced">Silenced Alert</string>
+    <string name="alert_cleared">Varsel bekreftet</string>
+    <string name="alert_cleared_reminder">Påminnelse bekreftet</string>
+    <string name="alert_cleared_tag">bekreftet</string>
+    <string name="alert_silenced">Varsel slått av</string>
     <string name="alert_silenced_tag">demp</string>
-    <string name="alert_repeated">Repeated Alert</string>
+    <string name="alert_repeated">Gjentatt Varsel</string>
     <string name="alert_repeated_tag">gjenta</string>
     <!-- default when no alert definition found -->
     <string name="alert_unknown_in_history">Unknown|Please check your PUMP Alarm History and report the FULL alert message as shown on the pump. Include the #code and data in brackets as shown here and send to the dev team.</string>
@@ -103,12 +103,12 @@
     <string name="alert_822" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode max delivery|Auto Mode has been at maximum delivery for 4 hours. Enter BG to continue in Auto Mode.</string>
     <string name="alert_823" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
     <string name="alert_824" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode exit High SG|Manual Mode started. Check infusion site. Check ketones. Consider an injection. Monitor your BG. Basal Pattern %1$s resumed.</string>
-    <string name="alert_827" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_829" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_830" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_831" comment="670G pump alert (see your pump manual) format: heading message|extended message">BG required|Enter a new BG for Auto Mode.</string>
-    <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode</string>
-    <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus recommended|For %1$s entered, a correction bolus is recommended.</string>
+    <string name="alert_827" comment="670G pump alert (see your pump manual) format: heading message|extended message">BS nødvendig|Skriv inn ny BS for Automodus.</string>
+    <string name="alert_829" comment="670G pump alert (see your pump manual) format: heading message|extended message">BS nødvendig|Skriv inn ny BS for Automodus.</string>
+    <string name="alert_830" comment="670G pump alert (see your pump manual) format: heading message|extended message">BS nødvendig|Skriv inn ny BS for Automodus.</string>
+    <string name="alert_831" comment="670G pump alert (see your pump manual) format: heading message|extended message">BS nødvendig|Skriv inn ny BS for Automodus.</string>
+    <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Kalibrering nødvendig for Automodus|Skriv inn BS og kalibrer sensor for Automodus</string>
+    <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus anbefalt|For %1$s innskrevet, anbefales en korreksjonsbolus.</string>
     <!-- unqualified alerts -->
     <string name="alert_99001" comment="pump alert (see your pump manual) format: heading message|extended message">Autom. stopp|Insulintilførsel stoppet. Ingen taster er trykket i løpet av den tiden som er angitt for autom. stopp.</string>
     <string name="alert_99002" comment="pump alert (see your pump manual) format: heading message|extended message">Batteri ikke kompatibelt|Se brukerhåndboken.</string>
@@ -129,9 +129,9 @@
     <string name="alert_99031" comment="pump alert (see your pump manual) format: heading message|extended message">Feil tast trykket|Prøv igjen</string>
     <string name="alert_99101" comment="pump alert (see your pump manual) format: heading message|extended message">Bytt sensor|Andre kalibrering ble ikke godkjent. Før inn ny sensor.</string>
     <string name="alert_99102" comment="pump alert (see your pump manual) format: heading message|extended message">Senderbatteri tomt|Lad opp senderen nå.</string>
-    <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|Current action canceled.</string>
-    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</string>
-    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">High BG %1$s|Check infusion set. Check ketones. Monitor BG.</string>
+    <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Automodus har startet|Gjeldende handling avbrutt.</string>
+    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Automodus startet|Følgende SmartGuard innstillinger er nå skrudd av: Stopp før lav - Stopp ved lav</string>
+    <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">Høy BS %1$s|Sjekk slangesett. Sjekk ketoner. Sjekk BS.</string>
 </resources>
 <!---
 

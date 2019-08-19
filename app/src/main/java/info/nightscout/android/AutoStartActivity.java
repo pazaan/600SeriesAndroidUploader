@@ -2,6 +2,7 @@ package info.nightscout.android;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -52,7 +53,14 @@ public class AutoStartActivity extends AppCompatActivity {
 
         if (service) {
             Log.d(TAG, "MasterService auto starter, starting!");
-            startService(new Intent(getBaseContext(), MasterService.class));
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(new Intent(getBaseContext(), MasterService.class));
+                } else {
+                    startService(new Intent(getBaseContext(), MasterService.class));
+                }
+            } catch (Exception ignored) {
+            }
         }
 
         finish();

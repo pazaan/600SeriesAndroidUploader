@@ -38,6 +38,9 @@ public class NightscoutStatus {
     private final int NS_MINOR_USE_PROFILE = 10;
     private final int NS_POINT_USE_PROFILE = 2;
 
+    // NS version blacklist for compatibility checks
+    private final String[] NS_BLACKLIST = {"0.11.0"};
+
     // report schedule
     private final long NS_REPORT = 120 * 60000L;
 
@@ -85,6 +88,9 @@ public class NightscoutStatus {
 
         available = dataStore.isNightscoutAvailable();
         reporttime = dataStore.getNightscoutReportTime();
+        ns_careportal = dataStore.isNightscoutCareportal();
+        ns_usequery = dataStore.isNightscoutUseQuery();
+        ns_useprofile = dataStore.isNightscoutUseProfile();
 
         if (!UploaderApplication.isOnline()) {
             available = false;
@@ -97,14 +103,27 @@ public class NightscoutStatus {
             boolean report = true;
             if (reporttime > 0 && now - reporttime < NS_REPORT) report = false;
 
-            if (!ns_authDefaultRoles.toLowerCase().contains("readable")
-                    || (dataStore.isNsEnableTreatments() && !dataStore.isNightscoutCareportal()))
+            if (dataStore.isNsEnableTreatments() && !dataStore.isNightscoutCareportal())
                 available = false;
 
             if (!available || report) {
                 String url = dataStore.getNightscoutURL();
                 String secret = dataStore.getNightscoutSECRET();
                 available = new getStatus().run(url, secret);
+
+                if (available) {
+                    for (String s : NS_BLACKLIST) {
+                        if (s.equals(String.format("%s.%s.%s", ns_version_major, ns_version_minor, ns_version_point))) {
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                                    String.format("{id;%s}: {id;%s} %s",
+                                            R.string.ul_share__nightscout, R.string.ul_share__version, ns_version));
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP,
+                                    R.string.ul_ns__help_version);
+                            available = false;
+                            break;
+                        }
+                    }
+                }
 
                 if (available && dataStore.isDbgEnableUploadErrors()) {
 
@@ -220,8 +239,9 @@ public class NightscoutStatus {
                         }
 
                     }
+                }
 
-                } else if (!available && dataStore.isDbgEnableUploadErrors())
+                if (!available && dataStore.isDbgEnableUploadErrors())
                     UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} {id;%s}",
                             R.string.ul_share__nightscout_site, R.string.ul_share__is_not_available));
             }

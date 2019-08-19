@@ -73,7 +73,7 @@
     <string name="alert_799" comment="pump alert (see your pump manual) format: heading message|extended message">Szenzor indítása elkezdődött|A szenzor indítása akár 2 órát is igénybe vehet. Értesítés, amikor kalibrálás szükséges.</string>
     <string name="alert_801" comment="pump alert (see your pump manual) format: heading message|extended message">SZG-érték nem elérhető|Ha probléma nem szűnik meg, akkor nézze meg a használati útmutatót.</string>
     <string name="alert_802" comment="pump alert (see your pump manual) format: heading message|extended message">Ért. alsó határnál %1$s|Alacsony szenzorglükóz. Mérje meg a VC-t.</string>
-    <string name="alert_803" comment="pump alert (see your pump manual) format: heading message|extended message">Felfügg. a. határ köz.|A beadás leállt. A szenzorglükóz közelít az alsó határhoz. Mérje meg a VC-t.</string>
+    <string name="alert_803" comment="pump alert (see your pump manual) format: heading message|extended message">Felfügg. alsó határnál|Alacsony szenzorglükóz. Inzulin beadása felfüggesztve. Mérje meg a VC-t.</string>
     <string name="alert_805" comment="pump alert (see your pump manual) format: heading message|extended message">Ért. a. határ köz. %1$s|A szenzorglükóz az alsó határhoz közelít. Mérje meg a VC-t.</string>
     <string name="alert_806" comment="pump alert (see your pump manual) format: heading message|extended message">Bázis beadása újraindult(néma)</string>
     <string name="alert_807" comment="pump alert (see your pump manual) format: heading message|extended message">Bázis beadása újraindult|Bázis beadása %1$s időpontban újraindult a szenzor általi felfüggesztés után. Mérje meg a VC-t.</string>

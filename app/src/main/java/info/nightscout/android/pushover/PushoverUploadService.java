@@ -125,15 +125,17 @@ public class PushoverUploadService extends Service {
 
             if (!valid && apiToken.equals(apiCheck) && userToken.equals(userCheck)) {
                 UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_share__pushover_validation_failed);
-                throw new Exception("account error");
+                throw new Exception("validation failed, check settings");
             }
 
             else if (valid && !(apiToken.equals(apiCheck) && userToken.equals(userCheck)))
                 valid = false;
 
             if (!valid) {
-                if (apiToken.length() != 30 || userToken.length() != 30)
+                if (apiToken.length() != 30 || userToken.length() != 30) {
+                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_share__pushover_validation_failed);
                     throw new Exception("api/user token is not valid");
+                }
 
                 PushoverEndpoints pushoverEndpoints = pushoverApi.getPushoverEndpoints();
 
@@ -148,7 +150,7 @@ public class PushoverUploadService extends Service {
                 else if (response.body() == null)
                     throw new Exception("response body null");
                 else if (response.code() != 200 && response.code() != 400)
-                    throw new Exception("server error");
+                    throw new Exception("server error " + response.code());
 
                 String status = response.body().getStatus();
                 if (response.code() == 400 || status == null || !status.equals("1")) {
@@ -181,6 +183,12 @@ public class PushoverUploadService extends Service {
 
         } catch (Exception e) {
             Log.e(TAG, "Pushover validation failed: " + e.getMessage());
+            UserLogMessage.sendE(mContext, String.format("{id;%s}: api: %s %s user: %s %s %s",
+                    R.string.ul_share__pushover,
+                    apiToken.length(), apiToken,
+                    userToken.length(), userToken,
+                    e.getMessage()
+            ));
         }
 
         return valid;

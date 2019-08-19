@@ -26,72 +26,179 @@
         android:id="@+id/view_sgv"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="6">
+        android:layout_weight="6"
+        >
 
-        <TextView
-            android:id="@+id/textview_bg"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="@string/dash"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textSize="80sp"
-            android:textStyle="bold"
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/cl_sgv_start"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            app:layout_constraintHorizontal_weight="0.5"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.22"
-            app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintEnd_toStartOf="@+id/cl_sgv_left"
+            >
+        </android.support.constraint.ConstraintLayout>
 
-        <com.mikepenz.iconics.view.IconicsTextView
-            android:id="@+id/textview_trend"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/dash"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textSize="50sp"
-            app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
-            app:layout_constraintEnd_toEndOf="@+id/textview_units"
-            app:layout_constraintStart_toEndOf="@+id/textview_bg"
-            app:layout_constraintTop_toTopOf="@+id/textview_bg"
-            app:layout_constraintVertical_bias="0.65" />
-
-        <TextView
-            android:id="@+id/textview_units"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/glucose_mgdl"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
-            app:layout_constraintStart_toEndOf="@+id/textview_bg" />
-
-        <TextView
-            android:id="@+id/textview_bg_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/dots"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textSize="18sp"
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/cl_sgv_left"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            app:layout_constraintHorizontal_weight="10"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/textview_iob"
-            app:layout_constraintTop_toTopOf="@+id/textview_bg"
-            app:layout_constraintVertical_bias="0.45" />
+            app:layout_constraintStart_toEndOf="@+id/cl_sgv_start"
+            app:layout_constraintEnd_toStartOf="@+id/cl_sgv_center"
+            >
 
-        <TextView
-            android:id="@+id/textview_iob"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginLeft="8dp"
-            android:text="@string/main_screen__active_insulin"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textSize="16sp"
-            app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/textview_trend"
-            app:layout_constraintTop_toBottomOf="@+id/textview_bg_time"
-            app:layout_constraintVertical_bias="0.39" />
+            <TextView
+                android:id="@+id/textview_bg"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:gravity="center_vertical|end"
+                android:lines="1"
+                android:text="@string/dash"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textStyle="bold"
+                app:autoSizeMaxTextSize="140sp"
+                app:autoSizeMinTextSize="30sp"
+                app:autoSizeStepGranularity="1px"
+                app:autoSizeTextType="uniform"
+                app:layout_constraintHorizontal_weight="5"
+                app:layout_constraintVertical_weight="4"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/textview_units"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                />
+
+            <info.nightscout.android.utils.IconicsAppCompatTextView
+                android:id="@+id/textview_trend"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="20dp"
+                android:gravity="bottom|center_horizontal"
+                android:lines="1"
+                android:text="@string/dash"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                app:autoSizeMaxTextSize="100sp"
+                app:autoSizeMinTextSize="30sp"
+                app:autoSizeStepGranularity="1px"
+                app:autoSizeTextType="uniform"
+                app:layout_constraintHorizontal_weight="2"
+                app:layout_constraintVertical_weight="4"
+                app:layout_constraintStart_toEndOf="@+id/textview_bg"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/textview_units"
+                />
+
+            <TextView
+                android:id="@+id/textview_units"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginBottom="10dp"
+                android:gravity="top|center_horizontal"
+                android:lines="1"
+                android:text="@string/glucose_mgdl"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                app:autoSizeMaxTextSize="20sp"
+                app:autoSizeMinTextSize="5sp"
+                app:autoSizeStepGranularity="1px"
+                app:autoSizeTextType="uniform"
+                app:layout_constraintHorizontal_weight="2"
+                app:layout_constraintVertical_weight="1"
+                app:layout_constraintStart_toEndOf="@+id/textview_bg"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textview_trend"
+                app:layout_constraintBottom_toBottomOf="@+id/textview_bg"
+                />
+
+        </android.support.constraint.ConstraintLayout>
+
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/cl_sgv_center"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            app:layout_constraintHorizontal_weight="0.5"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/cl_sgv_left"
+            app:layout_constraintEnd_toStartOf="@+id/cl_sgv_right"
+            >
+        </android.support.constraint.ConstraintLayout>
+
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/cl_sgv_right"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            app:layout_constraintHorizontal_weight="10"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/cl_sgv_center"
+            app:layout_constraintEnd_toStartOf="@+id/cl_sgv_end"
+            >
+
+            <TextView
+                android:id="@+id/textview_bg_time"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:lines="1"
+                android:text="@string/dots"
+                android:gravity="center_vertical|center_horizontal"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                app:autoSizeMaxTextSize="30sp"
+                app:autoSizeMinTextSize="10sp"
+                app:autoSizeStepGranularity="1px"
+                app:autoSizeTextType="uniform"
+                app:layout_constraintVertical_weight="1"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@+id/textview_iob"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                />
+
+            <TextView
+                android:id="@+id/textview_iob"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginBottom="20dp"
+                android:lines="1"
+                android:text="@string/main_screen__active_insulin"
+                android:gravity="center_vertical|center_horizontal"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                app:autoSizeMaxTextSize="30sp"
+                app:autoSizeMinTextSize="10sp"
+                app:autoSizeStepGranularity="1px"
+                app:autoSizeTextType="uniform"
+                app:layout_constraintVertical_weight="1"
+                app:layout_constraintTop_toBottomOf="@+id/textview_bg_time"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                />
+
+        </android.support.constraint.ConstraintLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/cl_sgv_end"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/cl_sgv_right"
+        app:layout_constraintEnd_toEndOf="parent"
+        >
+    </android.support.constraint.ConstraintLayout>
 
     </android.support.constraint.ConstraintLayout>
 
@@ -111,7 +218,8 @@
             app:layout_constraintDimensionRatio="333:100"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            />
 
     </android.support.constraint.ConstraintLayout>
 
