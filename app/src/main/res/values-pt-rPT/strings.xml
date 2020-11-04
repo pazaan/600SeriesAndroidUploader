@@ -58,7 +58,7 @@
     <!-- Main Screen -->
     <string name="main_screen__icon_nightscout_status">Nightscout</string>
     <string name="main_screen__icon_battery_status">Bateria da Bomba</string>
-    <string name="main_screen__active_insulin" maxLength="20">Isenção Ativa</string>
+    <string name="main_screen__active_insulin" maxLength="20">Insulina Ativa</string>
     <string name="main_screen__value_hour_chart" maxLength="20" comment="example: '12 hour chart' '24 hour chart'">Gráfico de %1d horas</string>
     <!-- Manage Devices Menu -->
     <string name="manage_cnl__title">Gerir os seus dispositivos</string>
