@@ -710,7 +710,7 @@ public class PumpHistoryParser {
         PumpHistoryMarker.marker(
                 pumpHistorySender, historyRealm, pumpMAC,
                 eventDate, eventRTC, eventOFFSET,
-                PumpHistoryMarker.RECORDTYPE.EXERCISE,
+                PumpHistoryMarker.RECORDTYPE.INJECTION,
                 0,
                 (byte) 0,
                 0,
