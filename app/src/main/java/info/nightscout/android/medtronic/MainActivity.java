@@ -231,7 +231,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             setSupportActionBar(toolbar);
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             getSupportActionBar().setElevation(0);
-            getSupportActionBar().setTitle("Nightscout");
+            getSupportActionBar().setTitle("600 Series Uploader");
         }
 
         final PrimaryDrawerItem itemSettings = new PrimaryDrawerItem()
