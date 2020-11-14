@@ -1,7 +1,7 @@
 package info.nightscout.android.upload.nightscout;
 
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

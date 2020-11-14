@@ -7,3 +7,4 @@ local.properties
 bugfender.properties
 /app/release/
 /crowdin.properties
+app/google-services.json

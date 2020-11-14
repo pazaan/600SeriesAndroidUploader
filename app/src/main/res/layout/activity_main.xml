@@ -6,12 +6,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <android.support.design.widget.AppBarLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        <android.support.v7.widget.Toolbar
+        <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -19,11 +19,11 @@
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        </android.support.v7.widget.Toolbar>
+        </androidx.appcompat.widget.Toolbar>
 
-    </android.support.design.widget.AppBarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/view_sgv"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -56,7 +56,8 @@
             app:layout_constraintEnd_toStartOf="@+id/textview_units"
             app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textview_bg_time" />
+            app:layout_constraintTop_toBottomOf="@+id/textview_bg_time"
+            android:gravity="center_horizontal" />
 
         <info.nightscout.android.utils.IconicsAppCompatTextView
             android:id="@+id/textview_trend"
@@ -94,9 +95,9 @@
             app:layout_constraintStart_toStartOf="@+id/textview_bg_time"
             app:layout_constraintTop_toBottomOf="@+id/textview_bg" />
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -112,9 +113,9 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <android.support.design.widget.CoordinatorLayout
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:saveEnabled="false"
         android:layout_width="match_parent"
@@ -128,7 +129,7 @@
             app:rrvLayoutType="LinearLayout"
             app:rrvSwipeToDelete="false" />
 
-        <android.support.design.widget.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:saveEnabled="false"
             android:id="@+id/fab_log_current"
             android:layout_width="wrap_content"
@@ -140,7 +141,7 @@
             app:backgroundTint="#40000000"
             app:fabSize="mini" />
 
-        <android.support.design.widget.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:saveEnabled="false"
             android:id="@+id/fab_log_search"
             android:layout_width="wrap_content"
@@ -152,6 +153,6 @@
             app:backgroundTint="#40000000"
             app:fabSize="mini" />
 
-    </android.support.design.widget.CoordinatorLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 </LinearLayout>
