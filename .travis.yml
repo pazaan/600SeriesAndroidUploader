@@ -1,4 +1,5 @@
 language: android
+dist: trusty
 jdk: oraclejdk8
 sudo: required
 
@@ -54,8 +55,8 @@ before_install:
   - yes | sdkmanager --update
 
 before_script:
-  - echo no | avdmanager create avd --force -n test -k "system-images;android-15;google_apis;armeabi-v7a"
-  - "$ANDROID_HOME/tools/emulator -avd test -no-audio -no-window &"
+  - echo no | android create avd --force -n test -t android-15 --abi armeabi-v7a -c 100M
+  - emulator -avd test -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
 
