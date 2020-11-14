@@ -51,9 +51,7 @@ before_install:
   - yes | sdkmanager "build-tools;29.0.2"
   - yes | sdkmanager "system-images;android-15;google_apis;armeabi-v7a"
   - sdkmanager --list
-  - sdkmanager --version
   - yes | sdkmanager --update
-  - yes | sdkmanager --licenses
 
 before_script:
   - echo no | avdmanager create avd --force -n test -k "system-images;android-15;google_apis;armeabi-v7a"
