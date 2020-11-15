@@ -1,7 +1,7 @@
 {
   "latestVersion": "0.7.2",
   "latestVersionCode": "14",
-  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/tag/v0.7.2",
+  "url": "https://github.com/pazaan/600SeriesAndroidUploader/releases/download/v0.7.2/600-series-ns-uploader.apk",
   "releaseNotes": [
     "- Change app title to avoid confusion when supporting users",
     "- Upgrade libraries"
