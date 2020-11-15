@@ -3,7 +3,7 @@ package info.nightscout.android.medtronic;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.DynamicDrawableSpan;

@@ -1,6 +1,5 @@
 package info.nightscout.android;
 
-import android.app.Application;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -9,8 +8,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.bugfender.sdk.Bugfender;
-import com.crashlytics.android.Crashlytics;
-import com.crashlytics.android.answers.Answers;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import info.nightscout.android.model.medtronicNg.PumpHistoryMarker;
 import info.nightscout.android.model.medtronicNg.PumpHistorySystem;
@@ -36,16 +34,16 @@ import info.nightscout.android.model.store.StatNightscout;
 import info.nightscout.android.model.store.StatPushover;
 import info.nightscout.android.model.store.UserLog;
 import info.nightscout.android.utils.FormatKit;
-import io.fabric.sdk.android.Fabric;
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.annotations.RealmModule;
 import uk.co.chrisjenx.calligraphy.CalligraphyConfig;
+import androidx.multidex.MultiDexApplication;
 
 /**
  * Created by lgoedhart on 9/06/2016.
  */
-public class UploaderApplication extends Application {
+public class UploaderApplication extends MultiDexApplication {
     private static final String TAG = UploaderApplication.class.getSimpleName();
 
     private static RealmConfiguration storeConfiguration;
@@ -75,10 +73,7 @@ public class UploaderApplication extends Application {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
                 if (prefs.getBoolean(getString(R.string.key_dbgCrashlytics), getResources().getBoolean(R.bool.default_dbgCrashlytics))) {
-                    Fabric.with(this, new Crashlytics());
-                }
-                if (prefs.getBoolean(getString(R.string.key_dbgAnswers), getResources().getBoolean(R.bool.default_dbgAnswers))) {
-                    Fabric.with(this, new Answers(), new Crashlytics());
+                    FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true);
                 }
 
                 if (prefs.getBoolean(getString(R.string.key_dbgRemoteLogcat), getResources().getBoolean(R.bool.default_dbgRemoteLogcat))) {
@@ -93,24 +88,28 @@ public class UploaderApplication extends Application {
         Realm.init(this);
 
         RealmConfiguration realmConfiguration = new RealmConfiguration.Builder()
+                .allowWritesOnUiThread(true)
                 .modules(new MainModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
         Realm.setDefaultConfiguration(realmConfiguration);
 
         storeConfiguration = new RealmConfiguration.Builder()
+                .allowWritesOnUiThread(true)
                 .name("store.realm")
                 .modules(new StoreModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
 
         userLogConfiguration = new RealmConfiguration.Builder()
+                .allowWritesOnUiThread(true)
                 .name("userlog.realm")
                 .modules(new UserLogModule())
                 .deleteRealmIfMigrationNeeded()
                 .build();
 
         historyConfiguration = new RealmConfiguration.Builder()
+                .allowWritesOnUiThread(true)
                 .name("history.realm")
                 .modules(new HistoryModule())
                 .deleteRealmIfMigrationNeeded()

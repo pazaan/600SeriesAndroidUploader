@@ -1,4 +1,5 @@
 language: android
+dist: trusty
 jdk: oraclejdk8
 sudo: required
 
@@ -14,9 +15,9 @@ cache:
 
 env:
   global:
-    - EMULATOR_API_LEVEL=15
-    - ANDROID_API_LEVEL=28
-    - ANDROID_BUILD_TOOLS_VERSION=28.0.3
+    - EMULATOR_API_LEVEL=16
+    - ANDROID_API_LEVEL=29
+    - ANDROID_BUILD_TOOLS_VERSION=29.0.2
     - ANDROID_ABI=armeabi-v7a
     - ADB_INSTALL_TIMEOUT=8
 
@@ -39,22 +40,22 @@ android:
 before_install:
   - openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
     -in keystore.jks.enc -out keystore.jks -d
-  - openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
-    -in fabric.properties.enc -out app/fabric.properties -d
+  - gpg --quiet --batch --yes --decrypt --passphrase="$GPG_ENCRYPTION_KEY" --output
+    app/google-services.json app/google-services.json.gpg
   - chmod +x gradlew
   - touch $HOME/.android/repositories.cfg
   - yes | sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout-solver;1.0.2"
-  - yes | sdkmanager "platforms;android-28"
-  - yes | sdkmanager "platforms;android-15"
-  - yes | sdkmanager "build-tools;28.0.3"
+  - yes | sdkmanager "platforms;android-29"
+  - yes | sdkmanager "platforms;android-16"
+  - yes | sdkmanager "build-tools;29.0.2"
   - yes | sdkmanager "system-images;android-15;google_apis;armeabi-v7a"
   - sdkmanager --list
   - yes | sdkmanager --update
-  - yes | sdkmanager --licenses
 
 before_script:
-  - echo no | avdmanager create avd --force -n test -k "system-images;android-15;google_apis;armeabi-v7a"
-  - "$ANDROID_HOME/tools/emulator -avd test -no-audio -no-window &"
+  - android list targets
+  - echo no | android create avd --force -n test -t android-16 --abi armeabi-v7a -c 100M
+  - emulator -avd test -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
 
@@ -65,16 +66,13 @@ before_deploy:
   - mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/600-series-ns-uploader.apk
 
 deploy:
-  skip_cleanup: true
+  edge: true # opt into dpl v2
   provider: releases
-  api_key:
-    secure: s9II6aXk4RBKz4tSEs9ObRTJQKuw2Kg5brJ8HZCs5zWGL7LbN8IEHRpLJb79wm2DfCoonIj5xdNPFVtBN9GPbAGzxmthaeWmQjyB05s0VkUScYGfufSIi7DgRqvRxvBmq7o4WyNCZgZLvFSMUnZ3L9Ay+X7Qrl62fZkMgjlKybApceGRr5eIoEcrDhGz4+Lf5ABBZSXUP0+YlPZ9SHUANhqeWRSSmzOEBM9Mw8mlmJKRvfBu8i946RoousEOLh1y1+Qxdaw6hn2Ng6v8iTMJdAt66dk9VHz9B05AXz6wm8Q3RuVtMkoawJLKHTkIXM06Tl8HzOt0e68ojkDNWSmSgGPEAY157TRCQJXAFHkZuo3mQrgI+heHMj+nfMNaHpunl13stRCUj0OLsmziCVI/llvcSWPcRcibjg1J02JvIKIZOjv8aCUjMIYBif7U2MdHKklElvxhFYGwBTorg6urPu7t7ljy7r6bKm2Jn5l4/6IOXBzEw2i/fwhnumz/LDAvQB1WWGQkAIGGQvFK0x54dafAAK6ykx1y1Myw0mBf/Lp38Cdkuw9jOaeuf/kM+ih3mZzaCPHNklzmoPWnLSSLjj2ZUH/1BgEcSjmvcf242dmxnGeWCNHTfZgn6dDj6nJ6Db6Pcvckyc5+NuxntZvdAOInKECgIlN88E5xk0IEqzY=
+  prerelease: true
   file: app/build/outputs/apk/release/600-series-ns-uploader.apk
   on:
     repo: pazaan/600SeriesAndroidUploader
     tags: true
-    # Octokit options
-    prerelease: true
 
 notifications:
   webhooks:

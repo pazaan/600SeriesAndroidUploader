@@ -18,12 +18,12 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.view.menu.MenuView;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
+import androidx.annotation.NonNull;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.menu.MenuView;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.Toolbar;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -47,6 +47,7 @@ import android.widget.Toast;
 
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.OnDataPointTapListener;
@@ -123,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private UserLogDisplay userLogDisplay;
     private AppUpdater appUpdater;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -135,6 +137,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
+        if (mPrefs.getBoolean(getString(R.string.key_dbgAnswers), getResources().getBoolean(R.bool.default_dbgAnswers))) {
+            mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        }
 
         final boolean versionChanged = !mPrefs.getString("versionName", "n/a").equals(getString(R.string.versionName));
         final long now = System.currentTimeMillis();
@@ -231,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             setSupportActionBar(toolbar);
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             getSupportActionBar().setElevation(0);
-            getSupportActionBar().setTitle("Nightscout");
+            getSupportActionBar().setTitle("600 Series Uploader");
         }
 
         final PrimaryDrawerItem itemSettings = new PrimaryDrawerItem()
