@@ -1,6 +1,5 @@
 .gradle
 build
-fabric.properties
 local.properties
 .idea
 /app/app.iml

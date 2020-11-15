@@ -29,6 +29,10 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
+
         <activity
             android:name=".medtronic.MainActivity"
             android:icon="@drawable/ic_launcher"

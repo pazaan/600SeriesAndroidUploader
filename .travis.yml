@@ -40,8 +40,6 @@ android:
 before_install:
   - openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
     -in keystore.jks.enc -out keystore.jks -d
-  - openssl aes-256-cbc -K $encrypted_c75769befc95_key -iv $encrypted_c75769befc95_iv
-    -in fabric.properties.enc -out app/fabric.properties -d
   - gpg --quiet --batch --yes --decrypt --passphrase="$GPG_ENCRYPTION_KEY" --output
     app/google-services.json app/google-services.json.gpg
   - chmod +x gradlew

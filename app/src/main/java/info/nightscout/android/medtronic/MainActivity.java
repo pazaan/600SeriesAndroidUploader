@@ -47,6 +47,7 @@ import android.widget.Toast;
 
 import com.github.javiersantos.appupdater.AppUpdater;
 import com.github.javiersantos.appupdater.enums.UpdateFrom;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.OnDataPointTapListener;
@@ -123,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
     private UserLogDisplay userLogDisplay;
     private AppUpdater appUpdater;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -135,6 +137,10 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         mPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
+        if (mPrefs.getBoolean(getString(R.string.key_dbgAnswers), getResources().getBoolean(R.bool.default_dbgAnswers))) {
+            mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        }
 
         final boolean versionChanged = !mPrefs.getString("versionName", "n/a").equals(getString(R.string.versionName));
         final long now = System.currentTimeMillis();

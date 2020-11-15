@@ -1,6 +1,5 @@
 package info.nightscout.android;
 
-import android.app.Application;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -9,7 +8,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.bugfender.sdk.Bugfender;
-import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import info.nightscout.android.model.medtronicNg.PumpHistoryMarker;
 import info.nightscout.android.model.medtronicNg.PumpHistorySystem;
@@ -73,9 +72,9 @@ public class UploaderApplication extends MultiDexApplication {
             try {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
-//                if (prefs.getBoolean(getString(R.string.key_dbgCrashlytics), getResources().getBoolean(R.bool.default_dbgCrashlytics))) {
-//                    Fabric.with(this, new Crashlytics());
-//                }
+                if (prefs.getBoolean(getString(R.string.key_dbgCrashlytics), getResources().getBoolean(R.bool.default_dbgCrashlytics))) {
+                    FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true);
+                }
 
                 if (prefs.getBoolean(getString(R.string.key_dbgRemoteLogcat), getResources().getBoolean(R.bool.default_dbgRemoteLogcat))) {
                     Bugfender.init(this, BuildConfig.BUGFENDER_API_KEY, BuildConfig.DEBUG);
