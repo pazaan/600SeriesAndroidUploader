@@ -370,6 +370,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         updateChart(null, now);
 
+        mChart.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                Log.d(TAG, "onLayoutChange called");
+                refreshDisplayChart();
+            }
+        });
+
+        // allow user to change chart period by swiping left/right and zoom level with long click
         mChart.setOnTouchListener(new OnSwipeTouchListener(mContext)
         {
             @Override
@@ -406,14 +415,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
 
         });
 
-        mChart.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-            @Override
-            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                Log.d(TAG, "onLayoutChange called");
-                refreshDisplayChart();
-            }
-        });
-
+        // allow user to reset chart to current time period by tapping the sgv area
         findViewById(R.id.view_sgv).setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -424,10 +426,36 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             }
         });
 
+        // allow user to change chart visibility by tapping top toolbar
+        View tb = findViewById(R.id.toolbar);
+        tb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                View log = findViewById(R.id.log_section);
+                View chart = findViewById(R.id.chart_section);
+                if (landscape) {
+                    if (log.getVisibility() == View.VISIBLE) {
+                        log.setVisibility(View.GONE);
+                        chart.setVisibility(View.VISIBLE);
+                    } else {
+                        log.setVisibility(View.VISIBLE);
+                        chart.setVisibility(View.GONE);
+                    }
+                } else {
+                    if (chart.getVisibility() == View.VISIBLE) {
+                        log.setVisibility(View.VISIBLE);
+                        chart.setVisibility(View.GONE);
+                    } else {
+                        log.setVisibility(View.VISIBLE);
+                        chart.setVisibility(View.VISIBLE);
+                    }
+                }
+            }
+        });
+
         setScreenSleepMode();
 
-        if (!landscape)
-            userLogDisplay = new UserLogDisplay(mContext);
+        userLogDisplay = new UserLogDisplay(mContext);
     }
 
     private void setScreenSleepMode() {
@@ -1194,7 +1222,7 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
         int chartWidth = mChart.getWidth();
         if (chartWidth > 0) {
             float xdpi = getResources().getDisplayMetrics().xdpi;
-            boolean change = chartWidth / xdpi > 3;
+            boolean change = chartWidth / xdpi > 3.2;
             if (change != chartLargeMode) {
                 Log.d(TAG, String.format("Chart large mode changed from %s to %s chartWidth = %s xdpi = %s",
                         chartLargeMode, change, chartWidth, xdpi));
