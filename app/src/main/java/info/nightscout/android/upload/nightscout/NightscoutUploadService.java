@@ -23,6 +23,7 @@ import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.model.store.StatNightscout;
 import io.realm.Realm;
 import io.realm.Sort;
+import io.realm.exceptions.RealmException;
 
 import static info.nightscout.android.history.PumpHistorySender.SENDER_ID_NIGHTSCOUT;
 import static info.nightscout.android.medtronic.service.MedtronicCnlService.DEVICE_HEADER;
@@ -88,54 +89,64 @@ public class NightscoutUploadService extends Service {
     private class Upload extends Thread {
         public void run() {
 
-            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 60000);
+            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 90000);
 
-            storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-            dataStore = storeRealm.where(DataStore.class).findFirst();
+            try {
 
-            statNightscout = (StatNightscout) Stats.getInstance().readRecord(StatNightscout.class);
-            statNightscout.incRun();
+                storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
+                dataStore = storeRealm.where(DataStore.class).findFirst();
 
-            pumpHistoryHandler = new PumpHistoryHandler(mContext);
+                statNightscout = (StatNightscout) Stats.getInstance().readRecord(StatNightscout.class);
+                statNightscout.incRun();
 
-            if (dataStore.isNightscoutUpload()) {
-                new NightscoutStatus(mContext).check();
+                pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
-                if (dataStore.isNightscoutAvailable()) {
-                    realm = Realm.getDefaultInstance();
+                if (dataStore.isNightscoutUpload()) {
+                    new NightscoutStatus(mContext).check();
 
-                    do {
-                        rerun = false;
+                    if (dataStore.isNightscoutAvailable()) {
+                        realm = Realm.getDefaultInstance();
 
-                        updateDB();
-                        uploadRecords();
+                        do {
+                            rerun = false;
 
-                        if (rerun) {
+                            updateDB();
+                            uploadRecords();
 
-                            acquireWakelock(wl, 60000);
+                            if (rerun) {
 
-                            if (nightscoutUploadProcess != null && !nightscoutUploadProcess.isCancel()) {
-                                // cooldown period
-                                try {
-                                    Thread.sleep(5000);
-                                } catch (InterruptedException ignored) {
+                                acquireWakelock(wl, 90000);
+
+                                if (nightscoutUploadProcess != null && !nightscoutUploadProcess.isCancel()) {
+                                    // cooldown period
+                                    try {
+                                        Thread.sleep(5000);
+                                    } catch (InterruptedException ignored) {
+                                    }
                                 }
+
+                                // refresh database
+                                realm.refresh();
+                                storeRealm.refresh();
+                                pumpHistoryHandler.refresh();
                             }
 
-                            // refresh database
-                            realm.refresh();
-                            storeRealm.refresh();
-                            pumpHistoryHandler.refresh();
-                        }
+                        } while (rerun && dataStore.isNightscoutUpload());
 
-                    } while (rerun && dataStore.isNightscoutUpload());
-
+                    } else {
+                        statNightscout.incSiteUnavailable();
+                        updateDB();
+                    }
                 } else {
-                    statNightscout.incSiteUnavailable();
                     updateDB();
                 }
-            } else {
-                updateDB();
+
+            } catch (RealmException e) {
+                Log.e(TAG, "Unexpected Realm Error! " + Log.getStackTraceString(e));
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_poll__unexpected_error, Log.getStackTraceString(e)));
+            } catch (Exception e) {
+                Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_poll__unexpected_error, Log.getStackTraceString(e)));
             }
 
             if (pumpHistoryHandler != null) pumpHistoryHandler.close();
@@ -160,163 +171,152 @@ public class NightscoutUploadService extends Service {
 
     private void uploadRecords() {
 
-        try {
+        PumpStatusEvent current = realm
+                .where(PumpStatusEvent.class)
+                .sort("eventDate", Sort.DESCENDING)
+                .findFirst();
+        String device = current != null
+                ? current.getDeviceName()
+                : DEVICE_HEADER;
 
-            PumpStatusEvent current = realm
-                    .where(PumpStatusEvent.class)
-                    .sort("eventDate", Sort.DESCENDING)
-                    .findFirst();
-            String device = current != null
-                    ? current.getDeviceName()
-                    : DEVICE_HEADER;
+        List<PumpStatusEvent> statusRecords = new ArrayList<>(
+                realm.where(PumpStatusEvent.class)
+                        .sort("eventDate", Sort.ASCENDING)
+                        .equalTo("uploaded", false)
+                        .findAll());
 
-            List<PumpStatusEvent> statusRecords = new ArrayList<>(
-                    realm.where(PumpStatusEvent.class)
-                            .sort("eventDate", Sort.ASCENDING)
-                            .equalTo("uploaded", false)
-                            .findAll());
+        if (statusRecords.size() > 20) {
+            statusRecords = statusRecords.subList(statusRecords.size() - 20, statusRecords.size());
+            Log.i(TAG, "Process limit reached for status records, another pass scheduled.");
+            rerun = true;
+        }
 
-            if (statusRecords.size() > 20) {
-                statusRecords = statusRecords.subList(statusRecords.size() - 20, statusRecords.size());
-                Log.i(TAG, "Process limit reached for status records, another pass scheduled.");
-                rerun = true;
-            }
+        Log.i(TAG, "Device status records to process for upload: " + statusRecords.size());
 
-            Log.i(TAG, "Device status records to process for upload: " + statusRecords.size());
+        List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ(SENDER_ID_NIGHTSCOUT);
 
-            List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ(SENDER_ID_NIGHTSCOUT);
+        // rerun the uploader if we hit the limiter for this pass
+        if (records.size() >= pumpHistoryHandler.getPumpHistorySender().getSender(SENDER_ID_NIGHTSCOUT).getLimiter()) {
+            Log.i(TAG, "Process limit reached for history records, another pass scheduled.");
+            rerun = true;
+        }
+        Log.i(TAG, "History records to process for upload: " + records.size());
 
-            // rerun the uploader if we hit the limiter for this pass
-            if (records.size() >= pumpHistoryHandler.getPumpHistorySender().getSender(SENDER_ID_NIGHTSCOUT).getLimiter()) {
-                Log.i(TAG, "Process limit reached for history records, another pass scheduled.");
-                rerun = true;
-            }
-            Log.i(TAG, "History records to process for upload: " + records.size());
+        // attach additional info to the nightscout pump status pill
+        PumpHistoryHandler.ExtraInfo extraInfo = pumpHistoryHandler.getExtraInfo();
 
-            // attach additional info to the nightscout pump status pill
-            PumpHistoryHandler.ExtraInfo extraInfo = pumpHistoryHandler.getExtraInfo();
+        int total = records.size() + statusRecords.size();
 
-            int total = records.size() + statusRecords.size();
+        if (total > 0) {
 
-            if (total > 0) {
+            try {
 
-                try {
+                long start = System.currentTimeMillis();
 
-                    long start = System.currentTimeMillis();
+                Log.i(TAG, String.format("Starting process of %s records for upload", total));
+                String urlSetting = dataStore.getNightscoutURL();
+                String secretSetting = dataStore.getNightscoutSECRET();
 
-                    Log.i(TAG, String.format("Starting process of %s records for upload", total));
-                    String urlSetting = dataStore.getNightscoutURL();
-                    String secretSetting = dataStore.getNightscoutSECRET();
+                int uploaderBatteryLevel = MasterService.getUploaderBatteryLevel();
 
-                    int uploaderBatteryLevel = MasterService.getUploaderBatteryLevel();
+                if (nightscoutUploadProcess == null)
+                    nightscoutUploadProcess = new NightscoutUploadProcess(urlSetting, secretSetting);
 
-                    if (nightscoutUploadProcess == null)
-                        nightscoutUploadProcess = new NightscoutUploadProcess(urlSetting, secretSetting);
+                nightscoutUploadProcess.doRESTUpload(
+                        pumpHistoryHandler.getPumpHistorySender(),
+                        storeRealm,
+                        dataStore,
+                        uploaderBatteryLevel,
+                        device,
+                        extraInfo,
+                        statusRecords,
+                        records);
 
-                    nightscoutUploadProcess.doRESTUpload(
-                            pumpHistoryHandler.getPumpHistorySender(),
-                            storeRealm,
-                            dataStore,
-                            uploaderBatteryLevel,
-                            device,
-                            extraInfo,
-                            statusRecords,
-                            records);
+                if (!nightscoutUploadProcess.isCancel()) {
+                    pumpHistoryHandler.setSenderRecordsACK(records, SENDER_ID_NIGHTSCOUT);
 
-                    if (!nightscoutUploadProcess.isCancel()) {
-                        pumpHistoryHandler.setSenderRecordsACK(records, SENDER_ID_NIGHTSCOUT);
-
-                        final List<PumpStatusEvent> finalStatusRecords = statusRecords;
-                        realm.executeTransaction(new Realm.Transaction() {
-                            @Override
-                            public void execute(@NonNull Realm realm) {
-                                for (PumpStatusEvent updateRecord : finalStatusRecords)
-                                    updateRecord.setUploaded(true);
-                            }
-                        });
-
-                        long timer = System.currentTimeMillis() - start;
-                        statNightscout.timer(timer);
-                        statNightscout.settotalRecords(statNightscout.getTotalRecords() + total);
-                        statNightscout.setTotalHttp(statNightscout.getTotalHttp() + nightscoutUploadProcess.getHttpWorkload());
-
-                        UserLogMessage.sendE(mContext, String.format("{id;%s}: {id;%s} %s http %s E:%s/%s/%s T:%s/%s/%s P:%s/%s/%s D:%s C:%s/%s [%sms]",
-                                R.string.ul_share__nightscout, R.string.ul_share__processed, total,
-                                nightscoutUploadProcess.getHttpWorkload(),
-                                nightscoutUploadProcess.getEntriesCheckCount(),
-                                nightscoutUploadProcess.getEntriesDeleteCount(),
-                                nightscoutUploadProcess.getEntriesBulkCount(),
-                                nightscoutUploadProcess.getTreatmentsCheckCount(),
-                                nightscoutUploadProcess.getTreatmentsDeleteCount(),
-                                nightscoutUploadProcess.getTreatmentsBulkCount(),
-                                nightscoutUploadProcess.getProfileCheckCount(),
-                                nightscoutUploadProcess.getProfileDeleteCount(),
-                                nightscoutUploadProcess.getProfileWriteCount(),
-                                nightscoutUploadProcess.getDeviceWriteCount(),
-                                nightscoutUploadProcess.getCheanupCheckCount(),
-                                nightscoutUploadProcess.getCheanupDeleteCount(),
-                                timer));
-
-                    } else {
-                        Log.i(TAG, "Uploading to Nightscout was canceled");
-                    }
-
-                } catch (NightscoutException e) {
-                    Log.e(TAG, "Nightscout Server Error:", e);
-                    statNightscout.incError();
-
-                    // Do not rerun, try again after the next poll
-                    rerun = false;
-
-                    storeRealm.executeTransaction(new Realm.Transaction() {
+                    final List<PumpStatusEvent> finalStatusRecords = statusRecords;
+                    realm.executeTransaction(new Realm.Transaction() {
                         @Override
                         public void execute(@NonNull Realm realm) {
-                            dataStore.setNightscoutAvailable(false);
+                            for (PumpStatusEvent updateRecord : finalStatusRecords)
+                                updateRecord.setUploaded(true);
                         }
                     });
 
-                    if (dataStore.isDbgEnableUploadErrors()) {
-                        UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
-                                String.format("{id;%s} %s",
-                                        R.string.ul_ns__warn_upload_unsuccessful,
-                                        e.getMessage()));
+                    long timer = System.currentTimeMillis() - start;
+                    statNightscout.timer(timer);
+                    statNightscout.settotalRecords(statNightscout.getTotalRecords() + total);
+                    statNightscout.setTotalHttp(statNightscout.getTotalHttp() + nightscoutUploadProcess.getHttpWorkload());
+
+                    UserLogMessage.sendE(mContext, String.format("{id;%s}: {id;%s} %s http %s E:%s/%s/%s T:%s/%s/%s P:%s/%s/%s D:%s C:%s/%s [%sms]",
+                            R.string.ul_share__nightscout, R.string.ul_share__processed, total,
+                            nightscoutUploadProcess.getHttpWorkload(),
+                            nightscoutUploadProcess.getEntriesCheckCount(),
+                            nightscoutUploadProcess.getEntriesDeleteCount(),
+                            nightscoutUploadProcess.getEntriesBulkCount(),
+                            nightscoutUploadProcess.getTreatmentsCheckCount(),
+                            nightscoutUploadProcess.getTreatmentsDeleteCount(),
+                            nightscoutUploadProcess.getTreatmentsBulkCount(),
+                            nightscoutUploadProcess.getProfileCheckCount(),
+                            nightscoutUploadProcess.getProfileDeleteCount(),
+                            nightscoutUploadProcess.getProfileWriteCount(),
+                            nightscoutUploadProcess.getDeviceWriteCount(),
+                            nightscoutUploadProcess.getCheanupCheckCount(),
+                            nightscoutUploadProcess.getCheanupDeleteCount(),
+                            timer));
+
+                } else {
+                    Log.i(TAG, "Uploading to Nightscout was canceled");
+                }
+
+            } catch (NightscoutException e) {
+                Log.e(TAG, "Nightscout Server Error:", e);
+                statNightscout.incError();
+
+                // Do not rerun, try again after the next poll
+                rerun = false;
+
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setNightscoutAvailable(false);
                     }
+                });
 
-                } catch (Exception e) {
-                    Log.e(TAG, "Exception while processing upload:", e);
-                    statNightscout.incError();
-
-                    // Do not rerun, try again after the next poll
-                    rerun = false;
-
-                    storeRealm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(@NonNull Realm realm) {
-                            dataStore.setNightscoutAvailable(false);
-                        }
-                    });
-
-                    String t[] = Log.getStackTraceString(e).split("at ");
-
+                if (dataStore.isDbgEnableUploadErrors()) {
                     UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
                             String.format("{id;%s} %s",
                                     R.string.ul_ns__warn_upload_unsuccessful,
-                                    t.length < 2 ? e.getMessage() : e.getMessage() + " >>> " +
-                                            t[1].replace("info.nightscout.android","").replace("\n", "")));
-                    UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, Log.getStackTraceString(e));
+                                    e.getMessage()));
                 }
 
-            } else {
-                Log.i(TAG, "No records have to be uploaded");
+            } catch (Exception e) {
+                Log.e(TAG, "Exception while processing upload:", e);
+                statNightscout.incError();
+
+                // Do not rerun, try again after the next poll
+                rerun = false;
+
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setNightscoutAvailable(false);
+                    }
+                });
+
+                String t[] = Log.getStackTraceString(e).split("at ");
+
+                UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN,
+                        String.format("{id;%s} %s",
+                                R.string.ul_ns__warn_upload_unsuccessful,
+                                t.length < 2 ? e.getMessage() : e.getMessage() + " >>> " +
+                                        t[1].replace("info.nightscout.android","").replace("\n", "")));
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, Log.getStackTraceString(e));
             }
 
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected Error! " + Log.getStackTraceString(e));
-            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} %s", R.string.ul_poll__unexpected_error, Log.getStackTraceString(e)));
-            if (pumpHistoryHandler != null) pumpHistoryHandler.close();
-            if (realm != null) realm.close();
-            if (storeRealm != null) storeRealm.close();
-            stopSelf();
+        } else {
+            Log.i(TAG, "No records have to be uploaded");
         }
     }
 

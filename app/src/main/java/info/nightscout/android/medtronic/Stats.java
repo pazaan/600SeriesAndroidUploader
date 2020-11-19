@@ -100,23 +100,23 @@ public class Stats {
         return LazyHolder.instance.open;
     }
 
-    public StatInterface readRecord(Class clazz) {
+    public synchronized StatInterface readRecord(Class clazz) {
         return readRecords(new Class[]{clazz}, sdfDateToKey.format(System.currentTimeMillis()), true)[0];
     }
 
-    public StatInterface readRecord(Class clazz, boolean isWrite) {
+    public synchronized StatInterface readRecord(Class clazz, boolean isWrite) {
         return readRecords(new Class[]{clazz}, sdfDateToKey.format(System.currentTimeMillis()), isWrite)[0];
     }
 
-    public StatInterface readRecord(Class clazz, String key, boolean isWrite) {
+    public synchronized StatInterface readRecord(Class clazz, String key, boolean isWrite) {
         return readRecords(new Class[]{clazz}, key, isWrite)[0];
     }
 
-    public StatInterface[] readRecords(Class[] classes) {
+    public synchronized StatInterface[] readRecords(Class[] classes) {
         return readRecords(classes, sdfDateToKey.format(System.currentTimeMillis()), true);
     }
 
-    public StatInterface[] readRecords(Class[] classes, String key, boolean isWrite) {
+    public synchronized StatInterface[] readRecords(Class[] classes, String key, boolean isWrite) {
         Realm storeRealm = null;
         StatInterface[] loaded = new StatInterface[classes.length];
 
@@ -164,7 +164,7 @@ public class Stats {
         return loaded;
     }
 
-    private void writeRecords() {
+    private synchronized void writeRecords() {
         if (loadedRecords != null && loadedRecords.size() > 0) {
             final Realm storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
 
@@ -191,11 +191,11 @@ public class Stats {
         }
     }
 
-    public String toString(Class clazz) {
+    public synchronized String toString(Class clazz) {
         return toString(new Class[]{clazz});
     }
 
-    public String toString(Class[] classes) {
+    public synchronized String toString(Class[] classes) {
         StringBuilder sb = new StringBuilder();
         StatInterface[] loaded = readRecords(classes, sdfDateToKey.format(System.currentTimeMillis()), false);
         for (StatInterface record : loaded) {
@@ -205,7 +205,7 @@ public class Stats {
         return sb.toString();
     }
 
-    public static void stale() {
+    public synchronized static void stale() {
         if (LazyHolder.instance.open > 0) Log.w(TAG, "stale called while stats are open [open=" + LazyHolder.instance.open + "]");
 
         long now = System.currentTimeMillis();
@@ -244,11 +244,11 @@ public class Stats {
         storeRealm.close();
     }
 
-    public static String report(Date date) {
+    public synchronized static String report(Date date) {
         return report(sdfDateToKey.format(date));
     }
 
-    public static String report(String key) {
+    public synchronized static String report(String key) {
         if (LazyHolder.instance.open > 0) Log.w(TAG, "report called while stats are open [open=" + LazyHolder.instance.open + "]");
 
         StringBuilder sb = new StringBuilder();

@@ -332,7 +332,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         public void run() {
             Log.d(TAG, "readPump called");
 
-            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 60000);
+            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 90000);
 
             sendBroadcast(new Intent(MasterService.Constants.ACTION_CNL_COMMS_ACTIVE));
 

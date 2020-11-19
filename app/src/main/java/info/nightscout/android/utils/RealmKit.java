@@ -10,6 +10,7 @@ import java.util.Date;
 import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.medtronic.UserLogMessage;
 import io.realm.Realm;
+import io.realm.exceptions.RealmError;
 
 public class RealmKit {
     private static final String TAG = RealmKit.class.getSimpleName();
@@ -63,6 +64,8 @@ public class RealmKit {
                         "Realm: compacted" + sb.toString());
             }
 
+        } catch (RealmError e) {
+            Log.e(TAG, "Error trying to compact realm" + Log.getStackTraceString(e));
         } catch (Exception e) {
             Log.e(TAG, "Error trying to compact realm" + Log.getStackTraceString(e));
         }
