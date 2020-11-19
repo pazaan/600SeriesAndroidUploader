@@ -559,6 +559,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                         if (e.getMessage().contains("NAK")) {
                             int nakcode = Integer.parseInt(e.getMessage().split("NAK")[1].split("[()]")[1].split(":")[1], 16);
                             nak = ContourNextLinkMessage.NAK.convert(nakcode);
+                            commsPairingError = 0;
                             Log.e(TAG, "Pump sent NAK code: " + nakcode + " name: " + nak.name());
                         }
 
