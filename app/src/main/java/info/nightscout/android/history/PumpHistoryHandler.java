@@ -700,6 +700,8 @@ public class PumpHistoryHandler {
         final String trend = pumpRecord.getCgmTrendString();
         final byte exception = pumpRecord.getCgmExceptionType();
 
+        final long now = System.currentTimeMillis();
+
         RealmResults<PumpHistoryCGM> cgmResults = historyRealm
                 .where(PumpHistoryCGM.class)
                 .sort("eventDate", Sort.DESCENDING)
@@ -748,7 +750,7 @@ public class PumpHistoryHandler {
 
                             // current sensor lifetime
                             Date sensorDate = miscResults.first().getEventDate();
-                            Date sensorDateEnd = new Date(System.currentTimeMillis());
+                            Date sensorDateEnd = new Date(now);
 
                             // current sensor calibrations
                             RealmResults<PumpHistoryBG> bgResults = historyRealm
@@ -779,7 +781,19 @@ public class PumpHistoryHandler {
 
                 // isig report needed?
                 if (dataStore.isSysEnableReportISIG()) {
-                    final long now = System.currentTimeMillis();
+
+                    if (sgv <= 75
+                            || !(PumpHistoryParser.CGM_EXCEPTION.SENSOR_OK.equals(exception)
+                            || PumpHistoryParser.CGM_EXCEPTION.NA.equals(exception))
+                    ) {
+                        storeRealm.executeTransaction(new Realm.Transaction() {
+                            @Override
+                            public void execute(@NonNull Realm realm) {
+                                dataStore.setReportIsigTimestamp(now);
+                            }
+                        });
+                    }
+
                     long min = dataStore.getReportIsigTimestamp() + dataStore.getSysReportISIGminimum() * 60000L;
 
                     long sensormin = 0;
@@ -792,22 +806,13 @@ public class PumpHistoryHandler {
                         sensormin = miscResults.first().getEventDate().getTime() + dataStore.getSysReportISIGnewsensor() * 60000L;
                     }
 
-                    if (sgv <= 75 || sensormin > now || min > now) {
+                    if (sensormin > now || min > now) {
                         backfill = true;
                         isig = true;
-
-                        if (!estimate) {
+                        if (!estimate)
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                                     String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__report_isig));
-                            if (sgv <= 75) {
-                                storeRealm.executeTransaction(new Realm.Transaction() {
-                                    @Override
-                                    public void execute(@NonNull Realm realm) {
-                                        dataStore.setReportIsigTimestamp(now);
-                                    }
-                                });
-                            }
-                        }
+
                     }
                 }
 
