@@ -713,10 +713,12 @@ public class MasterService extends Service {
 
     private void requestUsbPermission() {
         Log.d(TAG, "requestUsbPermission");
-        UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
-        UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID);
-        PendingIntent permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(Constants.ACTION_USB_PERMISSION), 0);
-        usbManager.requestPermission(cnlDevice, permissionIntent);
+        if (checkUsbDevice()) {
+            UsbManager usbManager = (UsbManager) this.getSystemService(Context.USB_SERVICE);
+            UsbDevice cnlDevice = UsbHidDriver.getUsbDevice(usbManager, MedtronicCnlService.USB_VID, MedtronicCnlService.USB_PID);
+            PendingIntent permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(Constants.ACTION_USB_PERMISSION), 0);
+            usbManager.requestPermission(cnlDevice, permissionIntent);
+        }
     }
 
     private boolean checkUsbDevice() {
