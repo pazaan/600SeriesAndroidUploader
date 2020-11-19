@@ -539,7 +539,8 @@ public class NightscoutUploadProcess {
             else
                 cgmException = PumpHistoryParser.CGM_EXCEPTION.NA;
 
-            if (cgmException != PumpHistoryParser.CGM_EXCEPTION.NA) {
+            if (cgmException != PumpHistoryParser.CGM_EXCEPTION.NA
+                    && cgmException != PumpHistoryParser.CGM_EXCEPTION.SENSOR_OK) {
                 sb.append(sb.length() == 0 ? "" : " ");
                 sb.append(shorten ? cgmException.abbriviation() : cgmException.string());
             }
