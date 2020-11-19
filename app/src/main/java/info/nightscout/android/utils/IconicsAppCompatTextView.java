@@ -5,7 +5,7 @@ import android.util.AttributeSet;
 
 import com.mikepenz.iconics.Iconics;
 
-public class IconicsAppCompatTextView extends android.support.v7.widget.AppCompatTextView {
+public class IconicsAppCompatTextView extends androidx.appcompat.widget.AppCompatTextView {
 
     public IconicsAppCompatTextView(Context context) {
         super(context);

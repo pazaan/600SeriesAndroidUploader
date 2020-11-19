@@ -5,7 +5,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
 import java.math.RoundingMode;
@@ -27,7 +27,7 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-import static android.support.v4.app.NotificationCompat.VISIBILITY_PUBLIC;
+import static androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC;
 import static info.nightscout.android.medtronic.service.MasterService.SERVICE_NOTIFICATION_ID;
 
 /**
