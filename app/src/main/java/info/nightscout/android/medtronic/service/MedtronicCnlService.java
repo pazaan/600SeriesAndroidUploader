@@ -1,8 +1,10 @@
 package info.nightscout.android.medtronic.service;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbEndpoint;
@@ -126,6 +128,31 @@ public class MedtronicCnlService extends Service {
     private int pumpClockError;
     private int pumpBatteryError;
 
+    private ShutdownReceiver shutdownReceiver;
+
+    private class ShutdownReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.w(TAG, "ShutdownReceiver called");
+            // device is shutting down, pull the emergency brake!
+            pullEmergencyBrake();
+        }
+    }
+
+    private void shutdownHandler(boolean mode) {
+        if (mode && shutdownReceiver == null) {
+                shutdownReceiver = new ShutdownReceiver();
+                IntentFilter intentFilter = new IntentFilter();
+                intentFilter.addAction(Intent.ACTION_SHUTDOWN);
+                intentFilter.addAction(Intent.ACTION_REBOOT);
+                registerReceiver(shutdownReceiver, intentFilter);
+        }
+        else if (!mode && shutdownReceiver != null) {
+            mContext.unregisterReceiver(shutdownReceiver);
+            shutdownReceiver = null;
+        }
+    }
+
     protected void sendMessage(String action) {
         try {
             Intent intent =
@@ -153,6 +180,7 @@ public class MedtronicCnlService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy called");
+        shutdownHandler(false);
 
         if (mHidDevice != null) {
             Log.i(TAG, "Closing serial device...");
@@ -198,6 +226,7 @@ public class MedtronicCnlService extends Service {
         String action = intent.getAction();
 
         if (MasterService.Constants.ACTION_CNL_READPUMP.equals(action) && readPump == null) {
+            shutdownHandler(true);
 
             readPump = new ReadPump();
             readPump.setPriority(Thread.NORM_PRIORITY);
@@ -207,12 +236,7 @@ public class MedtronicCnlService extends Service {
 
         } else if (MasterService.Constants.ACTION_CNL_CHECKSTATE.equals(action) && readPump == null) {
             ready();
-
-        } else if (MasterService.Constants.ACTION_CNL_SHUTDOWN.equals(action) && readPump != null) {
-            // device is shutting down, pull the emergency brake!
-            pullEmergencyBrake();
         }
-
         return START_NOT_STICKY;
     }
 
@@ -222,6 +246,7 @@ public class MedtronicCnlService extends Service {
     }
 
     private void pullEmergencyBrake() {
+        shutdownHandler(false);
 
         // less then ideal but we need to stop CNL comms asap before android kills us while protecting comms that must complete to avoid a CNL E86 error
 

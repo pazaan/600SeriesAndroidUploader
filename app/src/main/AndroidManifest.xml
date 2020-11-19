@@ -121,14 +121,6 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".medtronic.service.MedtronicCnlShutdownReceiver">
-            <intent-filter>
-                <category android:name="android.intent.category.DEFAULT" />
-                <action android:name="android.intent.action.ACTION_SHUTDOWN" />
-                <action android:name="android.intent.action.QUICKBOOT_POWEROFF" />
-            </intent-filter>
-        </receiver>
-
     </application>
 
 </manifest>

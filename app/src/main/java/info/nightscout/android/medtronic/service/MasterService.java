@@ -811,7 +811,6 @@ public class MasterService extends Service {
         public static final String ACTION_CNL_COMMS_FINISHED = "info.nightscout.android.medtronic.CNL_COMMS_FINISHED";
         public static final String ACTION_CNL_COMMS_READY = "info.nightscout.android.medtronic.CNL_COMMS_READY";
         public static final String ACTION_CNL_READPUMP = "info.nightscout.android.medtronic.CNL_READPUMP";
-        public static final String ACTION_CNL_SHUTDOWN = "info.nightscout.android.medtronic.CNL_SHUTDOWN";
         public static final String ACTION_CNL_CHECKSTATE = "info.nightscout.android.medtronic.CNL_STATE";
         public static final String ACTION_STOP_SERVICE = "info.nightscout.android.medtronic.STOP_SERVICE";
         public static final String ACTION_READ_NOW = "info.nightscout.android.medtronic.READ_NOW";
