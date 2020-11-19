@@ -459,14 +459,15 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private void setScreenSleepMode() {
-        if (mChart != null) {
+        View tb = findViewById(R.id.toolbar);
+        if (tb != null) {
             String sleep = mPrefs.getString("screenSleep", "1");
             if (sleep.equals("3")
                     || (sleep.equals("1") && landscape)
                     || (sleep.equals("2") && !landscape))
-                mChart.setKeepScreenOn(true);
+                tb.setKeepScreenOn(true);
             else
-                mChart.setKeepScreenOn(false);
+                tb.setKeepScreenOn(false);
         }
     }
 
