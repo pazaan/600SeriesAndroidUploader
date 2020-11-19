@@ -365,6 +365,7 @@ public class FormatKit {
     // The total size of an index entry, which can include structural overhead depending on the BSON type,
     // must be less than 1024 bytes.
     public String asMongoDBIndexKeySafe(String string) {
+        int max = 1010;
         int length = string.length();
 
         // json will escape "</div>" to "<\/div"
@@ -378,11 +379,11 @@ public class FormatKit {
 
         int utf8Length = utf8Length(json);
 
-        if (utf8Length < 1024) {
+        if (utf8Length <= max) {
             Log.d(TAG, String.format("MongoDBIndexKeySafe: length: %d json: %d utf-8: %s", length, jsonLength, utf8Length));
             return string;
         } else {
-            Log.e(TAG, String.format("MongoDBIndexKeySafe: length: %d json: %d utf-8: %s (max bytes >= 1024)", length, jsonLength, utf8Length));
+            Log.e(TAG, String.format("MongoDBIndexKeySafe: length: %d json: %d utf-8: %s (max bytes > %s)", length, jsonLength, utf8Length, max));
             return "";
         }
     }
