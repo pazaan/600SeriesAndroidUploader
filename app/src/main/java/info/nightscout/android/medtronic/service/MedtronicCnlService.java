@@ -97,6 +97,7 @@ public class MedtronicCnlService extends Service {
     private final static int ERROR_PUMPBATTERY_AT = 1;
     private final static int ERROR_PUMPCLOCK_AT = 3;
     private final static long ERROR_PUMPCLOCK_MS = 10 * 60 * 1000L;
+    private final static int ERROR_PAIRING_AT = 3;
 
     private Context mContext;
     private static UsbHidDriver mHidDevice;
@@ -119,6 +120,7 @@ public class MedtronicCnlService extends Service {
     private int commsError;
     private int commsConnectError;
     private int commsSignalError;
+    private int commsPairingError;
     private int commsCgmSuccess;
     private int pumpLostSensorError;
     private int pumpClockError;
@@ -257,6 +259,7 @@ public class MedtronicCnlService extends Service {
         commsError = dataStore.getCommsError();
         commsConnectError = dataStore.getCommsConnectError();
         commsSignalError = dataStore.getCommsSignalError();
+        commsPairingError = dataStore.getCommsPairingError();
         commsCgmSuccess = dataStore.getCommsCgmSuccess();
         pumpLostSensorError = dataStore.getPumpLostSensorError();
         pumpClockError = dataStore.getPumpClockError();
@@ -272,6 +275,7 @@ public class MedtronicCnlService extends Service {
                 dataStore.setCommsError(commsError);
                 dataStore.setCommsConnectError(commsConnectError);
                 dataStore.setCommsSignalError(commsSignalError);
+                dataStore.setCommsPairingError(commsPairingError);
                 dataStore.setCommsCgmSuccess(commsCgmSuccess);
                 dataStore.setPumpLostSensorError(pumpLostSensorError);
                 dataStore.setPumpClockError(pumpClockError);
@@ -467,7 +471,9 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                             pumpRecord.setDeviceName(deviceName);
 
+                            commsPairingError++;    // pump will ignore requests when there is a pairing issue
                             cnlReader.getPumpTime();
+                            commsPairingError = 0;
                             pumpClockDifference = cnlReader.getSessionClockDifference();
 
                             pumpRecord.setPumpMAC(pumpMAC);
@@ -930,6 +936,11 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         }
 
         if (commsError >= ERROR_COMMS_AT) {
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_poll__warn_multiple_comms_errors);
+            UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.ul_poll__help_multiple_comms_errors);
+        }
+
+        if (commsPairingError >= ERROR_PAIRING_AT) {
             UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, R.string.ul_poll__warn_multiple_comms_errors);
             UserLogMessage.send(mContext, UserLogMessage.TYPE.HELP, R.string.ul_poll__help_multiple_comms_errors);
         }

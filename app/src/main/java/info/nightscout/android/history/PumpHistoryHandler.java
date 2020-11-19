@@ -571,7 +571,14 @@ public class PumpHistoryHandler {
         return results.size() > 0;
     }
 
-    // Recency
+    public long profileHistoryRecency() {
+        RealmResults<PumpHistoryProfile> results = historyRealm
+                .where(PumpHistoryProfile.class)
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+        return results.size() == 0 ? -1 : System.currentTimeMillis() - results.first().getEventDate().getTime();
+    }
+
     public long pumpHistoryRecency() {
         RealmResults<HistorySegment> results = historyRealm
                 .where(HistorySegment.class)
@@ -1727,15 +1734,25 @@ public class PumpHistoryHandler {
         long last = historyRecency();
         boolean recent = last >= 0 && last <= 24 * 60 * 60000L;
 
-        if (dataStore.isRequestProfile()
-                || !isProfileInHistory()) {
-            readProfile(cnlReader);
-            storeRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(@NonNull Realm realm) {
-                    dataStore.setRequestProfile(false);
-                }
-            });
+        long lastPump = pumpHistoryRecency();
+        boolean recentPump = lastPump >= 0 && lastPump <= 24 * 60 * 60000L;
+
+        long lastProfile = profileHistoryRecency();
+        boolean recentProfile = lastProfile >= 0 && lastProfile <= 24 * 60 * 60000L;
+
+        // auto updates profile every 24 hours or on request
+        if (dataStore.isRequestProfile() || !recentProfile)
+        {
+            if (recentPump) {
+                readProfile(cnlReader);
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setRequestProfile(false);
+                    }
+                });
+            }
+            else limited = true;
         }
 
         long newest = cnlReader.getSessionDate().getTime();
@@ -1775,7 +1792,7 @@ public class PumpHistoryHandler {
                 if (dataStore.isSysEnablePumpHistory())
                     limited |= updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", R.string.ul_history__pump_history);
             }
-            else limited = dataStore.isSysEnablePumpHistory();
+            else limited |= dataStore.isSysEnablePumpHistory();
 
         } else {
 
@@ -1802,12 +1819,12 @@ public class PumpHistoryHandler {
                 if (dataStore.isSysEnableCgmHistory())
                     limited |= updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, false, "CGM history:", R.string.ul_history__cgm_history);
             }
-            else limited = dataStore.isSysEnableCgmHistory();
+            else limited |= dataStore.isSysEnableCgmHistory();
 
         }
 
         records();
-        return limited;
+        return limited; // true = limited history pull, more pull work needed to complete task
     }
 
     private boolean updateHistorySegments(MedtronicCnlReader cnlReader, int days, final long oldest, final long newest, final byte historyType, boolean pullHistory, String logTAG, int userlogTAG)

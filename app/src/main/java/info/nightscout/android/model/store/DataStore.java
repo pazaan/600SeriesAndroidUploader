@@ -51,6 +51,7 @@ public class DataStore extends RealmObject {
     private int commsError;
     private int commsConnectError;
     private int commsSignalError;
+    private int commsPairingError;
     private int commsCgmSuccess;
     private int pumpLostSensorError;
     private int pumpClockError;
@@ -869,6 +870,14 @@ public class DataStore extends RealmObject {
 
     public void setCommsSignalError(int commsSignalError) {
         this.commsSignalError = commsSignalError;
+    }
+
+    public int getCommsPairingError() {
+        return commsPairingError;
+    }
+
+    public void setCommsPairingError(int commsPairingError) {
+        this.commsPairingError = commsPairingError;
     }
 
     public int getCommsCgmSuccess() {
