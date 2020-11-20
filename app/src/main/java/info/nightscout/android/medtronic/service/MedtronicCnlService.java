@@ -1311,7 +1311,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 // sensor changed?
                 if (sensor) {
                     if (results.first().isCgmWarmUp()
-                            && (cgmresults.size() > 1 && !cgmresults.get(1).isCgmWarmUp())) {
+                            && !(cgmresults.size() > 1 && cgmresults.get(1).isCgmWarmUp())) {
                         Log.d(TAG, logTAG + "sensor changed");
                         UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                                 String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__sensor_changed));
