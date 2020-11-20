@@ -588,6 +588,15 @@ public class PumpHistoryHandler {
         return results.size() == 0 ? -1 : System.currentTimeMillis() - results.first().getToDate().getTime();
     }
 
+    public long cgmHistoryRecency() {
+        RealmResults<HistorySegment> results = historyRealm
+                .where(HistorySegment.class)
+                .equalTo("historyType", HISTORY_CGM)
+                .sort("toDate", Sort.DESCENDING)
+                .findAll();
+        return results.size() == 0 ? -1 : System.currentTimeMillis() - results.first().getToDate().getTime();
+    }
+
     public long historyRecency() {
         RealmResults<HistorySegment> results = historyRealm
                 .where(HistorySegment.class)
@@ -705,7 +714,30 @@ public class PumpHistoryHandler {
 
     public void cgm(final PumpStatusEvent pumpRecord) throws IntegrityException {
 
-        if (!pumpRecord.isCgmActive()) return;
+        if (!pumpRecord.isCgmActive()) {
+            long cgmRecency = System.currentTimeMillis() - dataStore.getCgmHistoryRecencyTimestamp();
+
+            // clear outdated isig report after 30 minutes
+            if (cgmRecency > 30 * 60000L && dataStore.isReportIsigAvailable()) {
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setReportIsigAvailable(false);
+                    }
+                });
+            }
+
+            // check cgm history for any outstanding data when uploader rarely used
+            if (cgmRecency > 12 * 60 * 60000L && dataStore.isSysEnableCgmHistory()) {
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setRequestCgmHistory(true);
+                    }
+                });
+            }
+            return;
+        }
 
         boolean backfill = false;
         boolean estimate = false;
@@ -1918,6 +1950,16 @@ public class PumpHistoryHandler {
                 @Override
                 public void execute(@NonNull Realm realm) {
                     historyRealm.createObject(HistorySegment.class).addSegment(new Date(newest), historyType);
+                }
+            });
+            // recency
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
+                    if (historyType == HISTORY_CGM)
+                        dataStore.setCgmHistoryRecencyTimestamp(newest);
+                    else
+                        dataStore.setPumpHistoryRecencyTimestamp(newest);
                 }
             });
         }

@@ -1019,8 +1019,8 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
         boolean historyNeeded = false;
         String logTAG = "historyNeeded: ";
 
-        int recency = Math.round((float) pumpHistoryHandler.pumpHistoryRecency() / 60000L);
-        if (recency == -1 || recency > 24 * 60) {
+        long recency = (System.currentTimeMillis() - dataStore.getPumpHistoryRecencyTimestamp()) / 60000L;
+        if (recency > 24 * 60) {
             Log.d(TAG, logTAG + "no recent data");
             UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                     String.format("{id;%s}: {id;%s}",
@@ -1028,7 +1028,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                             R.string.ul_history__no_recent_data));
             historyNeeded = true;
             statPoll.incHistoryReqRecency();
-        } else if (recency >= 3 * 60) {
+        } else if (recency >= 2 * 60) {
             Log.d(TAG, logTAG + "recency " + (recency < 120 ? recency + " minutes" : ">" + recency / 60 + " hours"));
             UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                     String.format("{id;%s}: {id;%s} %s{qid;%s;%s}",
@@ -1169,8 +1169,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                 }
 
                 // was temp ended before expected duration?
-                if (!results.first().isTempBasalActive() && results.get(1).isTempBasalActive()
-                        && Math.abs(tempMinsPre - ageMinutes) > 4) {
+                if (!results.first().isTempBasalActive() && results.get(1).isTempBasalActive()) {
                     Log.d(TAG, logTAG + "temp ended");
                     UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                             String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__temp_ended));
@@ -1198,23 +1197,19 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
 
                     // was dual ended before expected duration?
                     if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
-                        if (Math.abs(bolusMinsPre - ageMinutes) > 4) {
-                            Log.d(TAG, logTAG + "dual ended");
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
-                                    String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__dual_ended));
-                            historyNeeded = true;
-                            statPoll.incHistoryReqTreatment();
-                        }
+                        Log.d(TAG, logTAG + "dual ended");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__dual_ended));
+                        historyNeeded = true;
+                        statPoll.incHistoryReqTreatment();
                     }
                     // was square ended before expected duration?
                     else if (!results.first().isBolusingSquare() && results.get(1).isBolusingSquare() && !results.get(1).isBolusingNormal()) {
-                        if (Math.abs(bolusMinsPre - ageMinutes) > 4) {
-                            Log.d(TAG, logTAG + "square ended");
-                            UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
-                                    String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__square_ended));
-                            historyNeeded = true;
-                            statPoll.incHistoryReqTreatment();
-                        }
+                        Log.d(TAG, logTAG + "square ended");
+                        UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
+                                String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__square_ended));
+                        historyNeeded = true;
+                        statPoll.incHistoryReqTreatment();
                     }
                     // dual bolus normal part delivered?
                     else if (!results.first().isBolusingSquare() && !results.get(1).isBolusingDual() && results.first().isBolusingDual()) {
@@ -1234,8 +1229,7 @@ CNL: unpaired PUMP: unpaired UPLOADER: unregistered = "Invalid message received 
                     }
                 }
                 // bolus ended? or ended before expected duration?
-                else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()
-                        && Math.abs(bolusMinsPre - ageMinutes) > 4) {
+                else if (!results.first().isBolusingDual() && results.get(1).isBolusingDual()) {
                     Log.d(TAG, logTAG + "bolus ended");
                     UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                             String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__bolus_ended));

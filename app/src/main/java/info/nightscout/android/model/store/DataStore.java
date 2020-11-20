@@ -38,6 +38,9 @@ public class DataStore extends RealmObject {
     private boolean requestEstimate;
     private boolean requestIsig;
 
+    private long pumpHistoryRecencyTimestamp;
+    private long cgmHistoryRecencyTimestamp;
+
     private boolean reportIsigAvailable;
     private long reportIsigTimestamp;
 
@@ -2026,5 +2029,21 @@ public class DataStore extends RealmObject {
 
     public void setReportIsigAvailable(boolean reportIsigAvailable) {
         this.reportIsigAvailable = reportIsigAvailable;
+    }
+
+    public long getPumpHistoryRecencyTimestamp() {
+        return pumpHistoryRecencyTimestamp;
+    }
+
+    public void setPumpHistoryRecencyTimestamp(long pumpHistoryRecencyTimestamp) {
+        this.pumpHistoryRecencyTimestamp = pumpHistoryRecencyTimestamp;
+    }
+
+    public long getCgmHistoryRecencyTimestamp() {
+        return cgmHistoryRecencyTimestamp;
+    }
+
+    public void setCgmHistoryRecencyTimestamp(long cgmHistoryRecencyTimestamp) {
+        this.cgmHistoryRecencyTimestamp = cgmHistoryRecencyTimestamp;
     }
 }
