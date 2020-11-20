@@ -627,13 +627,25 @@ public class PumpHistoryHandler {
                         .findAll();
                 if (pumpStatusEvents.size() > 0) {
                     checkProfile = pumpStatusEvents.first().getActiveBasalPattern();
-                    if (checkProfile < 1 && checkProfile > 8)
-                        checkProfile = 1;
                 }
+                checkProfile = checkProfile < 1 ? 1 : checkProfile > 8 ? 1 : checkProfile;
             }
         }
-        final byte defaultProfile = checkProfile; // range 1 to 9
 
+        Log.i(TAG, String.format(
+                "readProfile: checkProfile = %s units = %s insulinDuration = %s insulinDelay = %s carbsPerHour = %s basalPatterns = %s carbRatios = %s sensitivity = %s targets = %s",
+                checkProfile,
+                units,
+                insulinDuration,
+                insulinDelay,
+                carbsPerHour,
+                basalPatterns.length,
+                carbRatios.length,
+                sensitivity.length,
+                targets.length
+        ));
+
+        final byte defaultProfile = checkProfile; // range 1 to 9
         historyRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(@NonNull Realm realm) {

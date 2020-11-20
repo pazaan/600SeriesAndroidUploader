@@ -91,7 +91,7 @@ public class PumpHistoryProfile extends RealmObject implements PumpHistoryInterf
         profile.setCreated_at(eventDate);
         profile.setStartDate(startdate);
         profile.setMills("" + startdate.getTime());
-        profile.setDefaultProfile(defaultProfile == 9 ? AUTOMODE : pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN,defaultProfile - 1));
+        profile.setDefaultProfile(defaultProfile == 9 ? AUTOMODE : pumpHistorySender.getList(senderID, PumpHistorySender.SENDEROPT.BASAL_PATTERN,defaultProfile < 1 ? 0 : defaultProfile > 8 ? 0 : defaultProfile - 1));
         profile.setUnits(units);
 
         Map<String, ProfileEndpoints.BasalProfile> basalProfileMap = new LinkedHashTreeMap<>();
