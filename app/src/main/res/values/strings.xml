@@ -6,6 +6,7 @@
     <!ENTITY percent "&#65130;">
     <!ENTITY newline "\n">
     <!ENTITY alert "⚠">
+    <!ENTITY silentalert "Ø">
     <!ENTITY delta "Δ">
     ]>
 
@@ -854,6 +855,7 @@
     <!-- Nightscout PUMP pill -->
 
     <string name="nightscout_pump_pill__active_alert" translatable="false" maxLength="1">&alert;</string>
+    <string name="nightscout_pump_pill__silent_alert" translatable="false" maxLength="1">&silentalert;</string>
     <string name="nightscout_pump_pill__temp" maxLength="1">T</string>
     <string name="nightscout_pump_pill__square" maxLength="1">S</string>
     <string name="nightscout_pump_pill__dual" maxLength="1">D</string>
