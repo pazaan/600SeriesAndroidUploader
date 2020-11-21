@@ -17,7 +17,6 @@
     <string translatable="false" name="key_mmolxl">mmolxl</string>
     <string translatable="false" name="key_mmolDecimals">mmolDecimals</string>
     <string translatable="false" name="key_pollInterval">pollInterval</string>
-    <string translatable="false" name="key_doublePollOnPumpAway">doublePollOnPumpAway</string>
     <string translatable="false" name="key_lowBatPollInterval">lowBatPollInterval</string>
 
     <string translatable="false" name="key_chartZoom">chartZoom</string>
@@ -273,7 +272,6 @@
     <bool name="default_mmolxl">false</bool>
     <bool name="default_mmolDecimals">false</bool>
     <string translatable="false" name="default_pollInterval">300000</string>
-    <bool name="default_doublePollOnPumpAway">false</bool>
     <string translatable="false" name="default_lowBatPollInterval">900000</string>
 
     <string translatable="false" name="default_chartZoom">3</string>

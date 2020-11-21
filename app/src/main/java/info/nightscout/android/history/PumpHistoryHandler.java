@@ -474,7 +474,7 @@ public class PumpHistoryHandler {
 
         public SystemEvent dismiss(PumpHistorySystem.STATUS status, final String senderID) {
             // dismiss pending unsent status events for selected sender
-            RealmResults<PumpHistorySystem> results = historyRealm
+            final RealmResults<PumpHistorySystem> results = historyRealm
                     .where(PumpHistorySystem.class)
                     .equalTo("status", status.value())
                     .contains("senderREQ", senderID)
@@ -482,22 +482,21 @@ public class PumpHistoryHandler {
             if (results.size() > 0) {
                 Log.d(TAG, String.format("SystemEvent dismiss: %s senderID = %s count = %s",
                         status.name(), senderID, results.size()));
-                for (PumpHistorySystem record : results) {
-                    final PumpHistorySystem r = record;
-                    historyRealm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(@NonNull Realm realm) {
-                            r.setSenderREQ(r.getSenderREQ().replace(senderID, ""));
+                historyRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        for (PumpHistorySystem record : results) {
+                            record.setSenderREQ(record.getSenderREQ().replace(senderID, ""));
                         }
-                    });
-                }
+                    }
+                });
             }
             return this;
         }
 
         public SystemEvent dismiss(PumpHistorySystem.STATUS status) {
             // dismiss pending unsent status events for all associated senders
-            RealmResults<PumpHistorySystem> results = historyRealm
+            final RealmResults<PumpHistorySystem> results = historyRealm
                     .where(PumpHistorySystem.class)
                     .equalTo("status", status.value())
                     .notEqualTo("senderREQ", "")
@@ -505,15 +504,14 @@ public class PumpHistoryHandler {
             if (results.size() > 0) {
                 Log.d(TAG, String.format("SystemEvent dismiss: %s count = %s",
                         status.name(), results.size()));
-                for (PumpHistorySystem record : results) {
-                    final PumpHistorySystem r = record;
-                    historyRealm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(@NonNull Realm realm) {
-                            r.setSenderREQ("");
+                historyRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        for (PumpHistorySystem record : results) {
+                            record.setSenderREQ("");
                         }
-                    });
-                }
+                    }
+                });
             }
             return this;
         }

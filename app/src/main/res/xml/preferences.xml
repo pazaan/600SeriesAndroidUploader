@@ -28,15 +28,6 @@
             android:entries="@array/poll_interval"
             android:entryValues="@array/poll_interval_values"
             android:summary="%s" />
-        <info.nightscout.android.utils.CustomSwitchPreference
-            android:title="@string/pref_monitor_poll_overdue_title"
-            android:disableDependentsState="false"
-            android:key="@string/key_doublePollOnPumpAway"
-            android:defaultValue="@bool/default_doublePollOnPumpAway"
-            android:summaryOff="@string/pref_monitor_poll_overdue_summary_off"
-            android:summaryOn="@string/pref_monitor_poll_overdue_summary_on"
-            android:switchTextOff="@string/off"
-            android:switchTextOn="@string/on" />
         <info.nightscout.android.utils.ListPreference
             android:title="@string/pref_monitor_low_battery_poll_interval_title"
             android:key="@string/key_lowBatPollInterval"

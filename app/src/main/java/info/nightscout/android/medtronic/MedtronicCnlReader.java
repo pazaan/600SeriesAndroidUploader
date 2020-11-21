@@ -188,15 +188,16 @@ public class MedtronicCnlReader {
         Log.d(TAG, String.format("Finished requestLinkKey. linkKey = '%s'", (Object) this.getPumpSession().getKey()));
     }
 
-    public byte negotiateChannel(byte lastRadioChannel) throws IOException, ChecksumException, TimeoutException, EncryptionException, UnexpectedMessageException {
+    public byte negotiateChannel(byte lastRadioChannel, boolean singleChannel)
+            throws IOException, ChecksumException, TimeoutException, EncryptionException, UnexpectedMessageException {
         ArrayList<Byte> radioChannels = new ArrayList<>(Arrays.asList(ArrayUtils.toObject(RADIO_CHANNELS)));
 
-        // retry strategy: last,chan0,chan1,last,chan2,chan3,last
         if (lastRadioChannel != 0x00) {
-            //noinspection RedundantCollectionOperation
-            radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
-            radioChannels.add(4, lastRadioChannel);
-            radioChannels.add(2, lastRadioChannel);
+            if (singleChannel) {
+                radioChannels.clear();
+            } else {
+                radioChannels.remove(radioChannels.indexOf(lastRadioChannel));
+            }
             radioChannels.add(0, lastRadioChannel);
         }
 

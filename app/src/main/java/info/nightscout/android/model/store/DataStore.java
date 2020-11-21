@@ -76,7 +76,6 @@ public class DataStore extends RealmObject {
     private boolean mmolxlDecimals;
     private long pollInterval;
     private long lowBatPollInterval;
-    private boolean doublePollOnPumpAway;
 
     private boolean enableXdripPlusUpload;
     private boolean xdripPlusUploadAvailable;
@@ -320,7 +319,6 @@ public class DataStore extends RealmObject {
         mmolxlDecimals = getBoolean(c, p, R.string.key_mmolDecimals, R.bool.default_mmolDecimals);
         pollInterval = getLong(c, p, R.string.key_pollInterval, R.string.default_pollInterval);
         lowBatPollInterval = getLong(c, p, R.string.key_lowBatPollInterval, R.string.default_lowBatPollInterval);
-        doublePollOnPumpAway = getBoolean(c, p, R.string.key_doublePollOnPumpAway, R.bool.default_doublePollOnPumpAway);
 
         nightscoutUpload = getBoolean(c, p, R.string.key_EnableRESTUpload, R.bool.default_EnableRESTUpload);
         nightscoutURL = getString(c, p, R.string.key_nightscoutURL, R.string.default_nightscoutURL);
@@ -953,10 +951,6 @@ public class DataStore extends RealmObject {
 
     public long getLowBatPollInterval() {
         return lowBatPollInterval;
-    }
-
-    public boolean isDoublePollOnPumpAway() {
-        return doublePollOnPumpAway;
     }
 
     public boolean isSysEnableCgmHistory() {
