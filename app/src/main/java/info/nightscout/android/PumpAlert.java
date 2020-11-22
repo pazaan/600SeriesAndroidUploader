@@ -101,6 +101,9 @@ public class PumpAlert {
 
         switch (code) {
 
+            case 3:
+                alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_3).format();
+                break;
             case 4:
                 alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_4).format();
                 break;
@@ -121,6 +124,9 @@ public class PumpAlert {
                 break;
             case 53:
                 alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_53).format();
+                break;
+            case 54:
+                alert(TYPE.PUMP, PRIORITY.EMERGENCY).id(R.string.alert_54).format();
                 break;
             case 58:
                 alert(TYPE.PUMP, PRIORITY.NORMAL).id(R.string.alert_58).format();
@@ -175,6 +181,12 @@ public class PumpAlert {
             case 777:
                 alert(TYPE.SENSOR, PRIORITY.HIGH).id(R.string.alert_777).format();
                 break;
+
+            // found as pump alert code #778, uses alert_99101 already localised and translated
+            case 778:
+                alert(TYPE.SENSOR, PRIORITY.HIGH).id(R.string.alert_99101).format();
+                break;
+
             case 780:
                 alert(TYPE.SENSOR, PRIORITY.LOW).id(R.string.alert_780).format();
                 break;
@@ -329,6 +341,11 @@ public class PumpAlert {
                 break;
             case 824:
                 alert(TYPE.AUTOMODE, PRIORITY.HIGH).id(R.string.alert_824).pattern(0).format();
+                break;
+
+            // found as pump alert code #825, uses alert_99202 already localised and translated
+            case 825:
+                alert(TYPE.AUTOMODE, PRIORITY.LOW).id(R.string.alert_99202).format();
                 break;
 
             // *** unknown ***

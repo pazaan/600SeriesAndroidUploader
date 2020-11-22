@@ -38,6 +38,9 @@ public class DataStore extends RealmObject {
     private boolean requestEstimate;
     private boolean requestIsig;
 
+    private long pumpHistoryRecencyTimestamp;
+    private long cgmHistoryRecencyTimestamp;
+
     private boolean reportIsigAvailable;
     private long reportIsigTimestamp;
 
@@ -51,6 +54,7 @@ public class DataStore extends RealmObject {
     private int commsError;
     private int commsConnectError;
     private int commsSignalError;
+    private int commsPairingError;
     private int commsCgmSuccess;
     private int pumpLostSensorError;
     private int pumpClockError;
@@ -72,7 +76,6 @@ public class DataStore extends RealmObject {
     private boolean mmolxlDecimals;
     private long pollInterval;
     private long lowBatPollInterval;
-    private boolean doublePollOnPumpAway;
 
     private boolean enableXdripPlusUpload;
     private boolean xdripPlusUploadAvailable;
@@ -316,7 +319,6 @@ public class DataStore extends RealmObject {
         mmolxlDecimals = getBoolean(c, p, R.string.key_mmolDecimals, R.bool.default_mmolDecimals);
         pollInterval = getLong(c, p, R.string.key_pollInterval, R.string.default_pollInterval);
         lowBatPollInterval = getLong(c, p, R.string.key_lowBatPollInterval, R.string.default_lowBatPollInterval);
-        doublePollOnPumpAway = getBoolean(c, p, R.string.key_doublePollOnPumpAway, R.bool.default_doublePollOnPumpAway);
 
         nightscoutUpload = getBoolean(c, p, R.string.key_EnableRESTUpload, R.bool.default_EnableRESTUpload);
         nightscoutURL = getString(c, p, R.string.key_nightscoutURL, R.string.default_nightscoutURL);
@@ -871,6 +873,14 @@ public class DataStore extends RealmObject {
         this.commsSignalError = commsSignalError;
     }
 
+    public int getCommsPairingError() {
+        return commsPairingError;
+    }
+
+    public void setCommsPairingError(int commsPairingError) {
+        this.commsPairingError = commsPairingError;
+    }
+
     public int getCommsCgmSuccess() {
         return commsCgmSuccess;
     }
@@ -941,10 +951,6 @@ public class DataStore extends RealmObject {
 
     public long getLowBatPollInterval() {
         return lowBatPollInterval;
-    }
-
-    public boolean isDoublePollOnPumpAway() {
-        return doublePollOnPumpAway;
     }
 
     public boolean isSysEnableCgmHistory() {
@@ -2017,5 +2023,21 @@ public class DataStore extends RealmObject {
 
     public void setReportIsigAvailable(boolean reportIsigAvailable) {
         this.reportIsigAvailable = reportIsigAvailable;
+    }
+
+    public long getPumpHistoryRecencyTimestamp() {
+        return pumpHistoryRecencyTimestamp;
+    }
+
+    public void setPumpHistoryRecencyTimestamp(long pumpHistoryRecencyTimestamp) {
+        this.pumpHistoryRecencyTimestamp = pumpHistoryRecencyTimestamp;
+    }
+
+    public long getCgmHistoryRecencyTimestamp() {
+        return cgmHistoryRecencyTimestamp;
+    }
+
+    public void setCgmHistoryRecencyTimestamp(long cgmHistoryRecencyTimestamp) {
+        this.cgmHistoryRecencyTimestamp = cgmHistoryRecencyTimestamp;
     }
 }

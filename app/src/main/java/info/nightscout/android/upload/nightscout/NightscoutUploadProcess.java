@@ -40,6 +40,7 @@ Entries - QUERY support, GET & POST & DELETE a single entry, POST & DELETE has b
 Treatments - QUERY support, GET & POST & DELETE a single treatment, POST has bulk support
 Profile - no QUERY support, GET returns all profile sets, can POST & DELETE a single profile set, POST does not support bulk upload
 
+info may be out of date for current nightscout server versions
 */
 
 public class NightscoutUploadProcess {
@@ -469,6 +470,12 @@ public class NightscoutUploadProcess {
         if (record.getAlert() > 0) {
             sb.append(FormatKit.getInstance().getString(R.string.nightscout_pump_pill__active_alert));
         }
+        if (record.getAlertSilenceMinutesRemaining() > 0) {
+            sb.append(sb.length() == 0 ? "" : " ");
+            sb.append(String.format("%s:%s",
+                    FormatKit.getInstance().getString(R.string.nightscout_pump_pill__silent_alert),
+                    formatMinutesAsShortHM(record.getAlertSilenceMinutesRemaining(), shorten)));
+        }
         if (record.isBolusingNormal()) {
             sb.append(sb.length() == 0 ? "" : " ");
             sb.append(info.length() > 5
@@ -522,12 +529,7 @@ public class NightscoutUploadProcess {
 
             if (record.getCalibrationDueMinutes() > 0) {
                 sb.append(sb.length() == 0 ? "" : " ");
-                sb.append(record.getCalibrationDueMinutes() < 100
-                        ? record.getCalibrationDueMinutes() + FormatKit.getInstance().getString(R.string.minute_m)
-                        : (shorten
-                        ? (record.getCalibrationDueMinutes() + 30) / 60 + FormatKit.getInstance().getString(R.string.hour_h)
-                        : record.getCalibrationDueMinutes() / 60 + FormatKit.getInstance().getString(R.string.hour_h)
-                        + record.getCalibrationDueMinutes() % 60 + FormatKit.getInstance().getString(R.string.minute_m)));
+                sb.append(formatMinutesAsShortHM(record.getCalibrationDueMinutes(), shorten));
             }
 
             PumpHistoryParser.CGM_EXCEPTION cgmException;
@@ -539,7 +541,8 @@ public class NightscoutUploadProcess {
             else
                 cgmException = PumpHistoryParser.CGM_EXCEPTION.NA;
 
-            if (cgmException != PumpHistoryParser.CGM_EXCEPTION.NA) {
+            if (cgmException != PumpHistoryParser.CGM_EXCEPTION.NA
+                    && cgmException != PumpHistoryParser.CGM_EXCEPTION.SENSOR_OK) {
                 sb.append(sb.length() == 0 ? "" : " ");
                 sb.append(shorten ? cgmException.abbriviation() : cgmException.string());
             }
@@ -560,6 +563,15 @@ public class NightscoutUploadProcess {
         }
 
         return sb.toString();
+    }
+
+    private String formatMinutesAsShortHM(int minutes, boolean shorten) {
+        return minutes < 100
+                ? minutes + FormatKit.getInstance().getString(R.string.minute_m)
+                : (shorten
+                ? (minutes + 30) / 60 + FormatKit.getInstance().getString(R.string.hour_h)
+                : minutes / 60 + FormatKit.getInstance().getString(R.string.hour_h)
+                + minutes % 60 + FormatKit.getInstance().getString(R.string.minute_m));
     }
 
     private void cleanupCheck() throws Exception {

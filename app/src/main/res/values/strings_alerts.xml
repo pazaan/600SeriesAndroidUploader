@@ -44,6 +44,7 @@
 
     <!-- taken from pump alarm history -->
 
+    <string name="alert_3" comment="pump alert (see your pump manual) format: heading message|extended message">Pump error 3|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
     <string name="alert_4" comment="pump alert (see your pump manual) format: heading message|extended message">Pump error 4|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
     <string name="alert_6" comment="pump alert (see your pump manual) format: heading message|extended message">Power loss|AA battery was removed for more than 10 min or power was lost. Select OK to re-enter time and date.</string>
     <string name="alert_7" comment="pump alert (see your pump manual) format: heading message|extended message">Insulin flow blocked|Check BG. Consider injection and testing ketones. Change reservoir and infusion set.</string>
@@ -51,6 +52,7 @@
     <string name="alert_11" comment="pump alert (see your pump manual) format: heading message|extended message">Replace battery now|Delivery stopped. Battery must be replaced to resume delivery.</string>
     <string name="alert_15" comment="pump alert (see your pump manual) format: heading message|extended message">Pump error 15|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
     <string name="alert_53" comment="pump alert (see your pump manual) format: heading message|extended message">Pump error 53|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
+    <string name="alert_54" comment="pump alert (see your pump manual) format: heading message|extended message">Pump error 54|Delivery stopped. Settings unchanged. Select OK to continue. See User Guide.</string>
     <string name="alert_58" comment="pump alert (see your pump manual) format: heading message|extended message">Battery Failed|Insert a new AA battery.</string>
     <string name="alert_61" comment="pump alert (see your pump manual) format: heading message|extended message">Stuck button|Button pressed for more than 3 minutes</string>
     <string name="alert_66" comment="pump alert (see your pump manual) format: heading message|extended message">No reservoir detected|Rewind before loading reservoir.</string>
@@ -128,6 +130,12 @@
     <string name="alert_832" comment="670G pump alert (see your pump manual) format: heading message|extended message">Cal required for Auto Mode|Enter a BG and calibrate sensor for Auto Mode</string>
     <string name="alert_833" comment="670G pump alert (see your pump manual) format: heading message|extended message">Bolus recommended|For %1$s entered, a correction bolus is recommended.</string>
 
+    <!-- found as pump alert code #825, uses alert_99202 already localised and translated -->
+    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</string>
+
+    <!-- found as pump alert code #778, uses alert_99101 already localised and translated -->
+    <string name="alert_99101" comment="pump alert (see your pump manual) format: heading message|extended message">Change sensor|Second calibration not accepted. Insert new sensor.</string>
+
     <!-- unqualified alerts -->
 
     <string name="alert_99001" comment="pump alert (see your pump manual) format: heading message|extended message">Auto Suspend|Insulin delivery suspended. No buttons pressed within time set in Auto Suspend.</string>
@@ -148,11 +156,9 @@
     <string name="alert_99024" comment="pump alert (see your pump manual) format: heading message|extended message">Resume Square bolus?|%1$s of %2$s delivered for %3$s hr. Resume delivery of %4$s for %5$s hr?</string>
     <string name="alert_99031" comment="pump alert (see your pump manual) format: heading message|extended message">Wrong key pressed|Try again</string>
 
-    <string name="alert_99101" comment="pump alert (see your pump manual) format: heading message|extended message">Change sensor|Second calibration not accepted. Insert new sensor.</string>
     <string name="alert_99102" comment="pump alert (see your pump manual) format: heading message|extended message">Transmitter battery depleted|Recharge transmitter now.</string>
 
     <string name="alert_99201" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|Current action canceled.</string>
-    <string name="alert_99202" comment="670G pump alert (see your pump manual) format: heading message|extended message">Auto Mode started|The following SmartGuard settings are now turned off: Suspend before low - Suspend on low</string>
     <string name="alert_99203" comment="670G pump alert (see your pump manual) format: heading message|extended message">High BG %1$s|Check infusion set. Check ketones. Monitor BG.</string>
 
 </resources>

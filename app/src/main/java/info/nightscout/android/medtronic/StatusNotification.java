@@ -312,6 +312,7 @@ public class StatusNotification {
 
             switch (cgmException) {
                 case NA:
+                case SENSOR_OK:
                     return String.format(
                             FormatKit.getInstance().getString(R.string.notification__CAL_remainingtime),
                             FormatKit.getInstance().formatMinutesAsHM(results.first().getCalibrationDueMinutes()));

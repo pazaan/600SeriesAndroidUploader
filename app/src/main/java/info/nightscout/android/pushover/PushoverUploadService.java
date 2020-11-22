@@ -92,7 +92,7 @@ public class PushoverUploadService extends Service {
     private class Upload extends Thread {
         public void run() {
 
-            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 60000);
+            PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 90000);
 
             storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
             dataStore = storeRealm.where(DataStore.class).findFirst();

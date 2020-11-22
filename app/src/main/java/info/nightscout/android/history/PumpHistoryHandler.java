@@ -474,7 +474,7 @@ public class PumpHistoryHandler {
 
         public SystemEvent dismiss(PumpHistorySystem.STATUS status, final String senderID) {
             // dismiss pending unsent status events for selected sender
-            RealmResults<PumpHistorySystem> results = historyRealm
+            final RealmResults<PumpHistorySystem> results = historyRealm
                     .where(PumpHistorySystem.class)
                     .equalTo("status", status.value())
                     .contains("senderREQ", senderID)
@@ -482,22 +482,21 @@ public class PumpHistoryHandler {
             if (results.size() > 0) {
                 Log.d(TAG, String.format("SystemEvent dismiss: %s senderID = %s count = %s",
                         status.name(), senderID, results.size()));
-                for (PumpHistorySystem record : results) {
-                    final PumpHistorySystem r = record;
-                    historyRealm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(@NonNull Realm realm) {
-                            r.setSenderREQ(r.getSenderREQ().replace(senderID, ""));
+                historyRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        for (PumpHistorySystem record : results) {
+                            record.setSenderREQ(record.getSenderREQ().replace(senderID, ""));
                         }
-                    });
-                }
+                    }
+                });
             }
             return this;
         }
 
         public SystemEvent dismiss(PumpHistorySystem.STATUS status) {
             // dismiss pending unsent status events for all associated senders
-            RealmResults<PumpHistorySystem> results = historyRealm
+            final RealmResults<PumpHistorySystem> results = historyRealm
                     .where(PumpHistorySystem.class)
                     .equalTo("status", status.value())
                     .notEqualTo("senderREQ", "")
@@ -505,15 +504,14 @@ public class PumpHistoryHandler {
             if (results.size() > 0) {
                 Log.d(TAG, String.format("SystemEvent dismiss: %s count = %s",
                         status.name(), results.size()));
-                for (PumpHistorySystem record : results) {
-                    final PumpHistorySystem r = record;
-                    historyRealm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(@NonNull Realm realm) {
-                            r.setSenderREQ("");
+                historyRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        for (PumpHistorySystem record : results) {
+                            record.setSenderREQ("");
                         }
-                    });
-                }
+                    }
+                });
             }
             return this;
         }
@@ -571,11 +569,27 @@ public class PumpHistoryHandler {
         return results.size() > 0;
     }
 
-    // Recency
+    public long profileHistoryRecency() {
+        RealmResults<PumpHistoryProfile> results = historyRealm
+                .where(PumpHistoryProfile.class)
+                .sort("eventDate", Sort.DESCENDING)
+                .findAll();
+        return results.size() == 0 ? -1 : System.currentTimeMillis() - results.first().getEventDate().getTime();
+    }
+
     public long pumpHistoryRecency() {
         RealmResults<HistorySegment> results = historyRealm
                 .where(HistorySegment.class)
                 .equalTo("historyType", HISTORY_PUMP)
+                .sort("toDate", Sort.DESCENDING)
+                .findAll();
+        return results.size() == 0 ? -1 : System.currentTimeMillis() - results.first().getToDate().getTime();
+    }
+
+    public long cgmHistoryRecency() {
+        RealmResults<HistorySegment> results = historyRealm
+                .where(HistorySegment.class)
+                .equalTo("historyType", HISTORY_CGM)
                 .sort("toDate", Sort.DESCENDING)
                 .findAll();
         return results.size() == 0 ? -1 : System.currentTimeMillis() - results.first().getToDate().getTime();
@@ -620,13 +634,25 @@ public class PumpHistoryHandler {
                         .findAll();
                 if (pumpStatusEvents.size() > 0) {
                     checkProfile = pumpStatusEvents.first().getActiveBasalPattern();
-                    if (checkProfile < 1 && checkProfile > 8)
-                        checkProfile = 1;
                 }
+                checkProfile = checkProfile < 1 ? 1 : checkProfile > 8 ? 1 : checkProfile;
             }
         }
-        final byte defaultProfile = checkProfile; // range 1 to 9
 
+        Log.i(TAG, String.format(
+                "readProfile: checkProfile = %s units = %s insulinDuration = %s insulinDelay = %s carbsPerHour = %s basalPatterns = %s carbRatios = %s sensitivity = %s targets = %s",
+                checkProfile,
+                units,
+                insulinDuration,
+                insulinDelay,
+                carbsPerHour,
+                basalPatterns.length,
+                carbRatios.length,
+                sensitivity.length,
+                targets.length
+        ));
+
+        final byte defaultProfile = checkProfile; // range 1 to 9
         historyRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(@NonNull Realm realm) {
@@ -686,7 +712,30 @@ public class PumpHistoryHandler {
 
     public void cgm(final PumpStatusEvent pumpRecord) throws IntegrityException {
 
-        if (!pumpRecord.isCgmActive()) return;
+        if (!pumpRecord.isCgmActive()) {
+            long cgmRecency = System.currentTimeMillis() - dataStore.getCgmHistoryRecencyTimestamp();
+
+            // clear outdated isig report after 30 minutes
+            if (cgmRecency > 30 * 60000L && dataStore.isReportIsigAvailable()) {
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setReportIsigAvailable(false);
+                    }
+                });
+            }
+
+            // check cgm history for any outstanding data when uploader rarely used
+            if (cgmRecency > 12 * 60 * 60000L && dataStore.isSysEnableCgmHistory()) {
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setRequestCgmHistory(true);
+                    }
+                });
+            }
+            return;
+        }
 
         boolean backfill = false;
         boolean estimate = false;
@@ -699,6 +748,8 @@ public class PumpHistoryHandler {
         final int sgv = pumpRecord.getSgv();
         final String trend = pumpRecord.getCgmTrendString();
         final byte exception = pumpRecord.getCgmExceptionType();
+
+        final long now = System.currentTimeMillis();
 
         RealmResults<PumpHistoryCGM> cgmResults = historyRealm
                 .where(PumpHistoryCGM.class)
@@ -748,7 +799,7 @@ public class PumpHistoryHandler {
 
                             // current sensor lifetime
                             Date sensorDate = miscResults.first().getEventDate();
-                            Date sensorDateEnd = new Date(System.currentTimeMillis());
+                            Date sensorDateEnd = new Date(now);
 
                             // current sensor calibrations
                             RealmResults<PumpHistoryBG> bgResults = historyRealm
@@ -779,7 +830,19 @@ public class PumpHistoryHandler {
 
                 // isig report needed?
                 if (dataStore.isSysEnableReportISIG()) {
-                    final long now = System.currentTimeMillis();
+
+                    if (sgv <= 75
+                            || !(PumpHistoryParser.CGM_EXCEPTION.SENSOR_OK.equals(exception)
+                            || PumpHistoryParser.CGM_EXCEPTION.NA.equals(exception))
+                    ) {
+                        storeRealm.executeTransaction(new Realm.Transaction() {
+                            @Override
+                            public void execute(@NonNull Realm realm) {
+                                dataStore.setReportIsigTimestamp(now);
+                            }
+                        });
+                    }
+
                     long min = dataStore.getReportIsigTimestamp() + dataStore.getSysReportISIGminimum() * 60000L;
 
                     long sensormin = 0;
@@ -792,22 +855,13 @@ public class PumpHistoryHandler {
                         sensormin = miscResults.first().getEventDate().getTime() + dataStore.getSysReportISIGnewsensor() * 60000L;
                     }
 
-                    if (sgv <= 75 || sensormin > now || min > now) {
+                    if (sensormin > now || min > now) {
                         backfill = true;
                         isig = true;
-
-                        if (!estimate) {
+                        if (!estimate)
                             UserLogMessage.send(mContext, UserLogMessage.TYPE.HISTORY,
                                     String.format("{id;%s}: {id;%s}", R.string.ul_history__history, R.string.ul_history__report_isig));
-                            if (sgv <= 75) {
-                                storeRealm.executeTransaction(new Realm.Transaction() {
-                                    @Override
-                                    public void execute(@NonNull Realm realm) {
-                                        dataStore.setReportIsigTimestamp(now);
-                                    }
-                                });
-                            }
-                        }
+
                     }
                 }
 
@@ -1722,15 +1776,25 @@ public class PumpHistoryHandler {
         long last = historyRecency();
         boolean recent = last >= 0 && last <= 24 * 60 * 60000L;
 
-        if (dataStore.isRequestProfile()
-                || !isProfileInHistory()) {
-            readProfile(cnlReader);
-            storeRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(@NonNull Realm realm) {
-                    dataStore.setRequestProfile(false);
-                }
-            });
+        long lastPump = pumpHistoryRecency();
+        boolean recentPump = lastPump >= 0 && lastPump <= 24 * 60 * 60000L;
+
+        long lastProfile = profileHistoryRecency();
+        boolean recentProfile = lastProfile >= 0 && lastProfile <= 24 * 60 * 60000L;
+
+        // auto updates profile every 24 hours or on request
+        if (dataStore.isRequestProfile() || !recentProfile)
+        {
+            if (recentPump) {
+                readProfile(cnlReader);
+                storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        dataStore.setRequestProfile(false);
+                    }
+                });
+            }
+            else limited = true;
         }
 
         long newest = cnlReader.getSessionDate().getTime();
@@ -1770,7 +1834,7 @@ public class PumpHistoryHandler {
                 if (dataStore.isSysEnablePumpHistory())
                     limited |= updateHistorySegments(cnlReader, dataStore.getSysPumpHistoryDays(), oldest, newest, HISTORY_PUMP, pullPUMP, "PUMP history:", R.string.ul_history__pump_history);
             }
-            else limited = dataStore.isSysEnablePumpHistory();
+            else limited |= dataStore.isSysEnablePumpHistory();
 
         } else {
 
@@ -1797,12 +1861,12 @@ public class PumpHistoryHandler {
                 if (dataStore.isSysEnableCgmHistory())
                     limited |= updateHistorySegments(cnlReader, dataStore.getSysCgmHistoryDays(), oldest, newest, HISTORY_CGM, false, "CGM history:", R.string.ul_history__cgm_history);
             }
-            else limited = dataStore.isSysEnableCgmHistory();
+            else limited |= dataStore.isSysEnableCgmHistory();
 
         }
 
         records();
-        return limited;
+        return limited; // true = limited history pull, more pull work needed to complete task
     }
 
     private boolean updateHistorySegments(MedtronicCnlReader cnlReader, int days, final long oldest, final long newest, final byte historyType, boolean pullHistory, String logTAG, int userlogTAG)
@@ -1884,6 +1948,16 @@ public class PumpHistoryHandler {
                 @Override
                 public void execute(@NonNull Realm realm) {
                     historyRealm.createObject(HistorySegment.class).addSegment(new Date(newest), historyType);
+                }
+            });
+            // recency
+            storeRealm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(@NonNull Realm realm) {
+                    if (historyType == HISTORY_CGM)
+                        dataStore.setCgmHistoryRecencyTimestamp(newest);
+                    else
+                        dataStore.setPumpHistoryRecencyTimestamp(newest);
                 }
             });
         }
