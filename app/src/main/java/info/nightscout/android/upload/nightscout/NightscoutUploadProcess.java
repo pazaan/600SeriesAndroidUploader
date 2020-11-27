@@ -55,10 +55,7 @@ public class NightscoutUploadProcess {
     private TreatmentsEndpoints treatmentsEndpoints;
     private ProfileEndpoints profileEndpoints;
 
-    private Realm storeRealm;
-    private DataStore dataStore;
-
-    private PumpHistorySender pumpHistorySender;
+    private PumpHistoryHandler pumpHistoryHandler;
 
     private String device;
     private String enteredBy;
@@ -97,7 +94,7 @@ public class NightscoutUploadProcess {
         return cancel;
     }
 
-    public void doRESTUpload(PumpHistorySender pumpHistorySender, Realm storeRealm, DataStore dataStore,
+    public void doRESTUpload(PumpHistoryHandler pumpHistoryHandler,
                              int uploaderBatteryLevel,
                              String device,
                              PumpHistoryHandler.ExtraInfo extraInfo,
@@ -108,20 +105,17 @@ public class NightscoutUploadProcess {
         cancel = false;
         resetCounts();
 
-        this.pumpHistorySender = pumpHistorySender;
-
-        this.storeRealm = storeRealm;
-        this.dataStore = dataStore;
+        this.pumpHistoryHandler = pumpHistoryHandler;
 
         this.extraInfo = extraInfo;
 
-        if (dataStore.getNsDeviceName().length() == 0) this.device = device;
-        else this.device = DEVICE_HEADER + dataStore.getNsDeviceName();
+        if (pumpHistoryHandler.dataStore.getNsDeviceName().length() == 0) this.device = device;
+        else this.device = DEVICE_HEADER + pumpHistoryHandler.dataStore.getNsDeviceName();
 
-        if (dataStore.getNsEnteredBy().length() == 0) this.enteredBy = this.device;
-        else enteredBy = DEVICE_HEADER + dataStore.getNsEnteredBy();
+        if (pumpHistoryHandler.dataStore.getNsEnteredBy().length() == 0) this.enteredBy = this.device;
+        else enteredBy = DEVICE_HEADER + pumpHistoryHandler.dataStore.getNsEnteredBy();
 
-        if (dataStore.isNsEnableDeviceStatus())
+        if (pumpHistoryHandler.dataStore.isNsEnableDeviceStatus())
             uploadStatus(statusRecords, uploaderBatteryLevel);
 
         if (!cancel) uploadEvents(records);
@@ -132,7 +126,7 @@ public class NightscoutUploadProcess {
                 deviceWriteCount,
                 profileCheckCount, profileDeleteCount, profileWriteCount,
                 cheanupCheckCount, cheanupDeleteCount
-                ));
+        ));
     }
 
     private void resetCounts() {
@@ -168,7 +162,7 @@ public class NightscoutUploadProcess {
         List<TreatmentsEndpoints.Treatment> treatments = new ArrayList<>();
 
         for (PumpHistoryInterface record : records) {
-            List<NightscoutItem> nightscoutItems = record.nightscout(pumpHistorySender, SENDER_ID_NIGHTSCOUT);
+            List<NightscoutItem> nightscoutItems = record.nightscout(pumpHistoryHandler.pumpHistorySender, SENDER_ID_NIGHTSCOUT);
             for (NightscoutItem nightscoutItem : nightscoutItems) {
                 if (nightscoutItem.isEntry())
                     processEntry(modeOverride(nightscoutItem), nightscoutItem.getEntry(), entries);
@@ -197,7 +191,7 @@ public class NightscoutUploadProcess {
         // can override to always update when items are older then a certain time
         NightscoutItem.MODE mode = nightscoutItem.getMode();
         if (mode == NightscoutItem.MODE.CHECK
-                && nightscoutItem.getTimestamp() < dataStore.getNightscoutAlwaysUpdateTimestamp())
+                && nightscoutItem.getTimestamp() < pumpHistoryHandler.dataStore.getNightscoutAlwaysUpdateTimestamp())
             mode = NightscoutItem.MODE.UPDATE;
         return mode;
     }
@@ -283,12 +277,12 @@ public class NightscoutUploadProcess {
                             (item.getPumpMAC600().equals(mac) &&
                                     mode == NightscoutItem.MODE.UPDATE || mode == NightscoutItem.MODE.DELETE)) {
                         treatmentsDeleteCount++;
-                        Response<ResponseBody> responseBody = dataStore.isNightscoutUseQuery()
+                        Response<ResponseBody> responseBody = pumpHistoryHandler.dataStore.isNightscoutUseQuery()
                                 ? treatmentsEndpoints.deleteID(item.getCreated_at(), item.get_id()).execute()
                                 : treatmentsEndpoints.deleteID(item.get_id()).execute();
                         if (responseBody.isSuccessful()) {
                             Log.d(TAG, String.format("deleted treatment ID: %s with KEY: %s MAC: %s DATE: %s QUERY: %s",
-                                    item.get_id(), item.getKey600(), item.getPumpMAC600(), item.getCreated_at(), dataStore.isNightscoutUseQuery()));
+                                    item.get_id(), item.getKey600(), item.getPumpMAC600(), item.getCreated_at(), pumpHistoryHandler.dataStore.isNightscoutUseQuery()));
                         } else {
                             Log.d(TAG, "no DELETE response from nightscout site");
                             throw new NightscoutException("(processTreatment) " + responseBody.message());
@@ -334,7 +328,7 @@ public class NightscoutUploadProcess {
                 String foundKey;
                 int count = 0;
 
-                if (dataStore.isNsEnableProfileSingle()) {
+                if (pumpHistoryHandler.dataStore.isNsEnableProfileSingle()) {
                     Log.d(TAG, "single profile enabled, deleting obsolete profiles");
 
                     for (ProfileEndpoints.Profile item : list) {
@@ -403,7 +397,7 @@ public class NightscoutUploadProcess {
         List<DeviceEndpoints.DeviceStatus> deviceEntries = new ArrayList<>();
         DeviceStatus deviceStatus;
 
-        if (dataStore.isNsEnableDevicePUMP()) {
+        if (pumpHistoryHandler.dataStore.isNsEnableDevicePUMP()) {
 
             for (PumpStatusEvent record : records) {
 
@@ -412,7 +406,7 @@ public class NightscoutUploadProcess {
                 deviceStatus.setDevice(device);
                 deviceStatus.setUploaderBattery(uploaderBatteryLevel);
 
-                if (dataStore.isNsEnableDevicePUMP()) {
+                if (pumpHistoryHandler.dataStore.isNsEnableDevicePUMP()) {
 
                     Iob iob = new Iob(record.getEventDate(), record.getActiveInsulin());
                     Battery battery = new Battery(record.getBatteryPercentage());
@@ -577,10 +571,10 @@ public class NightscoutUploadProcess {
     private void cleanupCheck() throws Exception {
         final long now = System.currentTimeMillis();
 
-        if (dataStore.isNightscoutInitCleanup()) {
+        if (pumpHistoryHandler.dataStore.isNightscoutInitCleanup()) {
             Log.i(TAG, "running nightscout initial cleanup check");
 
-            String cleanFrom = formatDateForNS(now - dataStore.getSysPumpHistoryDays() * 24 * 60 * 60000L);
+            String cleanFrom = formatDateForNS(now - pumpHistoryHandler.dataStore.getSysPumpHistoryDays() * 24 * 60 * 60000L);
             String cleanTo = formatDateForNS(now);
 
             // delete debug notes
@@ -607,16 +601,16 @@ public class NightscoutUploadProcess {
                     cleanFrom, cleanTo,
                     "Reservoir changed", "", "", "20").execute()) == 20) ;
 
-            storeRealm.executeTransaction(new Realm.Transaction() {
+            pumpHistoryHandler.storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(@NonNull Realm realm) {
-                    dataStore.setNightscoutInitCleanup(false);
+                    pumpHistoryHandler.dataStore.setNightscoutInitCleanup(false);
                 }
             });
 
         }
 
-        if (now - dataStore.getNightscoutCleanTimestamp() >= 4 * 60 * 60000L) {
+        if (now - pumpHistoryHandler.dataStore.getNightscoutCleanTimestamp() >= 4 * 60 * 60000L) {
             Log.d(TAG, "running nightscout message cleanup check");
 
             // clean up any old alarm or system messages that may remain in NS when multiple uploaders are in use
@@ -627,19 +621,19 @@ public class NightscoutUploadProcess {
                     cleanTo,
                     "SYS", "20").execute()) == 20) ;
 
-            if (!(dataStore.isNsEnableAlarms() && dataStore.getNsAlarmTTL() == 0)) {
+            if (!(pumpHistoryHandler.dataStore.isNsEnableAlarms() && pumpHistoryHandler.dataStore.getNsAlarmTTL() == 0)) {
                 while (deleteTreatments(treatmentsEndpoints.findKeyRegex(
                         "2017",
-                        dataStore.isNsEnableAlarms()
-                                ? formatDateForNS(now - dataStore.getNsAlarmTTL() * 60 * 60000L)
+                        pumpHistoryHandler.dataStore.isNsEnableAlarms()
+                                ? formatDateForNS(now - pumpHistoryHandler.dataStore.getNsAlarmTTL() * 60 * 60000L)
                                 : cleanTo,
                         "ALARM", "20").execute()) == 20) ;
             }
 
-            storeRealm.executeTransaction(new Realm.Transaction() {
+            pumpHistoryHandler.storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(@NonNull Realm realm) {
-                    dataStore.setNightscoutCleanTimestamp(now);
+                    pumpHistoryHandler.dataStore.setNightscoutCleanTimestamp(now);
                 }
             });
         }
@@ -647,8 +641,8 @@ public class NightscoutUploadProcess {
 
     private void cleanupNonKeyed() throws Exception {
         final long now = System.currentTimeMillis();
-        int cgmDays = dataStore.getSysCgmHistoryDays();
-        int pumpDays = dataStore.getSysPumpHistoryDays();
+        int cgmDays = pumpHistoryHandler.dataStore.getSysCgmHistoryDays();
+        int pumpDays = pumpHistoryHandler.dataStore.getSysPumpHistoryDays();
 
         if (CLEAN_COMPLETE) {
             cgmDays = 90;
@@ -658,10 +652,10 @@ public class NightscoutUploadProcess {
         final long cgmFrom = now - cgmDays * (24 * 60 * 60000L);
         long pumpFrom = now - pumpDays * (24 * 60 * 60000L);
 
-        long cgmTo = dataStore.getNightscoutCgmCleanFrom();
-        long pumpTo = dataStore.getNightscoutPumpCleanFrom();
+        long cgmTo = pumpHistoryHandler.dataStore.getNightscoutCgmCleanFrom();
+        long pumpTo = pumpHistoryHandler.dataStore.getNightscoutPumpCleanFrom();
 
-        long limit = dataStore.getInitTimestamp();
+        long limit = pumpHistoryHandler.dataStore.getInitTimestamp();
 
         if (cgmTo == 0) cgmTo = limit;
         if (pumpTo == 0) pumpTo = limit;
@@ -680,10 +674,10 @@ public class NightscoutUploadProcess {
             if (responseBody.isSuccessful()) {
                 Log.d(TAG, "cleanup: bulk deleted entries");
 
-                storeRealm.executeTransaction(new Realm.Transaction() {
+                pumpHistoryHandler.storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(@NonNull Realm realm) {
-                        dataStore.setNightscoutCgmCleanFrom(cgmFrom);
+                        pumpHistoryHandler.dataStore.setNightscoutCgmCleanFrom(cgmFrom);
                     }
                 });
 
@@ -718,10 +712,10 @@ public class NightscoutUploadProcess {
 
             if (result >= 0) {
                 final long pumpFromFinal = pumpFrom;
-                storeRealm.executeTransaction(new Realm.Transaction() {
+                pumpHistoryHandler.storeRealm.executeTransaction(new Realm.Transaction() {
                     @Override
                     public void execute(@NonNull Realm realm) {
-                        dataStore.setNightscoutPumpCleanFrom(pumpFromFinal);
+                        pumpHistoryHandler.dataStore.setNightscoutPumpCleanFrom(pumpFromFinal);
                     }
                 });
             }
@@ -735,12 +729,12 @@ public class NightscoutUploadProcess {
             List<TreatmentsEndpoints.Treatment> list = response.body();
             for (TreatmentsEndpoints.Treatment item : list) {
                 cheanupDeleteCount++;
-                Response<ResponseBody> responseBody = dataStore.isNightscoutUseQuery()
+                Response<ResponseBody> responseBody = pumpHistoryHandler.dataStore.isNightscoutUseQuery()
                         ? treatmentsEndpoints.deleteID(item.getCreated_at(), item.get_id()).execute()
                         : treatmentsEndpoints.deleteID(item.get_id()).execute();
                 if (responseBody.isSuccessful()) {
                     Log.d(TAG, String.format("deleted treatment ID: %s with KEY: %s MAC: %s DATE: %s QUERY: %s",
-                            item.get_id(), item.getKey600(), item.getPumpMAC600(), item.getCreated_at(), dataStore.isNightscoutUseQuery()));
+                            item.get_id(), item.getKey600(), item.getPumpMAC600(), item.getCreated_at(), pumpHistoryHandler.dataStore.isNightscoutUseQuery()));
                 } else {
                     Log.d(TAG, "no DELETE response from nightscout site");
                     return -1;

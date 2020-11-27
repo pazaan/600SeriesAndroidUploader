@@ -3,6 +3,7 @@ package info.nightscout.android.model.medtronicNg;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import info.nightscout.android.history.HistoryUtils;
 import info.nightscout.android.history.MessageItem;
@@ -15,6 +16,7 @@ import io.realm.Realm;
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
 import io.realm.annotations.Index;
+import io.realm.annotations.PrimaryKey;
 
 /**
  * Created by Pogman on 19.10.17.
@@ -23,6 +25,9 @@ import io.realm.annotations.Index;
 public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface {
     @Ignore
     private static final String TAG = PumpHistoryCGM.class.getSimpleName();
+
+    @PrimaryKey
+    private String uuid;
 
     @Index
     private String senderREQ = "";
@@ -155,7 +160,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
         if (record == null) {
             // create new entry
-            record = realm.createObject(PumpHistoryCGM.class);
+            record = realm.createObject(PumpHistoryCGM.class, UUID.randomUUID().toString());
             record.pumpMAC = pumpMAC;
             record.key = HistoryUtils.key("CGM", eventRTC);
             record.history = true;
@@ -210,7 +215,7 @@ public class PumpHistoryCGM extends RealmObject implements PumpHistoryInterface 
 
         if (record == null) {
             // create new entry
-            record = realm.createObject(PumpHistoryCGM.class);
+            record = realm.createObject(PumpHistoryCGM.class, UUID.randomUUID().toString());
             record.pumpMAC = pumpMAC;
             record.key = HistoryUtils.key("CGM", eventRTC);
             record.history = false;

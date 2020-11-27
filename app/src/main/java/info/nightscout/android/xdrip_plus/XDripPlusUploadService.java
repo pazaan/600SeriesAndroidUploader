@@ -19,14 +19,12 @@ import java.util.List;
 import java.util.Locale;
 
 import info.nightscout.android.R;
-import info.nightscout.android.UploaderApplication;
 import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.medtronic.service.MasterService;
 import info.nightscout.android.model.medtronicNg.PumpHistoryCGM;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.model.store.DataStore;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import io.realm.Sort;
@@ -45,9 +43,7 @@ public class XDripPlusUploadService extends Service {
 
     private Context mContext;
 
-    private Realm mRealm;
-    private Realm storeRealm;
-    private DataStore dataStore;
+    private PumpHistoryHandler pumpHistoryHandler;
 
     private SimpleDateFormat ISO8601_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
 
@@ -91,65 +87,74 @@ public class XDripPlusUploadService extends Service {
 
             PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 90000);
 
-            storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-            dataStore = storeRealm.where(DataStore.class).findFirst();
+            pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
-            if (dataStore.isEnableXdripPlusUpload()) {
+            if (pumpHistoryHandler.dataStore.isEnableXdripPlusUpload()) {
 
                 device = "NA";
 
-                mRealm = Realm.getDefaultInstance();
-                PumpHistoryHandler pumpHistoryHandler = new PumpHistoryHandler(mContext);
+                pumpHistoryHandler.historyRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
 
-                try {
-                    checkAvailable();
+                        try {
+                            checkAvailable();
 
-                    RealmResults<PumpStatusEvent> pumpStatusEvents = mRealm
-                            .where(PumpStatusEvent.class)
-                            .sort("eventDate", Sort.DESCENDING)
-                            .findAll();
+                            RealmResults<PumpStatusEvent> pumpStatusEvents = pumpHistoryHandler.realm
+                                    .where(PumpStatusEvent.class)
+                                    .sort("eventDate", Sort.DESCENDING)
+                                    .findAll();
 
-                    if (pumpStatusEvents.size() > 0) {
-                        device = pumpStatusEvents.first().getDeviceName();
-                        doXDripUploadStatus(pumpStatusEvents.first());
-                    }
-
-                    List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ(SENDER_ID_XDRIP);
-
-                    for (PumpHistoryInterface record : records) {
-                        if (((PumpHistoryCGM) record).getSgv() > 0) doXDripUploadCGM((PumpHistoryCGM) record, device);
-                    }
-
-                    pumpHistoryHandler.setSenderRecordsACK(records, SENDER_ID_XDRIP);
-
-                    if (!dataStore.isXdripPlusUploadAvailable()) {
-                        UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE, String.format("{id;%s} {id;%s}",
-                                R.string.ul_share__xdrip, R.string.ul_share__is_available));
-                        storeRealm.executeTransaction(new Realm.Transaction() {
-                            @Override
-                            public void execute(@NonNull Realm realm) {
-                                dataStore.setXdripPlusUploadAvailable(true);
+                            if (pumpStatusEvents.size() > 0) {
+                                device = pumpStatusEvents.first().getDeviceName();
+                                doXDripUploadStatus(pumpStatusEvents.first());
                             }
-                        });
-                    }
 
-                } catch (Exception e) {
-                    Log.e(TAG, "Error:", e);
-                    UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} {id;%s}",
-                            R.string.ul_share__xdrip, R.string.ul_share__is_not_available));
-                    storeRealm.executeTransaction(new Realm.Transaction() {
-                        @Override
-                        public void execute(@NonNull Realm realm) {
-                            dataStore.setXdripPlusUploadAvailable(false);
+                            List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ(SENDER_ID_XDRIP);
+
+                            for (PumpHistoryInterface record : records) {
+                                if (((PumpHistoryCGM) record).getSgv() > 0) {
+                                    doXDripUploadCGM((PumpHistoryCGM) record, device);
+                                    pumpHistoryHandler.setSenderRecordACK(records, SENDER_ID_XDRIP);
+                                }
+                            }
+
+                            if (!pumpHistoryHandler.dataStore.isXdripPlusUploadAvailable()) {
+                                UserLogMessage.send(mContext, UserLogMessage.TYPE.SHARE, String.format("{id;%s} {id;%s}",
+                                        R.string.ul_share__xdrip, R.string.ul_share__is_available));
+                                pumpHistoryHandler.storeRealm.executeTransaction(new Realm.Transaction() {
+                                    @Override
+                                    public void execute(@NonNull Realm realm) {
+                                        pumpHistoryHandler.dataStore.setXdripPlusUploadAvailable(true);
+                                    }
+                                });
+                            }
+
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error:", e);
+                            UserLogMessage.send(mContext, UserLogMessage.TYPE.WARN, String.format("{id;%s} {id;%s}",
+                                    R.string.ul_share__xdrip, R.string.ul_share__is_not_available));
+                            pumpHistoryHandler.storeRealm.executeTransaction(new Realm.Transaction() {
+                                @Override
+                                public void execute(@NonNull Realm realm) {
+                                    pumpHistoryHandler.dataStore.setXdripPlusUploadAvailable(false);
+                                }
+                            });
                         }
-                    });
-                }
 
-                pumpHistoryHandler.close();
-                mRealm.close();
+                    }
+                });
+
+            } else if (pumpHistoryHandler.dataStore.isXdripPlusUploadAvailable()) {
+                pumpHistoryHandler.storeRealm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(@NonNull Realm realm) {
+                        pumpHistoryHandler.dataStore.setXdripPlusUploadAvailable(false);
+                    }
+                });
             }
 
-            storeRealm.close();
+            pumpHistoryHandler.close();
 
             releaseWakeLock(wl);
             stopSelf();

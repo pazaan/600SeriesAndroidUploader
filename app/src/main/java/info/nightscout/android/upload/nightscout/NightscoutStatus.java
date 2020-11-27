@@ -272,7 +272,7 @@ public class NightscoutStatus {
 
                 Response<StatusEndpoints.Status> responseBody = statusEndpoints.getStatus().execute();
                 if (!responseBody.isSuccessful())
-                    throw new Exception("no response " + responseBody.message());
+                    throw new Exception(responseBody.message().length() == 0 ? "no response" : responseBody.message());
 
                 if (responseBody.body() == null)
                     throw new Exception("empty status response");

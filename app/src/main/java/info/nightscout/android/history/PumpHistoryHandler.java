@@ -152,6 +152,7 @@ public class PumpHistoryHandler {
     }
 
     // records as requested for a sender and ready for uploading / processing
+    // use as part of a open history realm transaction
     public List<PumpHistoryInterface> getSenderRecordsREQ(String senderID) {
 
         PumpHistorySender.Sender sender = pumpHistorySender.getSender(senderID);
@@ -205,100 +206,85 @@ public class PumpHistoryHandler {
     }
 
     // post uploading / processing, clear the request and acknowledge
-    public void setSenderRecordsACK(final List<PumpHistoryInterface> records, final String senderID) {
-        historyRealm.executeTransaction(new Realm.Transaction() {
-            @Override
-            public void execute(@NonNull Realm realm) {
-
-                for (PumpHistoryInterface record : records) {
-                    record.setSenderREQ(record.getSenderREQ().replace(senderID, ""));
-                    record.setSenderACK(record.getSenderACK().replace(senderID, "").concat(senderID));
-                }
-
-            }
-        });
+    // use as part of a open history realm transaction
+    public void setSenderRecordACK(List<PumpHistoryInterface> records, final String senderID) {
+        for (PumpHistoryInterface record : records) {
+            record.setSenderREQ(record.getSenderREQ().replace(senderID, ""));
+            record.setSenderACK(record.getSenderACK().replace(senderID, "").concat(senderID));
+        }
     }
 
-    public void setSenderRecordACK(final PumpHistoryInterface record, final String senderID) {
-        historyRealm.executeTransaction(new Realm.Transaction() {
-            @Override
-            public void execute(@NonNull Realm realm) {
-
-                record.setSenderREQ(record.getSenderREQ().replace(senderID, ""));
-                record.setSenderACK(record.getSenderACK().replace(senderID, "").concat(senderID));
-
-            }
-        });
+    public void setSenderRecordACK(PumpHistoryInterface record, final String senderID) {
+        record.setSenderREQ(record.getSenderREQ().replace(senderID, ""));
+        record.setSenderACK(record.getSenderACK().replace(senderID, "").concat(senderID));
     }
 
     public void processSenderTTL(final String senderID) {
 
-        long now = System.currentTimeMillis();
+        historyRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
 
-        PumpHistorySender.Sender sender = pumpHistorySender.getSender(senderID);
+                long now = System.currentTimeMillis();
 
-        List<Pair<String, Long>> ttl = sender.getTtl();
+                PumpHistorySender.Sender sender = pumpHistorySender.getSender(senderID);
 
-        final List<PumpHistoryInterface> recordsToDelete = new ArrayList<>();
-        final List<PumpHistoryInterface> recordsToUndelete = new ArrayList<>();
+                List<Pair<String, Long>> ttl = sender.getTtl();
 
-        RealmResults<PumpHistoryInterface> resultsToDelete;
-        RealmResults<PumpHistoryInterface> resultsToUndelete;
+                final List<PumpHistoryInterface> recordsToDelete = new ArrayList<>();
+                final List<PumpHistoryInterface> recordsToUndelete = new ArrayList<>();
 
-        for (DBitem dBitem : historyDB) {
+                RealmResults<PumpHistoryInterface> resultsToDelete;
+                RealmResults<PumpHistoryInterface> resultsToUndelete;
 
-            for (Pair<String, Long>ttlItem : ttl) {
+                for (DBitem dBitem : historyDB) {
 
-                if (dBitem.historydb.equals(ttlItem.first)) {
+                    for (Pair<String, Long>ttlItem : ttl) {
 
-                    Date ttlDate = new Date(now - ttlItem.second);
+                        if (dBitem.historydb.equals(ttlItem.first)) {
 
-                    // tag records for deletion (helps keep NS history clean)
-                    resultsToDelete = dBitem.results.where()
-                            .lessThan("eventDate", ttlDate)
-                            .beginGroup()
-                            .contains("senderREQ", senderID)
-                            .or()
-                            .contains("senderACK", senderID)
-                            .endGroup()
-                            .not()
-                            .contains("senderDEL", senderID)
-                            .findAll();
+                            Date ttlDate = new Date(now - ttlItem.second);
 
-                    recordsToDelete.addAll(resultsToDelete);
+                            // tag records for deletion (helps keep NS history clean)
+                            resultsToDelete = dBitem.results.where()
+                                    .lessThan("eventDate", ttlDate)
+                                    .beginGroup()
+                                    .contains("senderREQ", senderID)
+                                    .or()
+                                    .contains("senderACK", senderID)
+                                    .endGroup()
+                                    .not()
+                                    .contains("senderDEL", senderID)
+                                    .findAll();
 
-                    // ttl date changed? recover already deleted records (resend to NS)
-                    resultsToUndelete = dBitem.results.where()
-                            .greaterThanOrEqualTo("eventDate", ttlDate)
-                            .contains("senderDEL", senderID)
-                            .findAll();
+                            recordsToDelete.addAll(resultsToDelete);
 
-                    recordsToUndelete.addAll(resultsToUndelete);
+                            // ttl date changed? recover already deleted records (resend to NS)
+                            resultsToUndelete = dBitem.results.where()
+                                    .greaterThanOrEqualTo("eventDate", ttlDate)
+                                    .contains("senderDEL", senderID)
+                                    .findAll();
 
-                    Log.d(TAG, String.format("sender[%s] db: %s ttldate: %s delete: %s undelete: %s",
-                            senderID, ttlItem.first, dateFormatter.format(ttlDate), resultsToDelete.size(), resultsToUndelete.size()));
+                            recordsToUndelete.addAll(resultsToUndelete);
+
+                            Log.d(TAG, String.format("sender[%s] db: %s ttldate: %s delete: %s undelete: %s",
+                                    senderID, ttlItem.first, dateFormatter.format(ttlDate), resultsToDelete.size(), resultsToUndelete.size()));
+                        }
+                    }
                 }
+
+                for (PumpHistoryInterface record : recordsToDelete) {
+                    record.setSenderREQ(record.getSenderREQ().replace(senderID, "").concat(senderID));
+                    record.setSenderDEL(record.getSenderDEL().replace(senderID, "").concat(senderID));
+                }
+
+                for (PumpHistoryInterface record : recordsToUndelete) {
+                    record.setSenderREQ(record.getSenderREQ().replace(senderID, "").concat(senderID));
+                    record.setSenderDEL(record.getSenderDEL().replace(senderID, ""));
+                }
+
             }
-        }
-
-        if (recordsToDelete.size() > 0 || recordsToUndelete.size() > 0) {
-            historyRealm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(@NonNull Realm realm) {
-
-                    for (PumpHistoryInterface record : recordsToDelete) {
-                        record.setSenderREQ(record.getSenderREQ().replace(senderID, "").concat(senderID));
-                        record.setSenderDEL(record.getSenderDEL().replace(senderID, "").concat(senderID));
-                    }
-
-                    for (PumpHistoryInterface record : recordsToUndelete) {
-                        record.setSenderREQ(record.getSenderREQ().replace(senderID, "").concat(senderID));
-                        record.setSenderDEL(record.getSenderDEL().replace(senderID, ""));
-                    }
-
-                }
-            });
-        }
+        });
 
     }
 
@@ -962,7 +948,6 @@ public class PumpHistoryHandler {
         private boolean optUserlog = false;
 
         private List<PumpHistoryCGM> updateRecords = new ArrayList();
-        private List<Integer> updateSgv = new ArrayList();
 
         private int processRTC;
 
@@ -1121,18 +1106,10 @@ public class PumpHistoryHandler {
                     historyRealm.executeTransaction(new Realm.Transaction() {
                         @Override
                         public void execute(@NonNull Realm realm) {
-
-                            for (int i = 0; i < updateRecords.size(); i++) {
-                                PumpHistoryCGM record = updateRecords.get(i);
-                                record.setSgv(updateSgv.get(i));
-                                record.setEstimate(true);
-                                pumpHistorySender.setSenderREQ(record);
-                            }
-
+                            realm.copyToRealmOrUpdate(updateRecords);
                         }
                     });
                     updateRecords.clear();
-                    updateSgv.clear();
                 }
             }
         }
@@ -1247,8 +1224,11 @@ public class PumpHistoryHandler {
                     Log.d(TAG, "record outside calibration period, no estimated sgv available");
                 }
 
-                updateRecords.add(unprocessedCgmRecords.first());
-                updateSgv.add(0);
+                PumpHistoryCGM record = historyRealm.copyFromRealm(unprocessedCgmRecords.first());
+                record.setSgv(0);
+                record.setEstimate(true);
+                pumpHistorySender.setSenderREQ(record);
+                updateRecords.add(record);
 
                 return false;
             }
@@ -1393,8 +1373,11 @@ public class PumpHistoryHandler {
                 if (!est && sgv == 0) {
                     int finalEstimate = (int) Math.round(estsgv);
 
-                    updateRecords.add(calCgmRecords.get(i));
-                    updateSgv.add(finalEstimate);
+                    PumpHistoryCGM record = historyRealm.copyFromRealm(calCgmRecords.get(i));
+                    record.setSgv(finalEstimate);
+                    record.setEstimate(true);
+                    pumpHistorySender.setSenderREQ(record);
+                    updateRecords.add(record);
 
                     if (log >= 1) {
                         Log.d(TAG, String.format("Final Estimate %s(%s) isig=%s vctr=%s t+%s f=%s o=%s x=%s ex=%s",

@@ -1,14 +1,19 @@
 package info.nightscout.android.model.medtronicNg;
 
 import java.util.Date;
+import java.util.UUID;
 
 import io.realm.RealmObject;
 import io.realm.annotations.Index;
+import io.realm.annotations.PrimaryKey;
 
 /**
  * Created by lgoedhart on 4/06/2016.
  */
 public class PumpStatusEvent extends RealmObject {
+    @PrimaryKey
+    private String uuid;
+
     @Index
     private Date eventDate; // The actual time (uploader) of the this event (pumptime event date)
     @Index
@@ -108,6 +113,7 @@ public class PumpStatusEvent extends RealmObject {
     private boolean uploaded;
 
     public PumpStatusEvent() {
+        this.uuid = UUID.randomUUID().toString();
         this.eventDate = new Date();
     }
 

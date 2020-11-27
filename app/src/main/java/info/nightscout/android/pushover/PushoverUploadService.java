@@ -20,7 +20,6 @@ import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.medtronic.Stats;
 import info.nightscout.android.medtronic.UserLogMessage;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
-import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.model.store.StatPushover;
 import io.realm.Realm;
 import okhttp3.Headers;
@@ -37,10 +36,8 @@ public class PushoverUploadService extends Service {
 
     private Context mContext;
 
-    private Realm storeRealm;
-    private DataStore dataStore;
-    private StatPushover statPushover;
     private PumpHistoryHandler pumpHistoryHandler;
+    private StatPushover statPushover;
 
     PushoverApi pushoverApi;
 
@@ -63,15 +60,12 @@ public class PushoverUploadService extends Service {
         Log.d(TAG, "onCreate called");
 
         mContext = this.getBaseContext();
-        Stats.open();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy called");
-
-        Stats.close();
     }
 
     @Override
@@ -94,10 +88,9 @@ public class PushoverUploadService extends Service {
 
             PowerManager.WakeLock wl = getWakeLock(mContext, TAG, 90000);
 
-            storeRealm = Realm.getInstance(UploaderApplication.getStoreConfiguration());
-            dataStore = storeRealm.where(DataStore.class).findFirst();
+            pumpHistoryHandler = new PumpHistoryHandler(mContext);
 
-            if (UploaderApplication.isOnline() && dataStore.isPushoverEnable()) {
+            if (UploaderApplication.isOnline() && pumpHistoryHandler.dataStore.isPushoverEnable()) {
                 statPushover = (StatPushover) Stats.getInstance().readRecord(StatPushover.class);
                 statPushover.incRun();
 
@@ -106,7 +99,7 @@ public class PushoverUploadService extends Service {
                 else statPushover.incValidError();
             }
 
-            storeRealm.close();
+            pumpHistoryHandler.close();
 
             releaseWakeLock(wl);
             stopSelf();
@@ -115,11 +108,11 @@ public class PushoverUploadService extends Service {
 
     public boolean isValid() {
 
-        valid = dataStore.isPushoverValidated();
-        apiToken = dataStore.getPushoverAPItoken();
-        userToken = dataStore.getPushoverUSERtoken();
-        String apiCheck = dataStore.getPushoverAPItokenCheck();
-        String userCheck = dataStore.getPushoverUSERtokenCheck();
+        valid = pumpHistoryHandler.dataStore.isPushoverValidated();
+        apiToken = pumpHistoryHandler.dataStore.getPushoverAPItoken();
+        userToken = pumpHistoryHandler.dataStore.getPushoverUSERtoken();
+        String apiCheck = pumpHistoryHandler.dataStore.getPushoverAPItokenCheck();
+        String userCheck = pumpHistoryHandler.dataStore.getPushoverUSERtokenCheck();
 
         try {
 
@@ -202,12 +195,12 @@ public class PushoverUploadService extends Service {
     }
 
     private void updateValidation() {
-        storeRealm.executeTransaction(new Realm.Transaction() {
+        pumpHistoryHandler.storeRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(@NonNull Realm realm) {
-                dataStore.setPushoverValidated(valid);
-                dataStore.setPushoverAPItokenCheck(apiToken);
-                dataStore.setPushoverUSERtokenCheck(userToken);
+                pumpHistoryHandler.dataStore.setPushoverValidated(valid);
+                pumpHistoryHandler.dataStore.setPushoverAPItokenCheck(apiToken);
+                pumpHistoryHandler.dataStore.setPushoverUSERtokenCheck(userToken);
             }
         });
     }
@@ -215,28 +208,32 @@ public class PushoverUploadService extends Service {
     private void process() {
         messagesSent = 0;
 
-        pumpHistoryHandler = new PumpHistoryHandler(mContext);
-        List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ(SENDER_ID_PUSHOVER);
+        pumpHistoryHandler.historyRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(@NonNull Realm realm) {
 
-        for (PumpHistoryInterface record : records) {
+                List<PumpHistoryInterface> records = pumpHistoryHandler.getSenderRecordsREQ(SENDER_ID_PUSHOVER);
 
-            List<info.nightscout.android.history.MessageItem> messageItems = record.message(pumpHistoryHandler.getPumpHistorySender(), SENDER_ID_PUSHOVER);
+                for (PumpHistoryInterface record : records) {
 
-            boolean success = true;
-            for (MessageItem messageItem : messageItems) {
-                success &= send(messageItem);
+                    List<info.nightscout.android.history.MessageItem> messageItems = record.message(pumpHistoryHandler.getPumpHistorySender(), SENDER_ID_PUSHOVER);
+
+                    boolean success = true;
+                    for (MessageItem messageItem : messageItems) {
+                        success &= send(messageItem);
+                    }
+
+                    if (success) {
+                        pumpHistoryHandler.setSenderRecordACK(record, SENDER_ID_PUSHOVER);
+                    } else {
+                        statPushover.incError();
+                        break;
+                    }
+
+                }
+
             }
-
-            if (success) {
-                pumpHistoryHandler.setSenderRecordACK(record, SENDER_ID_PUSHOVER);
-            } else {
-                statPushover.incError();
-                break;
-            }
-
-        }
-
-        pumpHistoryHandler.close();
+        });
 
         if (messagesSent > 0) {
             statPushover.setMessagesSent(statPushover.getMessagesSent() + messagesSent);
@@ -258,13 +255,13 @@ public class PushoverUploadService extends Service {
         String message = messageItem.getMessage();
         String extended = messageItem.getExtended();
 
-        if (dataStore.isPushoverEnableTitleTime()
+        if (pumpHistoryHandler.dataStore.isPushoverEnableTitleTime()
                 && messageItem.getClock().length() > 0)
             title += " " + messageItem.getClock();
 
-        if (dataStore.isPushoverEnableTitleText()
-                && dataStore.getPushoverTitleText().length() > 0)
-            title += " " + dataStore.getPushoverTitleText();
+        if (pumpHistoryHandler.dataStore.isPushoverEnableTitleText()
+                && pumpHistoryHandler.dataStore.getPushoverTitleText().length() > 0)
+            title += " " + pumpHistoryHandler.dataStore.getPushoverTitleText();
 
         if (extended.length() > 0)
             message += " • " + extended;
@@ -287,105 +284,105 @@ public class PushoverUploadService extends Service {
         String sound;
         switch (messageItem.getType()) {
             case ALERT_ON_HIGH:
-                priority = dataStore.getPushoverPriorityOnHigh();
-                sound = dataStore.getPushoverSoundOnHigh();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityOnHigh();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundOnHigh();
                 break;
             case ALERT_ON_LOW:
-                priority = dataStore.getPushoverPriorityOnLow();
-                sound = dataStore.getPushoverSoundOnLow();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityOnLow();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundOnLow();
                 break;
             case ALERT_BEFORE_HIGH:
-                priority = dataStore.getPushoverPriorityBeforeHigh();
-                sound = dataStore.getPushoverSoundBeforeHigh();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBeforeHigh();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundBeforeHigh();
                 break;
             case ALERT_BEFORE_LOW:
-                priority = dataStore.getPushoverPriorityBeforeLow();
-                sound = dataStore.getPushoverSoundBeforeLow();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBeforeLow();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundBeforeLow();
                 break;
             case ALERT_EMERGENCY:
-                priority = dataStore.getPushoverPriorityPumpEmergency();
-                sound = dataStore.getPushoverSoundPumpEmergency();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpEmergency();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpEmergency();
                 break;
             case ALERT_ACTIONABLE:
-                priority = dataStore.getPushoverPriorityPumpActionable();
-                sound = dataStore.getPushoverSoundPumpActionable();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpActionable();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpActionable();
                 break;
             case ALERT_INFORMATIONAL:
-                priority = dataStore.getPushoverPriorityPumpInformational();
-                sound = dataStore.getPushoverSoundPumpInformational();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpInformational();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpInformational();
                 break;
             case REMINDER:
-                priority = dataStore.getPushoverPriorityPumpReminder();
-                sound = dataStore.getPushoverSoundPumpReminder();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpReminder();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpReminder();
                 break;
             case BOLUS:
-                priority = dataStore.getPushoverPriorityBolus();
-                sound = dataStore.getPushoverSoundBolus();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBolus();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundBolus();
                 break;
             case BASAL:
-                priority = dataStore.getPushoverPriorityBasal();
-                sound = dataStore.getPushoverSoundBasal();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBasal();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundBasal();
                 break;
             case SUSPEND:
             case RESUME:
-                priority = dataStore.getPushoverPrioritySuspendResume();
-                sound = dataStore.getPushoverSoundSuspendResume();
+                priority = pumpHistoryHandler.dataStore.getPushoverPrioritySuspendResume();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundSuspendResume();
                 break;
             case BG:
-                priority = dataStore.getPushoverPriorityBG();
-                sound = dataStore.getPushoverSoundBG();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBG();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundBG();
                 break;
             case CALIBRATION:
-                priority = dataStore.getPushoverPriorityCalibration();
-                sound = dataStore.getPushoverSoundCalibration();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityCalibration();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundCalibration();
                 break;
             case CONSUMABLE:
-                priority = dataStore.getPushoverPriorityConsumables();
-                sound = dataStore.getPushoverSoundConsumables();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityConsumables();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundConsumables();
                 break;
             case DAILY_TOTALS:
-                priority = dataStore.getPushoverPriorityDailyTotals();
-                sound = dataStore.getPushoverSoundDailyTotals();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityDailyTotals();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundDailyTotals();
                 break;
             case AUTOMODE_ACTIVE:
-                priority = dataStore.getPushoverPriorityAutoModeActive();
-                sound = dataStore.getPushoverSoundAutoModeActive();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeActive();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeActive();
                 break;
             case AUTOMODE_STOP:
-                priority = dataStore.getPushoverPriorityAutoModeStop();
-                sound = dataStore.getPushoverSoundAutoModeStop();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeStop();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeStop();
                 break;
             case AUTOMODE_EXIT:
-                priority = dataStore.getPushoverPriorityAutoModeExit();
-                sound = dataStore.getPushoverSoundAutoModeExit();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeExit();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeExit();
                 break;
             case AUTOMODE_MINMAX:
-                priority = dataStore.getPushoverPriorityAutoModeMinMax();
-                sound = dataStore.getPushoverSoundAutoModeMinMax();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeMinMax();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeMinMax();
                 break;
             case ALERT_UPLOADER_ERROR:
-                priority = dataStore.getPushoverPriorityUploaderPumpErrors();
-                sound = dataStore.getPushoverSoundUploaderPumpErrors();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderPumpErrors();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderPumpErrors();
                 break;
             case ALERT_UPLOADER_STATUS:
-                priority = dataStore.getPushoverPriorityUploaderStatus();
-                sound = dataStore.getPushoverSoundUploaderStatus();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderStatus();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderStatus();
                 break;
             case ALERT_UPLOADER_BATTERY:
-                priority = dataStore.getPushoverPriorityUploaderBattery();
-                sound = dataStore.getPushoverSoundUploaderBattery();
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderBattery();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderBattery();
                 break;
             default:
 
                 if (messageItem.getPriority() == MessageItem.PRIORITY.EMERGENCY) {
-                    priority = dataStore.getPushoverPriorityPumpEmergency();
-                    sound = dataStore.getPushoverSoundPumpEmergency();
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpEmergency();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpEmergency();
                 } else if (messageItem.getPriority() == MessageItem.PRIORITY.HIGH) {
-                    priority = dataStore.getPushoverPriorityPumpActionable();
-                    sound = dataStore.getPushoverSoundPumpActionable();
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpActionable();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpActionable();
                 } else if (messageItem.getPriority() == MessageItem.PRIORITY.NORMAL) {
-                    priority = dataStore.getPushoverPriorityPumpInformational();
-                    sound = dataStore.getPushoverSoundPumpInformational();
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpInformational();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpInformational();
                 } else {
                     priority = PRIORITY.NORMAL.string;
                     sound = SOUND.NONE.string;
@@ -393,34 +390,34 @@ public class PushoverUploadService extends Service {
         }
 
         if (messageItem.isCleared()) {
-            priority = dataStore.getPushoverPriorityCleared();
-            sound = dataStore.getPushoverSoundCleared();
+            priority = pumpHistoryHandler.dataStore.getPushoverPriorityCleared();
+            sound = pumpHistoryHandler.dataStore.getPushoverSoundCleared();
         } else if (messageItem.isSilenced()
-                && dataStore.isPushoverEnableSilencedOverride()) {
-            priority = dataStore.getPushoverPrioritySilenced();
-            sound = dataStore.getPushoverSoundSilenced();
+                && pumpHistoryHandler.dataStore.isPushoverEnableSilencedOverride()) {
+            priority = pumpHistoryHandler.dataStore.getPushoverPrioritySilenced();
+            sound = pumpHistoryHandler.dataStore.getPushoverSoundSilenced();
         }
 
-        if (dataStore.isPushoverEnableBackfillOverride() &&
-                System.currentTimeMillis() - messageItem.getDate().getTime() > dataStore.getPushoverBackfillOverrideAge() * 60000L) {
-            priority = dataStore.getPushoverPriorityBackfill();
-            sound = dataStore.getPushoverSoundBackfill();
+        if (pumpHistoryHandler.dataStore.isPushoverEnableBackfillOverride() &&
+                System.currentTimeMillis() - messageItem.getDate().getTime() > pumpHistoryHandler.dataStore.getPushoverBackfillOverrideAge() * 60000L) {
+            priority = pumpHistoryHandler.dataStore.getPushoverPriorityBackfill();
+            sound = pumpHistoryHandler.dataStore.getPushoverSoundBackfill();
         }
 
-        if (dataStore.isPushoverEnablePriorityOverride())
-            priority = dataStore.getPushoverPriorityOverride();
-        if (dataStore.isPushoverEnableSoundOverride())
-            sound = dataStore.getPushoverSoundOverride();
+        if (pumpHistoryHandler.dataStore.isPushoverEnablePriorityOverride())
+            priority = pumpHistoryHandler.dataStore.getPushoverPriorityOverride();
+        if (pumpHistoryHandler.dataStore.isPushoverEnableSoundOverride())
+            sound = pumpHistoryHandler.dataStore.getPushoverSoundOverride();
 
         pem.setPriority(priority);
         pem.setSound(sound);
 
         // Use device name to send the message directly to that device, rather than all of the user's devices (multiple devices may be separated by a comma)
-        pem.setDevice(dataStore.getPushoverSendToDevice());
+        pem.setDevice(pumpHistoryHandler.dataStore.getPushoverSendToDevice());
 
         if (priority.equals(PRIORITY.EMERGENCY.string)) {
-            pem.setRetry(dataStore.getPushoverEmergencyRetry());
-            pem.setExpire(dataStore.getPushoverEmergencyExpire());
+            pem.setRetry(pumpHistoryHandler.dataStore.getPushoverEmergencyRetry());
+            pem.setExpire(pumpHistoryHandler.dataStore.getPushoverEmergencyExpire());
         }
 
         try {
