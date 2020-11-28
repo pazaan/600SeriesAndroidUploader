@@ -104,6 +104,10 @@ android {
         // Because of http://stackoverflow.com/questions/35492259/lint-error-on-okio
         warning 'InvalidPackage'
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 release {
@@ -133,16 +137,16 @@ dependencies {
 
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
 
-    implementation 'org.apache.commons:commons-lang3:3.4'
+    implementation 'org.apache.commons:commons-lang3:3.10'
 
     implementation 'uk.co.chrisjenx:calligraphy:2.2.0'
 
     // due to bug in GraphView v4.2.1 using setNumHorizontalLabels reverted to using v4.0.1
     implementation 'com.jjoe64:graphview:4.0.1'
 
-    implementation 'com.google.code.gson:gson:2.8.5'
-    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
 
     // AppUpdater v2.7 uses com.squareup.okhttp3:okhttp:3.10.0
     implementation 'com.github.javiersantos:AppUpdater:2.7'

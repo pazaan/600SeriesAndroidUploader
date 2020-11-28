@@ -1586,7 +1586,7 @@ public class PumpHistoryHandler {
         }
 
         public String formatROC5min() {
-            return df.format(delta.size() > 0 ? delta.get(0) : 0);
+            return df.format((delta.size() > 0 ? delta.get(0) : 0) + 0);
         }
 
         public String formatROC10min() {
