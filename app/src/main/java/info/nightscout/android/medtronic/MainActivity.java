@@ -508,23 +508,27 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
     }
 
     private Toast serveToast(SpannableStringBuilder ssb, Toast toast, View v) {
-        if (toast != null) toast.cancel();
+        try {
+            if (toast != null) toast.cancel();
 
-        toast = Toast.makeText(mContext, ssb, Toast.LENGTH_LONG);
+            toast = Toast.makeText(mContext, ssb, Toast.LENGTH_LONG);
 
-        WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-        Point screen_size = new Point();
-        wm.getDefaultDisplay().getSize(screen_size);
+            WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+            Point screen_size = new Point();
+            wm.getDefaultDisplay().getSize(screen_size);
 
-        int[] coords = {0,0};
-        v.getLocationOnScreen(coords);
+            int[] coords = {0, 0};
+            v.getLocationOnScreen(coords);
 
-        toast.setGravity(Gravity.NO_GRAVITY,
-                coords[0] + (v.getWidth() / 2) - (screen_size.x / 2),
-                coords[1] + (v.getHeight() / 2) - (screen_size.y / 2)
-        );
+            toast.setGravity(Gravity.NO_GRAVITY,
+                    coords[0] + (v.getWidth() / 2) - (screen_size.x / 2),
+                    coords[1] + (v.getHeight() / 2) - (screen_size.y / 2)
+            );
 
-        toast.show();
+            toast.show();
+        } catch (Exception e) {
+            toast = null;
+        }
         return toast;
     }
 
