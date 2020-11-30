@@ -406,7 +406,9 @@ public class PumpHistorySender {
     // set history record REQ for all associated senders
     public void setSenderREQ(PumpHistoryInterface record) {
         String req = record.getSenderREQ();
-        String db = record.getClass().getSuperclass().getSimpleName();
+        String db = record.getClass().getSuperclass().getSimpleName().equals("RealmObject")
+                ? record.getClass().getSimpleName()
+                : record.getClass().getSuperclass().getSimpleName();
 
         for (Sender sender : senders) {
             if (sender.active.contains(db) && !req.contains(sender.id))
@@ -419,7 +421,9 @@ public class PumpHistorySender {
     // set history record ACK for all associated senders
     public void setSenderACK(PumpHistoryInterface record) {
         String ack = record.getSenderACK();
-        String db = record.getClass().getSuperclass().getSimpleName();
+        String db = record.getClass().getSuperclass().getSimpleName().equals("RealmObject")
+                ? record.getClass().getSimpleName()
+                : record.getClass().getSuperclass().getSimpleName();
 
         for (Sender sender : senders) {
             if (sender.active.contains(db) && !ack.contains(sender.id))

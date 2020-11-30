@@ -15,10 +15,8 @@ import info.nightscout.android.R;
 import info.nightscout.android.history.NightscoutItem;
 import info.nightscout.android.history.PumpHistoryHandler;
 import info.nightscout.android.history.PumpHistoryParser;
-import info.nightscout.android.history.PumpHistorySender;
 import info.nightscout.android.model.medtronicNg.PumpHistoryInterface;
 import info.nightscout.android.model.medtronicNg.PumpStatusEvent;
-import info.nightscout.android.model.store.DataStore;
 import info.nightscout.android.upload.nightscout.DeviceEndpoints.Iob;
 import info.nightscout.android.upload.nightscout.DeviceEndpoints.Battery;
 import info.nightscout.android.upload.nightscout.DeviceEndpoints.PumpStatus;
@@ -454,7 +452,8 @@ public class NightscoutUploadProcess {
         String info = "";
         if (!record.isCgmLostSensor()
                 && extraInfo != null
-                && record.getEventDate().getTime() >= extraInfo.getEventDate().getTime()) {
+                && record.getEventDate().getTime() >= extraInfo.getEventDate().getTime()
+                && System.currentTimeMillis() - extraInfo.getEventDate().getTime() < 30 * 60000L) {
             info = shorten ? extraInfo.getInfoShort() : extraInfo.getInfo();
             shorten = true;
         }
