@@ -6,7 +6,7 @@ import java.text.DateFormatSymbols;
 
 import info.nightscout.android.R;
 
-public class ListPreference extends android.preference.ListPreference{
+public class ListPreference extends androidx.preference.ListPreference{
 
     public ListPreference(Context context, AttributeSet attrs) {
         super(context, attrs);

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:edittextpreference="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_ns_bolus_presets_category">
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_preset_1_title"
+            android:key="@string/key_nameBolusPresetP1"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_preset_2_title"
+            android:key="@string/key_nameBolusPresetP2"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_preset_3_title"
+            android:key="@string/key_nameBolusPresetP3"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_preset_4_title"
+            android:key="@string/key_nameBolusPresetP4"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_preset_5_title"
+            android:key="@string/key_nameBolusPresetP5"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_preset_6_title"
+            android:key="@string/key_nameBolusPresetP6"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_preset_7_title"
+            android:key="@string/key_nameBolusPresetP7"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_preset_8_title"
+            android:key="@string/key_nameBolusPresetP8"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_preset_name_dialog_title"/>
+    </PreferenceCategory>
+
+</PreferenceScreen>

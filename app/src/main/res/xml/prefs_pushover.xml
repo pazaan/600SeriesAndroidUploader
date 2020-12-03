@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:edittextpreference="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_pushover_enable_title">
+        <CheckBoxPreference
+            android:title="@string/pref_pushover_summary"
+            android:key="@string/key_pushoverEnable"
+            android:defaultValue="@bool/default_pushoverEnable"
+            android:summary="@string/pref_pushover_enable_summary"/>
+    </PreferenceCategory>
+    <Preference
+        android:title="@string/pref_pushover_website_title">
+        <intent android:action="android.intent.action.VIEW"
+            android:data="https://pushover.net/" />
+    </Preference>
+    <Preference
+        android:title="@string/pref_pushover_website_api_token_title">
+        <intent android:action="android.intent.action.VIEW"
+            android:data="https://pushover.net/apps/build" />
+    </Preference>
+    <PreferenceCategory
+        android:title="@string/pref_pushover_account_category">
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="alphanumeric"
+            edittextpreference:maxCharacters="50"
+            android:title="@string/pref_pushover_api_token_title"
+            android:dependency="@string/key_pushoverEnable"
+            android:key="@string/key_pushoverAPItoken"
+            android:defaultValue="@string/default_pushoverAPItoken"
+            android:dialogMessage=""
+            android:dialogTitle="@string/pref_pushover_api_token_summary"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="alphanumeric"
+            edittextpreference:maxCharacters="50"
+            android:title="@string/pref_pushover_user_group_key_title"
+            android:dependency="@string/key_pushoverEnable"
+            android:key="@string/key_pushoverUSERtoken"
+            android:defaultValue="@string/default_pushoverUSERtoken"
+            android:dialogMessage=""
+            android:dialogTitle="@string/pref_pushover_user_group_key_summary"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_pushover_override_category">
+        <CheckBoxPreference
+            android:title="@string/pref_pushover_override_priority_title"
+            android:dependency="@string/key_pushoverEnable"
+            android:key="@string/key_pushoverEnablePriorityOverride"
+            android:defaultValue="@bool/default_pushoverEnablePriorityOverride"/>
+        <ListPreference
+            android:title="@string/pref_pushover_override_all_priorities_title"
+            android:dependency="@string/key_pushoverEnablePriorityOverride"
+            android:key="@string/key_pushoverPriorityOverride"
+            android:defaultValue="@string/default_pushoverPriorityOverride"
+            android:summary="%s"
+            android:entries="@array/pushover_priority"
+            android:entryValues="@array/pushover_priority_values"/>
+        <CheckBoxPreference
+            android:title="@string/pref_pushover_override_sound_title"
+            android:dependency="@string/key_pushoverEnable"
+            android:key="@string/key_pushoverEnableSoundOverride"
+            android:defaultValue="@bool/default_pushoverEnableSoundOverride"/>
+        <ListPreference
+            android:title="@string/pref_pushover_override_all_sounds_title"
+            android:dependency="@string/key_pushoverEnableSoundOverride"
+            android:key="@string/key_pushoverSoundOverride"
+            android:defaultValue="@string/default_pushoverSoundOverride"
+            android:summary="%s"
+            android:entries="@array/pushover_sound"
+            android:entryValues="@array/pushover_sound_values"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_pushover_settings_category">
+        <Preference
+            android:fragment="info.nightscout.android.settings.SettingsPOHighLowAlertsFragment"
+            android:title="@string/pref_pushover_high_low_alerts_category"
+            android:dependency="@string/key_pushoverEnable"
+            android:persistent="false"/>
+        <Preference
+            android:fragment="info.nightscout.android.settings.SettingsPOPumpAlertsFragment"
+            android:title="@string/pref_pushover_pump_alerts_category"
+            android:dependency="@string/key_pushoverEnable"/>
+        <Preference
+            android:fragment="info.nightscout.android.settings.SettingsPOPumpEventsFragment"
+            android:title="@string/pref_pushover_pump_events_category"
+            android:dependency="@string/key_pushoverEnable"/>
+        <Preference
+            android:fragment="info.nightscout.android.settings.SettingsPOAutoModeEventsFragment"
+            android:title="@string/pref_pushover_auto_mode_events_category"
+            android:dependency="@string/key_pushoverEnable"/>
+        <Preference
+            android:fragment="info.nightscout.android.settings.SettingsPOUploaderEventsFragment"
+            android:title="@string/pref_pushover_uploader_events_category"
+            android:dependency="@string/key_pushoverEnable"/>
+        <Preference
+            android:fragment="info.nightscout.android.settings.SettingsPOAdvancedFragment"
+            android:title="@string/pref_pushover_advanced_category"
+            android:dependency="pushoverEnable"/>
+    </PreferenceCategory>
+
+</PreferenceScreen>

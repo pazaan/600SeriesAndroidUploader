@@ -16,7 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.provider.Settings;
 import androidx.annotation.NonNull;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -306,17 +306,20 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
                             if (mEnableCgmService) {
                                 sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_NOW));
                             } else {
-                                UserLogMessage.getInstance().add(R.string.ul_main__cgm_service_disabled);
+                                UserLogMessage.getInstance().add(
+                                        UserLogMessage.TYPE.INFO, R.string.ul_main__cgm_service_disabled);
                             }
                         } else if (drawerItem.equals(itemUpdateProfile)) {
                             if (mEnableCgmService) {
                                 if (dataStore.isNsEnableProfileUpload()) {
                                     sendBroadcast(new Intent(MasterService.Constants.ACTION_READ_PROFILE));
                                 } else {
-                                    UserLogMessage.getInstance().add(R.string.ul_main__pump_profile_disabled);
+                                    UserLogMessage.getInstance().add(
+                                            UserLogMessage.TYPE.INFO, R.string.ul_main__pump_profile_disabled);
                                 }
                             } else {
-                                UserLogMessage.getInstance().add(R.string.ul_main__cgm_service_disabled);
+                                UserLogMessage.getInstance().add(
+                                        UserLogMessage.TYPE.INFO, R.string.ul_main__cgm_service_disabled);
                             }
                         } else if (drawerItem.equals(itemClearLog)) {
                             UserLogMessage.getInstance().clear();

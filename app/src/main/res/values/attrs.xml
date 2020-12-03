@@ -9,4 +9,11 @@
         <attr name="metaButtonBarButtonStyle" format="reference" />
     </declare-styleable>
 
+    <declare-styleable name="EditTextPreference">
+        <attr name="mode" format="string"/>
+        <attr name="minCharacters" format="integer"/>
+        <attr name="maxCharacters" format="integer"/>
+        <attr name="illegalCharacters" format="string"/>
+    </declare-styleable>
+
 </resources>

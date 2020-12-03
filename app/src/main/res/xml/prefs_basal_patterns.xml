@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:edittextpreference="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_ns_basal_patterns_category">
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_pattern_1_title"
+            android:key="@string/key_nameBasalPatternP1"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_pattern_2_title"
+            android:key="@string/key_nameBasalPatternP2"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_pattern_3_title"
+            android:key="@string/key_nameBasalPatternP3"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_pattern_4_title"
+            android:key="@string/key_nameBasalPatternP4"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_pattern_5_title"
+            android:key="@string/key_nameBasalPatternP5"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_pattern_6_title"
+            android:key="@string/key_nameBasalPatternP6"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_pattern_7_title"
+            android:key="@string/key_nameBasalPatternP7"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
+        <info.nightscout.android.utils.EditTextPreference
+            edittextpreference:mode="preset"
+            edittextpreference:maxCharacters="20"
+            android:title="@string/pref_ns_pattern_8_title"
+            android:key="@string/key_nameBasalPatternP8"
+            android:defaultValue="@string/default_empty"
+            android:dialogTitle="@string/pref_ns_enter_pattern_name_dialog_title"/>
+    </PreferenceCategory>
+
+</PreferenceScreen>

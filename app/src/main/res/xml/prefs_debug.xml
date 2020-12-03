@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="@string/pref_debug_settings_category">
+        <SwitchPreference
+            android:title="@string/pref_debug_crash_reporting_title"
+            android:key="@string/key_dbgCrashlytics"
+            android:defaultValue="@bool/default_dbgCrashlytics"
+            android:summary="@string/pref_debug_crash_reporting_summary" />
+        <SwitchPreference
+            android:title="@string/pref_debug_share_usage_data_title"
+            android:key="@string/key_dbgAnswers"
+            android:defaultValue="@bool/default_dbgAnswers"
+            android:summary="@string/pref_debug_share_usage_data_summary" />
+        <SwitchPreference
+            android:title="@string/pref_debug_remote_debugging_title"
+            android:key="@string/key_dbgRemoteLogcat"
+            android:defaultValue="@bool/default_dbgRemoteLogcat"
+            android:summary="@string/pref_debug_remote_debugging_summary" />
+        <ListPreference
+            android:title="@string/pref_debug_logging_level_title"
+            android:key="@string/key_dbgLogLevel"
+            android:defaultValue="@string/default_dbgLogLevel"
+            android:summary="%s"
+            android:entries="@array/debug_log_level"
+            android:entryValues="@array/debug_log_level_values" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/pref_debug_userlog_category">
+        <SwitchPreference
+            android:title="@string/pref_debug_extended_errors_title"
+            android:key="@string/key_dbgEnableExtendedErrors"
+            android:defaultValue="@bool/default_dbgEnableExtendedErrors"
+            android:summary="@string/pref_debug_extended_errors_summary" />
+        <SwitchPreference
+            android:title="@string/pref_debug_upload_errors_title"
+            android:key="@string/key_dbgEnableUploadErrors"
+            android:defaultValue="@bool/default_dbgEnableUploadErrors"
+            android:summary="@string/pref_debug_upload_errors_summary" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
