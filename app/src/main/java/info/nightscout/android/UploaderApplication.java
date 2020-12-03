@@ -2,8 +2,11 @@ package info.nightscout.android;
 
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.SystemClock;
+
 import androidx.preference.PreferenceManager;
 import android.util.Log;
 
@@ -124,8 +127,40 @@ public class UploaderApplication extends MultiDexApplication {
     }
 
     public static boolean isOnline() {
-        NetworkInfo netInfo = connectivityManager.getActiveNetworkInfo();
-        return netInfo != null && netInfo.isConnectedOrConnecting();
+        return getConnectionType() > 0;
+    }
+
+    // Returns connection type. 0: none; 1: mobile data; 2: wifi
+    public static int getConnectionType() {
+        int result = 0;
+        if (connectivityManager != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork());
+                if (capabilities != null) {
+                    if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        result = 2;
+                    } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                        result = 1;
+                    } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+                        result = 3;
+                    }
+                }
+            }
+        } else {
+            //  only accesses NetworkInfo on SDK <23 devices
+            NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+            if (activeNetwork != null) {
+                // connected to the internet
+                if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
+                    result = 2;
+                } else if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
+                    result = 1;
+                } else if (activeNetwork.getType() == ConnectivityManager.TYPE_VPN) {
+                    result = 3;
+                }
+            }
+        }
+        return result;
     }
 
     public static long getStartupRealtime() {
