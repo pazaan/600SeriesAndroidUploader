@@ -121,8 +121,10 @@ public class PushoverUploadService extends Service {
                 throw new Exception("validation failed, check settings");
             }
 
-            else if (valid && !(apiToken.equals(apiCheck) && userToken.equals(userCheck)))
+            else if (valid && !(apiToken.equals(apiCheck) && userToken.equals(userCheck))) {
                 valid = false;
+                updateValidation();
+            }
 
             if (!valid) {
                 if (apiToken.length() != 30 || userToken.length() != 30) {
@@ -178,8 +180,10 @@ public class PushoverUploadService extends Service {
             Log.e(TAG, "Pushover validation failed: " + e.getMessage());
             UserLogMessage.sendE(mContext, String.format("{id;%s}: api: %s %s user: %s %s %s",
                     R.string.ul_share__pushover,
-                    apiToken.length(), apiToken,
-                    userToken.length(), userToken,
+                    apiToken == null ? "" : apiToken.length(),
+                    apiToken == null ? "null": apiToken,
+                    userToken == null ? "" : userToken.length(),
+                    userToken == null ? "null" : userToken,
                     e.getMessage()
             ));
         }

@@ -25,7 +25,7 @@
         android:title="@string/pref_pushover_account_category">
         <info.nightscout.android.utils.EditTextPreference
             edittextpreference:mode="alphanumeric"
-            edittextpreference:maxCharacters="50"
+            edittextpreference:maxCharacters="30"
             android:title="@string/pref_pushover_api_token_title"
             android:dependency="@string/key_pushoverEnable"
             android:key="@string/key_pushoverAPItoken"
@@ -34,7 +34,7 @@
             android:dialogTitle="@string/pref_pushover_api_token_summary"/>
         <info.nightscout.android.utils.EditTextPreference
             edittextpreference:mode="alphanumeric"
-            edittextpreference:maxCharacters="50"
+            edittextpreference:maxCharacters="30"
             android:title="@string/pref_pushover_user_group_key_title"
             android:dependency="@string/key_pushoverEnable"
             android:key="@string/key_pushoverUSERtoken"
