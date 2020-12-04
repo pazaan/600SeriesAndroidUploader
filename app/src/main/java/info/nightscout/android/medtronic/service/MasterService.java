@@ -107,6 +107,24 @@ public class MasterService extends Service {
         // safety check: don't proceed until main ui has been run and datastore initialised
         if (dataStore != null) {
 
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+            String channel;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                createNotificationChannels();
+                channel = "status";
+            } else channel = "";
+
+            Notification notification = new NotificationCompat.Builder(this, channel)
+                    .setContentTitle("600 Series Uploader")
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setVisibility(VISIBILITY_PUBLIC)
+                    .setContentIntent(pendingIntent)
+                    .build();
+
+            startForeground(SERVICE_NOTIFICATION_ID, notification);
+
             storeRealm.executeTransaction(new Realm.Transaction() {
                 @Override
                 public void execute(@NonNull Realm realm) {
@@ -202,24 +220,6 @@ public class MasterService extends Service {
         } else if (intent == null || startId == 1) {
             Log.i(TAG, "service start");
             //userLogMessage.add(TAG + " service start");
-
-            Intent notificationIntent = new Intent(this, MainActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-
-            String channel;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                createNotificationChannels();
-                channel = "status";
-            } else channel = "";
-
-            Notification notification = new NotificationCompat.Builder(this, channel)
-                    .setContentTitle("600 Series Uploader")
-                    .setSmallIcon(R.drawable.ic_notification)
-                    .setVisibility(VISIBILITY_PUBLIC)
-                    .setContentIntent(pendingIntent)
-                    .build();
-
-            startForeground(SERVICE_NOTIFICATION_ID, notification);
 
             statusNotification.initNotification(mContext);
 
