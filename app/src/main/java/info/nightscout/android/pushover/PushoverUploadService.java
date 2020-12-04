@@ -255,176 +255,177 @@ public class PushoverUploadService extends Service {
     public boolean send(MessageItem messageItem) {
         boolean success;
 
-        String title = messageItem.getTitle();
-        String message = messageItem.getMessage();
-        String extended = messageItem.getExtended();
+        try {
 
-        if (pumpHistoryHandler.dataStore.isPushoverEnableTitleTime()
-                && messageItem.getClock().length() > 0)
-            title += " " + messageItem.getClock();
+            String title = messageItem.getTitle();
+            String message = messageItem.getMessage();
+            String extended = messageItem.getExtended();
 
-        if (pumpHistoryHandler.dataStore.isPushoverEnableTitleText()
-                && pumpHistoryHandler.dataStore.getPushoverTitleText().length() > 0)
-            title += " " + pumpHistoryHandler.dataStore.getPushoverTitleText();
+            if (pumpHistoryHandler.dataStore.isPushoverEnableTitleTime()
+                    && messageItem.getClock().length() > 0)
+                title += " " + messageItem.getClock();
 
-        if (extended.length() > 0)
-            message += " • " + extended;
+            if (pumpHistoryHandler.dataStore.isPushoverEnableTitleText()
+                    && pumpHistoryHandler.dataStore.getPushoverTitleText().length() > 0)
+                title += " " + pumpHistoryHandler.dataStore.getPushoverTitleText();
 
-        // Pushover will fail with a empty message string
-        if (message.length() == 0)
-            message = "...";
+            if (extended.length() > 0)
+                message += " • " + extended;
 
-        PushoverEndpoints pushoverEndpoints = pushoverApi.getPushoverEndpoints();
+            // Pushover will fail with a empty message string
+            if (message.length() == 0)
+                message = "...";
 
-        PushoverEndpoints.Message pem = new PushoverEndpoints.Message();
-        pem.setToken(apiToken);
-        pem.setUser(userToken);
+            PushoverEndpoints pushoverEndpoints = pushoverApi.getPushoverEndpoints();
 
-        pem.setTitle(title);
-        pem.setMessage(message);
-        pem.setTimestamp(String.valueOf(messageItem.getDate().getTime() / 1000L));
+            PushoverEndpoints.Message pem = new PushoverEndpoints.Message();
+            pem.setToken(apiToken);
+            pem.setUser(userToken);
 
-        String priority;
-        String sound;
-        switch (messageItem.getType()) {
-            case ALERT_ON_HIGH:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityOnHigh();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundOnHigh();
-                break;
-            case ALERT_ON_LOW:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityOnLow();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundOnLow();
-                break;
-            case ALERT_BEFORE_HIGH:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBeforeHigh();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundBeforeHigh();
-                break;
-            case ALERT_BEFORE_LOW:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBeforeLow();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundBeforeLow();
-                break;
-            case ALERT_EMERGENCY:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpEmergency();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpEmergency();
-                break;
-            case ALERT_ACTIONABLE:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpActionable();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpActionable();
-                break;
-            case ALERT_INFORMATIONAL:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpInformational();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpInformational();
-                break;
-            case REMINDER:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpReminder();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpReminder();
-                break;
-            case BOLUS:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBolus();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundBolus();
-                break;
-            case BASAL:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBasal();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundBasal();
-                break;
-            case SUSPEND:
-            case RESUME:
-                priority = pumpHistoryHandler.dataStore.getPushoverPrioritySuspendResume();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundSuspendResume();
-                break;
-            case BG:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBG();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundBG();
-                break;
-            case CALIBRATION:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityCalibration();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundCalibration();
-                break;
-            case CONSUMABLE:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityConsumables();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundConsumables();
-                break;
-            case DAILY_TOTALS:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityDailyTotals();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundDailyTotals();
-                break;
-            case AUTOMODE_ACTIVE:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeActive();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeActive();
-                break;
-            case AUTOMODE_STOP:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeStop();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeStop();
-                break;
-            case AUTOMODE_EXIT:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeExit();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeExit();
-                break;
-            case AUTOMODE_MINMAX:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeMinMax();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeMinMax();
-                break;
-            case ALERT_UPLOADER_ERROR:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderPumpErrors();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderPumpErrors();
-                break;
-            case ALERT_UPLOADER_STATUS:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderStatus();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderStatus();
-                break;
-            case ALERT_UPLOADER_BATTERY:
-                priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderBattery();
-                sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderBattery();
-                break;
-            default:
+            pem.setTitle(title);
+            pem.setMessage(message);
+            pem.setTimestamp(String.valueOf(messageItem.getDate().getTime() / 1000L));
 
-                if (messageItem.getPriority() == MessageItem.PRIORITY.EMERGENCY) {
+            String priority;
+            String sound;
+            switch (messageItem.getType()) {
+                case ALERT_ON_HIGH:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityOnHigh();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundOnHigh();
+                    break;
+                case ALERT_ON_LOW:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityOnLow();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundOnLow();
+                    break;
+                case ALERT_BEFORE_HIGH:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityBeforeHigh();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundBeforeHigh();
+                    break;
+                case ALERT_BEFORE_LOW:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityBeforeLow();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundBeforeLow();
+                    break;
+                case ALERT_EMERGENCY:
                     priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpEmergency();
                     sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpEmergency();
-                } else if (messageItem.getPriority() == MessageItem.PRIORITY.HIGH) {
+                    break;
+                case ALERT_ACTIONABLE:
                     priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpActionable();
                     sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpActionable();
-                } else if (messageItem.getPriority() == MessageItem.PRIORITY.NORMAL) {
+                    break;
+                case ALERT_INFORMATIONAL:
                     priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpInformational();
                     sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpInformational();
-                } else {
-                    priority = PRIORITY.NORMAL.string;
-                    sound = SOUND.NONE.string;
-                }
-        }
+                    break;
+                case REMINDER:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpReminder();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpReminder();
+                    break;
+                case BOLUS:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityBolus();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundBolus();
+                    break;
+                case BASAL:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityBasal();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundBasal();
+                    break;
+                case SUSPEND:
+                case RESUME:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPrioritySuspendResume();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundSuspendResume();
+                    break;
+                case BG:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityBG();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundBG();
+                    break;
+                case CALIBRATION:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityCalibration();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundCalibration();
+                    break;
+                case CONSUMABLE:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityConsumables();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundConsumables();
+                    break;
+                case DAILY_TOTALS:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityDailyTotals();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundDailyTotals();
+                    break;
+                case AUTOMODE_ACTIVE:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeActive();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeActive();
+                    break;
+                case AUTOMODE_STOP:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeStop();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeStop();
+                    break;
+                case AUTOMODE_EXIT:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeExit();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeExit();
+                    break;
+                case AUTOMODE_MINMAX:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityAutoModeMinMax();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundAutoModeMinMax();
+                    break;
+                case ALERT_UPLOADER_ERROR:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderPumpErrors();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderPumpErrors();
+                    break;
+                case ALERT_UPLOADER_STATUS:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderStatus();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderStatus();
+                    break;
+                case ALERT_UPLOADER_BATTERY:
+                    priority = pumpHistoryHandler.dataStore.getPushoverPriorityUploaderBattery();
+                    sound = pumpHistoryHandler.dataStore.getPushoverSoundUploaderBattery();
+                    break;
+                default:
 
-        if (messageItem.isCleared()) {
-            priority = pumpHistoryHandler.dataStore.getPushoverPriorityCleared();
-            sound = pumpHistoryHandler.dataStore.getPushoverSoundCleared();
-        } else if (messageItem.isSilenced()
-                && pumpHistoryHandler.dataStore.isPushoverEnableSilencedOverride()) {
-            priority = pumpHistoryHandler.dataStore.getPushoverPrioritySilenced();
-            sound = pumpHistoryHandler.dataStore.getPushoverSoundSilenced();
-        }
+                    if (messageItem.getPriority() == MessageItem.PRIORITY.EMERGENCY) {
+                        priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpEmergency();
+                        sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpEmergency();
+                    } else if (messageItem.getPriority() == MessageItem.PRIORITY.HIGH) {
+                        priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpActionable();
+                        sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpActionable();
+                    } else if (messageItem.getPriority() == MessageItem.PRIORITY.NORMAL) {
+                        priority = pumpHistoryHandler.dataStore.getPushoverPriorityPumpInformational();
+                        sound = pumpHistoryHandler.dataStore.getPushoverSoundPumpInformational();
+                    } else {
+                        priority = PRIORITY.NORMAL.string;
+                        sound = SOUND.NONE.string;
+                    }
+            }
 
-        if (pumpHistoryHandler.dataStore.isPushoverEnableBackfillOverride() &&
-                System.currentTimeMillis() - messageItem.getDate().getTime() > pumpHistoryHandler.dataStore.getPushoverBackfillOverrideAge() * 60000L) {
-            priority = pumpHistoryHandler.dataStore.getPushoverPriorityBackfill();
-            sound = pumpHistoryHandler.dataStore.getPushoverSoundBackfill();
-        }
+            if (messageItem.isCleared()) {
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityCleared();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundCleared();
+            } else if (messageItem.isSilenced()
+                    && pumpHistoryHandler.dataStore.isPushoverEnableSilencedOverride()) {
+                priority = pumpHistoryHandler.dataStore.getPushoverPrioritySilenced();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundSilenced();
+            }
 
-        if (pumpHistoryHandler.dataStore.isPushoverEnablePriorityOverride())
-            priority = pumpHistoryHandler.dataStore.getPushoverPriorityOverride();
-        if (pumpHistoryHandler.dataStore.isPushoverEnableSoundOverride())
-            sound = pumpHistoryHandler.dataStore.getPushoverSoundOverride();
+            if (pumpHistoryHandler.dataStore.isPushoverEnableBackfillOverride() &&
+                    System.currentTimeMillis() - messageItem.getDate().getTime() > pumpHistoryHandler.dataStore.getPushoverBackfillOverrideAge() * 60000L) {
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityBackfill();
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundBackfill();
+            }
 
-        pem.setPriority(priority);
-        pem.setSound(sound);
+            if (pumpHistoryHandler.dataStore.isPushoverEnablePriorityOverride())
+                priority = pumpHistoryHandler.dataStore.getPushoverPriorityOverride();
+            if (pumpHistoryHandler.dataStore.isPushoverEnableSoundOverride())
+                sound = pumpHistoryHandler.dataStore.getPushoverSoundOverride();
 
-        // Use device name to send the message directly to that device, rather than all of the user's devices (multiple devices may be separated by a comma)
-        pem.setDevice(pumpHistoryHandler.dataStore.getPushoverSendToDevice());
+            pem.setPriority(priority);
+            pem.setSound(sound);
 
-        if (priority.equals(PRIORITY.EMERGENCY.string)) {
-            pem.setRetry(pumpHistoryHandler.dataStore.getPushoverEmergencyRetry());
-            pem.setExpire(pumpHistoryHandler.dataStore.getPushoverEmergencyExpire());
-        }
+            // Use device name to send the message directly to that device, rather than all of the user's devices (multiple devices may be separated by a comma)
+            pem.setDevice(pumpHistoryHandler.dataStore.getPushoverSendToDevice());
 
-        try {
+            if (priority.equals(PRIORITY.EMERGENCY.string)) {
+                pem.setRetry(pumpHistoryHandler.dataStore.getPushoverEmergencyRetry());
+                pem.setExpire(pumpHistoryHandler.dataStore.getPushoverEmergencyExpire());
+            }
+
             Response<PushoverEndpoints.Message> response = pushoverEndpoints.postMessage(pem).execute();
 
             if (!response.isSuccessful()) {
@@ -439,6 +440,7 @@ public class PushoverUploadService extends Service {
             }
 
             try {
+
                 Headers headers = response.headers();
                 for (int i = 0, count = headers.size(); i < count; i++) {
                     String name = headers.name(i);
@@ -450,28 +452,29 @@ public class PushoverUploadService extends Service {
                         appReset = Long.parseLong(headers.value(i));
                     }
                 }
+
+                UserLogMessage.sendE(mContext, UserLogMessage.TYPE.PUSHOVER,
+                        String.format("{id;%s}: %s/%s {date.time;%s} '%s' '%s' '%s' '%s'%s",
+                                R.string.ul_share__pushover,
+                                appLimit - appRemaining,
+                                appLimit,
+                                messageItem.getDate().getTime(),
+                                pem.getTitle(),
+                                pem.getMessage(),
+                                pem.getPriority(),
+                                pem.getSound(),
+                                pem.getDevice().length() == 0 ? "" : " '" + pem.getDevice() + "'"
+                        ));
+
             } catch (Exception ignored) {}
 
-            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.PUSHOVER,
-                    String.format("{id;%s}: %s/%s {date.time;%s} '%s' '%s' '%s' '%s'%s",
-                            R.string.ul_share__pushover,
-                            appLimit - appRemaining,
-                            appLimit,
-                            messageItem.getDate().getTime(),
-                            pem.getTitle(),
-                            pem.getMessage(),
-                            pem.getPriority(),
-                            pem.getSound(),
-                            pem.getDevice().length() == 0 ? "" : " '" + pem.getDevice() + "'"
-                    ));
-
             messagesSent++;
-
             success = true;
-            Log.i(TAG, "success");
+
         } catch (Exception e) {
             success = false;
             Log.e(TAG, "failed: " + e.getMessage());
+            UserLogMessage.sendE(mContext, UserLogMessage.TYPE.WARN, Log.getStackTraceString(e));
         }
 
         return success;
