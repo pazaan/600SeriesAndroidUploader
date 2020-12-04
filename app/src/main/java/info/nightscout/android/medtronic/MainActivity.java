@@ -1483,7 +1483,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             realmRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
             fabCurrent = findViewById(R.id.fab_log_current);
-            fabCurrent.hide();
 
             // return to most recent log entry
             fabCurrent.setOnClickListener(new View.OnClickListener() {
@@ -1509,7 +1508,6 @@ public class MainActivity extends AppCompatActivity implements OnSharedPreferenc
             });
 
             fabSearch = findViewById(R.id.fab_log_search);
-            fabSearch.hide();
 
             // search click: in normal mode will scroll to errors/warnings, in extended mode this includes notes
             fabSearch.setOnClickListener(new View.OnClickListener() {
