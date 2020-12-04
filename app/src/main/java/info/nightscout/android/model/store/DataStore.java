@@ -1332,122 +1332,122 @@ public class DataStore extends RealmObject {
     }
 
     public String getNameBasalPattern1() {
-        return scrub(nameBasalPattern1.isEmpty() ?
+        return scrub(nameBasalPattern1 == null || nameBasalPattern1.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBasalPatternP1) : nameBasalPattern1);
     }
 
     public String getNameBasalPattern2() {
-        return scrub(nameBasalPattern2.isEmpty() ?
+        return scrub(nameBasalPattern2 == null || nameBasalPattern2.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBasalPatternP2) : nameBasalPattern2);
     }
 
     public String getNameBasalPattern3() {
-        return scrub(nameBasalPattern3.isEmpty() ?
+        return scrub(nameBasalPattern3 == null || nameBasalPattern3.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBasalPatternP3) : nameBasalPattern3);
     }
 
     public String getNameBasalPattern4() {
-        return scrub(nameBasalPattern4.isEmpty() ?
+        return scrub(nameBasalPattern4 == null || nameBasalPattern4.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBasalPatternP4) : nameBasalPattern4);
     }
 
     public String getNameBasalPattern5() {
-        return scrub(nameBasalPattern5.isEmpty() ?
+        return scrub(nameBasalPattern5 == null || nameBasalPattern5.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBasalPatternP5) : nameBasalPattern5);
     }
 
     public String getNameBasalPattern6() {
-        return scrub(nameBasalPattern6.isEmpty() ?
+        return scrub(nameBasalPattern6 == null || nameBasalPattern6.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBasalPatternP6) : nameBasalPattern6);
     }
 
     public String getNameBasalPattern7() {
-        return scrub(nameBasalPattern7.isEmpty() ?
+        return scrub(nameBasalPattern7 == null || nameBasalPattern7.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBasalPatternP7) : nameBasalPattern7);
     }
 
     public String getNameBasalPattern8() {
-        return scrub(nameBasalPattern8.isEmpty() ?
+        return scrub(nameBasalPattern8 == null || nameBasalPattern8.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBasalPatternP8) : nameBasalPattern8);
     }
 
     public String getNameTempBasalPreset1() {
-        return nameTempBasalPreset1.isEmpty() ?
+        return nameTempBasalPreset1 == null || nameTempBasalPreset1.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameTempBasalPresetP1) : nameTempBasalPreset1;
     }
 
     public String getNameTempBasalPreset2() {
-        return nameTempBasalPreset2.isEmpty() ?
+        return nameTempBasalPreset2 == null || nameTempBasalPreset2.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameTempBasalPresetP2) : nameTempBasalPreset2;
     }
 
     public String getNameTempBasalPreset3() {
-        return nameTempBasalPreset3.isEmpty() ?
+        return nameTempBasalPreset3 == null || nameTempBasalPreset3.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameTempBasalPresetP3) : nameTempBasalPreset3;
     }
 
     public String getNameTempBasalPreset4() {
-        return nameTempBasalPreset4.isEmpty() ?
+        return nameTempBasalPreset4 == null || nameTempBasalPreset4.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameTempBasalPresetP4) : nameTempBasalPreset4;
     }
 
     public String getNameTempBasalPreset5() {
-        return nameTempBasalPreset5.isEmpty() ?
+        return nameTempBasalPreset5 == null || nameTempBasalPreset5.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameTempBasalPresetP5) : nameTempBasalPreset5;
     }
 
     public String getNameTempBasalPreset6() {
-        return nameTempBasalPreset6.isEmpty() ?
+        return nameTempBasalPreset6 == null || nameTempBasalPreset6.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameTempBasalPresetP6) : nameTempBasalPreset6;
     }
 
     public String getNameTempBasalPreset7() {
-        return nameTempBasalPreset7.isEmpty() ?
+        return nameTempBasalPreset7 == null || nameTempBasalPreset7.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameTempBasalPresetP7) : nameTempBasalPreset7;
     }
 
     public String getNameTempBasalPreset8() {
-        return nameTempBasalPreset8.isEmpty() ?
+        return nameTempBasalPreset8 == null || nameTempBasalPreset8.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameTempBasalPresetP8) : nameTempBasalPreset8;
     }
 
     public String getNameBolusPreset1() {
-        return nameBolusPreset1.isEmpty() ?
+        return nameBolusPreset1 == null || nameBolusPreset1.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBolusPresetP1) : nameBolusPreset1;
     }
 
     public String getNameBolusPreset2() {
-        return nameBolusPreset2.isEmpty() ?
+        return nameBolusPreset2 == null || nameBolusPreset2.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBolusPresetP2) : nameBolusPreset2;
     }
 
     public String getNameBolusPreset3() {
-        return nameBolusPreset3.isEmpty() ?
+        return nameBolusPreset3 == null || nameBolusPreset3.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBolusPresetP3) : nameBolusPreset3;
     }
 
     public String getNameBolusPreset4() {
-        return nameBolusPreset4.isEmpty() ?
+        return nameBolusPreset4 == null || nameBolusPreset4.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBolusPresetP4) : nameBolusPreset4;
     }
 
     public String getNameBolusPreset5() {
-        return nameBolusPreset5.isEmpty() ?
+        return nameBolusPreset5 == null || nameBolusPreset5.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBolusPresetP5) : nameBolusPreset5;
     }
 
     public String getNameBolusPreset6() {
-        return nameBolusPreset6.isEmpty() ?
+        return nameBolusPreset6 == null || nameBolusPreset6.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBolusPresetP6) : nameBolusPreset6;
     }
 
     public String getNameBolusPreset7() {
-        return nameBolusPreset7.isEmpty() ?
+        return nameBolusPreset7 == null || nameBolusPreset7.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBolusPresetP7) : nameBolusPreset7;
     }
 
     public String getNameBolusPreset8() {
-        return nameBolusPreset8.isEmpty() ?
+        return nameBolusPreset8 == null || nameBolusPreset8.isEmpty() ?
                 FormatKit.getInstance().getString(R.string.default_nameBolusPresetP8) : nameBolusPreset8;
     }
 

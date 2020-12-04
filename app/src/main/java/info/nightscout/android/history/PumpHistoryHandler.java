@@ -124,8 +124,8 @@ public class PumpHistoryHandler {
             historyRealm.refresh();
         if (storeRealm != null && !storeRealm.isClosed()) {
             storeRealm.refresh();
-            if (dataStore != null)
-                pumpHistorySender = new PumpHistorySender().buildSenders(dataStore);
+            dataStore = storeRealm.where(DataStore.class).findFirst();
+            pumpHistorySender = new PumpHistorySender().buildSenders(dataStore);
         }
     }
 
