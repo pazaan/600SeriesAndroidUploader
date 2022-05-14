@@ -3,7 +3,7 @@
 
 ## 600SeriesAndroidUploader
 
-⚠️: | This project has been archived. The developers of this project are no longer using 600-Series pumps, and are unable to support them. If you are interested in taking an active role, [please get in touch with us!](https://gitter.im/pazaan)
+⚠️ | This project has been archived. The developers of this project are no longer using 600-Series pumps, and are unable to support them. If you are interested in taking an active role, [please get in touch with us!](https://gitter.im/pazaan)
 :---: | :---
 
 This is an Android app to upload data from a MiniMed 600 Series insulin pump to a Nightscout website via a Contour Next Link 2.4 blood glucose meter
